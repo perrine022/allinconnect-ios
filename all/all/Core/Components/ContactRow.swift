@@ -27,15 +27,15 @@ struct ContactRow: View {
     
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 14) {
+            HStack(spacing: 12) {
                 ZStack {
                     Circle()
                         .fill(iconColor.opacity(0.2))
-                        .frame(width: 36, height: 36)
+                        .frame(width: 32, height: 32)
                     
                     Image(systemName: icon)
                         .foregroundColor(iconColor)
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: 13, weight: .medium))
                 }
                 
                 Text(text)
@@ -45,10 +45,10 @@ struct ContactRow: View {
                 Spacer()
                 
                 Image(systemName: "chevron.right")
-                    .foregroundColor(.appTextSecondary)
-                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.gray.opacity(0.6))
+                    .font(.system(size: 11, weight: .semibold))
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, 2)
         }
     }
 }

@@ -18,20 +18,22 @@ struct PartnerDetailView: View {
     }
     
     var body: some View {
-        ZStack {
-            // Background avec gradient
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color.appDarkRed2,
-                    Color.appDarkRed1,
-                    Color.black
-                ]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-            
-            ScrollView {
+        GeometryReader { geometry in
+            ZStack(alignment: .bottom) {
+                ZStack {
+                    // Background avec gradient
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.appDarkRed2,
+                            Color.appDarkRed1,
+                            Color.black
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .ignoresSafeArea()
+                    
+                    ScrollView {
                 VStack(spacing: 0) {
                     // Header avec image
                     ZStack(alignment: .topLeading) {
@@ -99,7 +101,7 @@ struct PartnerDetailView: View {
                     .frame(height: 150)
                     
                     // Contenu principal
-                    VStack(alignment: .leading, spacing: 24) {
+                    VStack(alignment: .leading, spacing: 18) {
                         // Nom et catégorie
                         HStack(alignment: .top) {
                             VStack(alignment: .leading, spacing: 8) {
@@ -142,10 +144,11 @@ struct PartnerDetailView: View {
                                 .foregroundColor(.white.opacity(0.9))
                                 .lineSpacing(4)
                                 .padding(.horizontal, 20)
+                                .padding(.top, 4)
                         }
                         
                         // Informations de contact
-                        VStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 6) {
                             ContactRow(
                                 icon: "mappin.circle.fill",
                                 text: "\(viewModel.partner.address), \(viewModel.partner.postalCode) \(viewModel.partner.city)",
@@ -166,26 +169,45 @@ struct PartnerDetailView: View {
                                 )
                             }
                             
-                            if let email = viewModel.partner.email {
-                                ContactRow(
-                                    icon: "envelope.fill",
-                                    text: email,
-                                    iconColor: .appGold,
-                                    action: {
-                                        viewModel.openEmail()
+                            // Email et Website sur la même ligne
+                            if viewModel.partner.email != nil || viewModel.partner.website != nil {
+                                HStack(spacing: 16) {
+                                    if let email = viewModel.partner.email {
+                                        Button(action: {
+                                            viewModel.openEmail()
+                                        }) {
+                                            HStack(spacing: 6) {
+                                                Text(email)
+                                                    .font(.system(size: 13, weight: .regular))
+                                                    .foregroundColor(.white.opacity(0.9))
+                                                
+                                                Image(systemName: "chevron.right")
+                                                    .foregroundColor(.gray.opacity(0.6))
+                                                    .font(.system(size: 10, weight: .semibold))
+                                            }
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
                                     }
-                                )
-                            }
-                            
-                            if let website = viewModel.partner.website {
-                                ContactRow(
-                                    icon: "globe",
-                                    text: website,
-                                    iconColor: .appGold,
-                                    action: {
-                                        viewModel.openWebsite()
+                                    
+                                    if let website = viewModel.partner.website {
+                                        Button(action: {
+                                            viewModel.openWebsite()
+                                        }) {
+                                            HStack(spacing: 6) {
+                                                Text(website)
+                                                    .font(.system(size: 13, weight: .regular))
+                                                    .foregroundColor(.white.opacity(0.9))
+                                                
+                                                Image(systemName: "chevron.right")
+                                                    .foregroundColor(.gray.opacity(0.6))
+                                                    .font(.system(size: 10, weight: .semibold))
+                                            }
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
                                     }
-                                )
+                                }
+                                .padding(.leading, 50)
+                                .padding(.vertical, 2)
                             }
                         }
                         .padding(.horizontal, 20)
@@ -196,11 +218,25 @@ struct PartnerDetailView: View {
                                 Button(action: {
                                     viewModel.openInstagram()
                                 }) {
-                                    HStack(spacing: 8) {
+                                    // Logo Instagram
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 5)
+                                            .fill(
+                                                LinearGradient(
+                                                    gradient: Gradient(colors: [
+                                                        Color(red: 0.8, green: 0.3, blue: 0.6),
+                                                        Color(red: 0.9, green: 0.5, blue: 0.3),
+                                                        Color(red: 0.95, green: 0.7, blue: 0.2)
+                                                    ]),
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                )
+                                            )
+                                            .frame(width: 24, height: 24)
+                                        
                                         Image(systemName: "camera.fill")
-                                            .font(.system(size: 16))
-                                        Text("Instagram")
-                                            .font(.system(size: 15, weight: .semibold))
+                                            .font(.system(size: 12, weight: .bold))
+                                            .foregroundColor(.white)
                                     }
                                     .foregroundColor(.black)
                                     .frame(maxWidth: .infinity)
@@ -217,50 +253,26 @@ struct PartnerDetailView: View {
                             Button(action: {
                                 viewModel.callPartner()
                             }) {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "phone.fill")
-                                        .font(.system(size: 18))
-                                    Text("Contact")
-                                        .font(.system(size: 15, weight: .bold))
-                                }
-                                .foregroundColor(.black)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                                .background(Color.appGold)
-                                .cornerRadius(12)
-                            }
-                            
-                            Button(action: {
-                                // Action voir fiche
-                            }) {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "doc.text.fill")
-                                        .font(.system(size: 16))
-                                    Text("Voir fiche")
-                                        .font(.system(size: 15, weight: .semibold))
-                                }
-                                .foregroundColor(.black)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                                .background(Color.white)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.white.opacity(0.3), lineWidth: 1)
-                                )
-                                .cornerRadius(12)
+                                Image(systemName: "phone.fill")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(.black)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(Color.appGold)
+                                    .cornerRadius(12)
                             }
                         }
                         .padding(.horizontal, 20)
                         
                         // Section "Offres en cours"
                         if !viewModel.currentOffers.isEmpty {
-                            VStack(alignment: .leading, spacing: 16) {
+                            VStack(alignment: .leading, spacing: 12) {
                                 Text("Offres en cours")
                                     .font(.system(size: 22, weight: .bold))
                                     .foregroundColor(.white)
                                     .padding(.horizontal, 20)
                                 
-                                VStack(spacing: 12) {
+                                VStack(spacing: 10) {
                                     ForEach(viewModel.currentOffers) { offer in
                                         CurrentOfferCard(offer: offer) {
                                             // Navigation vers le détail de l'offre
@@ -269,7 +281,7 @@ struct PartnerDetailView: View {
                                 }
                                 .padding(.horizontal, 20)
                             }
-                            .padding(.top, 8)
+                            .padding(.top, 4)
                         }
                         
                         // Section "Avis All In Connect"
@@ -311,9 +323,21 @@ struct PartnerDetailView: View {
                     }
                 }
             }
+                
+                // Footer Bar - toujours visible (affichage uniquement)
+                VStack {
+                    Spacer()
+                    FooterBar(selectedTab: .constant(.home)) { tab in
+                        // Ne fait rien dans cette vue, juste pour l'affichage
+                    }
+                    .frame(width: geometry.size.width)
+                }
+                .ignoresSafeArea(edges: .bottom)
+            }
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
         .toolbarBackground(.hidden, for: .navigationBar)
     }
 }

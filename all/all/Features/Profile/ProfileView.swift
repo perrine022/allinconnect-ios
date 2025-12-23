@@ -11,6 +11,10 @@ struct ProfileView: View {
     @StateObject private var viewModel = ProfileViewModel()
     @State private var showNotificationPreferences = false
     @State private var showEditProfile = false
+    @State private var showChangePassword = false
+    @State private var showHelpSupport = false
+    @State private var showTerms = false
+    @State private var showPrivacyPolicy = false
     
     var body: some View {
         ZStack {
@@ -93,7 +97,7 @@ struct ProfileView: View {
                             icon: "lock.fill",
                             title: "Changer mon mot de passe",
                             action: {
-                                // Action changer mot de passe
+                                showChangePassword = true
                             }
                         )
                         
@@ -105,7 +109,7 @@ struct ProfileView: View {
                             icon: "questionmark.circle.fill",
                             title: "Aide & Support",
                             action: {
-                                // Action aide
+                                showHelpSupport = true
                             }
                         )
                         
@@ -117,7 +121,7 @@ struct ProfileView: View {
                             icon: "doc.text.fill",
                             title: "Conditions générales",
                             action: {
-                                // Action CGU
+                                showTerms = true
                             }
                         )
                         
@@ -129,7 +133,7 @@ struct ProfileView: View {
                             icon: "shield.fill",
                             title: "Politique de confidentialité",
                             action: {
-                                // Action politique
+                                showPrivacyPolicy = true
                             }
                         )
                     }
@@ -187,6 +191,26 @@ struct ProfileView: View {
         .sheet(isPresented: $showEditProfile) {
             NavigationStack {
                 EditProfileView()
+            }
+        }
+        .sheet(isPresented: $showChangePassword) {
+            NavigationStack {
+                ChangePasswordView()
+            }
+        }
+        .sheet(isPresented: $showHelpSupport) {
+            NavigationStack {
+                HelpSupportView()
+            }
+        }
+        .sheet(isPresented: $showTerms) {
+            NavigationStack {
+                TermsView(isPrivacyPolicy: false)
+            }
+        }
+        .sheet(isPresented: $showPrivacyPolicy) {
+            NavigationStack {
+                TermsView(isPrivacyPolicy: true)
             }
         }
     }
