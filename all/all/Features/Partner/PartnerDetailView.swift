@@ -10,7 +10,9 @@ import SwiftUI
 struct PartnerDetailView: View {
     @StateObject private var viewModel: PartnerDetailViewModel
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var appState: AppState
     @State private var isFavorite: Bool
+    @State private var selectedOffer: Offer?
     
     init(partner: Partner) {
         _viewModel = StateObject(wrappedValue: PartnerDetailViewModel(partner: partner))
@@ -171,19 +173,19 @@ struct PartnerDetailView: View {
                                     
                                     // Email et Website sur la même ligne
                                     if viewModel.partner.email != nil || viewModel.partner.website != nil {
-                                        HStack(spacing: 16) {
+                                        HStack(spacing: 20) {
                                             if let email = viewModel.partner.email {
                                                 Button(action: {
                                                     viewModel.openEmail()
                                                 }) {
-                                                    HStack(spacing: 6) {
+                                                    HStack(spacing: 8) {
                                                         Text(email)
-                                                            .font(.system(size: 13, weight: .regular))
+                                                            .font(.system(size: 15, weight: .regular))
                                                             .foregroundColor(.white.opacity(0.9))
                                                         
                                                         Image(systemName: "chevron.right")
                                                             .foregroundColor(.gray.opacity(0.6))
-                                                            .font(.system(size: 10, weight: .semibold))
+                                                            .font(.system(size: 11, weight: .semibold))
                                                     }
                                                 }
                                                 .buttonStyle(PlainButtonStyle())
@@ -193,21 +195,21 @@ struct PartnerDetailView: View {
                                                 Button(action: {
                                                     viewModel.openWebsite()
                                                 }) {
-                                                    HStack(spacing: 6) {
+                                                    HStack(spacing: 8) {
                                                         Text(website)
-                                                            .font(.system(size: 13, weight: .regular))
+                                                            .font(.system(size: 15, weight: .regular))
                                                             .foregroundColor(.white.opacity(0.9))
                                                         
                                                         Image(systemName: "chevron.right")
                                                             .foregroundColor(.gray.opacity(0.6))
-                                                            .font(.system(size: 10, weight: .semibold))
+                                                            .font(.system(size: 11, weight: .semibold))
                                                     }
                                                 }
                                                 .buttonStyle(PlainButtonStyle())
                                             }
                                         }
                                         .padding(.leading, 50)
-                                        .padding(.vertical, 2)
+                                        .padding(.vertical, 4)
                                     }
                                 }
                                 .padding(.horizontal, 20)
@@ -218,9 +220,9 @@ struct PartnerDetailView: View {
                                         Button(action: {
                                             viewModel.openInstagram()
                                         }) {
-                                            // Logo Instagram
+                                            // Logo Instagram carré
                                             ZStack {
-                                                RoundedRectangle(cornerRadius: 5)
+                                                RoundedRectangle(cornerRadius: 8)
                                                     .fill(
                                                         LinearGradient(
                                                             gradient: Gradient(colors: [
@@ -232,21 +234,12 @@ struct PartnerDetailView: View {
                                                             endPoint: .bottomTrailing
                                                         )
                                                     )
-                                                    .frame(width: 24, height: 24)
+                                                    .frame(width: 50, height: 50)
                                                 
                                                 Image(systemName: "camera.fill")
-                                                    .font(.system(size: 12, weight: .bold))
+                                                    .font(.system(size: 18, weight: .bold))
                                                     .foregroundColor(.white)
                                             }
-                                            .foregroundColor(.black)
-                                            .frame(maxWidth: .infinity)
-                                            .padding(.vertical, 12)
-                                            .background(Color.white)
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 12)
-                                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
-                                            )
-                                            .cornerRadius(12)
                                         }
                                     }
                                     
@@ -272,14 +265,14 @@ struct PartnerDetailView: View {
                                             .foregroundColor(.white)
                                             .padding(.horizontal, 20)
                                         
-                                        VStack(spacing: 10) {
-                                            ForEach(viewModel.currentOffers) { offer in
-                                                CurrentOfferCard(offer: offer) {
-                                                    // Navigation vers le détail de l'offre
-                                                }
-                                            }
+                                VStack(spacing: 10) {
+                                    ForEach(viewModel.currentOffers) { offer in
+                                        CurrentOfferCard(offer: offer) {
+                                            selectedOffer = offer
                                         }
-                                        .padding(.horizontal, 20)
+                                    }
+                                }
+                                .padding(.horizontal, 20)
                                     }
                                     .padding(.top, 4)
                                 }
@@ -325,11 +318,12 @@ struct PartnerDetailView: View {
                     }
                 }
                 
-                // Footer Bar - toujours visible (affichage uniquement)
+                // Footer Bar - toujours visible
                 VStack {
                     Spacer()
-                    FooterBar(selectedTab: .constant(.home)) { tab in
-                        // Ne fait rien dans cette vue, juste pour l'affichage
+                    FooterBar(selectedTab: $appState.selectedTab) { tab in
+                        appState.navigateToTab(tab)
+                        dismiss()
                     }
                     .frame(width: geometry.size.width)
                 }
@@ -340,6 +334,9 @@ struct PartnerDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .toolbarBackground(.hidden, for: .navigationBar)
+        .navigationDestination(item: $selectedOffer) { offer in
+            OfferDetailView(offer: offer)
+        }
     }
 }
 
@@ -363,6 +360,7 @@ struct PartnerDetailView: View {
             headerImageName: "gamecontroller.fill",
             isFavorite: false
         ))
+        .environmentObject(AppState())
     }
 }
 

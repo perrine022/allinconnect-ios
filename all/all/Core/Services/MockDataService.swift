@@ -233,5 +233,9 @@ class MockDataService {
     func getOffersForPartner(partnerId: UUID) -> [Offer] {
         return getAllOffers().filter { $0.partnerId == partnerId }
     }
+    
+    func getPartnerById(id: UUID) -> Partner? {
+        return getPartners().first { $0.id == id }
+    }
 }
 

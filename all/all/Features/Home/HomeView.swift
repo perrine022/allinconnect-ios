@@ -99,14 +99,14 @@ struct HomeView: View {
                     .padding(.horizontal, 20)
                     
                     // Champs de recherche - Design compact et épuré
-                    VStack(spacing: 8) {
+                    VStack(spacing: 6) {
                         // Champ Ville, nom, activité
                         HStack(spacing: 10) {
                             Image(systemName: "magnifyingglass")
-                                .foregroundColor(.gray.opacity(0.7))
-                                .font(.system(size: 14))
+                                .foregroundColor(.gray.opacity(0.6))
+                                .font(.system(size: 13))
                             
-                            TextField("", text: $viewModel.cityText, prompt: Text("Ville, nom, activité...").foregroundColor(.gray.opacity(0.7)))
+                            TextField("", text: $viewModel.cityText, prompt: Text("Ville, nom, activité...").foregroundColor(.gray.opacity(0.6)))
                                 .foregroundColor(.black)
                                 .font(.system(size: 14))
                                 .autocorrectionDisabled()
@@ -118,21 +118,21 @@ struct HomeView: View {
                             Button(action: {}) {
                                 Image(systemName: "mappin.circle.fill")
                                     .foregroundColor(.appRed)
-                                    .font(.system(size: 18))
+                                    .font(.system(size: 16))
                             }
                         }
                         .padding(.horizontal, 12)
-                        .padding(.vertical, 10)
+                        .padding(.vertical, 9)
                         .background(Color.white)
-                        .cornerRadius(10)
+                        .cornerRadius(8)
                         
                         // Champ Activité
                         HStack(spacing: 10) {
                             Image(systemName: "briefcase.fill")
-                                .foregroundColor(.gray.opacity(0.7))
-                                .font(.system(size: 14))
+                                .foregroundColor(.gray.opacity(0.6))
+                                .font(.system(size: 13))
                             
-                            TextField("", text: $viewModel.activityText, prompt: Text("Activité...").foregroundColor(.gray.opacity(0.7)))
+                            TextField("", text: $viewModel.activityText, prompt: Text("Activité...").foregroundColor(.gray.opacity(0.6)))
                                 .foregroundColor(.black)
                                 .font(.system(size: 14))
                                 .autocorrectionDisabled()
@@ -142,41 +142,65 @@ struct HomeView: View {
                                 }
                         }
                         .padding(.horizontal, 12)
-                        .padding(.vertical, 10)
+                        .padding(.vertical, 9)
                         .background(Color.white)
-                        .cornerRadius(10)
+                        .cornerRadius(8)
                         
-                        // Toggle Rayon de recherche
-                        HStack(spacing: 10) {
-                            Text("Rayon de recherche")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.white)
+                        // Slider Rayon de recherche
+                        VStack(spacing: 6) {
+                            HStack {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "location.fill")
+                                        .foregroundColor(.gray.opacity(0.6))
+                                        .font(.system(size: 12))
+                                    
+                                    Text("Rayon de recherche")
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundColor(.white)
+                                }
+                                
+                                Spacer()
+                                
+                                Text(viewModel.searchRadius == 0 ? "Désactivé" : "\(Int(viewModel.searchRadius)) km")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(viewModel.searchRadius == 0 ? .gray.opacity(0.7) : .appGold)
+                                    .frame(minWidth: 70, alignment: .trailing)
+                            }
                             
-                            Spacer()
-                            
-                            Toggle("", isOn: $viewModel.searchRadiusEnabled)
-                                .toggleStyle(SwitchToggleStyle(tint: .appRed))
-                                .scaleEffect(0.85)
-                            
-                            Text(viewModel.searchRadiusEnabled ? "Activé" : "Désactivé")
-                                .font(.system(size: 13, weight: .regular))
-                                .foregroundColor(.gray.opacity(0.8))
-                                .frame(width: 60, alignment: .trailing)
+                            HStack(spacing: 8) {
+                                Text("0")
+                                    .font(.system(size: 11, weight: .regular))
+                                    .foregroundColor(.gray.opacity(0.6))
+                                    .frame(width: 20)
+                                
+                                Slider(value: $viewModel.searchRadius, in: 0...50, step: 5)
+                                    .tint(.appRed)
+                                    .onChange(of: viewModel.searchRadius) { _, _ in
+                                        viewModel.searchProfessionals()
+                                    }
+                                
+                                Text("50")
+                                    .font(.system(size: 11, weight: .regular))
+                                    .foregroundColor(.gray.opacity(0.6))
+                                    .frame(width: 20)
+                            }
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 10)
                         .background(Color.white)
-                        .cornerRadius(10)
+                        .cornerRadius(8)
                         
                         // Checkbox CLUB10
                         Button(action: {
-                            viewModel.onlyClub10.toggle()
+                            withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+                                viewModel.onlyClub10.toggle()
+                            }
                         }) {
                             HStack(spacing: 10) {
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 3)
                                         .fill(viewModel.onlyClub10 ? Color.appRed : Color.clear)
-                                        .frame(width: 18, height: 18)
+                                        .frame(width: 16, height: 16)
                                         .overlay(
                                             RoundedRectangle(cornerRadius: 3)
                                                 .stroke(Color.white, lineWidth: 1.5)
@@ -185,24 +209,24 @@ struct HomeView: View {
                                     if viewModel.onlyClub10 {
                                         Image(systemName: "checkmark")
                                             .foregroundColor(.white)
-                                            .font(.system(size: 11, weight: .bold))
+                                            .font(.system(size: 10, weight: .bold))
                                     }
                                 }
                                 
                                 Image(systemName: "star.fill")
                                     .foregroundColor(.appGold)
-                                    .font(.system(size: 14))
+                                    .font(.system(size: 13))
                                 
                                 Text("Uniquement les membres CLUB10")
-                                    .font(.system(size: 14, weight: .medium))
+                                    .font(.system(size: 13, weight: .medium))
                                     .foregroundColor(.white)
                                 
                                 Spacer()
                             }
                             .padding(.horizontal, 12)
-                            .padding(.vertical, 10)
-                            .background(Color.appDarkGray.opacity(0.5))
-                            .cornerRadius(10)
+                            .padding(.vertical, 9)
+                            .background(Color.appDarkGray.opacity(0.4))
+                            .cornerRadius(8)
                         }
                         .buttonStyle(PlainButtonStyle())
                     }

@@ -18,7 +18,7 @@ class HomeViewModel: ObservableObject {
     // Search fields
     @Published var cityText: String = ""
     @Published var activityText: String = ""
-    @Published var searchRadiusEnabled: Bool = false
+    @Published var searchRadius: Double = 10.0 // Rayon en km (0 = désactivé)
     @Published var onlyClub10: Bool = false
     
     // Filters

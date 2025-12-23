@@ -24,7 +24,7 @@ enum TabItem: String, CaseIterable {
 }
 
 struct TabBarView: View {
-    @State private var selectedTab: TabItem = .home
+    @StateObject private var appState = AppState()
     
     var body: some View {
         NavigationStack {
@@ -32,7 +32,7 @@ struct TabBarView: View {
                 ZStack(alignment: .bottom) {
                     // Contenu principal
                     Group {
-                        switch selectedTab {
+                        switch appState.selectedTab {
                         case .home:
                             HomeView()
                         case .offers:
@@ -48,14 +48,15 @@ struct TabBarView: View {
                     // Footer Bar réutilisable - toujours visible au-dessus
                     VStack {
                         Spacer()
-                        FooterBar(selectedTab: $selectedTab) { tab in
-                            selectedTab = tab
+                        FooterBar(selectedTab: $appState.selectedTab) { tab in
+                            appState.navigateToTab(tab)
                         }
                         .frame(width: geometry.size.width)
                     }
                     .ignoresSafeArea(edges: .bottom)
                 }
             }
+            .environmentObject(appState)
         }
     }
 }
