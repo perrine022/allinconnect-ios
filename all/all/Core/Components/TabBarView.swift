@@ -46,10 +46,14 @@ struct TabBarView: View {
                     .frame(width: geometry.size.width, height: geometry.size.height)
                 
                     // Footer Bar réutilisable - toujours visible au-dessus
-                    FooterBar(selectedTab: $selectedTab) { tab in
-                        selectedTab = tab
+                    VStack {
+                        Spacer()
+                        FooterBar(selectedTab: $selectedTab) { tab in
+                            selectedTab = tab
+                        }
+                        .frame(width: geometry.size.width)
                     }
-                    .frame(width: geometry.size.width)
+                    .ignoresSafeArea(edges: .bottom)
                 }
             }
         }

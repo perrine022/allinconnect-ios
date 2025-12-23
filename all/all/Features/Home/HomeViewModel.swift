@@ -75,6 +75,11 @@ class HomeViewModel: ObservableObject {
         applyFilters()
     }
     
+    func getPartner(for offer: Offer) -> Partner? {
+        guard let partnerId = offer.partnerId else { return nil }
+        return partners.first { $0.id == partnerId }
+    }
+    
     private func applyFilters() {
         var filtered = professionals
         

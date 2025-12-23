@@ -26,23 +26,23 @@ struct FooterBar: View {
                     selectedTab = tab
                     onTabSelected(tab)
                 }) {
-                    VStack(spacing: 6) {
+                    VStack(spacing: 4) {
                         Image(systemName: tab.icon)
-                            .font(.system(size: 22, weight: .medium))
+                            .font(.system(size: 20, weight: .medium))
                             .foregroundColor(selectedTab == tab ? .appRed : Color(red: 0.7, green: 0.7, blue: 0.7))
                         
                         Text(tab.rawValue)
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.system(size: 11, weight: .medium))
                             .foregroundColor(selectedTab == tab ? .appRed : Color(red: 0.7, green: 0.7, blue: 0.7))
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 6)
                 }
             }
         }
         .padding(.horizontal, 0)
-        .padding(.top, 8)
-        .padding(.bottom, 20)
+        .padding(.top, 6)
+        .padding(.bottom, 8)
         .background(
             LinearGradient(
                 gradient: Gradient(colors: [

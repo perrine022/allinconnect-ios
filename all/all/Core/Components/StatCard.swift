@@ -32,28 +32,31 @@ struct StatCard: View {
     }
     
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             if let icon = icon {
                 Image(systemName: icon)
                     .foregroundColor(iconColor)
-                    .font(.system(size: 24))
+                    .font(.system(size: 22))
             }
             
             Text(value)
-                .font(.system(size: 24, weight: .bold))
+                .font(.system(size: 22, weight: .bold))
                 .foregroundColor(valueColor)
             
             Text(label)
-                .font(.system(size: 14, weight: .regular))
+                .font(.system(size: 13, weight: .regular))
                 .foregroundColor(labelColor)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
-        .background(Color.appDarkRed1.opacity(0.8))
-        .cornerRadius(16)
+        .padding(.vertical, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.appDarkRed1.opacity(0.85))
+                .shadow(color: Color.black.opacity(0.15), radius: 6, x: 0, y: 3)
+        )
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.white.opacity(0.15), lineWidth: 1)
         )
     }
 }

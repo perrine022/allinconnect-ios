@@ -38,7 +38,7 @@ struct PartnerDetailView: View {
                         Image(systemName: viewModel.partner.headerImageName)
                             .resizable()
                             .scaledToFill()
-                            .frame(height: 250)
+                            .frame(height: 150)
                             .clipped()
                             .foregroundColor(.gray.opacity(0.3))
                         
@@ -51,7 +51,7 @@ struct PartnerDetailView: View {
                             startPoint: .top,
                             endPoint: .bottom
                         )
-                        .frame(height: 250)
+                        .frame(height: 150)
                         
                         // Boutons de navigation
                         HStack {
@@ -96,7 +96,7 @@ struct PartnerDetailView: View {
                         .padding(.horizontal, 20)
                         .padding(.top, 8)
                     }
-                    .frame(height: 250)
+                    .frame(height: 150)
                     
                     // Contenu principal
                     VStack(alignment: .leading, spacing: 24) {
@@ -307,7 +307,7 @@ struct PartnerDetailView: View {
                             }
                         }
                         .padding(.top, 24)
-                        .padding(.bottom, 40)
+                        .padding(.bottom, 100) // Espace pour le footer
                     }
                 }
             }

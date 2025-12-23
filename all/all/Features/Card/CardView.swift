@@ -26,7 +26,7 @@ struct CardView: View {
             .ignoresSafeArea()
             
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: 20) {
                     // Titre
                     HStack {
                         Text("Ma Carte")
@@ -35,86 +35,94 @@ struct CardView: View {
                         Spacer()
                     }
                     .padding(.horizontal, 20)
-                    .padding(.top, 20)
+                    .padding(.top, 16)
                     
                     // Carte utilisateur principale
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack {
+                    VStack(alignment: .leading, spacing: 14) {
+                        HStack(alignment: .top) {
                             // Logo ALL IN
-                            HStack(spacing: 4) {
-                                Text("ALL")
-                                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                                    .foregroundColor(.white)
-                                
-                                ZStack {
-                                    Circle()
-                                        .fill(Color.appRed)
-                                        .frame(width: 24, height: 24)
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack(spacing: 4) {
+                                    Text("ALL")
+                                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                                        .foregroundColor(.white)
                                     
-                                    Circle()
-                                        .fill(Color.appRed.opacity(0.6))
-                                        .frame(width: 20, height: 20)
+                                    ZStack {
+                                        Circle()
+                                            .fill(Color.appRed)
+                                            .frame(width: 24, height: 24)
+                                        
+                                        Circle()
+                                            .fill(Color.appRed.opacity(0.6))
+                                            .frame(width: 20, height: 20)
+                                        
+                                        Circle()
+                                            .fill(Color.appRed.opacity(0.3))
+                                            .frame(width: 16, height: 16)
+                                    }
                                     
-                                    Circle()
-                                        .fill(Color.appRed.opacity(0.3))
-                                        .frame(width: 16, height: 16)
+                                    Text("IN")
+                                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                                        .foregroundColor(.white)
                                 }
                                 
-                                Text("IN")
-                                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                                    .foregroundColor(.white)
+                                Text("Connect")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(Color.appRed.opacity(0.9))
                             }
                             
                             Spacer()
                             
                             // Badge ACTIVE
                             Text("ACTIVE")
-                                .font(.system(size: 12, weight: .bold))
+                                .font(.system(size: 11, weight: .bold))
                                 .foregroundColor(.white)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
                                 .background(Color.green)
-                                .cornerRadius(8)
+                                .cornerRadius(6)
                         }
-                        
-                        Text("Connect")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(Color.appRed.opacity(0.9))
                         
                         // Nom utilisateur
                         Text(viewModel.user.fullName)
-                            .font(.system(size: 24, weight: .bold))
+                            .font(.system(size: 26, weight: .bold))
                             .foregroundColor(.white)
+                            .padding(.top, 4)
                         
                         // Code utilisateur
                         Text("Code: \(viewModel.referralCode)")
-                            .font(.system(size: 14, weight: .regular))
+                            .font(.system(size: 13, weight: .regular))
                             .foregroundColor(.gray)
+                            .padding(.top, 2)
                         
                         // Membre CLUB10
                         HStack(spacing: 6) {
                             Image(systemName: "star.fill")
                                 .foregroundColor(.appGold)
-                                .font(.system(size: 16))
+                                .font(.system(size: 14))
                             
                             Text("Membre CLUB10")
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(.system(size: 15, weight: .semibold))
                                 .foregroundColor(.appGold)
                         }
+                        .padding(.top, 4)
                     }
                     .padding(20)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.appDarkRed1.opacity(0.8))
-                    .cornerRadius(20)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color.appDarkRed1.opacity(0.85))
+                            .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 4)
+                    )
                     .overlay(
                         RoundedRectangle(cornerRadius: 20)
-                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
                     )
                     .padding(.horizontal, 20)
                     
                     // Grille de statistiques
-                    VStack(spacing: 12) {
-                        HStack(spacing: 12) {
+                    VStack(spacing: 10) {
+                        HStack(spacing: 10) {
                             StatCard(
                                 icon: "banknote.fill",
                                 value: "\(Int(viewModel.savings))€",
@@ -130,7 +138,7 @@ struct CardView: View {
                             )
                         }
                         
-                        HStack(spacing: 12) {
+                        HStack(spacing: 10) {
                             StatCard(
                                 icon: "wallet.pass.fill",
                                 value: "\(Int(viewModel.wallet))€",
@@ -153,113 +161,125 @@ struct CardView: View {
                         HStack(spacing: 8) {
                             Image(systemName: "square.and.arrow.up")
                                 .foregroundColor(.appGold)
-                                .font(.system(size: 18))
+                                .font(.system(size: 16))
                             
                             Text("Lien de parrainage")
-                                .font(.system(size: 18, weight: .bold))
+                                .font(.system(size: 17, weight: .bold))
                                 .foregroundColor(.white)
                         }
                         
-                        HStack {
+                        HStack(spacing: 12) {
                             Text(viewModel.referralLink)
-                                .font(.system(size: 15, weight: .medium))
-                                .foregroundColor(.white)
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.white.opacity(0.9))
                             
                             Spacer()
                             
                             Button(action: {
-                                viewModel.copyReferralLink()
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                                    viewModel.copyReferralLink()
+                                }
                             }) {
                                 Image(systemName: "doc.on.doc")
                                     .foregroundColor(.appGold)
-                                    .font(.system(size: 18))
+                                    .font(.system(size: 16))
                             }
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .background(Color.appDarkRed2.opacity(0.6))
-                        .cornerRadius(12)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 11)
+                        .background(Color.appDarkRed2.opacity(0.7))
+                        .cornerRadius(10)
                         
                         Text("Gagnez 50% de la 1ère mensualité de chaque filleul !")
-                            .font(.system(size: 13, weight: .regular))
-                            .foregroundColor(.gray)
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundColor(.gray.opacity(0.9))
+                            .lineSpacing(2)
                     }
-                    .padding(20)
+                    .padding(18)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.appDarkRed1.opacity(0.8))
-                    .cornerRadius(20)
+                    .background(
+                        RoundedRectangle(cornerRadius: 18)
+                            .fill(Color.appDarkRed1.opacity(0.85))
+                            .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 3)
+                    )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 18)
+                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
                     )
                     .padding(.horizontal, 20)
                     
                     // Boutons portefeuille
-                    HStack(spacing: 12) {
+                    HStack(spacing: 10) {
                         Button(action: {
                             // Action Apple Wallet
                         }) {
                             HStack(spacing: 8) {
                                 Image(systemName: "applelogo")
-                                    .font(.system(size: 18))
+                                    .font(.system(size: 16, weight: .medium))
                                 Text("Apple Wallet")
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(.system(size: 14, weight: .semibold))
                             }
                             .foregroundColor(.black)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
+                            .padding(.vertical, 12)
                             .background(Color.white)
-                            .cornerRadius(12)
+                            .cornerRadius(10)
+                            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
                         }
+                        .buttonStyle(PlainButtonStyle())
                         
                         Button(action: {
                             // Action Google Wallet
                         }) {
                             HStack(spacing: 8) {
                                 Image(systemName: "wallet.pass.fill")
-                                    .font(.system(size: 18))
+                                    .font(.system(size: 16, weight: .medium))
                                 Text("Google Wallet")
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(.system(size: 14, weight: .semibold))
                             }
                             .foregroundColor(.black)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
+                            .padding(.vertical, 12)
                             .background(Color.white)
-                            .cornerRadius(12)
+                            .cornerRadius(10)
+                            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
                         }
+                        .buttonStyle(PlainButtonStyle())
                     }
                     .padding(.horizontal, 20)
                     
                     // Section Mes favoris
                     if !viewModel.favoritePartners.isEmpty {
-                        VStack(alignment: .leading, spacing: 16) {
+                        VStack(alignment: .leading, spacing: 14) {
                             Text("Mes favoris")
                                 .font(.system(size: 20, weight: .bold))
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 20)
                             
-                            VStack(spacing: 12) {
+                            VStack(spacing: 10) {
                                 ForEach(viewModel.favoritePartners) { partner in
                                     Button(action: {
-                                        selectedPartner = partner
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                            selectedPartner = partner
+                                        }
                                     }) {
                                         HStack(spacing: 12) {
                                             // Image
                                             Image(systemName: partner.imageName)
                                                 .resizable()
                                                 .scaledToFill()
-                                                .frame(width: 60, height: 60)
+                                                .frame(width: 56, height: 56)
                                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                                                 .foregroundColor(.gray.opacity(0.3))
                                             
-                                            VStack(alignment: .leading, spacing: 4) {
+                                            VStack(alignment: .leading, spacing: 3) {
                                                 Text(partner.name)
-                                                    .font(.system(size: 16, weight: .bold))
+                                                    .font(.system(size: 15, weight: .bold))
                                                     .foregroundColor(.white)
                                                 
                                                 Text(partner.category)
-                                                    .font(.system(size: 14, weight: .regular))
-                                                    .foregroundColor(.gray)
+                                                    .font(.system(size: 13, weight: .regular))
+                                                    .foregroundColor(.gray.opacity(0.9))
                                             }
                                             
                                             Spacer()
@@ -267,17 +287,20 @@ struct CardView: View {
                                             // Badge réduction
                                             if let discount = partner.discount {
                                                 Text("-\(discount)%")
-                                                    .font(.system(size: 12, weight: .bold))
+                                                    .font(.system(size: 11, weight: .bold))
                                                     .foregroundColor(.white)
-                                                    .padding(.horizontal, 10)
-                                                    .padding(.vertical, 6)
+                                                    .padding(.horizontal, 9)
+                                                    .padding(.vertical, 5)
                                                     .background(Color.green)
-                                                    .cornerRadius(8)
+                                                    .cornerRadius(6)
                                             }
                                         }
                                         .padding(12)
-                                        .background(Color.appDarkRed1.opacity(0.6))
-                                        .cornerRadius(12)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .fill(Color.appDarkRed1.opacity(0.7))
+                                                .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                                        )
                                         .overlay(
                                             RoundedRectangle(cornerRadius: 12)
                                                 .stroke(Color.white.opacity(0.1), lineWidth: 1)
@@ -288,7 +311,7 @@ struct CardView: View {
                             }
                             .padding(.horizontal, 20)
                         }
-                        .padding(.top, 8)
+                        .padding(.top, 4)
                     }
                     
                     // Espace pour le footer

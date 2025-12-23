@@ -8,252 +8,303 @@
 import SwiftUI
 
 struct ProfileView: View {
-    @State private var user: User = User(
-        firstName: "Sophie",
-        lastName: "Martin",
-        username: "sophie.martin",
-        bio: "Passionnée de design & photographie 📸\nPartage mon quotidien et mes créations ✨",
-        profileImageName: "person.circle.fill",
-        publications: 342,
-        subscribers: 12500,
-        subscriptions: 892
-    )
+    @StateObject private var viewModel = ProfileViewModel()
+    @State private var showNotificationPreferences = false
     @State private var showEditProfile = false
-    @State private var showMoreOptions = false
     
     var body: some View {
         ZStack {
-            // Background blanc
-            Color.white
-                .ignoresSafeArea()
+            // Background avec gradient
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color.appDarkRed2,
+                    Color.appDarkRed1,
+                    Color.black
+                ]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
             
             ScrollView {
-                VStack(spacing: 0) {
-                    // Header avec gradient violet
-                    ZStack(alignment: .top) {
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color(red: 0.6, green: 0.3, blue: 0.9),
-                                Color(red: 0.5, green: 0.2, blue: 0.8)
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                        .frame(height: 200)
-                        .ignoresSafeArea(edges: .top)
-                        
-                        // Bouton menu trois points
-                        HStack {
-                            Spacer()
+                VStack(spacing: 24) {
+                    // Section utilisateur
+                    VStack(spacing: 16) {
+                        // Avatar
+                        ZStack {
+                            Circle()
+                                .fill(Color.appGold)
+                                .frame(width: 100, height: 100)
                             
-                            Button(action: {
-                                showMoreOptions.toggle()
-                            }) {
-                                Image(systemName: "ellipsis")
-                                    .foregroundColor(.white)
-                                    .font(.system(size: 18, weight: .semibold))
-                                    .padding(8)
-                            }
+                            Text(String(viewModel.user.firstName.prefix(1)).uppercased())
+                                .font(.system(size: 48, weight: .bold))
+                                .foregroundColor(.black)
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.top, 8)
-                    }
-                    
-                    // Contenu principal
-                    VStack(spacing: 0) {
-                        // Photo de profil qui chevauche
-                        ZStack(alignment: .bottomTrailing) {
-                            Image(systemName: user.profileImageName)
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 120, height: 120)
-                                .clipShape(Circle())
-                                .overlay(
-                                    Circle()
-                                        .stroke(Color.white, lineWidth: 4)
-                                )
-                                .foregroundColor(.gray.opacity(0.3))
-                                .offset(y: -60)
-                            
-                            // Bouton caméra pour éditer la photo
-                            Button(action: {
-                                // Action pour changer la photo
-                            }) {
-                                ZStack {
-                                    Circle()
-                                        .fill(
-                                            LinearGradient(
-                                                gradient: Gradient(colors: [
-                                                    Color(red: 0.6, green: 0.3, blue: 0.9),
-                                                    Color(red: 0.5, green: 0.2, blue: 0.8)
-                                                ]),
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            )
-                                        )
-                                        .frame(width: 36, height: 36)
-                                    
-                                    Image(systemName: "camera.fill")
-                                        .foregroundColor(.white)
-                                        .font(.system(size: 14, weight: .semibold))
-                                }
-                            }
-                            .offset(x: -8, y: -60)
-                        }
-                        .frame(height: 60)
-                        .padding(.bottom, 20)
                         
-                        // Nom de l'utilisateur
-                        Text(user.fullName)
+                        // Nom
+                        Text(viewModel.user.fullName)
                             .font(.system(size: 24, weight: .bold))
-                            .foregroundColor(.black)
-                            .padding(.top, 8)
+                            .foregroundColor(.white)
                         
-                        // Username
-                        Text("@\(user.username)")
-                            .font(.system(size: 16, weight: .regular))
-                            .foregroundColor(.gray)
-                            .padding(.top, 4)
-                        
-                        // Bio
-                        Text(user.bio)
+                        // Email
+                        Text("marie@email.fr")
                             .font(.system(size: 15, weight: .regular))
-                            .foregroundColor(.black)
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(4)
-                            .padding(.horizontal, 40)
-                            .padding(.top, 12)
+                            .foregroundColor(.white.opacity(0.8))
                         
-                        // Statistiques
-                        HStack(spacing: 0) {
-                            StatCard(
-                                value: "\(user.publications)",
-                                label: "Publications",
-                                valueColor: .black,
-                                labelColor: .gray
-                            )
-                            
-                            Spacer()
-                            
-                            StatCard(
-                                value: "\(user.subscribers)",
-                                label: "Abonnés",
-                                valueColor: .black,
-                                labelColor: .gray
-                            )
-                            
-                            Spacer()
-                            
-                            StatCard(
-                                value: "\(user.subscriptions)",
-                                label: "Abonnements",
-                                valueColor: .black,
-                                labelColor: .gray
-                            )
-                        }
-                        .padding(.horizontal, 50)
-                        .padding(.top, 32)
-                        
-                        // Boutons d'action
-                        HStack(spacing: 12) {
-                            // Bouton Modifier le profil
-                            Button(action: {
-                                showEditProfile.toggle()
-                            }) {
-                                Text("Modifier le profil")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 14)
-                                    .background(
-                                        LinearGradient(
-                                            gradient: Gradient(colors: [
-                                                Color(red: 0.6, green: 0.3, blue: 0.9),
-                                                Color(red: 0.5, green: 0.2, blue: 0.8)
-                                            ]),
-                                            startPoint: .leading,
-                                            endPoint: .trailing
-                                        )
-                                    )
-                                    .cornerRadius(12)
-                            }
-                            
-                            // Bouton partage
-                            Button(action: {
-                                // Action de partage
-                            }) {
-                                ZStack {
-                                    Circle()
-                                        .fill(Color.white)
-                                        .frame(width: 50, height: 50)
-                                        .overlay(
-                                            Circle()
-                                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                                        )
-                                    
-                                    Image(systemName: "square.and.arrow.up")
-                                        .foregroundColor(.black)
-                                        .font(.system(size: 18, weight: .semibold))
-                                }
-                            }
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.top, 32)
-                        .padding(.bottom, 40)
+                        // Badge CLUB10
+                        Text("MEMBRE CLUB10")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Color.green)
+                            .cornerRadius(8)
                     }
-                    .background(Color.white)
+                    .padding(.top, 20)
+                    .padding(.bottom, 8)
+                    
+                    // Menu options
+                    VStack(spacing: 0) {
+                        ProfileMenuRow(
+                            icon: "person.fill",
+                            title: "Modifier mon profil",
+                            action: {
+                                showEditProfile = true
+                            }
+                        )
+                        
+                        Divider()
+                            .background(Color.white.opacity(0.1))
+                            .padding(.leading, 54)
+                        
+                        ProfileMenuRow(
+                            icon: "bell.fill",
+                            title: "Préférences de notifications",
+                            action: {
+                                showNotificationPreferences = true
+                            }
+                        )
+                        
+                        Divider()
+                            .background(Color.white.opacity(0.1))
+                            .padding(.leading, 54)
+                        
+                        ProfileMenuRow(
+                            icon: "lock.fill",
+                            title: "Changer mon mot de passe",
+                            action: {
+                                // Action changer mot de passe
+                            }
+                        )
+                        
+                        Divider()
+                            .background(Color.white.opacity(0.1))
+                            .padding(.leading, 54)
+                        
+                        ProfileMenuRow(
+                            icon: "questionmark.circle.fill",
+                            title: "Aide & Support",
+                            action: {
+                                // Action aide
+                            }
+                        )
+                        
+                        Divider()
+                            .background(Color.white.opacity(0.1))
+                            .padding(.leading, 54)
+                        
+                        ProfileMenuRow(
+                            icon: "doc.text.fill",
+                            title: "Conditions générales",
+                            action: {
+                                // Action CGU
+                            }
+                        )
+                        
+                        Divider()
+                            .background(Color.white.opacity(0.1))
+                            .padding(.leading, 54)
+                        
+                        ProfileMenuRow(
+                            icon: "shield.fill",
+                            title: "Politique de confidentialité",
+                            action: {
+                                // Action politique
+                            }
+                        )
+                    }
+                    .background(Color.appDarkRed1.opacity(0.8))
+                    .cornerRadius(16)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    )
+                    .padding(.horizontal, 20)
+                    
+                    // Bouton déconnexion
+                    Button(action: {
+                        // Action déconnexion
+                    }) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "rectangle.portrait.and.arrow.right")
+                                .font(.system(size: 16))
+                            
+                            Text("Déconnexion")
+                                .font(.system(size: 15, weight: .semibold))
+                        }
+                        .foregroundColor(.appRed)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color.clear)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.appRed, lineWidth: 1.5)
+                        )
+                        .cornerRadius(12)
+                    }
+                    .padding(.horizontal, 20)
+                    
+                    // Version de l'app
+                    Text("All In Connect v1.0.0")
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(.gray.opacity(0.7))
+                        .padding(.top, 8)
+                    
+                    Spacer()
+                        .frame(height: 100)
                 }
             }
         }
-        .sheet(isPresented: $showEditProfile) {
-            EditProfileView(user: $user)
+        .navigationTitle("Profil")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .sheet(isPresented: $showNotificationPreferences) {
+            NavigationStack {
+                NotificationPreferencesView()
+            }
         }
-        .confirmationDialog("Options", isPresented: $showMoreOptions, titleVisibility: .hidden) {
-            Button("Paramètres") {}
-            Button("Signaler") {}
-            Button("Annuler", role: .cancel) {}
+        .sheet(isPresented: $showEditProfile) {
+            NavigationStack {
+                EditProfileView()
+            }
         }
     }
 }
 
 struct EditProfileView: View {
-    @Binding var user: User
     @Environment(\.dismiss) private var dismiss
+    @State private var firstName: String = "Marie"
+    @State private var lastName: String = "Dupont"
+    @State private var email: String = "marie@email.fr"
     
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.white.ignoresSafeArea()
-                
-                VStack {
-                    Text("Édition du profil")
-                        .font(.title2)
-                        .foregroundColor(.black)
+        ZStack {
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color.appDarkRed2,
+                    Color.appDarkRed1,
+                    Color.black
+                ]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+            
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Avatar
+                    ZStack {
+                        Circle()
+                            .fill(Color.appGold)
+                            .frame(width: 100, height: 100)
+                        
+                        Text(String(firstName.prefix(1)).uppercased())
+                            .font(.system(size: 48, weight: .bold))
+                            .foregroundColor(.black)
+                    }
+                    .padding(.top, 20)
                     
-                    // Formulaire d'édition ici
+                    VStack(spacing: 16) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Prénom")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.gray)
+                            
+                            TextField("", text: $firstName)
+                                .font(.system(size: 16))
+                                .foregroundColor(.white)
+                                .padding(12)
+                                .background(Color.appDarkRed1.opacity(0.6))
+                                .cornerRadius(10)
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Nom")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.gray)
+                            
+                            TextField("", text: $lastName)
+                                .font(.system(size: 16))
+                                .foregroundColor(.white)
+                                .padding(12)
+                                .background(Color.appDarkRed1.opacity(0.6))
+                                .cornerRadius(10)
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Email")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.gray)
+                            
+                            TextField("", text: $email)
+                                .font(.system(size: 16))
+                                .foregroundColor(.white)
+                                .keyboardType(.emailAddress)
+                                .autocapitalization(.none)
+                                .padding(12)
+                                .background(Color.appDarkRed1.opacity(0.6))
+                                .cornerRadius(10)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        Text("Enregistrer")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.black)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Color.appGold)
+                            .cornerRadius(12)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                    
+                    Spacer()
+                        .frame(height: 100)
                 }
             }
-            .navigationTitle("Modifier le profil")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Annuler") {
-                        dismiss()
-                    }
+        }
+        .navigationTitle("Modifier mon profil")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Annuler") {
+                    dismiss()
                 }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Enregistrer") {
-                        dismiss()
-                    }
-                    .fontWeight(.semibold)
-                }
+                .foregroundColor(.white)
             }
         }
     }
 }
 
 #Preview {
-    ProfileView()
+    NavigationStack {
+        ProfileView()
+    }
 }
-

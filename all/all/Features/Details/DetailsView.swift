@@ -199,7 +199,7 @@ struct DetailsView: View {
                             }
                             .padding(.horizontal, 24)
                             .padding(.top, 40)
-                            .padding(.bottom, 40)
+                            .padding(.bottom, 100) // Espace pour le footer
                         }
                         .background(
                             RoundedRectangle(cornerRadius: 0)

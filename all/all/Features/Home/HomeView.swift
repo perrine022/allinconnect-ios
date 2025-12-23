@@ -10,7 +10,6 @@ import SwiftUI
 struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
     @State private var selectedProfessional: Professional?
-    @State private var selectedOffer: Offer?
     @State private var selectedPartner: Partner?
     
     var body: some View {
@@ -237,7 +236,9 @@ struct HomeView: View {
                             HStack(spacing: 16) {
                                 ForEach(viewModel.offers) { offer in
                                     OfferCard(offer: offer) {
-                                        selectedOffer = offer
+                                        if let partner = viewModel.getPartner(for: offer) {
+                                            selectedPartner = partner
+                                        }
                                     }
                                 }
                             }
@@ -295,9 +296,6 @@ struct HomeView: View {
         }
         .onTapGesture {
             hideKeyboard()
-        }
-        .sheet(item: $selectedOffer) { offer in
-            // Détail de l'offre
         }
         .navigationDestination(item: $selectedPartner) { partner in
             PartnerDetailView(partner: partner)

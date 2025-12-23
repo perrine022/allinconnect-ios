@@ -31,15 +31,15 @@ struct ContactRow: View {
                 ZStack {
                     Circle()
                         .fill(iconColor.opacity(0.2))
-                        .frame(width: 40, height: 40)
+                        .frame(width: 36, height: 36)
                     
                     Image(systemName: icon)
                         .foregroundColor(iconColor)
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                 }
                 
                 Text(text)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.system(size: 14, weight: .regular))
                     .foregroundColor(.white)
                 
                 Spacer()
