@@ -55,7 +55,7 @@ struct OfferDetailView: View {
                                 HStack {
                                     NavigationButton(
                                         icon: "arrow.left",
-                                        iconColor: .white,
+                                        iconColor: Color.white,
                                         backgroundColor: Color.black.opacity(0.5),
                                         action: {
                                             dismiss()
@@ -74,9 +74,8 @@ struct OfferDetailView: View {
                                 // Badge type et titre
                                 VStack(alignment: .leading, spacing: 12) {
                                     BadgeView(
-                                        text: offer.offerType.rawValue.uppercased(),
-                                        backgroundColor: offer.offerType == .event ? .appRed : .appGold,
-                                        textColor: .white
+                                        text: offer.offerType.rawValue,
+                                        gradientColors: offer.offerType == .event ? [Color.appRed, Color.appDarkRed] : [Color.appGold, Color.appGold.opacity(0.8)]
                                     )
                                     
                                     Text(offer.title)
@@ -139,7 +138,7 @@ struct OfferDetailView: View {
                                         }
                                     }
                                     
-                                    if let discount = offer.discount, !discount.isEmpty {
+                                    if !offer.discount.isEmpty {
                                         HStack(spacing: 12) {
                                             Image(systemName: "tag.fill")
                                                 .foregroundColor(.appGold)
@@ -150,7 +149,7 @@ struct OfferDetailView: View {
                                                     .font(.system(size: 13, weight: .regular))
                                                     .foregroundColor(.gray)
                                                 
-                                                Text(discount)
+                                                Text(offer.discount)
                                                     .font(.system(size: 16, weight: .semibold))
                                                     .foregroundColor(.white)
                                             }
