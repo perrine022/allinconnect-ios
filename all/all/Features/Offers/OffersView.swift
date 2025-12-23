@@ -78,7 +78,7 @@ struct OffersView: View {
                     .padding(.horizontal, 20)
                     
                     // Liste des offres
-                    VStack(spacing: 16) {
+                    VStack(spacing: 12) {
                         ForEach(viewModel.filteredOffers) { offer in
                             OfferListCard(offer: offer) {
                                 if let partner = viewModel.getPartner(for: offer) {

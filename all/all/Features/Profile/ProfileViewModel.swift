@@ -11,8 +11,12 @@ import Combine
 @MainActor
 class ProfileViewModel: ObservableObject {
     @Published var user: User
+    @Published var favoritePartners: [Partner] = []
     
-    init() {
+    private let dataService: MockDataService
+    
+    init(dataService: MockDataService = MockDataService.shared) {
+        self.dataService = dataService
         self.user = User(
             firstName: "Marie",
             lastName: "Dupont",
@@ -23,6 +27,11 @@ class ProfileViewModel: ObservableObject {
             subscribers: 0,
             subscriptions: 0
         )
+        loadFavorites()
+    }
+    
+    func loadFavorites() {
+        favoritePartners = dataService.getPartners().filter { $0.isFavorite }
     }
 }
 

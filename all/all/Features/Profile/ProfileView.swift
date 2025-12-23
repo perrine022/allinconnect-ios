@@ -15,6 +15,7 @@ struct ProfileView: View {
     @State private var showHelpSupport = false
     @State private var showTerms = false
     @State private var showPrivacyPolicy = false
+    @State private var selectedPartner: Partner?
     
     var body: some View {
         ZStack {
@@ -145,6 +146,72 @@ struct ProfileView: View {
                     )
                     .padding(.horizontal, 20)
                     
+                    // Section Mes favoris
+                    if !viewModel.favoritePartners.isEmpty {
+                        VStack(alignment: .leading, spacing: 14) {
+                            Text("Mes favoris")
+                                .font(.system(size: 20, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 20)
+                            
+                            VStack(spacing: 10) {
+                                ForEach(viewModel.favoritePartners) { partner in
+                                    Button(action: {
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                            selectedPartner = partner
+                                        }
+                                    }) {
+                                        HStack(spacing: 12) {
+                                            // Image
+                                            Image(systemName: partner.imageName)
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: 56, height: 56)
+                                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                                .foregroundColor(.gray.opacity(0.3))
+                                            
+                                            VStack(alignment: .leading, spacing: 3) {
+                                                Text(partner.name)
+                                                    .font(.system(size: 15, weight: .bold))
+                                                    .foregroundColor(.white)
+                                                
+                                                Text(partner.category)
+                                                    .font(.system(size: 13, weight: .regular))
+                                                    .foregroundColor(.gray.opacity(0.9))
+                                            }
+                                            
+                                            Spacer()
+                                            
+                                            // Badge réduction
+                                            if let discount = partner.discount {
+                                                Text("-\(discount)%")
+                                                    .font(.system(size: 11, weight: .bold))
+                                                    .foregroundColor(.white)
+                                                    .padding(.horizontal, 9)
+                                                    .padding(.vertical, 5)
+                                                    .background(Color.green)
+                                                    .cornerRadius(6)
+                                            }
+                                        }
+                                        .padding(12)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .fill(Color.appDarkRed1.opacity(0.7))
+                                                .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                                        )
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                        )
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                        }
+                        .padding(.top, 4)
+                    }
+                    
                     // Bouton déconnexion
                     Button(action: {
                         // Action déconnexion
@@ -212,6 +279,9 @@ struct ProfileView: View {
             NavigationStack {
                 TermsView(isPrivacyPolicy: true)
             }
+        }
+        .navigationDestination(item: $selectedPartner) { partner in
+            PartnerDetailView(partner: partner)
         }
     }
 }

@@ -98,17 +98,17 @@ struct HomeView: View {
                     }
                     .padding(.horizontal, 20)
                     
-                    // Champs de recherche
-                    VStack(spacing: 12) {
+                    // Champs de recherche - Design compact et épuré
+                    VStack(spacing: 8) {
                         // Champ Ville, nom, activité
-                        HStack(spacing: 12) {
+                        HStack(spacing: 10) {
                             Image(systemName: "magnifyingglass")
-                                .foregroundColor(.gray)
-                                .font(.system(size: 16))
+                                .foregroundColor(.gray.opacity(0.7))
+                                .font(.system(size: 14))
                             
-                            TextField("", text: $viewModel.cityText, prompt: Text("Ville, nom, activité...").foregroundColor(.gray))
+                            TextField("", text: $viewModel.cityText, prompt: Text("Ville, nom, activité...").foregroundColor(.gray.opacity(0.7)))
                                 .foregroundColor(.black)
-                                .font(.system(size: 15))
+                                .font(.system(size: 14))
                                 .autocorrectionDisabled()
                                 .textInputAutocapitalization(.never)
                                 .onChange(of: viewModel.cityText) { _, _ in
@@ -118,89 +118,91 @@ struct HomeView: View {
                             Button(action: {}) {
                                 Image(systemName: "mappin.circle.fill")
                                     .foregroundColor(.appRed)
-                                    .font(.system(size: 20))
+                                    .font(.system(size: 18))
                             }
                         }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 12)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
                         .background(Color.white)
-                        .cornerRadius(12)
+                        .cornerRadius(10)
                         
                         // Champ Activité
-                        HStack(spacing: 12) {
+                        HStack(spacing: 10) {
                             Image(systemName: "briefcase.fill")
-                                .foregroundColor(.gray)
-                                .font(.system(size: 16))
+                                .foregroundColor(.gray.opacity(0.7))
+                                .font(.system(size: 14))
                             
-                            TextField("", text: $viewModel.activityText, prompt: Text("Activité...").foregroundColor(.gray))
+                            TextField("", text: $viewModel.activityText, prompt: Text("Activité...").foregroundColor(.gray.opacity(0.7)))
                                 .foregroundColor(.black)
-                                .font(.system(size: 15))
+                                .font(.system(size: 14))
                                 .autocorrectionDisabled()
                                 .textInputAutocapitalization(.never)
                                 .onChange(of: viewModel.activityText) { _, _ in
                                     viewModel.searchProfessionals()
                                 }
                         }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 12)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
                         .background(Color.white)
-                        .cornerRadius(12)
+                        .cornerRadius(10)
                         
                         // Toggle Rayon de recherche
-                        HStack {
-                            Text("Rayon de recherche :")
-                                .font(.system(size: 15, weight: .medium))
+                        HStack(spacing: 10) {
+                            Text("Rayon de recherche")
+                                .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(.white)
                             
                             Spacer()
                             
                             Toggle("", isOn: $viewModel.searchRadiusEnabled)
                                 .toggleStyle(SwitchToggleStyle(tint: .appRed))
+                                .scaleEffect(0.85)
                             
                             Text(viewModel.searchRadiusEnabled ? "Activé" : "Désactivé")
-                                .font(.system(size: 14, weight: .regular))
-                                .foregroundColor(.gray)
+                                .font(.system(size: 13, weight: .regular))
+                                .foregroundColor(.gray.opacity(0.8))
+                                .frame(width: 60, alignment: .trailing)
                         }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 12)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
                         .background(Color.white)
-                        .cornerRadius(12)
+                        .cornerRadius(10)
                         
                         // Checkbox CLUB10
                         Button(action: {
                             viewModel.onlyClub10.toggle()
                         }) {
-                            HStack(spacing: 12) {
+                            HStack(spacing: 10) {
                                 ZStack {
-                                    RoundedRectangle(cornerRadius: 4)
+                                    RoundedRectangle(cornerRadius: 3)
                                         .fill(viewModel.onlyClub10 ? Color.appRed : Color.clear)
-                                        .frame(width: 20, height: 20)
+                                        .frame(width: 18, height: 18)
                                         .overlay(
-                                            RoundedRectangle(cornerRadius: 4)
-                                                .stroke(Color.white, lineWidth: 2)
+                                            RoundedRectangle(cornerRadius: 3)
+                                                .stroke(Color.white, lineWidth: 1.5)
                                         )
                                     
                                     if viewModel.onlyClub10 {
                                         Image(systemName: "checkmark")
                                             .foregroundColor(.white)
-                                            .font(.system(size: 12, weight: .bold))
+                                            .font(.system(size: 11, weight: .bold))
                                     }
                                 }
                                 
                                 Image(systemName: "star.fill")
                                     .foregroundColor(.appGold)
-                                    .font(.system(size: 16))
+                                    .font(.system(size: 14))
                                 
                                 Text("Uniquement les membres CLUB10")
-                                    .font(.system(size: 15, weight: .medium))
+                                    .font(.system(size: 14, weight: .medium))
                                     .foregroundColor(.white)
                                 
                                 Spacer()
                             }
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 12)
-                            .background(Color.appDarkGray.opacity(0.6))
-                            .cornerRadius(12)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            .background(Color.appDarkGray.opacity(0.5))
+                            .cornerRadius(10)
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
