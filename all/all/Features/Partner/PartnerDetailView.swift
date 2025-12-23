@@ -192,7 +192,7 @@ struct PartnerDetailView: View {
                         
                         // Boutons d'action
                         HStack(spacing: 12) {
-                            if let instagram = viewModel.partner.instagram {
+                            if viewModel.partner.instagram != nil {
                                 Button(action: {
                                     viewModel.openInstagram()
                                 }) {

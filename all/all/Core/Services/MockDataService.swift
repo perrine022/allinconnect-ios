@@ -8,7 +8,7 @@
 import Foundation
 
 class MockDataService {
-    static let shared = MockDataService()
+    nonisolated static let shared = MockDataService()
     
     func getProfessionals() -> [Professional] {
         return [

@@ -127,7 +127,7 @@ struct ProfileView: View {
                         // Statistiques
                         HStack(spacing: 0) {
                             StatCard(
-                                value: user.publications,
+                                value: "\(user.publications)",
                                 label: "Publications",
                                 valueColor: .black,
                                 labelColor: .gray
@@ -136,7 +136,7 @@ struct ProfileView: View {
                             Spacer()
                             
                             StatCard(
-                                value: user.subscribers,
+                                value: "\(user.subscribers)",
                                 label: "Abonnés",
                                 valueColor: .black,
                                 labelColor: .gray
@@ -145,7 +145,7 @@ struct ProfileView: View {
                             Spacer()
                             
                             StatCard(
-                                value: user.subscriptions,
+                                value: "\(user.subscriptions)",
                                 label: "Abonnements",
                                 valueColor: .black,
                                 labelColor: .gray
