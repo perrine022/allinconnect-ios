@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 class AppState: ObservableObject {
     @Published var selectedTab: TabItem = .home
     

@@ -14,9 +14,9 @@ struct CurrentOfferCard: View {
     var badgeColor: Color {
         switch offer.offerType {
         case .event:
-            return .red
+            return .appRed
         case .offer:
-            return .yellow
+            return .appGold
         }
     }
     

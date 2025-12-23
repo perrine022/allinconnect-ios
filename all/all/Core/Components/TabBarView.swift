@@ -56,8 +56,8 @@ struct TabBarView: View {
                     .ignoresSafeArea(edges: .bottom)
                 }
             }
-            .environmentObject(appState)
         }
+        .environmentObject(appState)
     }
 }
 

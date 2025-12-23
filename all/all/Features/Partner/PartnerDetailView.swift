@@ -265,14 +265,14 @@ struct PartnerDetailView: View {
                                             .foregroundColor(.white)
                                             .padding(.horizontal, 20)
                                         
-                                VStack(spacing: 10) {
-                                    ForEach(viewModel.currentOffers) { offer in
-                                        CurrentOfferCard(offer: offer) {
-                                            selectedOffer = offer
+                                        VStack(spacing: 10) {
+                                            ForEach(viewModel.currentOffers) { offer in
+                                                CurrentOfferCard(offer: offer) {
+                                                    selectedOffer = offer
+                                                }
+                                            }
                                         }
-                                    }
-                                }
-                                .padding(.horizontal, 20)
+                                        .padding(.horizontal, 20)
                                     }
                                     .padding(.top, 4)
                                 }
