@@ -322,7 +322,7 @@ struct PartnerDetailView: View {
                         .padding(.bottom, 100) // Espace pour le footer
                     }
                 }
-            }
+                }
                 
                 // Footer Bar - toujours visible (affichage uniquement)
                 VStack {
