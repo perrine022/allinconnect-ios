@@ -15,6 +15,11 @@ struct ClientSubscriptionView: View {
     @State private var showStripePayment = false
     @State private var isProcessingPayment = false
     
+    // Récupérer le prénom depuis UserDefaults
+    private var firstName: String {
+        UserDefaults.standard.string(forKey: "user_first_name") ?? ""
+    }
+    
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .bottom) {
@@ -32,17 +37,43 @@ struct ClientSubscriptionView: View {
                     
                     ScrollView {
                         VStack(spacing: 24) {
-                            // Titre
+                            // Titre de bienvenue
+                            VStack(spacing: 12) {
+                                Text("Bienvenue sur ALL IN Connect")
+                                    .font(.system(size: 24, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .multilineTextAlignment(.center)
+                                
+                                if !firstName.isEmpty {
+                                    Text(firstName)
+                                        .font(.system(size: 20, weight: .semibold))
+                                        .foregroundColor(.appGold)
+                                }
+                            }
+                            .padding(.top, 20)
+                            .padding(.horizontal, 20)
+                            
+                            // Texte explicatif
+                            VStack(spacing: 8) {
+                                Text("Pour accéder à tous les avantages de la plateforme, vous devez souscrire à un abonnement CLUB10.")
+                                    .font(.system(size: 15, weight: .regular))
+                                    .foregroundColor(.white.opacity(0.9))
+                                    .multilineTextAlignment(.center)
+                                    .lineSpacing(4)
+                            }
+                            .padding(.horizontal, 20)
+                            
+                            // Titre de la section abonnement
                             VStack(spacing: 8) {
                                 Text("Abonnement CLUB10")
-                                    .font(.system(size: 32, weight: .bold))
+                                    .font(.system(size: 28, weight: .bold))
                                     .foregroundColor(.white)
                                 
                                 Text("Accédez à tous les avantages")
                                     .font(.system(size: 16, weight: .regular))
                                     .foregroundColor(.white.opacity(0.8))
                             }
-                            .padding(.top, 20)
+                            .padding(.top, 8)
                             
                             // Carte d'abonnement
                             VStack(alignment: .leading, spacing: 16) {

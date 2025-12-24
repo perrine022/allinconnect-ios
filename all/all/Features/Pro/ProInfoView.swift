@@ -1,5 +1,5 @@
 //
-//  ProSubscriptionView.swift
+//  ProInfoView.swift
 //  all
 //
 //  Created by Perrine Honoré on 23/12/2025.
@@ -7,20 +7,11 @@
 
 import SwiftUI
 
-struct ProSubscriptionView: View {
-    @Environment(\.dismiss) private var dismiss
+struct ProInfoView: View {
     @EnvironmentObject private var appState: AppState
-    @Binding var userType: UserType
-    let onComplete: () -> Void
     @State private var selectedPlan: SubscriptionPlan = .monthly
-    @State private var showPayment = false
     @State private var showStripePayment = false
     @State private var isProcessingPayment = false
-    
-    // Récupérer le prénom depuis UserDefaults
-    private var firstName: String {
-        UserDefaults.standard.string(forKey: "user_first_name") ?? ""
-    }
     
     enum SubscriptionPlan: String, CaseIterable {
         case monthly = "Paiement mensuel"
@@ -65,32 +56,6 @@ struct ProSubscriptionView: View {
                     
                     ScrollView {
                         VStack(spacing: 24) {
-                            // Titre de bienvenue
-                            VStack(spacing: 12) {
-                                Text("Bienvenue sur ALL IN Connect")
-                                    .font(.system(size: 24, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .multilineTextAlignment(.center)
-                                
-                                if !firstName.isEmpty {
-                                    Text(firstName)
-                                        .font(.system(size: 20, weight: .semibold))
-                                        .foregroundColor(.appGold)
-                                }
-                            }
-                            .padding(.top, 20)
-                            .padding(.horizontal, 20)
-                            
-                            // Texte explicatif
-                            VStack(spacing: 8) {
-                                Text("Pour accéder à tous les avantages de la plateforme, vous devez souscrire à un abonnement Pro.")
-                                    .font(.system(size: 15, weight: .regular))
-                                    .foregroundColor(.white.opacity(0.9))
-                                    .multilineTextAlignment(.center)
-                                    .lineSpacing(4)
-                            }
-                            .padding(.horizontal, 20)
-                            
                             // Titre principal
                             VStack(spacing: 12) {
                                 Text("Le bouche-à-oreille, enfin digitalisé ! 🚀")
@@ -104,7 +69,7 @@ struct ProSubscriptionView: View {
                                     .multilineTextAlignment(.center)
                                     .lineSpacing(4)
                             }
-                            .padding(.top, 8)
+                            .padding(.top, 20)
                             .padding(.horizontal, 20)
                             
                             // Plans d'abonnement
@@ -210,7 +175,7 @@ struct ProSubscriptionView: View {
                                         UserDefaults.standard.set(formatter.string(from: nextPaymentDate), forKey: "subscription_next_payment_date")
                                         
                                         // Rediriger vers le profil
-                                        onComplete()
+                                        appState.selectedTab = .profile
                                     }
                                 } else {
                                     // Afficher le formulaire de paiement Stripe
@@ -260,61 +225,9 @@ struct ProSubscriptionView: View {
     }
 }
 
-struct ProBenefitCard: View {
-    let icon: String
-    let iconColor: Color
-    let title: String
-    let description: String
-    
-    var body: some View {
-        HStack(spacing: 16) {
-            // Icône
-            ZStack {
-                Circle()
-                    .fill(Color.appDarkRed1.opacity(0.8))
-                    .frame(width: 50, height: 50)
-                
-                Image(systemName: icon)
-                    .foregroundColor(iconColor)
-                    .font(.system(size: 24))
-            }
-            
-            // Texte
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
-                
-                Text(description)
-                    .font(.system(size: 14, weight: .regular))
-                    .foregroundColor(.white.opacity(0.8))
-            }
-            
-            Spacer()
-        }
-        .padding(16)
-        .background(
-            ZStack {
-                // Fond avec effet de blur simulé
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.appDarkRed1.opacity(0.6))
-                
-                // Overlay sombre pour la lisibilité
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.black.opacity(0.3))
-            }
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
-        )
-        .cornerRadius(12)
-    }
-}
-
 #Preview {
     NavigationStack {
-        ProSubscriptionView(userType: .constant(.pro), onComplete: {})
+        ProInfoView()
             .environmentObject(AppState())
     }
 }

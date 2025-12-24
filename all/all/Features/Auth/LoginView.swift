@@ -58,15 +58,15 @@ struct LoginView: View {
                             .font(.system(size: 20, weight: .medium))
                             .foregroundColor(.appRed.opacity(0.9))
                     }
-                    .padding(.top, 60)
+                    .padding(.top, 40)
                     
                     // Titre
                     Text("Connexion")
-                        .font(.system(size: 32, weight: .bold))
+                        .font(.system(size: 20, weight: .bold))
                         .foregroundColor(.white)
                     
                     // Formulaire
-                    VStack(spacing: 20) {
+                    VStack(spacing: 16) {
                         // Email
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Email")
@@ -130,7 +130,7 @@ struct LoginView: View {
                         }
                     }
                     .padding(.horizontal, 20)
-                    .padding(.top, 20)
+                    .padding(.top, 12)
                     
                     // Message d'erreur
                     if let errorMessage = viewModel.errorMessage {
@@ -162,7 +162,7 @@ struct LoginView: View {
                     }
                     .disabled(!viewModel.isValid || viewModel.isLoading)
                     .padding(.horizontal, 20)
-                    .padding(.top, 10)
+                    .padding(.top, 8)
                     
                     // Mot de passe oublié
                     HStack {
@@ -176,7 +176,7 @@ struct LoginView: View {
                         }
                         Spacer()
                     }
-                    .padding(.top, 12)
+                    .padding(.top, 8)
                     
                     // Ligne de séparation
                     HStack {
@@ -185,7 +185,7 @@ struct LoginView: View {
                             .frame(height: 1)
                     }
                     .padding(.horizontal, 20)
-                    .padding(.top, 20)
+                    .padding(.top, 12)
                     
                     // Bouton Inscrivez-vous
                     Button(action: {
@@ -200,7 +200,7 @@ struct LoginView: View {
                             .cornerRadius(12)
                     }
                     .padding(.horizontal, 20)
-                    .padding(.top, 20)
+                    .padding(.top, 12)
                     
                     Spacer()
                         .frame(height: 40)

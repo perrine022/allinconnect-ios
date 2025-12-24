@@ -11,24 +11,27 @@ import CoreLocation
 struct PartnersListView: View {
     @StateObject private var viewModel = PartnersListViewModel()
     @EnvironmentObject private var locationService: LocationService
+    @EnvironmentObject private var appState: AppState
     @State private var selectedPartner: Partner?
     @State private var showLocationPermission = false
     
     var body: some View {
-        ZStack {
-            // Background avec gradient
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color.appDarkRed2,
-                    Color.appDarkRed1,
-                    Color.black
-                ]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-            
-            ScrollView {
+        GeometryReader { geometry in
+            ZStack(alignment: .bottom) {
+                ZStack {
+                    // Background avec gradient
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.appDarkRed2,
+                            Color.appDarkRed1,
+                            Color.black
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .ignoresSafeArea()
+                    
+                    ScrollView {
                 VStack(spacing: 20) {
                     // Titre
                     HStack {
@@ -195,6 +198,17 @@ struct PartnersListView: View {
                     Spacer()
                         .frame(height: 100) // Espace pour le footer
                 }
+            }
+                
+                // Footer Bar - toujours visible
+                VStack {
+                    Spacer()
+                    FooterBar(selectedTab: $appState.selectedTab) { tab in
+                        appState.navigateToTab(tab, dismiss: {})
+                    }
+                    .frame(width: geometry.size.width)
+                }
+                .ignoresSafeArea(edges: .bottom)
             }
         }
         .onTapGesture {

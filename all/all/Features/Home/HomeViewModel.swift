@@ -21,6 +21,7 @@ class HomeViewModel: ObservableObject {
     @Published var selectedSector: String = ""
     @Published var searchRadius: Double = 15.0 // Rayon en km (0 = désactivé)
     @Published var onlyClub10: Bool = false
+    @Published var hasSearched: Bool = false // Indique si l'utilisateur a cliqué sur Rechercher
     
     // Secteurs disponibles
     let sectors: [String] = [
@@ -76,6 +77,7 @@ class HomeViewModel: ObservableObject {
     }
     
     func searchProfessionals() {
+        hasSearched = true
         applyFilters()
     }
     

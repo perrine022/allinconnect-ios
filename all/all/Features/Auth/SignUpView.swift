@@ -14,6 +14,8 @@ struct SignUpView: View {
     @StateObject private var viewModel = SignUpViewModel()
     @State private var showPassword = false
     @State private var showConfirmPassword = false
+    @State private var clientSubscriptionNavigationId: UUID?
+    @State private var proSubscriptionNavigationId: UUID?
     @FocusState private var focusedField: Field?
     
     enum Field: Hashable {
@@ -323,10 +325,10 @@ struct SignUpView: View {
                                             // Tous les utilisateurs doivent s'abonner après l'inscription
                                             if viewModel.userType == .pro {
                                                 // Afficher la vue d'abonnement Pro
-                                                viewModel.showProSubscription = true
+                                                proSubscriptionNavigationId = UUID()
                                             } else {
                                                 // Afficher la vue d'abonnement Client
-                                                viewModel.showClientSubscription = true
+                                                clientSubscriptionNavigationId = UUID()
                                             }
                                         }
                                     }
@@ -376,27 +378,23 @@ struct SignUpView: View {
         .onTapGesture {
             hideKeyboard()
         }
-        .sheet(isPresented: $viewModel.showClientSubscription) {
-            NavigationStack {
-                ClientSubscriptionView(userType: $viewModel.userType, onComplete: {
-                    viewModel.showClientSubscription = false
-                    // Rediriger vers le profil avec l'abonnement actif
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        appState.selectedTab = .profile
-                    }
-                })
-            }
+        .navigationDestination(item: $clientSubscriptionNavigationId) { _ in
+            ClientSubscriptionView(userType: $viewModel.userType, onComplete: {
+                clientSubscriptionNavigationId = nil
+                // Rediriger vers le profil avec l'abonnement actif
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    appState.selectedTab = .profile
+                }
+            })
         }
-        .sheet(isPresented: $viewModel.showProSubscription) {
-            NavigationStack {
-                ProSubscriptionView(userType: $viewModel.userType, onComplete: {
-                    viewModel.showProSubscription = false
-                    // Rediriger vers le profil avec l'abonnement actif
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        appState.selectedTab = .profile
-                    }
-                })
-            }
+        .navigationDestination(item: $proSubscriptionNavigationId) { _ in
+            ProSubscriptionView(userType: $viewModel.userType, onComplete: {
+                proSubscriptionNavigationId = nil
+                // Rediriger vers le profil avec l'abonnement actif
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    appState.selectedTab = .profile
+                }
+            })
         }
     }
 }
