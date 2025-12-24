@@ -11,32 +11,16 @@ struct ReviewCard: View {
     let review: Review
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // En-tête avec nom et date
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(review.userName)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
-                    
-                    // Date formatée
-                    Text(formatDate(review.date))
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundColor(.gray.opacity(0.8))
-                }
-                
-                Spacer()
-                
-                // Étoiles
-                StarRatingView(rating: review.rating, starSize: 14)
-            }
+        HStack {
+            // Nom
+            Text(review.userName)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.white)
             
-            // Commentaire
-            Text(review.comment)
-                .font(.system(size: 14, weight: .regular))
-                .foregroundColor(.white.opacity(0.9))
-                .lineSpacing(4)
-                .fixedSize(horizontal: false, vertical: true)
+            Spacer()
+            
+            // Étoiles
+            StarRatingView(rating: review.rating, starSize: 14)
         }
         .padding(16)
         .background(
