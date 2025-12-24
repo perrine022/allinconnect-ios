@@ -8,9 +8,13 @@
 import SwiftUI
 
 struct LoginView: View {
+    @Binding var signUpNavigationId: UUID?
     @StateObject private var viewModel = LoginViewModel()
     @State private var showForgotPassword = false
-    @State private var showSignUp = false
+    
+    init(signUpNavigationId: Binding<UUID?> = .constant(nil)) {
+        self._signUpNavigationId = signUpNavigationId
+    }
     @State private var showPassword = false
     @FocusState private var focusedField: Field?
     
@@ -185,7 +189,7 @@ struct LoginView: View {
                     
                     // Bouton Inscrivez-vous
                     Button(action: {
-                        showSignUp = true
+                        signUpNavigationId = UUID()
                     }) {
                         Text("Inscrivez-vous")
                             .font(.system(size: 18, weight: .bold))
@@ -209,11 +213,6 @@ struct LoginView: View {
         .sheet(isPresented: $showForgotPassword) {
             NavigationStack {
                 ForgotPasswordView()
-            }
-        }
-        .sheet(isPresented: $showSignUp) {
-            NavigationStack {
-                SignUpView()
             }
         }
     }

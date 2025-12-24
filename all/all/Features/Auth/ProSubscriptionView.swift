@@ -14,29 +14,31 @@ struct ProSubscriptionView: View {
     let onComplete: () -> Void
     @State private var selectedPlan: SubscriptionPlan = .monthly
     @State private var showPayment = false
+    @State private var showStripePayment = false
+    @State private var isProcessingPayment = false
     
     enum SubscriptionPlan: String, CaseIterable {
-        case monthly = "Mensuel"
-        case yearly = "Annuel"
+        case monthly = "Paiement mensuel"
+        case yearly = "Paiement annuel"
         
         var price: String {
             switch self {
-            case .monthly: return "49,90€"
-            case .yearly: return "499€"
+            case .monthly: return "9,99€"
+            case .yearly: return "99€"
             }
         }
         
-        var monthlyEquivalent: String {
+        var priceLabel: String {
             switch self {
-            case .monthly: return "49,90€"
-            case .yearly: return "41,58€"
+            case .monthly: return "\(price) / mois"
+            case .yearly: return "\(price) / an"
             }
         }
         
         var savings: String? {
             switch self {
             case .monthly: return nil
-            case .yearly: return "Économisez 17%"
+            case .yearly: return "Économise 2 mois 🎉"
             }
         }
     }
@@ -58,17 +60,21 @@ struct ProSubscriptionView: View {
                     
                     ScrollView {
                         VStack(spacing: 24) {
-                            // Titre
-                            VStack(spacing: 8) {
-                                Text("Abonnement Pro")
-                                    .font(.system(size: 32, weight: .bold))
+                            // Titre principal
+                            VStack(spacing: 12) {
+                                Text("Le bouche-à-oreille, enfin digitalisé ! 🚀")
+                                    .font(.system(size: 24, weight: .bold))
                                     .foregroundColor(.white)
+                                    .multilineTextAlignment(.center)
                                 
-                                Text("Choisissez votre formule")
-                                    .font(.system(size: 16, weight: .regular))
-                                    .foregroundColor(.white.opacity(0.8))
+                                Text("ALL IN Connect, c'est la plateforme locale qui connecte les indépendants et commerçants aux habitants de leur secteur.")
+                                    .font(.system(size: 15, weight: .regular))
+                                    .foregroundColor(.white.opacity(0.9))
+                                    .multilineTextAlignment(.center)
+                                    .lineSpacing(4)
                             }
                             .padding(.top, 20)
+                            .padding(.horizontal, 20)
                             
                             // Plans d'abonnement
                             VStack(spacing: 16) {
@@ -76,55 +82,24 @@ struct ProSubscriptionView: View {
                                     Button(action: {
                                         selectedPlan = plan
                                     }) {
-                                        VStack(alignment: .leading, spacing: 12) {
-                                            HStack {
-                                                VStack(alignment: .leading, spacing: 4) {
-                                                    Text(plan.rawValue)
-                                                        .font(.system(size: 18, weight: .bold))
-                                                        .foregroundColor(.white)
-                                                    
-                                                    if plan == .yearly {
-                                                        Text("\(plan.price)/an")
-                                                            .font(.system(size: 14, weight: .regular))
-                                                            .foregroundColor(.white.opacity(0.8))
-                                                        
-                                                        Text("Soit \(plan.monthlyEquivalent)/mois")
-                                                            .font(.system(size: 12, weight: .regular))
-                                                            .foregroundColor(.appGold)
-                                                    } else {
-                                                        Text(plan.price + "/mois")
-                                                            .font(.system(size: 14, weight: .regular))
-                                                            .foregroundColor(.white.opacity(0.8))
-                                                    }
-                                                }
-                                                
-                                                Spacer()
-                                                
-                                                ZStack {
-                                                    Circle()
-                                                        .fill(selectedPlan == plan ? Color.appGold : Color.clear)
-                                                        .frame(width: 24, height: 24)
-                                                    
-                                                    if selectedPlan == plan {
-                                                        Image(systemName: "checkmark")
-                                                            .foregroundColor(.black)
-                                                            .font(.system(size: 12, weight: .bold))
-                                                    } else {
-                                                        Circle()
-                                                            .stroke(Color.white.opacity(0.5), lineWidth: 2)
-                                                            .frame(width: 24, height: 24)
-                                                    }
-                                                }
-                                            }
+                                        VStack(alignment: .leading, spacing: 8) {
+                                            Text(plan.rawValue)
+                                                .font(.system(size: 14, weight: .medium))
+                                                .foregroundColor(.white.opacity(0.9))
+                                            
+                                            Text(plan.priceLabel)
+                                                .font(.system(size: 24, weight: .bold))
+                                                .foregroundColor(.white)
                                             
                                             if let savings = plan.savings {
                                                 Text(savings)
-                                                    .font(.system(size: 12, weight: .semibold))
-                                                    .foregroundColor(.appGold)
+                                                    .font(.system(size: 13, weight: .medium))
+                                                    .foregroundColor(.white.opacity(0.9))
                                             }
                                         }
-                                        .padding(16)
-                                        .background(selectedPlan == plan ? Color.appDarkRed1.opacity(0.8) : Color.appDarkRed1.opacity(0.4))
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(20)
+                                        .background(selectedPlan == plan ? Color.appDarkRed1.opacity(0.9) : Color.appDarkRed1.opacity(0.5))
                                         .overlay(
                                             RoundedRectangle(cornerRadius: 12)
                                                 .stroke(selectedPlan == plan ? Color.appGold : Color.clear, lineWidth: 2)
@@ -135,37 +110,88 @@ struct ProSubscriptionView: View {
                             }
                             .padding(.horizontal, 20)
                             
-                            // Avantages Pro
-                            VStack(alignment: .leading, spacing: 16) {
-                                Text("Avantages de l'abonnement Pro")
-                                    .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(.white)
+                            // Section "Ce que tu obtiens"
+                            VStack(alignment: .leading, spacing: 20) {
+                                HStack(spacing: 8) {
+                                    Text("🎁")
+                                        .font(.system(size: 24))
+                                    Text("Ce que tu obtiens")
+                                        .font(.system(size: 20, weight: .bold))
+                                        .foregroundColor(.white)
+                                }
                                 
-                                VStack(alignment: .leading, spacing: 12) {
-                                    AdvantageRow(icon: "checkmark.circle.fill", text: "Gestion complète de votre établissement")
-                                    AdvantageRow(icon: "checkmark.circle.fill", text: "Création et gestion d'offres illimitées")
-                                    AdvantageRow(icon: "checkmark.circle.fill", text: "Statistiques détaillées de performance")
-                                    AdvantageRow(icon: "checkmark.circle.fill", text: "Visibilité accrue dans l'application")
-                                    AdvantageRow(icon: "checkmark.circle.fill", text: "Support prioritaire")
+                                VStack(spacing: 16) {
+                                    // Visibilité locale
+                                    ProBenefitCard(
+                                        icon: "mappin.circle.fill",
+                                        iconColor: .red,
+                                        title: "Visibilité locale",
+                                        description: "Apparais auprès des habitants de ta zone"
+                                    )
+                                    
+                                    // Tes offres diffusées
+                                    ProBenefitCard(
+                                        icon: "megaphone.fill",
+                                        iconColor: .white,
+                                        title: "Tes offres diffusées",
+                                        description: "À toute la communauté ALL IN Connect"
+                                    )
+                                    
+                                    // Accès au CLUB10
+                                    ProBenefitCard(
+                                        icon: "star.fill",
+                                        iconColor: .appGold,
+                                        title: "Accès au CLUB10",
+                                        description: "Mis en avant toute l'année"
+                                    )
                                 }
                             }
                             .padding(.horizontal, 20)
                             
+                            // Section Stripe Payment (embedded)
+                            if showStripePayment {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text("Paiement sécurisé")
+                                        .font(.system(size: 18, weight: .bold))
+                                        .foregroundColor(.white)
+                                    
+                                    // WebView Stripe embedded
+                                    StripePaymentView()
+                                        .frame(height: 600)
+                                        .cornerRadius(12)
+                                }
+                                .padding(.horizontal, 20)
+                            }
+                            
                             // Bouton S'abonner
                             Button(action: {
-                                // Simuler le paiement
-                                showPayment = true
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                                    showPayment = false
-                                    onComplete()
+                                if showStripePayment {
+                                    // Simuler le paiement (mock)
+                                    isProcessingPayment = true
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                        isProcessingPayment = false
+                                        // Sauvegarder l'abonnement actif
+                                        UserDefaults.standard.set(true, forKey: "has_active_subscription")
+                                        UserDefaults.standard.set("PRO", forKey: "subscription_type")
+                                        let nextPaymentDate = Calendar.current.date(byAdding: selectedPlan == .yearly ? .year : .month, value: selectedPlan == .yearly ? 1 : 1, to: Date()) ?? Date()
+                                        let formatter = DateFormatter()
+                                        formatter.dateFormat = "dd/MM/yyyy"
+                                        UserDefaults.standard.set(formatter.string(from: nextPaymentDate), forKey: "subscription_next_payment_date")
+                                        
+                                        // Rediriger vers le profil
+                                        onComplete()
+                                    }
+                                } else {
+                                    // Afficher le formulaire de paiement Stripe
+                                    showStripePayment = true
                                 }
                             }) {
                                 HStack {
-                                    if showPayment {
+                                    if isProcessingPayment {
                                         ProgressView()
                                             .progressViewStyle(CircularProgressViewStyle(tint: .black))
                                     } else {
-                                        Text(selectedPlan == .yearly ? "S'abonner - \(selectedPlan.price)/an" : "S'abonner - \(selectedPlan.price)/mois")
+                                        Text(showStripePayment ? "Confirmer le paiement" : (selectedPlan == .yearly ? "S'abonner - \(selectedPlan.price)/an" : "S'abonner - \(selectedPlan.price)/mois"))
                                             .font(.system(size: 18, weight: .bold))
                                     }
                                 }
@@ -175,7 +201,7 @@ struct ProSubscriptionView: View {
                                 .background(Color.appGold)
                                 .cornerRadius(12)
                             }
-                            .disabled(showPayment)
+                            .disabled(isProcessingPayment)
                             .padding(.horizontal, 20)
                             .padding(.top, 8)
                             
@@ -203,20 +229,55 @@ struct ProSubscriptionView: View {
     }
 }
 
-struct AdvantageRow: View {
+struct ProBenefitCard: View {
     let icon: String
-    let text: String
+    let iconColor: Color
+    let title: String
+    let description: String
     
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .foregroundColor(.appGold)
-                .font(.system(size: 16))
+        HStack(spacing: 16) {
+            // Icône
+            ZStack {
+                Circle()
+                    .fill(Color.appDarkRed1.opacity(0.8))
+                    .frame(width: 50, height: 50)
+                
+                Image(systemName: icon)
+                    .foregroundColor(iconColor)
+                    .font(.system(size: 24))
+            }
             
-            Text(text)
-                .font(.system(size: 14, weight: .regular))
-                .foregroundColor(.white.opacity(0.9))
+            // Texte
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+                
+                Text(description)
+                    .font(.system(size: 14, weight: .regular))
+                    .foregroundColor(.white.opacity(0.8))
+            }
+            
+            Spacer()
         }
+        .padding(16)
+        .background(
+            ZStack {
+                // Fond avec effet de blur simulé
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.appDarkRed1.opacity(0.6))
+                
+                // Overlay sombre pour la lisibilité
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.black.opacity(0.3))
+            }
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+        )
+        .cornerRadius(12)
     }
 }
 

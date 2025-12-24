@@ -9,136 +9,156 @@ import SwiftUI
 
 struct NotificationPreferencesView: View {
     @StateObject private var viewModel = NotificationPreferencesViewModel()
-    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var appState: AppState
     
     var body: some View {
-        ZStack {
-            // Background avec gradient
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color.appDarkRed2,
-                    Color.appDarkRed1,
-                    Color.black
-                ]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-            
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Section "Je souhaite recevoir"
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Je souhaite recevoir :")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.gray)
-                            .padding(.horizontal, 20)
-                        
-                        VStack(spacing: 0) {
-                            NotificationToggleRow(
-                                title: "Nouvelles offres",
-                                isOn: $viewModel.newOffers
-                            )
-                            
-                            Divider()
-                                .background(Color.white.opacity(0.1))
-                                .padding(.leading, 60)
-                            
-                            NotificationToggleRow(
-                                title: "Nouvel indépendant dans mon secteur",
-                                isOn: $viewModel.newIndependent
-                            )
-                            
-                            Divider()
-                                .background(Color.white.opacity(0.1))
-                                .padding(.leading, 60)
-                            
-                            NotificationToggleRow(
-                                title: "Événements locaux",
-                                isOn: $viewModel.localEvents
-                            )
-                            
-                            Divider()
-                                .background(Color.white.opacity(0.1))
-                                .padding(.leading, 60)
-                            
-                            NotificationToggleRow(
-                                title: "Nouvelles offres selon ma localisation",
-                                isOn: $viewModel.localizedOffers
-                            )
-                        }
-                        .background(Color.appDarkRed1.opacity(0.8))
-                        .cornerRadius(16)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                        )
-                        .padding(.horizontal, 20)
-                    }
-                    .padding(.top, 20)
+        GeometryReader { geometry in
+            ZStack(alignment: .bottom) {
+                ZStack {
+                    // Background avec gradient
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.appDarkRed2,
+                            Color.appDarkRed1,
+                            Color.black
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .ignoresSafeArea()
                     
-                    // Section "Catégories"
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Catégories :")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.gray)
+                    ScrollView {
+                        VStack(spacing: 24) {
+                            // Titre
+                            HStack {
+                                Text("Préférences de notifications")
+                                    .font(.system(size: 28, weight: .bold))
+                                    .foregroundColor(.white)
+                                Spacer()
+                            }
                             .padding(.horizontal, 20)
-                        
-                        VStack(spacing: 0) {
-                            CategoryToggleRow(
-                                emoji: "🤸",
-                                title: "Sport & Santé",
-                                isOn: $viewModel.sportHealth
-                            )
+                            .padding(.top, 20)
                             
-                            Divider()
-                                .background(Color.white.opacity(0.1))
-                                .padding(.leading, 60)
+                            // Section "Je souhaite recevoir"
+                            VStack(alignment: .leading, spacing: 16) {
+                                Text("Je souhaite recevoir :")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(.gray)
+                                    .padding(.horizontal, 20)
+                                
+                                VStack(spacing: 0) {
+                                    NotificationToggleRow(
+                                        title: "Nouvelles offres",
+                                        isOn: $viewModel.newOffers
+                                    )
+                                    
+                                    Divider()
+                                        .background(Color.white.opacity(0.1))
+                                        .padding(.leading, 60)
+                                    
+                                    NotificationToggleRow(
+                                        title: "Nouvel indépendant dans mon secteur",
+                                        isOn: $viewModel.newIndependent
+                                    )
+                                    
+                                    Divider()
+                                        .background(Color.white.opacity(0.1))
+                                        .padding(.leading, 60)
+                                    
+                                    NotificationToggleRow(
+                                        title: "Événements locaux",
+                                        isOn: $viewModel.localEvents
+                                    )
+                                    
+                                    Divider()
+                                        .background(Color.white.opacity(0.1))
+                                        .padding(.leading, 60)
+                                    
+                                    NotificationToggleRow(
+                                        title: "Nouvelles offres selon ma localisation",
+                                        isOn: $viewModel.localizedOffers
+                                    )
+                                }
+                                .background(Color.appDarkRed1.opacity(0.8))
+                                .cornerRadius(16)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                )
+                                .padding(.horizontal, 20)
+                            }
                             
-                            CategoryToggleRow(
-                                emoji: "💅",
-                                title: "Esthétique",
-                                isOn: $viewModel.aesthetics
-                            )
+                            // Section "Catégories" (mêmes que homepage)
+                            VStack(alignment: .leading, spacing: 16) {
+                                Text("Catégories :")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(.gray)
+                                    .padding(.horizontal, 20)
+                                
+                                VStack(spacing: 0) {
+                                    ForEach(Array(viewModel.categories.enumerated()), id: \.element.key) { index, category in
+                                        CategoryToggleRow(
+                                            emoji: category.emoji,
+                                            title: category.title,
+                                            isOn: bindingForCategory(category.key)
+                                        )
+                                        
+                                        if index < viewModel.categories.count - 1 {
+                                            Divider()
+                                                .background(Color.white.opacity(0.1))
+                                                .padding(.leading, 60)
+                                        }
+                                    }
+                                }
+                                .background(Color.appDarkRed1.opacity(0.8))
+                                .cornerRadius(16)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                )
+                                .padding(.horizontal, 20)
+                            }
                             
-                            Divider()
-                                .background(Color.white.opacity(0.1))
-                                .padding(.leading, 60)
-                            
-                            CategoryToggleRow(
-                                emoji: "🎮",
-                                title: "Divertissement",
-                                isOn: $viewModel.entertainment
-                            )
-                            
-                            Divider()
-                                .background(Color.white.opacity(0.1))
-                                .padding(.leading, 60)
-                            
-                            CategoryToggleRow(
-                                emoji: "🍔",
-                                title: "Food",
-                                isOn: $viewModel.food
-                            )
+                            Spacer()
+                                .frame(height: 100)
                         }
-                        .background(Color.appDarkRed1.opacity(0.8))
-                        .cornerRadius(16)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                        )
-                        .padding(.horizontal, 20)
                     }
-                    
-                    Spacer()
-                        .frame(height: 100)
                 }
+                
+                // Footer Bar - toujours visible
+                VStack {
+                    Spacer()
+                    FooterBar(selectedTab: $appState.selectedTab) { tab in
+                        appState.navigateToTab(tab, dismiss: {})
+                    }
+                    .frame(width: geometry.size.width)
+                }
+                .ignoresSafeArea(edges: .bottom)
             }
         }
-        .navigationTitle("Préférences de notifications")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
+    }
+    
+    private func bindingForCategory(_ key: String) -> Binding<Bool> {
+        switch key {
+        case "santeBienEtre":
+            return $viewModel.santeBienEtre
+        case "beauteEsthetique":
+            return $viewModel.beauteEsthetique
+        case "foodPlaisirsGourmands":
+            return $viewModel.foodPlaisirsGourmands
+        case "loisirsDivertissements":
+            return $viewModel.loisirsDivertissements
+        case "servicePratiques":
+            return $viewModel.servicePratiques
+        case "entrePros":
+            return $viewModel.entrePros
+        default:
+            return .constant(false)
+        }
     }
 }
 
@@ -189,6 +209,7 @@ struct CategoryToggleRow: View {
 #Preview {
     NavigationStack {
         NotificationPreferencesView()
+            .environmentObject(AppState())
     }
 }
 

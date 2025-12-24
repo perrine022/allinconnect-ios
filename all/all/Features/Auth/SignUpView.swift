@@ -37,11 +37,31 @@ struct SignUpView: View {
                     
                     ScrollView {
                         VStack(spacing: 24) {
+                            // Titre avec bouton retour
+                            HStack {
+                                Button(action: {
+                                    dismiss()
+                                }) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "chevron.left")
+                                            .font(.system(size: 18, weight: .semibold))
+                                        Text("Retour")
+                                            .font(.system(size: 16, weight: .medium))
+                                    }
+                                    .foregroundColor(.white)
+                                }
+                                
+                                Spacer()
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.top, 20)
+                            
                             // Titre
                             Text("Inscription")
                                 .font(.system(size: 32, weight: .bold))
                                 .foregroundColor(.white)
-                                .padding(.top, 20)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 20)
                             
                             // Formulaire
                             VStack(spacing: 16) {
@@ -300,12 +320,13 @@ struct SignUpView: View {
                                     hideKeyboard()
                                     viewModel.signUp { success in
                                         if success {
+                                            // Tous les utilisateurs doivent s'abonner après l'inscription
                                             if viewModel.userType == .pro {
                                                 // Afficher la vue d'abonnement Pro
-                                                viewModel.showSubscription = true
+                                                viewModel.showProSubscription = true
                                             } else {
-                                                // Afficher la vue Bienvenue puis rediriger
-                                                viewModel.showWelcome = true
+                                                // Afficher la vue d'abonnement Client
+                                                viewModel.showClientSubscription = true
                                             }
                                         }
                                     }
@@ -347,37 +368,34 @@ struct SignUpView: View {
                 .ignoresSafeArea(edges: .bottom)
             }
         }
+        .navigationBarBackButtonHidden(true)
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button("Annuler") {
-                    dismiss()
-                }
-                .foregroundColor(.white)
-            }
-        }
         .onTapGesture {
             hideKeyboard()
         }
-        .sheet(isPresented: $viewModel.showSubscription) {
+        .sheet(isPresented: $viewModel.showClientSubscription) {
             NavigationStack {
-                ProSubscriptionView(userType: $viewModel.userType, onComplete: {
-                    viewModel.showSubscription = false
-                    viewModel.showWelcome = true
+                ClientSubscriptionView(userType: $viewModel.userType, onComplete: {
+                    viewModel.showClientSubscription = false
+                    // Rediriger vers le profil avec l'abonnement actif
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        appState.selectedTab = .profile
+                    }
                 })
             }
         }
-        .fullScreenCover(isPresented: $viewModel.showWelcome) {
-            WelcomeView(userName: viewModel.firstName, userType: viewModel.userType) {
-                viewModel.showWelcome = false
-                dismiss()
-                // Naviguer vers le profil
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    appState.selectedTab = .profile
-                }
+        .sheet(isPresented: $viewModel.showProSubscription) {
+            NavigationStack {
+                ProSubscriptionView(userType: $viewModel.userType, onComplete: {
+                    viewModel.showProSubscription = false
+                    // Rediriger vers le profil avec l'abonnement actif
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        appState.selectedTab = .profile
+                    }
+                })
             }
         }
     }

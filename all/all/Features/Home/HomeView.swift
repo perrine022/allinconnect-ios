@@ -15,6 +15,7 @@ struct HomeView: View {
     @State private var selectedPartner: Partner?
     @State private var showLocationPermission = false
     @State private var digitalCardInfoNavigationId: UUID?
+    @State private var partnersListNavigationId: UUID?
     
     var body: some View {
         ZStack {
@@ -33,36 +34,36 @@ struct HomeView: View {
             ScrollView {
                 VStack(spacing: 24) {
                     // Logo et tagline
-                    VStack(spacing: 8) {
-                        HStack(spacing: 4) {
+                    VStack(spacing: 6) {
+                        HStack(spacing: 3) {
                             Text("ALL")
-                                .font(.system(size: 32, weight: .bold, design: .rounded))
+                                .font(.system(size: 24, weight: .bold, design: .rounded))
                                 .foregroundColor(.white)
                             
                             ZStack {
                                 Circle()
                                     .fill(Color.appRed)
-                                    .frame(width: 24, height: 24)
+                                    .frame(width: 18, height: 18)
                                 
                                 Circle()
                                     .fill(Color.appRed.opacity(0.6))
-                                    .frame(width: 20, height: 20)
+                                    .frame(width: 15, height: 15)
                                 
                                 Circle()
                                     .fill(Color.appRed.opacity(0.3))
-                                    .frame(width: 16, height: 16)
+                                    .frame(width: 12, height: 12)
                             }
                             
                             Text("IN")
-                                .font(.system(size: 32, weight: .bold, design: .rounded))
+                                .font(.system(size: 24, weight: .bold, design: .rounded))
                                 .foregroundColor(.white)
                         }
                         
                         Text("Connect")
-                            .font(.system(size: 16, weight: .medium))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundColor(Color.appRed.opacity(0.9))
                     }
-                    .padding(.top, 20)
+                    .padding(.top, 16)
                     
                     // Bouton "L'app qui pense à toi"
                     Button(action: {}) {
@@ -138,6 +139,7 @@ struct HomeView: View {
                                 viewModel.searchProfessionals()
                             }
                         )
+                        .zIndex(1000) // zIndex très élevé pour passer au-dessus de tout
                         
                         // Slider Rayon de recherche
                         HStack(spacing: 8) {
@@ -171,6 +173,7 @@ struct HomeView: View {
                         Button(action: {
                             withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
                                 viewModel.onlyClub10.toggle()
+                                viewModel.searchProfessionals()
                             }
                         }) {
                             HStack(spacing: 10) {
@@ -225,7 +228,74 @@ struct HomeView: View {
                     }
                     .padding(.horizontal, 20)
                     
-                    // Section "À ne pas louper"
+                    // Section "Nos partenaires" - juste après le bouton rechercher
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            Text("Nos partenaires")
+                                .font(.system(size: 20, weight: .bold))
+                                .foregroundColor(.white)
+                            
+                            Spacer()
+                            
+                            if !viewModel.filteredPartners.isEmpty {
+                                Text("\(viewModel.filteredPartners.count) résultat\(viewModel.filteredPartners.count > 1 ? "s" : "")")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(.gray)
+                            }
+                            
+                            Button(action: {
+                                partnersListNavigationId = UUID()
+                            }) {
+                                HStack(spacing: 4) {
+                                    Text("Voir tout")
+                                        .font(.system(size: 14, weight: .medium))
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 12, weight: .semibold))
+                                }
+                                .foregroundColor(.gray)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        
+                        // Liste des partenaires filtrés
+                        if viewModel.filteredPartners.isEmpty {
+                            VStack(spacing: 16) {
+                                Image(systemName: "magnifyingglass")
+                                    .font(.system(size: 50))
+                                    .foregroundColor(.white.opacity(0.5))
+                                
+                                Text("Aucun partenaire trouvé")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(.white.opacity(0.7))
+                                
+                                Text("Essayez de modifier vos critères de recherche")
+                                    .font(.system(size: 14, weight: .regular))
+                                    .foregroundColor(.white.opacity(0.6))
+                                    .multilineTextAlignment(.center)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 60)
+                            .padding(.horizontal, 20)
+                        } else {
+                            VStack(spacing: 12) {
+                                ForEach(viewModel.filteredPartners) { partner in
+                                    PartnerCard(
+                                        partner: partner,
+                                        onFavoriteToggle: {
+                                            viewModel.togglePartnerFavorite(for: partner)
+                                        },
+                                        onTap: {
+                                            selectedPartner = partner
+                                        }
+                                    )
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                        }
+                    }
+                    .padding(.top, 8)
+                    
+                    // Section "À ne pas louper" - à la fin
                     VStack(alignment: .leading, spacing: 16) {
                         HStack {
                             HStack(spacing: 6) {
@@ -264,51 +334,53 @@ struct HomeView: View {
                             .padding(.horizontal, 20)
                         }
                     }
-                    .padding(.top, 8)
+                    .padding(.top, 24)
                     
-                    // Carte CLUB10
+                    // Section "Pourquoi adhérer" pour les pros
+                    VStack(alignment: .leading, spacing: 20) {
+                        HStack(spacing: 8) {
+                            Text("🎁")
+                                .font(.system(size: 24))
+                            Text("Pourquoi adhérer")
+                                .font(.system(size: 20, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                        .padding(.horizontal, 20)
+                        
+                        VStack(spacing: 16) {
+                            // Visibilité locale
+                            ProBenefitCard(
+                                icon: "mappin.circle.fill",
+                                iconColor: .red,
+                                title: "Visibilité locale",
+                                description: "Apparais auprès des habitants de ta zone"
+                            )
+                            
+                            // Tes offres diffusées
+                            ProBenefitCard(
+                                icon: "megaphone.fill",
+                                iconColor: .white,
+                                title: "Tes offres diffusées",
+                                description: "À toute la communauté ALL IN Connect"
+                            )
+                            
+                            // Accès au CLUB10
+                            ProBenefitCard(
+                                icon: "star.fill",
+                                iconColor: .appGold,
+                                title: "Accès au CLUB10",
+                                description: "Mis en avant toute l'année"
+                            )
+                        }
+                        .padding(.horizontal, 20)
+                    }
+                    .padding(.top, 24)
+                    
+                    // Carte CLUB10 - à la fin
                     Club10Card(onLearnMore: {
                         digitalCardInfoNavigationId = UUID()
                     })
                     .padding(.horizontal, 20)
-                    
-                    // Section "Nos partenaires"
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack {
-                            Text("Nos partenaires")
-                                .font(.system(size: 20, weight: .bold))
-                                .foregroundColor(.white)
-                            
-                            Spacer()
-                            
-                            Button(action: {}) {
-                                HStack(spacing: 4) {
-                                    Text("Voir tout")
-                                        .font(.system(size: 14, weight: .medium))
-                                    Image(systemName: "chevron.right")
-                                        .font(.system(size: 12, weight: .semibold))
-                                }
-                                .foregroundColor(.gray)
-                            }
-                        }
-                        .padding(.horizontal, 20)
-                        
-                        // Liste des partenaires
-                        VStack(spacing: 12) {
-                            ForEach(viewModel.partners) { partner in
-                                PartnerCard(
-                                    partner: partner,
-                                    onFavoriteToggle: {
-                                        viewModel.togglePartnerFavorite(for: partner)
-                                    },
-                                    onTap: {
-                                        selectedPartner = partner
-                                    }
-                                )
-                            }
-                        }
-                        .padding(.horizontal, 20)
-                    }
                     .padding(.top, 8)
                     .padding(.bottom, 100) // Espace pour le footer
                 }
@@ -339,8 +411,12 @@ struct HomeView: View {
         .navigationDestination(item: $digitalCardInfoNavigationId) { _ in
             DigitalCardInfoView()
         }
+        .navigationDestination(item: $partnersListNavigationId) { _ in
+            PartnersListView()
+        }
     }
 }
+
 
 #Preview {
     NavigationStack {

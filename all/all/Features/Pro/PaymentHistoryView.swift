@@ -6,9 +6,11 @@
 //
 
 import SwiftUI
+import Combine
 
 struct PaymentHistoryView: View {
     @EnvironmentObject private var appState: AppState
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = PaymentHistoryViewModel()
     
     var body: some View {
@@ -76,7 +78,9 @@ struct PaymentHistoryView: View {
                 VStack {
                     Spacer()
                     FooterBar(selectedTab: $appState.selectedTab) { tab in
-                        appState.navigateToTab(tab, dismiss: {})
+                        appState.navigateToTab(tab, dismiss: {
+                            dismiss()
+                        })
                     }
                     .frame(width: geometry.size.width)
                 }

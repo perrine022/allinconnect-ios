@@ -11,18 +11,23 @@ struct ProfileView: View {
     @StateObject private var viewModel = ProfileViewModel()
     @EnvironmentObject private var appState: AppState
     @State private var isLoggedIn = LoginViewModel.isLoggedIn()
-    @State private var showNotificationPreferences = false
-    @State private var showEditProfile = false
+    @State private var notificationPreferencesNavigationId: UUID?
+    @State private var editProfileNavigationId: UUID?
     @State private var proOffersNavigationId: UUID?
     @State private var manageEstablishmentNavigationId: UUID?
     @State private var manageSubscriptionsNavigationId: UUID?
     @State private var paymentHistoryNavigationId: UUID?
     @State private var settingsNavigationId: UUID?
     @State private var selectedPartner: Partner?
+    @State private var signUpNavigationId: UUID?
     
     var body: some View {
         if isLoggedIn {
             profileContent
+                .onAppear {
+                    // Recharger les données d'abonnement quand on arrive sur la vue
+                    viewModel.loadSubscriptionData()
+                }
                 .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserDidLogout"))) { _ in
                     // Réinitialiser l'état lors de la déconnexion
                     isLoggedIn = false
@@ -30,10 +35,15 @@ struct ProfileView: View {
                     viewModel.reset()
                 }
         } else {
-            LoginView()
-                .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserDidLogin"))) { _ in
-                    isLoggedIn = true
-                }
+            NavigationStack {
+                LoginView(signUpNavigationId: $signUpNavigationId)
+                    .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserDidLogin"))) { _ in
+                        isLoggedIn = true
+                    }
+                    .navigationDestination(item: $signUpNavigationId) { _ in
+                        SignUpView()
+                    }
+            }
         }
     }
     
@@ -85,14 +95,16 @@ struct ProfileView: View {
                             
                             Spacer()
                             
-                            // Badge CLUB10 au bout de la ligne
-                            Text("MEMBRE CLUB10")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 5)
-                                .background(Color.green)
-                                .cornerRadius(6)
+                            // Badge CLUB10 au bout de la ligne - uniquement si abonnement actif
+                            if viewModel.hasActiveClub10Subscription || (viewModel.user.userType == .pro && viewModel.hasActiveProSubscription) {
+                                Text("MEMBRE CLUB10")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(Color.green)
+                                    .cornerRadius(6)
+                            }
                         }
                         .padding(.horizontal, 20)
                         
@@ -129,8 +141,81 @@ struct ProfileView: View {
                     .padding(.top, 20)
                     .padding(.bottom, 8)
                     
-                    // Bloc Abonnement PRO (uniquement si PRO et dans l'espace PRO)
-                    if viewModel.user.userType == .pro && viewModel.currentSpace == .pro {
+                    // Bloc Abonnement CLUB10 (espace client) - uniquement si abonnement actif
+                    if viewModel.currentSpace == .client && viewModel.hasActiveClub10Subscription {
+                        VStack(alignment: .leading, spacing: 16) {
+                            HStack {
+                                Image(systemName: "star.fill")
+                                    .foregroundColor(.appGold)
+                                    .font(.system(size: 18))
+                                
+                                Text("Abonnement CLUB10")
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundColor(.white)
+                                
+                                Spacer()
+                            }
+                            
+                            VStack(spacing: 12) {
+                                // Montant
+                                HStack {
+                                    Text("Montant")
+                                        .font(.system(size: 14, weight: .regular))
+                                        .foregroundColor(.white.opacity(0.8))
+                                    
+                                    Spacer()
+                                    
+                                    Text("\(viewModel.club10Amount) / mois")
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundColor(.appGold)
+                                }
+                                
+                                Divider()
+                                    .background(Color.white.opacity(0.1))
+                                
+                                // Prochain prélèvement
+                                HStack {
+                                    Text("Prochain prélèvement")
+                                        .font(.system(size: 14, weight: .regular))
+                                        .foregroundColor(.white.opacity(0.8))
+                                    
+                                    Spacer()
+                                    
+                                    Text(viewModel.club10NextPaymentDate)
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundColor(.appGold)
+                                }
+                                
+                                Divider()
+                                    .background(Color.white.opacity(0.1))
+                                
+                                // Engagement
+                                HStack {
+                                    Text("Engagement jusqu'au")
+                                        .font(.system(size: 14, weight: .regular))
+                                        .foregroundColor(.white.opacity(0.8))
+                                    
+                                    Spacer()
+                                    
+                                    Text(viewModel.club10CommitmentUntil)
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundColor(.white)
+                                }
+                            }
+                        }
+                        .padding(16)
+                        .background(Color.appDarkRed1.opacity(0.8))
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                        )
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 8)
+                    }
+                    
+                    // Bloc Abonnement PRO (uniquement si PRO, dans l'espace PRO et abonnement actif)
+                    if viewModel.user.userType == .pro && viewModel.currentSpace == .pro && viewModel.hasActiveProSubscription {
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
                                 Image(systemName: "creditcard.fill")
@@ -264,6 +349,59 @@ struct ProfileView: View {
                         .padding(.bottom, 8)
                     }
                     
+                    // Section Favoris (espace client)
+                    if viewModel.currentSpace == .client {
+                        VStack(alignment: .leading, spacing: 16) {
+                            HStack {
+                                Image(systemName: "heart.fill")
+                                    .foregroundColor(.appGold)
+                                    .font(.system(size: 18))
+                                
+                                Text("Mes favoris")
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundColor(.white)
+                                
+                                Spacer()
+                                
+                                if !viewModel.favoritePartners.isEmpty {
+                                    Text("\(viewModel.favoritePartners.count)")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(.gray)
+                                }
+                            }
+                            
+                            // Liste des favoris (limités à 3 pour l'aperçu)
+                            if viewModel.favoritePartners.isEmpty {
+                                Text("Aucun favori pour le moment")
+                                    .font(.system(size: 14, weight: .regular))
+                                    .foregroundColor(.white.opacity(0.7))
+                            } else {
+                                VStack(spacing: 8) {
+                                    ForEach(Array(viewModel.favoritePartners.prefix(3))) { partner in
+                                        PartnerCard(
+                                            partner: partner,
+                                            onFavoriteToggle: {
+                                                viewModel.togglePartnerFavorite(for: partner)
+                                            },
+                                            onTap: {
+                                                selectedPartner = partner
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        .padding(16)
+                        .background(Color.appDarkRed1.opacity(0.8))
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                        )
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 8)
+                    }
+                    
                     // Menu options
                     VStack(spacing: 0) {
                         // Options PRO uniquement dans l'espace PRO
@@ -305,11 +443,38 @@ struct ProfileView: View {
                                 .padding(.leading, 54)
                         }
                         
+                        // Options CLUB10 (espace client)
+                        if viewModel.currentSpace == .client {
+                            ProfileMenuRow(
+                                icon: "creditcard.fill",
+                                title: "Gérer mes abonnements",
+                                action: {
+                                    manageSubscriptionsNavigationId = UUID()
+                                }
+                            )
+                            
+                            Divider()
+                                .background(Color.white.opacity(0.1))
+                                .padding(.leading, 54)
+                            
+                            ProfileMenuRow(
+                                icon: "clock.fill",
+                                title: "Historique des paiements",
+                                action: {
+                                    paymentHistoryNavigationId = UUID()
+                                }
+                            )
+                            
+                            Divider()
+                                .background(Color.white.opacity(0.1))
+                                .padding(.leading, 54)
+                        }
+                        
                         ProfileMenuRow(
                             icon: "person.fill",
                             title: "Modifier mon profil",
                             action: {
-                                showEditProfile = true
+                                editProfileNavigationId = UUID()
                             }
                         )
                         
@@ -321,7 +486,7 @@ struct ProfileView: View {
                             icon: "bell.fill",
                             title: "Préférences de notifications",
                             action: {
-                                showNotificationPreferences = true
+                                notificationPreferencesNavigationId = UUID()
                             }
                         )
                         
@@ -395,15 +560,11 @@ struct ProfileView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
-        .sheet(isPresented: $showNotificationPreferences) {
-            NavigationStack {
-                NotificationPreferencesView()
-            }
+        .navigationDestination(item: $notificationPreferencesNavigationId) { _ in
+            NotificationPreferencesView()
         }
-        .sheet(isPresented: $showEditProfile) {
-            NavigationStack {
-                EditProfileView()
-            }
+        .navigationDestination(item: $editProfileNavigationId) { _ in
+            EditProfileView()
         }
         .navigationDestination(item: $proOffersNavigationId) { _ in
             ProOffersView()
@@ -427,113 +588,129 @@ struct ProfileView: View {
 }
 
 struct EditProfileView: View {
-    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var appState: AppState
     @State private var firstName: String = "Marie"
     @State private var lastName: String = "Dupont"
     @State private var email: String = "marie@email.fr"
     
     var body: some View {
-        ZStack {
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color.appDarkRed2,
-                    Color.appDarkRed1,
-                    Color.black
-                ]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-            
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Avatar
-                    ZStack {
-                        Circle()
-                            .fill(Color.appGold)
-                            .frame(width: 100, height: 100)
-                        
-                        Text(String(firstName.prefix(1)).uppercased())
-                            .font(.system(size: 48, weight: .bold))
-                            .foregroundColor(.black)
-                    }
-                    .padding(.top, 20)
+        GeometryReader { geometry in
+            ZStack(alignment: .bottom) {
+                ZStack {
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.appDarkRed2,
+                            Color.appDarkRed1,
+                            Color.black
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .ignoresSafeArea()
                     
-                    VStack(spacing: 16) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Prénom")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.gray)
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            // Titre
+                            HStack {
+                                Text("Modifier mon profil")
+                                    .font(.system(size: 28, weight: .bold))
+                                    .foregroundColor(.white)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.top, 20)
                             
-                            TextField("", text: $firstName)
-                                .font(.system(size: 16))
-                                .foregroundColor(.white)
-                                .padding(12)
-                                .background(Color.appDarkRed1.opacity(0.6))
-                                .cornerRadius(10)
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Nom")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.gray)
+                            // Avatar
+                            ZStack {
+                                Circle()
+                                    .fill(Color.appGold)
+                                    .frame(width: 100, height: 100)
+                                
+                                Text(String(firstName.prefix(1)).uppercased())
+                                    .font(.system(size: 48, weight: .bold))
+                                    .foregroundColor(.black)
+                            }
+                            .padding(.top, 8)
                             
-                            TextField("", text: $lastName)
-                                .font(.system(size: 16))
-                                .foregroundColor(.white)
-                                .padding(12)
-                                .background(Color.appDarkRed1.opacity(0.6))
-                                .cornerRadius(10)
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Email")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.gray)
+                            VStack(spacing: 16) {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Prénom")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(.gray)
+                                    
+                                    TextField("", text: $firstName)
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.white)
+                                        .padding(12)
+                                        .background(Color.appDarkRed1.opacity(0.6))
+                                        .cornerRadius(10)
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Nom")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(.gray)
+                                    
+                                    TextField("", text: $lastName)
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.white)
+                                        .padding(12)
+                                        .background(Color.appDarkRed1.opacity(0.6))
+                                        .cornerRadius(10)
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Email")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(.gray)
+                                    
+                                    TextField("", text: $email)
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.white)
+                                        .keyboardType(.emailAddress)
+                                        .autocapitalization(.none)
+                                        .padding(12)
+                                        .background(Color.appDarkRed1.opacity(0.6))
+                                        .cornerRadius(10)
+                                }
+                            }
+                            .padding(.horizontal, 20)
                             
-                            TextField("", text: $email)
-                                .font(.system(size: 16))
-                                .foregroundColor(.white)
-                                .keyboardType(.emailAddress)
-                                .autocapitalization(.none)
-                                .padding(12)
-                                .background(Color.appDarkRed1.opacity(0.6))
-                                .cornerRadius(10)
+                            Button(action: {
+                                // Action enregistrer
+                            }) {
+                                Text("Enregistrer")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(.black)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 14)
+                                    .background(Color.appGold)
+                                    .cornerRadius(12)
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.top, 8)
+                            
+                            Spacer()
+                                .frame(height: 100)
                         }
                     }
-                    .padding(.horizontal, 20)
-                    
-                    Button(action: {
-                        dismiss()
-                    }) {
-                        Text("Enregistrer")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.black)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(Color.appGold)
-                            .cornerRadius(12)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
-                    
-                    Spacer()
-                        .frame(height: 100)
                 }
+                
+                // Footer Bar - toujours visible
+                VStack {
+                    Spacer()
+                    FooterBar(selectedTab: $appState.selectedTab) { tab in
+                        appState.navigateToTab(tab, dismiss: {})
+                    }
+                    .frame(width: geometry.size.width)
+                }
+                .ignoresSafeArea(edges: .bottom)
             }
         }
-        .navigationTitle("Modifier mon profil")
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button("Annuler") {
-                    dismiss()
-                }
-                .foregroundColor(.white)
-            }
-        }
     }
 }
 

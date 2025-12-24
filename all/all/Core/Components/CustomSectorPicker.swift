@@ -93,15 +93,18 @@ struct CustomSectorPicker: View {
                     }
                     .background(Color.white)
                     .cornerRadius(8)
-                    .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                    .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 5)
                     .frame(width: geometry.size.width)
                     .offset(y: 37) // Positionné juste en dessous du champ principal
                     .transition(.opacity.combined(with: .move(edge: .top)))
+                    .zIndex(1000) // zIndex très élevé pour passer au-dessus de tout
+                    .allowsHitTesting(true) // Permettre les interactions
                 }
             }
         }
-        .frame(height: 37) // Hauteur fixe pour éviter le décalage
-        .zIndex(isExpanded ? 1 : 0)
+        .frame(height: isExpanded ? nil : 37) // Hauteur fixe seulement quand fermé
+        .zIndex(isExpanded ? 1000 : 0) // zIndex très élevé quand ouvert
+        .compositingGroup() // Grouper pour un meilleur rendu
     }
 }
 

@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct TermsView: View {
+    @EnvironmentObject private var appState: AppState
     let isPrivacyPolicy: Bool
     
     init(isPrivacyPolicy: Bool = false) {
@@ -15,47 +16,61 @@ struct TermsView: View {
     }
     
     var body: some View {
-        ZStack {
-            // Background avec gradient
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color.appDarkRed2,
-                    Color.appDarkRed1,
-                    Color.black
-                ]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-            
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    // Titre
-                    Text(isPrivacyPolicy ? "Politique de confidentialité" : "Conditions générales")
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 20)
-                        .padding(.top, 20)
-                    
-                    // Contenu
-                    VStack(alignment: .leading, spacing: 20) {
-                        Text(getContent())
-                            .font(.system(size: 15, weight: .regular))
-                            .foregroundColor(.white.opacity(0.9))
-                            .lineSpacing(6)
-                    }
-                    .padding(20)
-                    .background(Color.appDarkRed1.opacity(0.8))
-                    .cornerRadius(16)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+        GeometryReader { geometry in
+            ZStack(alignment: .bottom) {
+                ZStack {
+                    // Background avec gradient
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.appDarkRed2,
+                            Color.appDarkRed1,
+                            Color.black
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
                     )
-                    .padding(.horizontal, 20)
+                    .ignoresSafeArea()
                     
-                    Spacer()
-                        .frame(height: 100)
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 24) {
+                            // Titre
+                            Text(isPrivacyPolicy ? "Politique de confidentialité" : "Conditions générales")
+                                .font(.system(size: 28, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 20)
+                                .padding(.top, 20)
+                            
+                            // Contenu
+                            VStack(alignment: .leading, spacing: 20) {
+                                Text(getContent())
+                                    .font(.system(size: 15, weight: .regular))
+                                    .foregroundColor(.white.opacity(0.9))
+                                    .lineSpacing(6)
+                            }
+                            .padding(20)
+                            .background(Color.appDarkRed1.opacity(0.8))
+                            .cornerRadius(16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                            )
+                            .padding(.horizontal, 20)
+                            
+                            Spacer()
+                                .frame(height: 100)
+                        }
+                    }
                 }
+                
+                // Footer Bar - toujours visible
+                VStack {
+                    Spacer()
+                    FooterBar(selectedTab: $appState.selectedTab) { tab in
+                        appState.navigateToTab(tab, dismiss: {})
+                    }
+                    .frame(width: geometry.size.width)
+                }
+                .ignoresSafeArea(edges: .bottom)
             }
         }
         .navigationTitle("")
@@ -167,6 +182,7 @@ struct TermsView: View {
 #Preview {
     NavigationStack {
         TermsView()
+            .environmentObject(AppState())
     }
 }
 

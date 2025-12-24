@@ -19,8 +19,8 @@ class SignUpViewModel: ObservableObject {
     @Published var userType: UserType = .client
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
-    @Published var showSubscription: Bool = false
-    @Published var showWelcome: Bool = false
+    @Published var showClientSubscription: Bool = false
+    @Published var showProSubscription: Bool = false
     
     var isValid: Bool {
         !firstName.trimmingCharacters(in: .whitespaces).isEmpty &&

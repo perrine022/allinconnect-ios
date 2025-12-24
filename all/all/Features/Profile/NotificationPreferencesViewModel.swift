@@ -16,11 +16,23 @@ class NotificationPreferencesViewModel: ObservableObject {
     @Published var localEvents: Bool = true
     @Published var localizedOffers: Bool = true // Nouvelles offres selon la localisation
     
-    // Catégories
-    @Published var sportHealth: Bool = true
-    @Published var aesthetics: Bool = true
-    @Published var entertainment: Bool = true
-    @Published var food: Bool = true
+    // Catégories (mêmes que sur la homepage)
+    @Published var santeBienEtre: Bool = true
+    @Published var beauteEsthetique: Bool = true
+    @Published var foodPlaisirsGourmands: Bool = true
+    @Published var loisirsDivertissements: Bool = true
+    @Published var servicePratiques: Bool = true
+    @Published var entrePros: Bool = true
+    
+    // Mapping des catégories
+    let categories: [(key: String, title: String, emoji: String)] = [
+        ("santeBienEtre", "Santé & bien être", "💪"),
+        ("beauteEsthetique", "Beauté & Esthétique", "💅"),
+        ("foodPlaisirsGourmands", "Food & plaisirs gourmands", "🍔"),
+        ("loisirsDivertissements", "Loisirs & Divertissements", "🎮"),
+        ("servicePratiques", "Service & pratiques", "🔧"),
+        ("entrePros", "Entre pros", "👔")
+    ]
     
     func savePreferences() {
         // Sauvegarder les préférences

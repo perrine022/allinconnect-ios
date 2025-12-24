@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ProOffersView: View {
     @EnvironmentObject private var appState: AppState
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = ProOffersViewModel()
     @State private var showCreateOffer = false
     
@@ -94,7 +95,9 @@ struct ProOffersView: View {
                 VStack {
                     Spacer()
                     FooterBar(selectedTab: $appState.selectedTab) { tab in
-                        appState.navigateToTab(tab, dismiss: {})
+                        appState.navigateToTab(tab, dismiss: {
+                            dismiss()
+                        })
                     }
                     .frame(width: geometry.size.width)
                 }

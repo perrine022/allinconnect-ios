@@ -10,7 +10,7 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject private var appState: AppState
     @State private var selectedSection: SettingsSection?
-    @State private var showChangePassword = false
+    @State private var changePasswordNavigationId: UUID?
     
     enum SettingsSection: String, Identifiable {
         case helpSupport = "Aide & Support"
@@ -98,7 +98,7 @@ struct SettingsView: View {
                                 
                                 // Changer mon mot de passe
                                 Button(action: {
-                                    showChangePassword = true
+                                    changePasswordNavigationId = UUID()
                                 }) {
                                     HStack(spacing: 14) {
                                         Image(systemName: "lock.fill")
@@ -153,11 +153,6 @@ struct SettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
-        .sheet(isPresented: $showChangePassword) {
-            NavigationStack {
-                ChangePasswordView()
-            }
-        }
         .navigationDestination(item: $selectedSection) { section in
             switch section {
             case .helpSupport:
@@ -167,6 +162,9 @@ struct SettingsView: View {
             case .privacyPolicy:
                 TermsView(isPrivacyPolicy: true)
             }
+        }
+        .navigationDestination(item: $changePasswordNavigationId) { _ in
+            ChangePasswordView()
         }
     }
 }
