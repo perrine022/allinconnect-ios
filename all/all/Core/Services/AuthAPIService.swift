@@ -28,7 +28,7 @@ struct RegistrationRequest: Codable {
     let password: String
     let address: String?
     let city: String?
-    let birthDate: String? // Format YYYY-MM-DD
+    let birthDate: String?
     let userType: APIUserType
     let subscriptionType: APISubscriptionType
     let profession: String?
@@ -84,27 +84,22 @@ class AuthAPIService: ObservableObject {
     private let apiService: APIServiceProtocol
     
     init(apiService: APIServiceProtocol? = nil) {
-        // Utiliser le service fourni ou créer une nouvelle instance
         if let apiService = apiService {
             self.apiService = apiService
         } else {
-            // Accéder à shared dans un contexte MainActor
             self.apiService = APIService.shared
         }
     }
     
     // MARK: - Register
     func register(_ request: RegistrationRequest) async throws -> AuthResponse {
-        // Encoder la requête en JSON directement (les CodingKeys gèrent déjà le mapping)
         let encoder = JSONEncoder()
         let jsonData = try encoder.encode(request)
         
-        // Convertir en dictionnaire pour l'API service
         guard let jsonObject = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
             throw APIError.invalidResponse
         }
         
-        // Nettoyer les valeurs nil (NSNull dans JSON)
         let cleanedParameters = jsonObject.compactMapValues { value -> Any? in
             if value is NSNull {
                 return nil
@@ -120,11 +115,10 @@ class AuthAPIService: ObservableObject {
         )
     }
     
-    // MARK: - Authenticate (Login)
+    // MARK: - Authenticate
     func authenticate(email: String, password: String) async throws -> AuthResponse {
         let loginRequest = LoginRequest(email: email, password: password)
         
-        // Encoder la requête en JSON
         let encoder = JSONEncoder()
         let jsonData = try encoder.encode(loginRequest)
         
@@ -144,7 +138,6 @@ class AuthAPIService: ObservableObject {
     func forgotPassword(email: String) async throws {
         let forgotPasswordRequest = ForgotPasswordRequest(email: email)
         
-        // Encoder la requête en JSON
         let encoder = JSONEncoder()
         let jsonData = try encoder.encode(forgotPasswordRequest)
         
@@ -152,8 +145,6 @@ class AuthAPIService: ObservableObject {
             throw APIError.invalidResponse
         }
         
-        // La réponse peut être vide ou un message de succès
-        // On utilise un type générique pour accepter n'importe quelle réponse
         struct EmptyResponse: Codable {}
         let _: EmptyResponse = try await apiService.request(
             endpoint: "/auth/forgot-password",

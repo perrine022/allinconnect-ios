@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import CoreLocation
 
 @MainActor
 class HomeViewModel: ObservableObject {
@@ -52,7 +53,7 @@ class HomeViewModel: ObservableObject {
         partnersAPIService: PartnersAPIService? = nil,
         favoritesAPIService: FavoritesAPIService? = nil,
         dataService: MockDataService = MockDataService.shared,
-        locationService: LocationService = LocationService.shared
+        locationService: LocationService? = nil
     ) {
         // Créer les services dans un contexte MainActor
         if let partnersAPIService = partnersAPIService {
@@ -68,7 +69,8 @@ class HomeViewModel: ObservableObject {
         }
         
         self.dataService = dataService
-        self.locationService = locationService
+        // Accéder à LocationService.shared dans un contexte MainActor
+        self.locationService = locationService ?? LocationService.shared
         self.categories = dataService.getCategories()
         self.cities = dataService.getCities()
         loadData()
@@ -82,7 +84,7 @@ class HomeViewModel: ObservableObject {
     }
     
     func loadPartners() {
-        Task {
+        Task { @MainActor in
             do {
                 var professionalsResponse: [PartnerProfessionalResponse]
                 

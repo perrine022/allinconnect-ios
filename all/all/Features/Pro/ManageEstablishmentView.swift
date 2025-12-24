@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Combine
+import CoreLocation
 
 struct ManageEstablishmentView: View {
     @Environment(\.dismiss) private var dismiss
@@ -322,7 +323,7 @@ class ManageEstablishmentViewModel: ObservableObject {
     
     init(
         profileAPIService: ProfileAPIService? = nil,
-        locationService: LocationService = LocationService.shared
+        locationService: LocationService? = nil
     ) {
         // Créer le service dans un contexte MainActor
         if let profileAPIService = profileAPIService {
@@ -330,10 +331,11 @@ class ManageEstablishmentViewModel: ObservableObject {
         } else {
             self.profileAPIService = ProfileAPIService()
         }
-        self.locationService = locationService
+        // Accéder à LocationService.shared dans un contexte MainActor
+        self.locationService = locationService ?? LocationService.shared
         
         // Charger la localisation si disponible
-        if let location = locationService.currentLocation {
+        if let location = self.locationService.currentLocation {
             self.latitude = location.coordinate.latitude
             self.longitude = location.coordinate.longitude
         }

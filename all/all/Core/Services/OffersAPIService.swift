@@ -147,6 +147,135 @@ class OffersAPIService: ObservableObject {
         )
         return offers
     }
+    
+    // MARK: - Get Offers by Professional
+    func getOffersByProfessional(professionalId: Int) async throws -> [OfferResponse] {
+        let offers: [OfferResponse] = try await apiService.request(
+            endpoint: "/offers/professional/\(professionalId)",
+            method: .get,
+            parameters: nil,
+            headers: nil
+        )
+        return offers
+    }
+    
+    // MARK: - Create Offer
+    func createOffer(
+        title: String,
+        description: String,
+        price: Double?,
+        startDate: String?,
+        endDate: String?,
+        featured: Bool?
+    ) async throws -> OfferResponse {
+        var parameters: [String: Any] = [
+            "title": title,
+            "description": description
+        ]
+        
+        if let price = price {
+            parameters["price"] = price
+        }
+        
+        if let startDate = startDate {
+            parameters["startDate"] = startDate
+        }
+        
+        if let endDate = endDate {
+            parameters["endDate"] = endDate
+        }
+        
+        if let featured = featured {
+            parameters["featured"] = featured
+        }
+        
+        let offer: OfferResponse = try await apiService.request(
+            endpoint: "/offers",
+            method: .post,
+            parameters: parameters,
+            headers: nil
+        )
+        return offer
+    }
+    
+    // MARK: - Update Offer
+    func updateOffer(
+        id: Int,
+        title: String? = nil,
+        description: String? = nil,
+        price: Double? = nil,
+        startDate: String? = nil,
+        endDate: String? = nil,
+        featured: Bool? = nil
+    ) async throws -> OfferResponse {
+        var parameters: [String: Any] = [:]
+        
+        if let title = title {
+            parameters["title"] = title
+        }
+        
+        if let description = description {
+            parameters["description"] = description
+        }
+        
+        if let price = price {
+            parameters["price"] = price
+        }
+        
+        if let startDate = startDate {
+            parameters["startDate"] = startDate
+        }
+        
+        if let endDate = endDate {
+            parameters["endDate"] = endDate
+        }
+        
+        if let featured = featured {
+            parameters["featured"] = featured
+        }
+        
+        let offer: OfferResponse = try await apiService.request(
+            endpoint: "/offers/\(id)",
+            method: .put,
+            parameters: parameters.isEmpty ? nil : parameters,
+            headers: nil
+        )
+        return offer
+    }
+    
+    // MARK: - Archive Offer
+    func archiveOffer(id: Int) async throws -> OfferResponse {
+        let offer: OfferResponse = try await apiService.request(
+            endpoint: "/offers/\(id)/archive",
+            method: .post,
+            parameters: nil,
+            headers: nil
+        )
+        return offer
+    }
+    
+    // MARK: - Delete Offer
+    func deleteOffer(id: Int) async throws {
+        // Pour DELETE, l'API peut retourner 204 No Content (pas de body)
+        // On utilise un type vide qui peut gérer les réponses vides
+        struct EmptyResponse: Codable {
+            init() {}
+            init(from decoder: Decoder) throws {
+                // Accepter un conteneur vide ou un JSON vide
+                let container = try decoder.singleValueContainer()
+                if !container.decodeNil() {
+                    // Si ce n'est pas nil, on ignore la valeur
+                }
+            }
+        }
+        
+        let _: EmptyResponse = try await apiService.request(
+            endpoint: "/offers/\(id)",
+            method: .delete,
+            parameters: nil,
+            headers: nil
+        )
+    }
 }
 
 // MARK: - Mapping Extension

@@ -108,16 +108,13 @@ class PartnerDetailViewModel: ObservableObject {
         let address = "\(partner.address), \(partner.postalCode) \(partner.city)"
         let encodedAddress = address.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         
-        // Essayer d'abord Apple Maps
         if let appleMapsURL = URL(string: "http://maps.apple.com/?q=\(encodedAddress)") {
             UIApplication.shared.open(appleMapsURL) { success in
-                // Si Apple Maps échoue, essayer Google Maps
                 if !success {
                     if let googleMapsURL = URL(string: "comgooglemaps://?q=\(encodedAddress)") {
                         if UIApplication.shared.canOpenURL(googleMapsURL) {
                             UIApplication.shared.open(googleMapsURL)
                         } else {
-                            // Fallback vers Google Maps web
                             if let webURL = URL(string: "https://www.google.com/maps/search/?api=1&query=\(encodedAddress)") {
                                 UIApplication.shared.open(webURL)
                             }
@@ -126,6 +123,11 @@ class PartnerDetailViewModel: ObservableObject {
                 }
             }
         }
+    }
+    
+    func submitRating(_ rating: Int) {
+        // TODO: Intégrer avec l'API backend pour soumettre la note
+        print("Note soumise: \(rating) étoiles pour \(partner.name)")
     }
 }
 

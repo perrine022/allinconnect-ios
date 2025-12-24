@@ -10,8 +10,6 @@ import Combine
 
 // MARK: - API Configuration
 struct APIConfig {
-    // Pour le simulateur iOS, utiliser 'localhost' au lieu de '127.0.0.1'
-    // Pour un appareil physique, utiliser l'adresse IP de votre Mac (ex: http://192.168.1.XXX:8000)
     static let baseURL = "http://localhost:8000/api/v1"
     
     static var defaultHeaders: [String: String] {
@@ -20,7 +18,6 @@ struct APIConfig {
             "Accept": "application/json"
         ]
         
-        // Ajouter le token d'authentification si disponible
         if let token = AuthTokenManager.shared.getToken() {
             headers["Authorization"] = "Bearer \(token)"
         }
@@ -113,7 +110,6 @@ class APIService: APIServiceProtocol, ObservableObject {
     init(session: URLSession = .shared) {
         self.session = session
         
-        // Configuration du decoder avec format de date
         self.decoder = JSONDecoder()
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"
@@ -127,12 +123,10 @@ class APIService: APIServiceProtocol, ObservableObject {
         parameters: [String: Any]? = nil,
         headers: [String: String]? = nil
     ) async throws -> T {
-        // Construire l'URL
         guard var urlComponents = URLComponents(string: "\(APIConfig.baseURL)\(endpoint)") else {
             throw APIError.invalidURL
         }
         
-        // Ajouter les paramètres de requête pour GET
         if method == .get, let parameters = parameters {
             urlComponents.queryItems = parameters.map { key, value in
                 URLQueryItem(name: key, value: "\(value)")
@@ -143,24 +137,19 @@ class APIService: APIServiceProtocol, ObservableObject {
             throw APIError.invalidURL
         }
         
-        // Créer la requête
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
         
-        // Ajouter les headers par défaut
         APIConfig.defaultHeaders.forEach { key, value in
             request.setValue(value, forHTTPHeaderField: key)
         }
         
-        // Ajouter les headers personnalisés
         headers?.forEach { key, value in
             request.setValue(value, forHTTPHeaderField: key)
         }
         
-        // Ajouter le body pour POST/PUT/PATCH
         if method != .get, let parameters = parameters {
             do {
-                // Filtrer les valeurs NSNull (représentation JSON de nil)
                 let cleanedParameters = parameters.compactMapValues { value -> Any? in
                     if value is NSNull {
                         return nil
@@ -174,31 +163,32 @@ class APIService: APIServiceProtocol, ObservableObject {
             }
         }
         
-        // Effectuer la requête
         do {
             let (data, response) = try await session.data(for: request)
             
-            // Vérifier la réponse HTTP
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw APIError.invalidResponse
             }
             
-            // Gérer les erreurs HTTP
             switch httpResponse.statusCode {
             case 200...299:
-                // Succès
                 break
             case 401:
                 throw APIError.unauthorized
             case 404:
                 throw APIError.notFound
             default:
-                // Essayer de décoder le message d'erreur
                 let errorMessage = try? JSONDecoder().decode([String: String].self, from: data)["message"]
                 throw APIError.httpError(statusCode: httpResponse.statusCode, message: errorMessage)
             }
             
-            // Décoder la réponse
+            if httpResponse.statusCode == 204 && data.isEmpty {
+                if let emptyJSON = "{}".data(using: .utf8),
+                   let decoded = try? decoder.decode(T.self, from: emptyJSON) {
+                    return decoded
+                }
+            }
+            
             do {
                 let decoded = try decoder.decode(T.self, from: data)
                 return decoded

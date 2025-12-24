@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import CoreLocation
 
 @MainActor
 class PartnersListViewModel: ObservableObject {
@@ -41,7 +42,7 @@ class PartnersListViewModel: ObservableObject {
         partnersAPIService: PartnersAPIService? = nil,
         favoritesAPIService: FavoritesAPIService? = nil,
         dataService: MockDataService = MockDataService.shared,
-        locationService: LocationService = LocationService.shared
+        locationService: LocationService? = nil
     ) {
         // Créer les services dans un contexte MainActor
         if let partnersAPIService = partnersAPIService {
@@ -57,7 +58,8 @@ class PartnersListViewModel: ObservableObject {
         }
         
         self.dataService = dataService
-        self.locationService = locationService
+        // Accéder à LocationService.shared dans un contexte MainActor
+        self.locationService = locationService ?? LocationService.shared
         loadPartners()
     }
     
@@ -65,7 +67,7 @@ class PartnersListViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         
-        Task {
+        Task { @MainActor in
             do {
                 // Déterminer les paramètres de recherche
                 var city: String? = nil

@@ -69,6 +69,8 @@ class OfferDetailViewModel: ObservableObject {
                         lastName: professional.lastName,
                         address: nil,
                         city: professional.city,
+                        latitude: nil,
+                        longitude: nil,
                         birthDate: nil,
                         userType: "PROFESSIONAL",
                         subscriptionType: nil,

@@ -267,6 +267,7 @@ struct OfferDetailView: View {
                                 Spacer()
                                     .frame(height: 100)
                             }
+                            }
                         }
                     }
                 }

@@ -12,6 +12,7 @@ struct PartnerDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appState: AppState
     @State private var selectedOffer: Offer?
+    @State private var showRatingPopup = false
     
     init(partner: Partner) {
         _viewModel = StateObject(wrappedValue: PartnerDetailViewModel(partner: partner))
@@ -276,11 +277,15 @@ struct PartnerDetailView: View {
                                         Spacer()
                                         
                                         Button(action: {
-                                            // Action laisser un avis
+                                            showRatingPopup = true
                                         }) {
                                             Text("Laisser un avis")
-                                                .font(.system(size: 14, weight: .medium))
-                                                .foregroundColor(.blue)
+                                                .font(.system(size: 14, weight: .semibold))
+                                                .foregroundColor(.black)
+                                                .padding(.horizontal, 16)
+                                                .padding(.vertical, 8)
+                                                .background(Color.appGold)
+                                                .cornerRadius(8)
                                         }
                                     }
                                     .padding(.horizontal, 20)
@@ -335,6 +340,17 @@ struct PartnerDetailView: View {
         )
         .navigationDestination(item: $selectedOffer) { offer in
             OfferDetailView(offer: offer)
+        }
+        .overlay {
+            if showRatingPopup {
+                RatingPopupView(
+                    isPresented: $showRatingPopup,
+                    partnerName: viewModel.partner.name,
+                    onRatingSubmit: { rating in
+                        viewModel.submitRating(rating)
+                    }
+                )
+            }
         }
     }
 }
