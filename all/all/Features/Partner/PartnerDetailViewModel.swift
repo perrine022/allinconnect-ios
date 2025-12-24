@@ -19,12 +19,21 @@ class PartnerDetailViewModel: ObservableObject {
     
     private let favoritesAPIService: FavoritesAPIService
     private let partnersAPIService: PartnersAPIService
+    private let offersAPIService: OffersAPIService
+    private let ratingsAPIService: RatingsAPIService
+    private let profileAPIService: ProfileAPIService
     private let dataService: MockDataService
+    
+    @Published var hasUserRated: Bool = false
+    @Published var isLoadingRatings: Bool = false
     
     init(
         partner: Partner,
         favoritesAPIService: FavoritesAPIService? = nil,
         partnersAPIService: PartnersAPIService? = nil,
+        offersAPIService: OffersAPIService? = nil,
+        ratingsAPIService: RatingsAPIService? = nil,
+        profileAPIService: ProfileAPIService? = nil,
         dataService: MockDataService = MockDataService.shared
     ) {
         self.partner = partner
@@ -39,6 +48,24 @@ class PartnerDetailViewModel: ObservableObject {
             self.partnersAPIService = partnersAPIService
         } else {
             self.partnersAPIService = PartnersAPIService()
+        }
+        
+        if let offersAPIService = offersAPIService {
+            self.offersAPIService = offersAPIService
+        } else {
+            self.offersAPIService = OffersAPIService()
+        }
+        
+        if let ratingsAPIService = ratingsAPIService {
+            self.ratingsAPIService = ratingsAPIService
+        } else {
+            self.ratingsAPIService = RatingsAPIService()
+        }
+        
+        if let profileAPIService = profileAPIService {
+            self.profileAPIService = profileAPIService
+        } else {
+            self.profileAPIService = ProfileAPIService()
         }
         
         self.dataService = dataService
@@ -56,6 +83,8 @@ class PartnerDetailViewModel: ObservableObject {
             currentOffers = dataService.getOffersForPartner(partnerId: partner.id)
             let allReviews = dataService.getReviewsForPartner(partnerId: partner.id)
             reviews = Array(allReviews.prefix(2))
+            // Si pas d'apiId, on ne peut pas vérifier si l'utilisateur a déjà noté
+            hasUserRated = false
         }
     }
     
@@ -95,16 +124,99 @@ class PartnerDetailViewModel: ObservableObject {
             // Synchroniser l'état des favoris
             await syncFavoriteStatus()
             
-            // Charger les offres et avis (pour l'instant depuis les données mockées, à remplacer par l'API plus tard)
-            currentOffers = dataService.getOffersForPartner(partnerId: partner.id)
-            let allReviews = dataService.getReviewsForPartner(partnerId: partner.id)
-            reviews = Array(allReviews.prefix(2))
+            // Charger les offres actives depuis l'API
+            await loadActiveOffers(professionalId: apiId)
+            
+            // Charger les avis depuis l'API
+            await loadRatings(professionalId: apiId)
         } catch {
             print("Erreur lors du chargement des détails du partenaire: \(error)")
             // En cas d'erreur, utiliser les données mockées
             currentOffers = dataService.getOffersForPartner(partnerId: partner.id)
             let allReviews = dataService.getReviewsForPartner(partnerId: partner.id)
             reviews = Array(allReviews.prefix(2))
+        }
+    }
+    
+    private func loadRatings(professionalId: Int) async {
+        isLoadingRatings = true
+        
+        do {
+            // Charger les avis depuis l'API
+            let ratingsResponse = try await ratingsAPIService.getRatingsByUser(userId: professionalId)
+            
+            // Convertir les réponses en modèles Review
+            reviews = ratingsResponse.map { $0.toReview() }
+            
+            // Vérifier si l'utilisateur connecté a déjà laissé un avis
+            await checkIfUserHasRated(ratings: ratingsResponse)
+            
+            // Mettre à jour la note moyenne et le nombre d'avis du partenaire
+            let averageRating = try await ratingsAPIService.getAverageRating(userId: professionalId)
+            let reviewCount = reviews.count
+            
+            // Mettre à jour le partenaire avec la nouvelle note et le nombre d'avis
+            partner = Partner(
+                id: partner.id,
+                name: partner.name,
+                category: partner.category,
+                address: partner.address,
+                city: partner.city,
+                postalCode: partner.postalCode,
+                phone: partner.phone,
+                email: partner.email,
+                website: partner.website,
+                instagram: partner.instagram,
+                description: partner.description,
+                rating: averageRating,
+                reviewCount: reviewCount,
+                discount: partner.discount,
+                imageName: partner.imageName,
+                headerImageName: partner.headerImageName,
+                isFavorite: partner.isFavorite,
+                apiId: partner.apiId
+            )
+            
+            isLoadingRatings = false
+        } catch {
+            print("Erreur lors du chargement des avis: \(error)")
+            // En cas d'erreur, utiliser les données mockées
+            let allReviews = dataService.getReviewsForPartner(partnerId: partner.id)
+            reviews = Array(allReviews.prefix(2))
+            isLoadingRatings = false
+        }
+    }
+    
+    private func checkIfUserHasRated(ratings: [RatingResponse]) async {
+        // Récupérer les informations de l'utilisateur connecté
+        do {
+            let userLight = try await profileAPIService.getUserLight()
+            let currentUserFirstName = userLight.firstName
+            let currentUserLastName = userLight.lastName
+            
+            // Vérifier si l'un des avis a été laissé par l'utilisateur connecté
+            hasUserRated = ratings.contains { rating in
+                guard let rater = rating.rater else { return false }
+                return rater.firstName == currentUserFirstName && rater.lastName == currentUserLastName
+            }
+        } catch {
+            print("Erreur lors de la vérification si l'utilisateur a déjà noté: \(error)")
+            // En cas d'erreur, on suppose qu'il n'a pas encore noté
+            hasUserRated = false
+        }
+    }
+    
+    private func loadActiveOffers(professionalId: Int) async {
+        do {
+            // Charger les offres actives depuis l'API
+            let offersResponse = try await offersAPIService.getActiveOffersByProfessional(professionalId: professionalId)
+            
+            // Convertir les réponses en modèles Offer
+            currentOffers = offersResponse.map { $0.toOffer() }
+        } catch {
+            print("Erreur lors du chargement des offres actives: \(error)")
+            // En cas d'erreur, utiliser les données mockées en fallback
+            currentOffers = dataService.getOffersForPartner(partnerId: partner.id)
         }
     }
     
@@ -316,9 +428,27 @@ class PartnerDetailViewModel: ObservableObject {
         }
     }
     
-    func submitRating(_ rating: Int) {
-        // TODO: Intégrer avec l'API backend pour soumettre la note
-        print("Note soumise: \(rating) étoiles pour \(partner.name)")
+    func submitRating(_ rating: Int, comment: String? = nil) {
+        guard let apiId = partner.apiId else {
+            print("Impossible de soumettre l'avis : pas d'ID API pour le partenaire")
+            return
+        }
+        
+        Task {
+            do {
+                // Soumettre l'avis via l'API
+                let _ = try await ratingsAPIService.createRating(
+                    ratedId: apiId,
+                    score: rating,
+                    comment: comment
+                )
+                
+                // Recharger les avis pour mettre à jour la liste
+                await loadRatings(professionalId: apiId)
+            } catch {
+                print("Erreur lors de la soumission de l'avis: \(error)")
+            }
+        }
     }
 }
 

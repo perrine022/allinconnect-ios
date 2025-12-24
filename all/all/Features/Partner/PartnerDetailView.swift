@@ -196,7 +196,7 @@ struct PartnerDetailView: View {
                                         }
                                     }
                                     
-                                    if let phone = viewModel.partner.phone {
+                                    if viewModel.partner.phone != nil {
                                         Button(action: {
                                             viewModel.callPartner()
                                         }) {
@@ -211,7 +211,7 @@ struct PartnerDetailView: View {
                                                         .font(.system(size: 18))
                                                 }
                                                 
-                                                Text(phone)
+                                                Text(viewModel.partner.phone ?? "")
                                                     .font(.system(size: 15, weight: .regular))
                                                     .foregroundColor(.white)
                                                 
@@ -292,7 +292,7 @@ struct PartnerDetailView: View {
                                     Spacer()
                                     
                                     // Appel (bouton large)
-                                    if let phone = viewModel.partner.phone {
+                                    if viewModel.partner.phone != nil {
                                         Button(action: {
                                             viewModel.callPartner()
                                         }) {
@@ -343,16 +343,19 @@ struct PartnerDetailView: View {
                                         
                                         Spacer()
                                         
-                                        Button(action: {
-                                            showRatingPopup = true
-                                        }) {
-                                            Text("Laisser un avis")
-                                                .font(.system(size: 14, weight: .semibold))
-                                                .foregroundColor(.black)
-                                                .padding(.horizontal, 16)
-                                                .padding(.vertical, 8)
-                                                .background(Color.appGold)
-                                                .cornerRadius(8)
+                                        // Afficher le bouton seulement si l'utilisateur n'a pas déjà laissé un avis
+                                        if !viewModel.hasUserRated {
+                                            Button(action: {
+                                                showRatingPopup = true
+                                            }) {
+                                                Text("Laisser un avis")
+                                                    .font(.system(size: 14, weight: .semibold))
+                                                    .foregroundColor(.black)
+                                                    .padding(.horizontal, 16)
+                                                    .padding(.vertical, 8)
+                                                    .background(Color.appGold)
+                                                    .cornerRadius(8)
+                                            }
                                         }
                                     }
                                     .padding(.horizontal, 20)
@@ -414,7 +417,7 @@ struct PartnerDetailView: View {
                     isPresented: $showRatingPopup,
                     partnerName: viewModel.partner.name,
                     onRatingSubmit: { rating in
-                        viewModel.submitRating(rating)
+                        viewModel.submitRating(rating, comment: nil)
                     }
                 )
             }

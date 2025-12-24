@@ -100,7 +100,37 @@ class OffersAPIService: ObservableObject {
         }
     }
     
-    // MARK: - Get All Offers
+    // MARK: - Get Active Offers (offres et événements actifs avec filtre temporel)
+    func getActiveOffers(
+        city: String? = nil,
+        category: OfferCategory? = nil,
+        type: String? = nil // "OFFRE" ou "EVENEMENT" pour filtrer
+    ) async throws -> [OfferResponse] {
+        var parameters: [String: Any] = [:]
+        
+        if let city = city {
+            parameters["city"] = city
+        }
+        
+        if let category = category {
+            parameters["category"] = category.rawValue
+        }
+        
+        if let type = type {
+            parameters["type"] = type
+        }
+        
+        // L'API retourne directement un tableau d'offres actives (statut ACTIVE et dates valides)
+        let offers: [OfferResponse] = try await apiService.request(
+            endpoint: "/offers/active",
+            method: .get,
+            parameters: parameters.isEmpty ? nil : parameters,
+            headers: nil
+        )
+        return offers
+    }
+    
+    // MARK: - Get All Offers (toutes les offres actives sans filtre temporel)
     func getAllOffers(
         city: String? = nil,
         category: OfferCategory? = nil,
@@ -161,6 +191,17 @@ class OffersAPIService: ObservableObject {
     func getOffersByProfessional(professionalId: Int) async throws -> [OfferResponse] {
         let offers: [OfferResponse] = try await apiService.request(
             endpoint: "/offers/professional/\(professionalId)",
+            method: .get,
+            parameters: nil,
+            headers: nil
+        )
+        return offers
+    }
+    
+    // MARK: - Get Active Offers by Professional (offres actives avec filtre temporel)
+    func getActiveOffersByProfessional(professionalId: Int) async throws -> [OfferResponse] {
+        let offers: [OfferResponse] = try await apiService.request(
+            endpoint: "/offers/professional/\(professionalId)/active",
             method: .get,
             parameters: nil,
             headers: nil

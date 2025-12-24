@@ -107,7 +107,7 @@ struct NotificationPreferencesView: View {
                                         if index < viewModel.categories.count - 1 {
                                             Divider()
                                                 .background(Color.white.opacity(0.1))
-                                                .padding(.leading, 60)
+                                                .padding(.leading, 16)
                                         }
                                     }
                                 }
@@ -192,9 +192,6 @@ struct CategoryToggleRow: View {
     
     var body: some View {
         HStack {
-            Text(emoji)
-                .font(.system(size: 20))
-            
             Text(title)
                 .font(.system(size: 15, weight: .regular))
                 .foregroundColor(.white)

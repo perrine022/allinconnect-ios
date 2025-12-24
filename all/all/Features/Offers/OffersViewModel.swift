@@ -73,8 +73,8 @@ class OffersViewModel: ObservableObject {
                 // Convertir le type sélectionné en type API
                 let apiType: String? = selectedOfferType == .event ? "EVENEMENT" : (selectedOfferType == .offer ? "OFFRE" : nil)
                 
-                // Appeler l'API
-                let offersResponse = try await offersAPIService.getAllOffers(
+                // Appeler l'API pour récupérer uniquement les offres actives (avec filtre temporel)
+                let offersResponse = try await offersAPIService.getActiveOffers(
                     city: city,
                     category: category,
                     type: apiType

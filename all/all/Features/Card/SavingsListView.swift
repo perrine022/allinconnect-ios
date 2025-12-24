@@ -135,12 +135,28 @@ struct SavingsListView: View {
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                NavigationButton(icon: "arrow.left", action: { dismiss() })
+                Button(action: {
+                    dismiss()
+                }) {
+                    Image(systemName: "arrow.left")
+                        .foregroundColor(.white)
+                        .font(.system(size: 16, weight: .semibold))
+                }
             }
         }
+        .gesture(
+            DragGesture(minimumDistance: 50, coordinateSpace: .local)
+                .onEnded { value in
+                    // Swipe vers la droite (translation.width > 0) pour revenir en arrière
+                    if value.translation.width > 50 && abs(value.translation.width) > abs(value.translation.height) {
+                        dismiss()
+                    }
+                }
+        )
         .sheet(isPresented: $showAddSavingsPopup) {
             AddSavingsPopupView(
                 isPresented: $showAddSavingsPopup,
