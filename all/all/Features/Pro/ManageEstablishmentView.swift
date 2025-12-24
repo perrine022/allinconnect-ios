@@ -10,6 +10,7 @@ import Combine
 
 struct ManageEstablishmentView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = ManageEstablishmentViewModel()
     @FocusState private var focusedField: Field?
     
@@ -18,172 +19,207 @@ struct ManageEstablishmentView: View {
     }
     
     var body: some View {
-        ZStack {
-            // Background avec gradient
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color.appDarkRed2,
-                    Color.appDarkRed1,
-                    Color.black
-                ]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-            
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Titre
-                    HStack {
-                        Text("Gérer mon établissement")
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(.white)
-                        Spacer()
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
+        GeometryReader { geometry in
+            ZStack(alignment: .bottom) {
+                ZStack {
+                    // Background avec gradient
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.appDarkRed2,
+                            Color.appDarkRed1,
+                            Color.black
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .ignoresSafeArea()
                     
-                    // Photo de l'établissement
-                    VStack(spacing: 12) {
-                        Text("Photo de l'établissement")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white.opacity(0.9))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        
-                        Button(action: {
-                            // Action pour changer la photo
-                        }) {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color.appDarkRed1.opacity(0.6))
-                                    .frame(height: 200)
+                    ScrollView {
+                        VStack(spacing: 16) {
+                            // Titre
+                            HStack {
+                                Text("Gérer mon établissement")
+                                    .font(.system(size: 28, weight: .bold))
+                                    .foregroundColor(.white)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.top, 20)
+                            
+                            // Photo de l'établissement
+                            VStack(spacing: 8) {
+                                Text("Photo de l'établissement")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(.white.opacity(0.9))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                 
-                                VStack(spacing: 8) {
-                                    Image(systemName: "camera.fill")
-                                        .font(.system(size: 40))
-                                        .foregroundColor(.gray.opacity(0.6))
-                                    
-                                    Text("Ajouter une photo")
-                                        .font(.system(size: 14, weight: .medium))
-                                        .foregroundColor(.gray.opacity(0.8))
+                                Button(action: {
+                                    // Action pour changer la photo
+                                }) {
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(Color.appDarkRed1.opacity(0.6))
+                                            .frame(height: 150)
+                                        
+                                        VStack(spacing: 8) {
+                                            Image(systemName: "camera.fill")
+                                                .font(.system(size: 32))
+                                                .foregroundColor(.gray.opacity(0.6))
+                                            
+                                            Text("Ajouter une photo")
+                                                .font(.system(size: 13, weight: .medium))
+                                                .foregroundColor(.gray.opacity(0.8))
+                                        }
+                                    }
                                 }
                             }
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    
-                    // Formulaire
-                    VStack(spacing: 16) {
-                        // Nom de l'établissement
-                        InputField(
-                            title: "Nom de l'établissement",
-                            text: $viewModel.name,
-                            placeholder: "Ex: Fit & Forme Studio"
-                        )
-                        .focused($focusedField, equals: .name)
-                        
-                        // Description
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Description")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.white.opacity(0.9))
+                            .padding(.horizontal, 20)
                             
-                            TextEditor(text: $viewModel.description)
+                            // Formulaire
+                            VStack(spacing: 12) {
+                                // Nom de l'établissement
+                                InputField(
+                                    title: "Nom de l'établissement",
+                                    text: $viewModel.name,
+                                    placeholder: "Ex: Fit & Forme Studio",
+                                    isFocused: focusedField == .name
+                                )
+                                .focused($focusedField, equals: .name)
+                                
+                                // Description
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text("Description")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(.white.opacity(0.9))
+                                    
+                                    TextEditor(text: $viewModel.description)
+                                        .frame(height: 80)
+                                        .padding(10)
+                                        .background(focusedField == .description ? Color.appDarkRed1.opacity(0.8) : Color.appDarkRed1.opacity(0.6))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .stroke(focusedField == .description ? Color.appGold : Color.clear, lineWidth: 2)
+                                        )
+                                        .cornerRadius(10)
+                                        .foregroundColor(.white)
+                                        .accentColor(.appGold)
+                                        .focused($focusedField, equals: .description)
+                                }
+                                .padding(.horizontal, 20)
+                                
+                                // Adresse
+                                InputField(
+                                    title: "Adresse",
+                                    text: $viewModel.address,
+                                    placeholder: "Ex: 28 Avenue Victor Hugo",
+                                    isFocused: focusedField == .address
+                                )
+                                .focused($focusedField, equals: .address)
+                                
+                                // Ville et Code postal
+                                HStack(spacing: 12) {
+                                    InputField(
+                                        title: "Ville",
+                                        text: $viewModel.city,
+                                        placeholder: "Ex: Lyon",
+                                        isFocused: focusedField == .city
+                                    )
+                                    .focused($focusedField, equals: .city)
+                                    
+                                    InputField(
+                                        title: "Code postal",
+                                        text: $viewModel.postalCode,
+                                        placeholder: "69001",
+                                        isFocused: focusedField == .postalCode
+                                    )
+                                    .focused($focusedField, equals: .postalCode)
+                                    .frame(width: 120)
+                                }
+                                
+                                // Téléphone
+                                InputField(
+                                    title: "Téléphone",
+                                    text: $viewModel.phone,
+                                    placeholder: "Ex: 04 78 12 34 56",
+                                    isFocused: focusedField == .phone
+                                )
+                                .focused($focusedField, equals: .phone)
+                                .keyboardType(.phonePad)
+                                
+                                // Email
+                                InputField(
+                                    title: "Email",
+                                    text: $viewModel.email,
+                                    placeholder: "contact@etablissement.fr",
+                                    isFocused: focusedField == .email
+                                )
+                                .focused($focusedField, equals: .email)
+                                .keyboardType(.emailAddress)
+                                .autocapitalization(.none)
+                                
+                                // Site web
+                                InputField(
+                                    title: "Site web (optionnel)",
+                                    text: $viewModel.website,
+                                    placeholder: "https://www.exemple.fr",
+                                    isFocused: focusedField == .website
+                                )
+                                .focused($focusedField, equals: .website)
+                                .keyboardType(.URL)
+                                .autocapitalization(.none)
+                            }
+                            
+                            // Bouton Enregistrer
+                            Button(action: {
+                                viewModel.saveEstablishment()
+                                dismiss()
+                            }) {
+                                Text("Enregistrer les modifications")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.black)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 14)
+                                    .background(viewModel.isValid ? Color.appGold : Color.gray.opacity(0.5))
+                                    .cornerRadius(12)
+                            }
+                            .disabled(!viewModel.isValid)
+                            .padding(.horizontal, 20)
+                            .padding(.top, 8)
+                            
+                            Spacer()
                                 .frame(height: 100)
-                                .padding(8)
-                                .background(Color.appDarkRed1.opacity(0.6))
-                                .cornerRadius(10)
-                                .foregroundColor(.white)
-                                .accentColor(.appGold)
-                                .focused($focusedField, equals: .description)
                         }
-                        .padding(.horizontal, 20)
-                        
-                        // Adresse
-                        InputField(
-                            title: "Adresse",
-                            text: $viewModel.address,
-                            placeholder: "Ex: 28 Avenue Victor Hugo"
-                        )
-                        .focused($focusedField, equals: .address)
-                        
-                        // Ville et Code postal
-                        HStack(spacing: 12) {
-                            InputField(
-                                title: "Ville",
-                                text: $viewModel.city,
-                                placeholder: "Ex: Lyon"
-                            )
-                            .focused($focusedField, equals: .city)
-                            
-                            InputField(
-                                title: "Code postal",
-                                text: $viewModel.postalCode,
-                                placeholder: "69001"
-                            )
-                            .focused($focusedField, equals: .postalCode)
-                            .frame(width: 120)
-                        }
-                        
-                        // Téléphone
-                        InputField(
-                            title: "Téléphone",
-                            text: $viewModel.phone,
-                            placeholder: "Ex: 04 78 12 34 56"
-                        )
-                        .focused($focusedField, equals: .phone)
-                        .keyboardType(.phonePad)
-                        
-                        // Email
-                        InputField(
-                            title: "Email",
-                            text: $viewModel.email,
-                            placeholder: "contact@etablissement.fr"
-                        )
-                        .focused($focusedField, equals: .email)
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                        
-                        // Site web
-                        InputField(
-                            title: "Site web (optionnel)",
-                            text: $viewModel.website,
-                            placeholder: "https://www.exemple.fr"
-                        )
-                        .focused($focusedField, equals: .website)
-                        .keyboardType(.URL)
-                        .autocapitalization(.none)
                     }
-                    
-                    // Bouton Enregistrer
-                    Button(action: {
-                        viewModel.saveEstablishment()
-                        dismiss()
-                    }) {
-                        Text("Enregistrer les modifications")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.black)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(viewModel.isValid ? Color.appGold : Color.gray.opacity(0.5))
-                            .cornerRadius(12)
-                    }
-                    .disabled(!viewModel.isValid)
-                    .padding(.horizontal, 20)
-                    .padding(.top, 10)
-                    
-                    Spacer()
-                        .frame(height: 100)
                 }
+                
+                // Footer Bar - toujours visible
+                VStack {
+                    Spacer()
+                    FooterBar(selectedTab: $appState.selectedTab) { tab in
+                        appState.navigateToTab(tab, dismiss: {
+                            dismiss()
+                        })
+                    }
+                    .frame(width: geometry.size.width)
+                }
+                .ignoresSafeArea(edges: .bottom)
             }
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                NavigationButton(icon: "arrow.left", action: { dismiss() })
+                Button(action: { dismiss() }) {
+                    Image(systemName: "arrow.left")
+                        .foregroundColor(.white)
+                        .font(.system(size: 16, weight: .semibold))
+                        .frame(width: 40, height: 40)
+                        .background(Color.black.opacity(0.3))
+                        .clipShape(Circle())
+                }
             }
         }
         .onTapGesture {
@@ -197,18 +233,23 @@ struct InputField: View {
     @Binding var text: String
     let placeholder: String
     var keyboardType: UIKeyboardType = .default
+    var isFocused: Bool = false
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: 13, weight: .medium))
                 .foregroundColor(.white.opacity(0.9))
             
             TextField("", text: $text, prompt: Text(placeholder).foregroundColor(.gray.opacity(0.6)))
-                .font(.system(size: 16))
+                .font(.system(size: 15))
                 .foregroundColor(.white)
                 .padding(12)
-                .background(Color.appDarkRed1.opacity(0.6))
+                .background(isFocused ? Color.appDarkRed1.opacity(0.8) : Color.appDarkRed1.opacity(0.6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(isFocused ? Color.appGold : Color.clear, lineWidth: 2)
+                )
                 .cornerRadius(10)
                 .keyboardType(keyboardType)
                 .autocorrectionDisabled()
@@ -248,6 +289,7 @@ class ManageEstablishmentViewModel: ObservableObject {
 #Preview {
     NavigationStack {
         ManageEstablishmentView()
+            .environmentObject(AppState())
     }
 }
 

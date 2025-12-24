@@ -74,5 +74,27 @@ class ProfileViewModel: ObservableObject {
     func switchToProSpace() {
         currentSpace = .pro
     }
+    
+    func reset() {
+        // Réinitialiser l'état lors de la déconnexion
+        favoritePartners = []
+        myOffers = []
+        currentSpace = .client
+        
+        // Réinitialiser l'utilisateur avec des valeurs par défaut
+        let userType = UserDefaults.standard.string(forKey: "user_type") == "PRO" ? UserType.pro : UserType.client
+        
+        self.user = User(
+            firstName: "",
+            lastName: "",
+            username: "",
+            bio: "",
+            profileImageName: "person.circle.fill",
+            publications: 0,
+            subscribers: 0,
+            subscriptions: 0,
+            userType: userType
+        )
+    }
 }
 

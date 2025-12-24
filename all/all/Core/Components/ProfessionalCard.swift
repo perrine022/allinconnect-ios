@@ -35,14 +35,39 @@ struct ProfessionalCard: View {
                         .foregroundColor(.appCoral)
                     
                     // Localisation
-                    HStack(spacing: 4) {
-                        Image(systemName: "mappin.circle.fill")
-                            .foregroundColor(.red.opacity(0.8))
-                            .font(.system(size: 11))
-                        Text("\(professional.address), \(professional.city)")
-                            .font(.system(size: 12))
-                            .foregroundColor(.gray)
+                    Button(action: {
+                        let address = "\(professional.address), \(professional.postalCode) \(professional.city)"
+                        let encodedAddress = address.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+                        
+                        // Essayer d'abord Apple Maps
+                        if let appleMapsURL = URL(string: "http://maps.apple.com/?q=\(encodedAddress)") {
+                            UIApplication.shared.open(appleMapsURL) { success in
+                                // Si Apple Maps échoue, essayer Google Maps
+                                if !success {
+                                    if let googleMapsURL = URL(string: "comgooglemaps://?q=\(encodedAddress)") {
+                                        if UIApplication.shared.canOpenURL(googleMapsURL) {
+                                            UIApplication.shared.open(googleMapsURL)
+                                        } else {
+                                            // Fallback vers Google Maps web
+                                            if let webURL = URL(string: "https://www.google.com/maps/search/?api=1&query=\(encodedAddress)") {
+                                                UIApplication.shared.open(webURL)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "mappin.circle.fill")
+                                .foregroundColor(.red.opacity(0.8))
+                                .font(.system(size: 11))
+                            Text("\(professional.address), \(professional.city)")
+                                .font(.system(size: 12))
+                                .foregroundColor(.gray)
+                        }
                     }
+                    .buttonStyle(PlainButtonStyle())
                 }
                 
                 Spacer()

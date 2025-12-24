@@ -8,100 +8,103 @@
 import SwiftUI
 
 struct ProOffersView: View {
+    @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = ProOffersViewModel()
     @State private var showCreateOffer = false
     
     var body: some View {
-        ZStack {
-            // Background avec gradient
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color.appDarkRed2,
-                    Color.appDarkRed1,
-                    Color.black
-                ]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-            
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Titre
-                    HStack {
-                        Text("Mes offres")
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(.white)
-                        Spacer()
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
+        GeometryReader { geometry in
+            ZStack(alignment: .bottom) {
+                ZStack {
+                    // Background avec gradient
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.appDarkRed2,
+                            Color.appDarkRed1,
+                            Color.black
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .ignoresSafeArea()
                     
-                    // Bloc "Mes offres" (comme Abonnement PRO)
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack {
-                            Image(systemName: "tag.fill")
-                                .foregroundColor(.appGold)
-                                .font(.system(size: 18))
-                            
-                            Text("Mes offres")
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundColor(.white)
-                            
-                            Spacer()
-                        }
-                        
-                        // Liste des offres
-                        if viewModel.myOffers.isEmpty {
-                            VStack(spacing: 12) {
-                                Text("Aucune offre pour le moment")
-                                    .font(.system(size: 14, weight: .regular))
-                                    .foregroundColor(.white.opacity(0.7))
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                        } else {
-                            VStack(spacing: 12) {
-                                ForEach(viewModel.myOffers) { offer in
-                                    ProOfferCard(offer: offer) {
-                                        viewModel.deleteOffer(offer)
-                                    }
+                    ScrollView {
+                        VStack(spacing: 24) {
+                            // Titre avec bouton +
+                            HStack {
+                                Text("Mes offres")
+                                    .font(.system(size: 28, weight: .bold))
+                                    .foregroundColor(.white)
+                                
+                                Spacer()
+                                
+                                Button(action: {
+                                    showCreateOffer = true
+                                }) {
+                                    Image(systemName: "plus")
+                                        .font(.system(size: 20, weight: .bold))
+                                        .foregroundColor(.black)
+                                        .frame(width: 44, height: 44)
+                                        .background(Color.appGold)
+                                        .clipShape(Circle())
                                 }
                             }
-                        }
-                        
-                        // Bouton "Gérer mes offres"
-                        Button(action: {
-                            showCreateOffer = true
-                        }) {
-                            HStack {
-                                Spacer()
-                                Text("Gérer mes offres")
-                                    .font(.system(size: 15, weight: .semibold))
-                                    .foregroundColor(.black)
-                                Spacer()
+                            .padding(.horizontal, 20)
+                            .padding(.top, 20)
+                            
+                            // Liste des offres
+                            if viewModel.myOffers.isEmpty {
+                                VStack(spacing: 16) {
+                                    VStack(spacing: 12) {
+                                        Image(systemName: "tag.fill")
+                                            .font(.system(size: 50))
+                                            .foregroundColor(.white.opacity(0.5))
+                                        
+                                        Text("Aucune offre pour le moment")
+                                            .font(.system(size: 16, weight: .medium))
+                                            .foregroundColor(.white.opacity(0.7))
+                                        
+                                        Text("Créez votre première offre en cliquant sur le bouton +")
+                                            .font(.system(size: 14, weight: .regular))
+                                            .foregroundColor(.white.opacity(0.6))
+                                            .multilineTextAlignment(.center)
+                                    }
+                                    .padding(.vertical, 40)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.horizontal, 20)
+                            } else {
+                                VStack(spacing: 12) {
+                                    ForEach(viewModel.myOffers) { offer in
+                                        ProOfferCard(offer: offer) {
+                                            viewModel.deleteOffer(offer)
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal, 20)
                             }
-                            .padding(.vertical, 12)
-                            .background(Color.appGold)
-                            .cornerRadius(10)
+                            
+                            Spacer()
+                                .frame(height: 100)
                         }
                     }
-                    .padding(16)
-                    .background(Color.appDarkRed1.opacity(0.8))
-                    .cornerRadius(12)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                    )
-                    .padding(.horizontal, 20)
-                    
-                    Spacer()
-                        .frame(height: 100)
                 }
+                
+                // Footer Bar - toujours visible
+                VStack {
+                    Spacer()
+                    FooterBar(selectedTab: $appState.selectedTab) { tab in
+                        appState.navigateToTab(tab, dismiss: {})
+                    }
+                    .frame(width: geometry.size.width)
+                }
+                .ignoresSafeArea(edges: .bottom)
             }
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .sheet(isPresented: $showCreateOffer) {
             NavigationStack {
                 CreateOfferView { newOffer in
@@ -199,6 +202,7 @@ struct ProOfferCard: View {
 #Preview {
     NavigationStack {
         ProOffersView()
+            .environmentObject(AppState())
     }
 }
 

@@ -153,7 +153,7 @@ struct PartnerDetailView: View {
                                         text: "\(viewModel.partner.address), \(viewModel.partner.postalCode) \(viewModel.partner.city)",
                                         iconColor: .appGold,
                                         action: {
-                                            // Ouvrir la carte
+                                            viewModel.openMaps()
                                         }
                                     )
                                     
@@ -167,57 +167,15 @@ struct PartnerDetailView: View {
                                             }
                                         )
                                     }
-                                    
-                                    // Email et Website sur la même ligne
-                                    if viewModel.partner.email != nil || viewModel.partner.website != nil {
-                                        HStack(spacing: 20) {
-                                            if let email = viewModel.partner.email {
-                                                Button(action: {
-                                                    viewModel.openEmail()
-                                                }) {
-                                                    HStack(spacing: 8) {
-                                                        Text(email)
-                                                            .font(.system(size: 15, weight: .regular))
-                                                            .foregroundColor(.white.opacity(0.9))
-                                                        
-                                                        Image(systemName: "chevron.right")
-                                                            .foregroundColor(.gray.opacity(0.6))
-                                                            .font(.system(size: 11, weight: .semibold))
-                                                    }
-                                                }
-                                                .buttonStyle(PlainButtonStyle())
-                                            }
-                                            
-                                            if let website = viewModel.partner.website {
-                                                Button(action: {
-                                                    viewModel.openWebsite()
-                                                }) {
-                                                    HStack(spacing: 8) {
-                                                        Text(website)
-                                                            .font(.system(size: 15, weight: .regular))
-                                                            .foregroundColor(.white.opacity(0.9))
-                                                        
-                                                        Image(systemName: "chevron.right")
-                                                            .foregroundColor(.gray.opacity(0.6))
-                                                            .font(.system(size: 11, weight: .semibold))
-                                                    }
-                                                }
-                                                .buttonStyle(PlainButtonStyle())
-                                            }
-                                        }
-                                        .padding(.leading, 50)
-                                        .padding(.vertical, 4)
-                                    }
                                 }
                                 .padding(.horizontal, 20)
                                 
-                                // Boutons d'action
+                                // Boutons d'action - Instagram, Email, Website sur la même ligne
                                 HStack(spacing: 12) {
                                     if viewModel.partner.instagram != nil {
                                         Button(action: {
                                             viewModel.openInstagram()
                                         }) {
-                                            // Logo Instagram carré
                                             ZStack {
                                                 RoundedRectangle(cornerRadius: 8)
                                                     .fill(
@@ -239,6 +197,40 @@ struct PartnerDetailView: View {
                                             }
                                         }
                                     }
+                                    
+                                    if viewModel.partner.email != nil {
+                                        Button(action: {
+                                            viewModel.openEmail()
+                                        }) {
+                                            ZStack {
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(Color.appGold)
+                                                    .frame(width: 50, height: 50)
+                                                
+                                                Image(systemName: "envelope.fill")
+                                                    .font(.system(size: 18, weight: .bold))
+                                                    .foregroundColor(.black)
+                                            }
+                                        }
+                                    }
+                                    
+                                    if viewModel.partner.website != nil {
+                                        Button(action: {
+                                            viewModel.openWebsite()
+                                        }) {
+                                            ZStack {
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(Color.appGold)
+                                                    .frame(width: 50, height: 50)
+                                                
+                                                Image(systemName: "globe")
+                                                    .font(.system(size: 18, weight: .bold))
+                                                    .foregroundColor(.black)
+                                            }
+                                        }
+                                    }
+                                    
+                                    Spacer()
                                     
                                     Button(action: {
                                         viewModel.callPartner()
@@ -299,10 +291,10 @@ struct PartnerDetailView: View {
                                             .foregroundColor(.gray)
                                             .padding(.horizontal, 20)
                                     } else {
-                                        // Liste des avis
+                                        // Liste des avis (2 avis max)
                                         VStack(spacing: 12) {
                                             ForEach(viewModel.reviews) { review in
-                                                // Card d'avis
+                                                ReviewCard(review: review)
                                             }
                                         }
                                         .padding(.horizontal, 20)

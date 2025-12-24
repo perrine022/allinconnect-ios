@@ -253,5 +253,89 @@ class MockDataService {
     func getPartnerById(id: UUID) -> Partner? {
         return getPartners().first { $0.id == id }
     }
+    
+    func getReviewsForPartner(partnerId: UUID) -> [Review] {
+        // Générer 2 avis différents selon le partenaire
+        let calendar = Calendar.current
+        let now = Date()
+        
+        switch partnerId {
+        case MockDataService.fitFormeId:
+            return [
+                Review(
+                    userName: "Sophie M.",
+                    rating: 5.0,
+                    comment: "Excellente salle de sport ! Les équipements sont modernes et bien entretenus. L'ambiance est super sympa et les coachs sont à l'écoute. Je recommande vivement !",
+                    date: calendar.date(byAdding: .day, value: -5, to: now) ?? now
+                ),
+                Review(
+                    userName: "Thomas L.",
+                    rating: 4.5,
+                    comment: "Très bonne expérience, équipements de qualité et personnel professionnel. Seul petit bémol : parfois un peu de monde aux heures de pointe.",
+                    date: calendar.date(byAdding: .day, value: -12, to: now) ?? now
+                )
+            ]
+        case MockDataService.belleZenId:
+            return [
+                Review(
+                    userName: "Marie D.",
+                    rating: 5.0,
+                    comment: "Un véritable havre de paix ! Les soins sont exceptionnels et le personnel très attentionné. Je me sens toujours détendue après une séance. À refaire sans hésitation !",
+                    date: calendar.date(byAdding: .day, value: -3, to: now) ?? now
+                ),
+                Review(
+                    userName: "Julie K.",
+                    rating: 4.5,
+                    comment: "Spa magnifique avec une ambiance zen parfaite. Les massages sont relaxants et les produits utilisés sont de qualité. Je recommande !",
+                    date: calendar.date(byAdding: .day, value: -8, to: now) ?? now
+                )
+            ]
+        case MockDataService.comptoirGourmandId:
+            return [
+                Review(
+                    userName: "Pierre R.",
+                    rating: 4.5,
+                    comment: "Restaurant excellent avec des produits frais et locaux. Les plats sont savoureux et bien présentés. Le service est impeccable. Une belle découverte !",
+                    date: calendar.date(byAdding: .day, value: -7, to: now) ?? now
+                ),
+                Review(
+                    userName: "Camille B.",
+                    rating: 4.0,
+                    comment: "Très bon restaurant, cuisine raffinée et produits de qualité. L'ambiance est agréable. Dommage que les portions soient un peu petites pour le prix.",
+                    date: calendar.date(byAdding: .day, value: -15, to: now) ?? now
+                )
+            ]
+        case MockDataService.gameZoneId:
+            return [
+                Review(
+                    userName: "Lucas P.",
+                    rating: 5.0,
+                    comment: "Super expérience en VR ! Les jeux sont variés et les graphismes impressionnants. Parfait pour une sortie entre amis ou en famille. On a passé un excellent moment !",
+                    date: calendar.date(byAdding: .day, value: -2, to: now) ?? now
+                ),
+                Review(
+                    userName: "Emma T.",
+                    rating: 4.5,
+                    comment: "Centre de réalité virtuelle génial ! Beaucoup de choix de jeux et l'équipement est de qualité. Le personnel est sympa et explique bien. À tester absolument !",
+                    date: calendar.date(byAdding: .day, value: -10, to: now) ?? now
+                )
+            ]
+        default:
+            return [
+                Review(
+                    userName: "Client A.",
+                    rating: 4.5,
+                    comment: "Très bon établissement, je recommande !",
+                    date: calendar.date(byAdding: .day, value: -5, to: now) ?? now
+                ),
+                Review(
+                    userName: "Client B.",
+                    rating: 4.0,
+                    comment: "Bonne expérience globale, à refaire.",
+                    date: calendar.date(byAdding: .day, value: -10, to: now) ?? now
+                )
+            ]
+        }
+    }
 }
 

@@ -9,20 +9,26 @@ import SwiftUI
 
 struct ProfileView: View {
     @StateObject private var viewModel = ProfileViewModel()
+    @EnvironmentObject private var appState: AppState
     @State private var isLoggedIn = LoginViewModel.isLoggedIn()
     @State private var showNotificationPreferences = false
     @State private var showEditProfile = false
-    @State private var showChangePassword = false
     @State private var proOffersNavigationId: UUID?
     @State private var manageEstablishmentNavigationId: UUID?
-    @State private var helpSupportNavigationId: UUID?
-    @State private var termsNavigationId: UUID?
-    @State private var privacyPolicyNavigationId: UUID?
+    @State private var manageSubscriptionsNavigationId: UUID?
+    @State private var paymentHistoryNavigationId: UUID?
+    @State private var settingsNavigationId: UUID?
     @State private var selectedPartner: Partner?
     
     var body: some View {
         if isLoggedIn {
             profileContent
+                .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserDidLogout"))) { _ in
+                    // Réinitialiser l'état lors de la déconnexion
+                    isLoggedIn = false
+                    // Réinitialiser le ViewModel pour nettoyer les données
+                    viewModel.reset()
+                }
         } else {
             LoginView()
                 .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserDidLogin"))) { _ in
@@ -81,12 +87,12 @@ struct ProfileView: View {
                             
                             // Badge CLUB10 au bout de la ligne
                             Text("MEMBRE CLUB10")
-                                .font(.system(size: 13, weight: .bold))
+                                .font(.system(size: 10, weight: .bold))
                                 .foregroundColor(.white)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
                                 .background(Color.green)
-                                .cornerRadius(8)
+                                .cornerRadius(6)
                         }
                         .padding(.horizontal, 20)
                         
@@ -97,24 +103,24 @@ struct ProfileView: View {
                                     viewModel.switchToClientSpace()
                                 }) {
                                     Text("Espace Client")
-                                        .font(.system(size: 13, weight: .semibold))
+                                        .font(.system(size: 16, weight: .semibold))
                                         .foregroundColor(viewModel.currentSpace == .client ? .black : .white)
-                                        .padding(.horizontal, 16)
-                                        .padding(.vertical, 8)
+                                        .padding(.horizontal, 20)
+                                        .padding(.vertical, 12)
                                         .background(viewModel.currentSpace == .client ? Color.appGold : Color.appDarkRed1.opacity(0.6))
-                                        .cornerRadius(8)
+                                        .cornerRadius(10)
                                 }
                                 
                                 Button(action: {
                                     viewModel.switchToProSpace()
                                 }) {
                                     Text("Espace Pro")
-                                        .font(.system(size: 13, weight: .semibold))
+                                        .font(.system(size: 16, weight: .semibold))
                                         .foregroundColor(viewModel.currentSpace == .pro ? .black : .white)
-                                        .padding(.horizontal, 16)
-                                        .padding(.vertical, 8)
+                                        .padding(.horizontal, 20)
+                                        .padding(.vertical, 12)
                                         .background(viewModel.currentSpace == .pro ? Color.appGold : Color.appDarkRed1.opacity(0.6))
-                                        .cornerRadius(8)
+                                        .cornerRadius(10)
                                 }
                             }
                             .padding(.horizontal, 20)
@@ -260,13 +266,37 @@ struct ProfileView: View {
                     
                     // Menu options
                     VStack(spacing: 0) {
-                        // Option "Gérer mon établissement" uniquement dans l'espace PRO
+                        // Options PRO uniquement dans l'espace PRO
                         if viewModel.user.userType == .pro && viewModel.currentSpace == .pro {
                             ProfileMenuRow(
                                 icon: "building.2.fill",
                                 title: "Gérer mon établissement",
                                 action: {
                                     manageEstablishmentNavigationId = UUID()
+                                }
+                            )
+                            
+                            Divider()
+                                .background(Color.white.opacity(0.1))
+                                .padding(.leading, 54)
+                            
+                            ProfileMenuRow(
+                                icon: "creditcard.fill",
+                                title: "Gérer mes abonnements",
+                                action: {
+                                    manageSubscriptionsNavigationId = UUID()
+                                }
+                            )
+                            
+                            Divider()
+                                .background(Color.white.opacity(0.1))
+                                .padding(.leading, 54)
+                            
+                            ProfileMenuRow(
+                                icon: "clock.fill",
+                                title: "Historique des paiements",
+                                action: {
+                                    paymentHistoryNavigationId = UUID()
                                 }
                             )
                             
@@ -300,85 +330,12 @@ struct ProfileView: View {
                             .padding(.leading, 54)
                         
                         ProfileMenuRow(
-                            icon: "lock.fill",
-                            title: "Changer mon mot de passe",
+                            icon: "gearshape.fill",
+                            title: "Paramètres",
                             action: {
-                                showChangePassword = true
+                                settingsNavigationId = UUID()
                             }
                         )
-                        
-                        Divider()
-                            .background(Color.white.opacity(0.1))
-                            .padding(.leading, 54)
-                        
-                        ProfileMenuRow(
-                            icon: "questionmark.circle.fill",
-                            title: "Aide & Support",
-                            action: {
-                                helpSupportNavigationId = UUID()
-                            }
-                        )
-                        
-                        Divider()
-                            .background(Color.white.opacity(0.1))
-                            .padding(.leading, 54)
-                        
-                        ProfileMenuRow(
-                            icon: "doc.text.fill",
-                            title: "Conditions générales",
-                            action: {
-                                termsNavigationId = UUID()
-                            }
-                        )
-                        
-                        Divider()
-                            .background(Color.white.opacity(0.1))
-                            .padding(.leading, 54)
-                        
-                        ProfileMenuRow(
-                            icon: "shield.fill",
-                            title: "Politique de confidentialité",
-                            action: {
-                                privacyPolicyNavigationId = UUID()
-                            }
-                        )
-                        
-                        ProfileMenuRow(
-                            icon: "person.fill",
-                            title: "Modifier mon profil",
-                            action: {
-                                showEditProfile = true
-                            }
-                        )
-                        
-                        Divider()
-                            .background(Color.white.opacity(0.1))
-                            .padding(.leading, 54)
-                        
-                        ProfileMenuRow(
-                            icon: "bell.fill",
-                            title: "Préférences de notifications",
-                            action: {
-                                showNotificationPreferences = true
-                            }
-                        )
-                        
-                        Divider()
-                            .background(Color.white.opacity(0.1))
-                            .padding(.leading, 54)
-                        
-                        ProfileMenuRow(
-                            icon: "lock.fill",
-                            title: "Changer mon mot de passe",
-                            action: {
-                                showChangePassword = true
-                            }
-                        )
-                        
-                        Divider()
-                            .background(Color.white.opacity(0.1))
-                            .padding(.leading, 54)
-                        
                     }
                     .background(Color.appDarkRed1.opacity(0.8))
                     .cornerRadius(16)
@@ -390,8 +347,19 @@ struct ProfileView: View {
                     
                     // Bouton déconnexion
                     Button(action: {
-                        LoginViewModel.logout()
-                        isLoggedIn = false
+                        // Afficher une confirmation avant de déconnecter
+                        withAnimation {
+                            // Déconnecter l'utilisateur
+                            LoginViewModel.logout()
+                            // Réinitialiser l'état local
+                            isLoggedIn = false
+                            // Réinitialiser le ViewModel
+                            viewModel.reset()
+                            // Naviguer vers l'onglet Accueil après déconnexion
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                appState.selectedTab = .home
+                            }
+                        }
                     }) {
                         HStack(spacing: 10) {
                             Image(systemName: "rectangle.portrait.and.arrow.right")
@@ -437,25 +405,20 @@ struct ProfileView: View {
                 EditProfileView()
             }
         }
-        .sheet(isPresented: $showChangePassword) {
-            NavigationStack {
-                ChangePasswordView()
-            }
-        }
         .navigationDestination(item: $proOffersNavigationId) { _ in
             ProOffersView()
         }
         .navigationDestination(item: $manageEstablishmentNavigationId) { _ in
             ManageEstablishmentView()
         }
-        .navigationDestination(item: $helpSupportNavigationId) { _ in
-            HelpSupportView()
+        .navigationDestination(item: $manageSubscriptionsNavigationId) { _ in
+            ManageSubscriptionsView()
         }
-        .navigationDestination(item: $termsNavigationId) { _ in
-            TermsView(isPrivacyPolicy: false)
+        .navigationDestination(item: $paymentHistoryNavigationId) { _ in
+            PaymentHistoryView()
         }
-        .navigationDestination(item: $privacyPolicyNavigationId) { _ in
-            TermsView(isPrivacyPolicy: true)
+        .navigationDestination(item: $settingsNavigationId) { _ in
+            SettingsView()
         }
         .navigationDestination(item: $selectedPartner) { partner in
             PartnerDetailView(partner: partner)
@@ -577,5 +540,6 @@ struct EditProfileView: View {
 #Preview {
     NavigationStack {
         ProfileView()
+            .environmentObject(AppState())
     }
 }

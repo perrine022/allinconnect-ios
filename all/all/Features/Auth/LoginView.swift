@@ -10,6 +10,7 @@ import SwiftUI
 struct LoginView: View {
     @StateObject private var viewModel = LoginViewModel()
     @State private var showForgotPassword = false
+    @State private var showSignUp = false
     @State private var showPassword = false
     @FocusState private var focusedField: Field?
     
@@ -123,18 +124,6 @@ struct LoginView: View {
                                 }
                             }
                         }
-                        
-                        // Mot de passe oublié
-                        HStack {
-                            Spacer()
-                            Button(action: {
-                                showForgotPassword = true
-                            }) {
-                                Text("Mot de passe oublié ?")
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(.appGold)
-                            }
-                        }
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 20)
@@ -171,6 +160,44 @@ struct LoginView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 10)
                     
+                    // Mot de passe oublié
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            showForgotPassword = true
+                        }) {
+                            Text("Mot de passe oublié ?")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.appGold)
+                        }
+                        Spacer()
+                    }
+                    .padding(.top, 12)
+                    
+                    // Ligne de séparation
+                    HStack {
+                        Rectangle()
+                            .fill(Color.white.opacity(0.2))
+                            .frame(height: 1)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
+                    
+                    // Bouton Inscrivez-vous
+                    Button(action: {
+                        showSignUp = true
+                    }) {
+                        Text("Inscrivez-vous")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.black)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color.appGold)
+                            .cornerRadius(12)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
+                    
                     Spacer()
                         .frame(height: 40)
                 }
@@ -182,6 +209,11 @@ struct LoginView: View {
         .sheet(isPresented: $showForgotPassword) {
             NavigationStack {
                 ForgotPasswordView()
+            }
+        }
+        .sheet(isPresented: $showSignUp) {
+            NavigationStack {
+                SignUpView()
             }
         }
     }

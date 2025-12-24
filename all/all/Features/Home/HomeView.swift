@@ -14,6 +14,7 @@ struct HomeView: View {
     @State private var selectedProfessional: Professional?
     @State private var selectedPartner: Partner?
     @State private var showLocationPermission = false
+    @State private var digitalCardInfoNavigationId: UUID?
     
     var body: some View {
         ZStack {
@@ -68,14 +69,14 @@ struct HomeView: View {
                         HStack(spacing: 12) {
                             Image(systemName: "star.fill")
                                 .foregroundColor(.appGold)
-                                .font(.system(size: 18))
+                                .font(.system(size: 14))
                             
                             Text("L'app qui pense à toi")
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(.white)
                         }
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
+                        .padding(.vertical, 8)
                         .background(
                             LinearGradient(
                                 gradient: Gradient(colors: [Color.appRed, Color.appDarkRed]),
@@ -90,7 +91,7 @@ struct HomeView: View {
                     // Titre principal
                     VStack(spacing: 8) {
                         Text("Trouve ton partenaire ALL IN près de chez toi")
-                            .font(.system(size: 24, weight: .bold))
+                            .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                             .multilineTextAlignment(.center)
                         
@@ -205,6 +206,22 @@ struct HomeView: View {
                             .cornerRadius(8)
                         }
                         .buttonStyle(PlainButtonStyle())
+                        
+                        // Bouton Rechercher
+                        Button(action: {
+                            viewModel.searchProfessionals()
+                        }) {
+                            HStack {
+                                Spacer()
+                                Text("Rechercher")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.black)
+                                Spacer()
+                            }
+                            .padding(.vertical, 14)
+                            .background(Color.appGold)
+                            .cornerRadius(10)
+                        }
                     }
                     .padding(.horizontal, 20)
                     
@@ -250,8 +267,10 @@ struct HomeView: View {
                     .padding(.top, 8)
                     
                     // Carte CLUB10
-                    Club10Card()
-                        .padding(.horizontal, 20)
+                    Club10Card(onLearnMore: {
+                        digitalCardInfoNavigationId = UUID()
+                    })
+                    .padding(.horizontal, 20)
                     
                     // Section "Nos partenaires"
                     VStack(alignment: .leading, spacing: 16) {
@@ -316,6 +335,9 @@ struct HomeView: View {
         }
         .navigationDestination(item: $selectedPartner) { partner in
             PartnerDetailView(partner: partner)
+        }
+        .navigationDestination(item: $digitalCardInfoNavigationId) { _ in
+            DigitalCardInfoView()
         }
     }
 }

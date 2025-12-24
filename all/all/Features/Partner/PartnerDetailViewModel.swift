@@ -27,8 +27,9 @@ class PartnerDetailViewModel: ObservableObject {
         // Charger les offres en cours pour ce partenaire
         currentOffers = dataService.getOffersForPartner(partnerId: partner.id)
         
-        // Charger les avis (pour l'instant vide)
-        reviews = []
+        // Charger les avis (limité à 2)
+        let allReviews = dataService.getReviewsForPartner(partnerId: partner.id)
+        reviews = Array(allReviews.prefix(2))
     }
     
     func toggleFavorite() {
@@ -67,6 +68,30 @@ class PartnerDetailViewModel: ObservableObject {
             return
         }
         UIApplication.shared.open(url)
+    }
+    
+    func openMaps() {
+        let address = "\(partner.address), \(partner.postalCode) \(partner.city)"
+        let encodedAddress = address.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        
+        // Essayer d'abord Apple Maps
+        if let appleMapsURL = URL(string: "http://maps.apple.com/?q=\(encodedAddress)") {
+            UIApplication.shared.open(appleMapsURL) { success in
+                // Si Apple Maps échoue, essayer Google Maps
+                if !success {
+                    if let googleMapsURL = URL(string: "comgooglemaps://?q=\(encodedAddress)") {
+                        if UIApplication.shared.canOpenURL(googleMapsURL) {
+                            UIApplication.shared.open(googleMapsURL)
+                        } else {
+                            // Fallback vers Google Maps web
+                            if let webURL = URL(string: "https://www.google.com/maps/search/?api=1&query=\(encodedAddress)") {
+                                UIApplication.shared.open(webURL)
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

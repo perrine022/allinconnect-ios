@@ -95,25 +95,54 @@ struct DetailsView: View {
                                 icon: "mappin.circle.fill",
                                 iconColor: .appRed
                             ) {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    HStack(alignment: .top, spacing: 12) {
-                                        Image(systemName: "mappin.circle.fill")
-                                            .foregroundColor(.appRed)
-                                            .font(.system(size: 18))
-                                        
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(professional.address)
-                                                .font(.system(size: 16, weight: .medium))
-                                                .foregroundColor(.white)
-                                            
-                                            Text("\(professional.postalCode) \(professional.city)")
-                                                .font(.system(size: 15))
-                                                .foregroundColor(.appTextSecondary)
+                                Button(action: {
+                                    let address = "\(professional.address), \(professional.postalCode) \(professional.city)"
+                                    let encodedAddress = address.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+                                    
+                                    // Essayer d'abord Apple Maps
+                                    if let appleMapsURL = URL(string: "http://maps.apple.com/?q=\(encodedAddress)") {
+                                        UIApplication.shared.open(appleMapsURL) { success in
+                                            // Si Apple Maps échoue, essayer Google Maps
+                                            if !success {
+                                                if let googleMapsURL = URL(string: "comgooglemaps://?q=\(encodedAddress)") {
+                                                    if UIApplication.shared.canOpenURL(googleMapsURL) {
+                                                        UIApplication.shared.open(googleMapsURL)
+                                                    } else {
+                                                        // Fallback vers Google Maps web
+                                                        if let webURL = URL(string: "https://www.google.com/maps/search/?api=1&query=\(encodedAddress)") {
+                                                            UIApplication.shared.open(webURL)
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         }
-                                        
-                                        Spacer()
+                                    }
+                                }) {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        HStack(alignment: .top, spacing: 12) {
+                                            Image(systemName: "mappin.circle.fill")
+                                                .foregroundColor(.appRed)
+                                                .font(.system(size: 18))
+                                            
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text(professional.address)
+                                                    .font(.system(size: 16, weight: .medium))
+                                                    .foregroundColor(.white)
+                                                
+                                                Text("\(professional.postalCode) \(professional.city)")
+                                                    .font(.system(size: 15))
+                                                    .foregroundColor(.appTextSecondary)
+                                            }
+                                            
+                                            Spacer()
+                                            
+                                            Image(systemName: "chevron.right")
+                                                .foregroundColor(.gray.opacity(0.6))
+                                                .font(.system(size: 11, weight: .semibold))
+                                        }
                                     }
                                 }
+                                .buttonStyle(PlainButtonStyle())
                             }
                             .padding(.top, 32)
                             

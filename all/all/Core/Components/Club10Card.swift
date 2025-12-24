@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct Club10Card: View {
+    var onLearnMore: () -> Void = {}
+    
     var body: some View {
         HStack(spacing: 16) {
             VStack(alignment: .leading, spacing: 8) {
@@ -19,7 +21,7 @@ struct Club10Card: View {
                     .font(.system(size: 14, weight: .regular))
                     .foregroundColor(.gray)
                 
-                Button(action: {}) {
+                Button(action: onLearnMore) {
                     Text("En savoir plus")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.black)

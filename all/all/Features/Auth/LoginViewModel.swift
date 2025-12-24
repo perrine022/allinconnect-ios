@@ -56,7 +56,12 @@ class LoginViewModel: ObservableObject {
     }
     
     static func logout() {
+        // Nettoyer toutes les données de session
         UserDefaults.standard.set(false, forKey: "is_logged_in")
+        UserDefaults.standard.removeObject(forKey: "user_email")
+        UserDefaults.standard.removeObject(forKey: "user_type")
+        
+        // Notifier la déconnexion
         NotificationCenter.default.post(name: NSNotification.Name("UserDidLogout"), object: nil)
     }
 }
