@@ -27,7 +27,7 @@ struct CardView: View {
             )
             .ignoresSafeArea()
             
-                    ScrollView {
+            ScrollView {
                 VStack(spacing: 20) {
                     // Titre
                     HStack {
@@ -243,62 +243,62 @@ struct CardView: View {
                             }
                         }
                         .padding(.horizontal, 20)
-                    
-                    // Section lien de parrainage
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "square.and.arrow.up")
-                                .foregroundColor(.appGold)
-                                .font(.system(size: 16))
-                            
-                            Text("Lien de parrainage")
-                                .font(.system(size: 17, weight: .bold))
-                                .foregroundColor(.white)
-                        }
                         
-                        HStack(spacing: 12) {
-                            Text(viewModel.referralLink)
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.white.opacity(0.9))
-                            
-                            Spacer()
-                            
-                            Button(action: {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                                    viewModel.copyReferralLink()
-                                }
-                            }) {
-                                Image(systemName: "doc.on.doc")
+                        // Section lien de parrainage
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "square.and.arrow.up")
                                     .foregroundColor(.appGold)
                                     .font(.system(size: 16))
+                                
+                                Text("Lien de parrainage")
+                                    .font(.system(size: 17, weight: .bold))
+                                    .foregroundColor(.white)
                             }
+                            
+                            HStack(spacing: 12) {
+                                Text(viewModel.referralLink)
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(.white.opacity(0.9))
+                                
+                                Spacer()
+                                
+                                Button(action: {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                                        viewModel.copyReferralLink()
+                                    }
+                                }) {
+                                    Image(systemName: "doc.on.doc")
+                                        .foregroundColor(.appGold)
+                                        .font(.system(size: 16))
+                                }
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 11)
+                            .background(Color.appDarkRed2.opacity(0.7))
+                            .cornerRadius(10)
+                            
+                            Text("Gagnez 50% de la 1ère mensualité de chaque filleul !")
+                                .font(.system(size: 12, weight: .regular))
+                                .foregroundColor(.gray.opacity(0.9))
+                                .lineSpacing(2)
                         }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 11)
-                        .background(Color.appDarkRed2.opacity(0.7))
-                        .cornerRadius(10)
+                        .padding(18)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            RoundedRectangle(cornerRadius: 18)
+                                .fill(Color.appDarkRed1.opacity(0.85))
+                                .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 3)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 18)
+                                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                        )
+                        .padding(.horizontal, 20)
                         
-                        Text("Gagnez 50% de la 1ère mensualité de chaque filleul !")
-                            .font(.system(size: 12, weight: .regular))
-                            .foregroundColor(.gray.opacity(0.9))
-                            .lineSpacing(2)
-                    }
-                    .padding(18)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 18)
-                            .fill(Color.appDarkRed1.opacity(0.85))
-                            .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 3)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 18)
-                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
-                    )
-                    .padding(.horizontal, 20)
-                    
-                    // Section Mes favoris
-                    if !viewModel.favoritePartners.isEmpty {
-                        VStack(alignment: .leading, spacing: 14) {
+                        // Section Mes favoris
+                        if !viewModel.favoritePartners.isEmpty {
+                            VStack(alignment: .leading, spacing: 14) {
                             Text("Mes favoris")
                                 .font(.system(size: 20, weight: .bold))
                                 .foregroundColor(.white)
@@ -374,9 +374,9 @@ struct CardView: View {
                             }
                             .padding(.horizontal, 20)
                         }
-                        .padding(.top, 4)
-                    }
-                    
+                            .padding(.top, 4)
+                        }
+                        
                         // Espace pour le footer
                         Spacer()
                             .frame(height: 100)
@@ -388,13 +388,16 @@ struct CardView: View {
             PartnerDetailView(partner: partner)
         }
         .navigationDestination(isPresented: $showSavingsList) {
-            SavingsListView()
+            SavingsListView(viewModel: viewModel)
         }
         .overlay {
             if showAddSavingsPopup {
-                AddSavingsPopupView(isPresented: $showAddSavingsPopup) { amount, date, store in
-                    viewModel.addSavings(amount: amount, date: date, store: store)
-                }
+                AddSavingsPopupView(
+                    isPresented: $showAddSavingsPopup,
+                    onSave: { amount, date, store, description in
+                        viewModel.addSavings(amount: amount, date: date, store: store, description: description)
+                    }
+                )
             }
         }
     }

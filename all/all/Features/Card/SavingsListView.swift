@@ -8,10 +8,12 @@
 import SwiftUI
 
 struct SavingsListView: View {
-    @StateObject private var viewModel = CardViewModel()
+    @ObservedObject var viewModel: CardViewModel
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appState: AppState
     @State private var showAddSavingsPopup = false
+    @State private var showEditSavingsPopup = false
+    @State private var editingEntry: SavingsEntry? = nil
     
     var body: some View {
         GeometryReader { geometry in
@@ -78,7 +80,16 @@ struct SavingsListView: View {
                             } else {
                                 VStack(spacing: 12) {
                                     ForEach(viewModel.savingsEntries.sorted(by: { $0.date > $1.date })) { entry in
-                                        SavingsRow(entry: entry)
+                                        SavingsRow(
+                                            entry: entry,
+                                            onEdit: {
+                                                editingEntry = entry
+                                                showEditSavingsPopup = true
+                                            },
+                                            onDelete: {
+                                                viewModel.deleteSavings(entry: entry)
+                                            }
+                                        )
                                     }
                                 }
                                 .padding(.horizontal, 20)
@@ -131,17 +142,40 @@ struct SavingsListView: View {
             }
         }
         .sheet(isPresented: $showAddSavingsPopup) {
-            AddSavingsPopupView(isPresented: $showAddSavingsPopup) { amount, date, store in
-                viewModel.addSavings(amount: amount, date: date, store: store)
-            }
+            AddSavingsPopupView(
+                isPresented: $showAddSavingsPopup,
+                onSave: { amount, date, store, description in
+                    viewModel.addSavings(amount: amount, date: date, store: store, description: description)
+                }
+            )
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showEditSavingsPopup) {
+            if let entry = editingEntry {
+                AddSavingsPopupView(
+                    isPresented: $showEditSavingsPopup,
+                    onSave: { amount, date, store, description in
+                        viewModel.updateSavings(entry: entry, amount: amount, date: date, store: store, description: description)
+                    },
+                    editingEntry: entry
+                )
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+            }
+        }
+        .onAppear {
+            viewModel.loadSavings()
         }
     }
 }
 
 struct SavingsRow: View {
     let entry: SavingsEntry
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+    
+    @State private var showDeleteConfirmation = false
     
     private var formattedDate: String {
         let formatter = DateFormatter()
@@ -169,6 +203,13 @@ struct SavingsRow: View {
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.white)
                 
+                if let description = entry.description, !description.isEmpty {
+                    Text(description)
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundColor(.gray)
+                        .lineLimit(2)
+                }
+                
                 HStack(spacing: 12) {
                     HStack(spacing: 4) {
                         Image(systemName: "calendar")
@@ -187,6 +228,24 @@ struct SavingsRow: View {
             Text("\(String(format: "%.2f", entry.amount))€")
                 .font(.system(size: 18, weight: .bold))
                 .foregroundColor(.appGold)
+            
+            // Boutons d'action
+            Menu {
+                Button(action: onEdit) {
+                    Label("Modifier", systemImage: "pencil")
+                }
+                
+                Button(role: .destructive, action: {
+                    showDeleteConfirmation = true
+                }) {
+                    Label("Supprimer", systemImage: "trash")
+                }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .foregroundColor(.white.opacity(0.7))
+                    .font(.system(size: 16))
+                    .padding(8)
+            }
         }
         .padding(16)
         .background(
@@ -197,12 +256,20 @@ struct SavingsRow: View {
                         .stroke(Color.appGold.opacity(0.2), lineWidth: 1)
                 )
         )
+        .alert("Supprimer l'économie", isPresented: $showDeleteConfirmation) {
+            Button("Annuler", role: .cancel) { }
+            Button("Supprimer", role: .destructive) {
+                onDelete()
+            }
+        } message: {
+            Text("Êtes-vous sûr de vouloir supprimer cette économie ?")
+        }
     }
 }
 
 #Preview {
     NavigationStack {
-        SavingsListView()
+        SavingsListView(viewModel: CardViewModel())
             .environmentObject(AppState())
     }
 }
