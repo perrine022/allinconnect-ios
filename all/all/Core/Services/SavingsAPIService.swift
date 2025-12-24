@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Combine
 
 // MARK: - Savings Response
 struct SavingsResponse: Codable, Identifiable {
