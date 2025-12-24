@@ -189,16 +189,9 @@ struct AddSavingsPopupView: View {
                                 .cornerRadius(10)
                                 .padding(.horizontal, 20)
                         }
-                    }
-                    .padding(.bottom, 24)
-                }
-                
-                // Bouton sauvegarder fixe en bas
-                VStack(spacing: 0) {
-                    Divider()
-                        .background(Color.white.opacity(0.2))
-                    
-                    Button(action: {
+                        
+                        // Bouton sauvegarder
+                        Button(action: {
                         // Valider le montant
                         guard let amountValue = Double(amount), amountValue > 0 else {
                             errorMessage = "Montant invalide"
@@ -225,20 +218,23 @@ struct AddSavingsPopupView: View {
                         
                         errorMessage = nil
                         let descriptionText = description.trimmingCharacters(in: .whitespaces).isEmpty ? nil : description.trimmingCharacters(in: .whitespaces)
-                        onSave(amountValue, dateValue, storeName, descriptionText)
-                        isPresented = false
-                    }) {
-                        Text(editingEntry == nil ? "Ajouter" : "Modifier")
-                            .font(.system(size: 17, weight: .bold))
-                            .foregroundColor(.black)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(isValid ? Color.appGold : Color.gray.opacity(0.5))
-                            .cornerRadius(0)
+                            onSave(amountValue, dateValue, storeName, descriptionText)
+                            isPresented = false
+                        }) {
+                            Text(editingEntry == nil ? "Ajouter" : "Modifier")
+                                .font(.system(size: 17, weight: .bold))
+                                .foregroundColor(.black)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(isValid ? Color.appGold : Color.gray.opacity(0.5))
+                                .cornerRadius(12)
+                        }
+                        .disabled(!isValid)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 8)
                     }
-                    .disabled(!isValid)
+                    .padding(.bottom, 24)
                 }
-                .background(Color.appDarkRed2)
             }
         }
         .onTapGesture {

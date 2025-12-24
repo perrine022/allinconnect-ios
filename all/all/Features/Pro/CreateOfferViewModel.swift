@@ -51,6 +51,7 @@ class CreateOfferViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     
     var isValid: Bool {
+        // Vérifier que les champs obligatoires sont remplis
         guard !title.trimmingCharacters(in: .whitespaces).isEmpty,
               !description.trimmingCharacters(in: .whitespaces).isEmpty,
               !startDate.trimmingCharacters(in: .whitespaces).isEmpty,
@@ -58,23 +59,22 @@ class CreateOfferViewModel: ObservableObject {
             return false
         }
         
-        // Valider que les dates sont au bon format et valides
+        // Valider que les dates sont au bon format (format DD/MM/YYYY avec 10 caractères)
+        // Format minimum : DD/MM/YYYY = 10 caractères
+        guard startDate.count >= 10,
+              validUntil.count >= 10 else {
+            return false
+        }
+        
+        // Vérifier que les dates peuvent être parsées (format valide)
         guard let startDateParsed = parseDate(startDate),
               let endDateParsed = parseDate(validUntil) else {
             return false
         }
         
-        // Valider que les dates sont après aujourd'hui
-        let today = Calendar.current.startOfDay(for: Date())
-        guard startDateParsed >= today,
-              endDateParsed >= today else {
-            return false
-        }
-        
-        // Valider que la date de fin est après la date de début
-        guard endDateParsed >= startDateParsed else {
-            return false
-        }
+        // Les dates doivent être valides (parsées correctement)
+        // On ne vérifie plus si elles sont dans le futur pour permettre la publication
+        // La validation stricte sera faite dans publishOffer()
         
         return true
     }
@@ -182,6 +182,16 @@ class CreateOfferViewModel: ObservableObject {
             price = nil
         }
         
+        // Log des données avant l'appel API
+        print("📝 [CreateOffer] Préparation de la création d'offre:")
+        print("   - Titre: \(title.trimmingCharacters(in: .whitespaces))")
+        print("   - Description: \(description.trimmingCharacters(in: .whitespaces))")
+        print("   - Prix: \(price?.description ?? "nil")")
+        print("   - Date de début (ISO): \(startDateISO)")
+        print("   - Date de fin (ISO): \(endDate)")
+        print("   - Featured (CLUB10): \(isClub10)")
+        print("   - Type: \(apiType)")
+        
         // Appeler l'API pour créer l'offre
         let offerResponse = try await offersAPIService.createOffer(
             title: title.trimmingCharacters(in: .whitespaces),
@@ -192,6 +202,8 @@ class CreateOfferViewModel: ObservableObject {
             featured: isClub10, // featured = isClub10
             type: apiType
         )
+        
+        print("✅ [CreateOffer] Offre créée avec succès: ID=\(offerResponse.id)")
         
         // Convertir la réponse en modèle Offer
         return offerResponse.toOffer()

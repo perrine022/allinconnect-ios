@@ -10,7 +10,7 @@ import Combine
 
 // MARK: - API Configuration
 struct APIConfig {
-    static let baseURL = "http://localhost:8000/api/v1"
+    static let baseURL = "http://127.0.0.1:8000/api/v1"
     
     static var defaultHeaders: [String: String] {
         var headers = [

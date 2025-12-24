@@ -246,12 +246,31 @@ class OffersAPIService: ObservableObject {
             parameters["imageUrl"] = imageUrl
         }
         
+        // Log du payload et de l'endpoint
+        let endpoint = "/offers"
+        let baseURL = "http://127.0.0.1:8000/api/v1"
+        let fullURL = "\(baseURL)\(endpoint)"
+        
+        print("🚀 [OffersAPIService] Création d'offre:")
+        print("   📍 Endpoint: POST \(fullURL)")
+        print("   📦 Payload JSON:")
+        
+        // Convertir les paramètres en JSON pour l'affichage
+        if let jsonData = try? JSONSerialization.data(withJSONObject: parameters, options: .prettyPrinted),
+           let jsonString = String(data: jsonData, encoding: .utf8) {
+            print(jsonString)
+        } else {
+            print("   \(parameters)")
+        }
+        
         let offer: OfferResponse = try await apiService.request(
-            endpoint: "/offers",
+            endpoint: endpoint,
             method: .post,
             parameters: parameters,
             headers: nil
         )
+        
+        print("✅ [OffersAPIService] Réponse reçue: ID=\(offer.id), Title=\(offer.title)")
         return offer
     }
     
