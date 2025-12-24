@@ -204,5 +204,22 @@ class ProfileAPIService: ObservableObject {
             headers: nil
         )
     }
+    
+    // MARK: - Get Current User ID
+    func getCurrentUserId() async throws -> String {
+        // Essayer de récupérer depuis /users/me qui devrait retourner l'ID
+        struct UserMeResponse: Codable {
+            let id: Int
+        }
+        
+        let userMe: UserMeResponse = try await apiService.request(
+            endpoint: "/users/me",
+            method: .get,
+            parameters: nil,
+            headers: nil
+        )
+        
+        return String(userMe.id)
+    }
 }
 
