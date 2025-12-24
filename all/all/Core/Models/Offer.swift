@@ -23,6 +23,7 @@ struct Offer: Identifiable, Hashable {
     let offerType: OfferType
     let isClub10: Bool
     let partnerId: UUID?
+    let apiId: Int? // ID original de l'API pour pouvoir recharger les détails
     
     init(
         id: UUID = UUID(),
@@ -34,7 +35,8 @@ struct Offer: Identifiable, Hashable {
         imageName: String,
         offerType: OfferType = .offer,
         isClub10: Bool = false,
-        partnerId: UUID? = nil
+        partnerId: UUID? = nil,
+        apiId: Int? = nil
     ) {
         self.id = id
         self.title = title
@@ -46,6 +48,23 @@ struct Offer: Identifiable, Hashable {
         self.offerType = offerType
         self.isClub10 = isClub10
         self.partnerId = partnerId
+        self.apiId = apiId
+    }
+    
+    // Fonction utilitaire pour extraire l'ID API depuis l'UUID si possible
+    func extractApiId() -> Int? {
+        if let apiId = apiId {
+            return apiId
+        }
+        // Essayer d'extraire depuis l'UUID si généré avec le format standard
+        let uuidString = id.uuidString
+        // Format: XXXXXXXX-0000-0000-0000-XXXXXXXXXXXX
+        // On peut extraire les 8 premiers caractères hex
+        if uuidString.count >= 8 {
+            let hexString = String(uuidString.prefix(8))
+            return Int(hexString, radix: 16)
+        }
+        return nil
     }
 }
 

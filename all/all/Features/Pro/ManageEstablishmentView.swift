@@ -15,7 +15,7 @@ struct ManageEstablishmentView: View {
     @FocusState private var focusedField: Field?
     
     enum Field: Hashable {
-        case name, description, address, city, postalCode, phone, email, website
+        case name, description, address, city, postalCode, phone, email, website, openingHours
     }
     
     var body: some View {
@@ -167,22 +167,60 @@ struct ManageEstablishmentView: View {
                                 .focused($focusedField, equals: .website)
                                 .keyboardType(.URL)
                                 .autocapitalization(.none)
+                                
+                                // Horaires d'ouverture
+                                InputField(
+                                    title: "Horaires d'ouverture",
+                                    text: $viewModel.openingHours,
+                                    placeholder: "Ex: Lun-Ven: 9h-19h, Sam: 9h-18h",
+                                    isFocused: focusedField == .openingHours
+                                )
+                                .focused($focusedField, equals: .openingHours)
+                            }
+                            
+                            // Messages d'erreur et de succès
+                            if let errorMessage = viewModel.errorMessage {
+                                Text(errorMessage)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.red)
+                                    .padding(.horizontal, 20)
+                                    .padding(.top, 8)
+                            }
+                            
+                            if let successMessage = viewModel.successMessage {
+                                Text(successMessage)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.green)
+                                    .padding(.horizontal, 20)
+                                    .padding(.top, 8)
                             }
                             
                             // Bouton Enregistrer
                             Button(action: {
                                 viewModel.saveEstablishment()
-                                dismiss()
+                                // Ne pas fermer automatiquement, attendre le succès
+                                if viewModel.successMessage != nil {
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                                        dismiss()
+                                    }
+                                }
                             }) {
-                                Text("Enregistrer les modifications")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.black)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 14)
-                                    .background(viewModel.isValid ? Color.appGold : Color.gray.opacity(0.5))
-                                    .cornerRadius(12)
+                                HStack {
+                                    if viewModel.isLoading {
+                                        ProgressView()
+                                            .progressViewStyle(CircularProgressViewStyle(tint: .black))
+                                    } else {
+                                        Text("Enregistrer les modifications")
+                                            .font(.system(size: 16, weight: .bold))
+                                    }
+                                }
+                                .foregroundColor(.black)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background((viewModel.isValid && !viewModel.isLoading) ? Color.appGold : Color.gray.opacity(0.5))
+                                .cornerRadius(12)
                             }
-                            .disabled(!viewModel.isValid)
+                            .disabled(!viewModel.isValid || viewModel.isLoading)
                             .padding(.horizontal, 20)
                             .padding(.top, 8)
                             
@@ -269,6 +307,37 @@ class ManageEstablishmentViewModel: ObservableObject {
     @Published var phone: String = "04 78 12 34 56"
     @Published var email: String = "contact@fitforme.fr"
     @Published var website: String = "https://fitforme.fr"
+    @Published var openingHours: String = "Lun-Ven: 9h-19h, Sam: 9h-18h"
+    @Published var latitude: Double? = nil
+    @Published var longitude: Double? = nil
+    @Published var profession: String? = nil
+    @Published var category: OfferCategory? = nil
+    
+    @Published var isLoading: Bool = false
+    @Published var errorMessage: String?
+    @Published var successMessage: String?
+    
+    private let profileAPIService: ProfileAPIService
+    private let locationService: LocationService
+    
+    init(
+        profileAPIService: ProfileAPIService? = nil,
+        locationService: LocationService = LocationService.shared
+    ) {
+        // Créer le service dans un contexte MainActor
+        if let profileAPIService = profileAPIService {
+            self.profileAPIService = profileAPIService
+        } else {
+            self.profileAPIService = ProfileAPIService()
+        }
+        self.locationService = locationService
+        
+        // Charger la localisation si disponible
+        if let location = locationService.currentLocation {
+            self.latitude = location.coordinate.latitude
+            self.longitude = location.coordinate.longitude
+        }
+    }
     
     var isValid: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -281,8 +350,52 @@ class ManageEstablishmentViewModel: ObservableObject {
     }
     
     func saveEstablishment() {
-        // Sauvegarder les modifications
-        // Plus tard, appeler l'API pour mettre à jour l'établissement
+        guard isValid else {
+            errorMessage = "Veuillez remplir tous les champs obligatoires"
+            return
+        }
+        
+        isLoading = true
+        errorMessage = nil
+        successMessage = nil
+        
+        Task {
+            do {
+                // Créer la requête de mise à jour (champs établissement uniquement)
+                let updateRequest = UpdateProfileRequest(
+                    firstName: nil, // Pas de modification du prénom ici
+                    lastName: nil, // Pas de modification du nom ici
+                    email: nil, // Pas de modification de l'email ici
+                    address: address.trimmingCharacters(in: .whitespaces),
+                    city: city.trimmingCharacters(in: .whitespaces),
+                    birthDate: nil, // Pas de modification de la date de naissance ici
+                    latitude: latitude,
+                    longitude: longitude,
+                    establishmentName: name.trimmingCharacters(in: .whitespaces),
+                    establishmentDescription: description.trimmingCharacters(in: .whitespaces),
+                    phoneNumber: phone.trimmingCharacters(in: .whitespaces),
+                    website: website.trimmingCharacters(in: .whitespaces).isEmpty ? nil : website.trimmingCharacters(in: .whitespaces),
+                    openingHours: openingHours.trimmingCharacters(in: .whitespaces).isEmpty ? nil : openingHours.trimmingCharacters(in: .whitespaces),
+                    profession: profession?.trimmingCharacters(in: .whitespaces),
+                    category: category
+                )
+                
+                // Appeler l'API
+                try await profileAPIService.updateProfile(updateRequest)
+                
+                isLoading = false
+                successMessage = "Fiche établissement mise à jour avec succès"
+                
+                // Effacer le message de succès après 3 secondes
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    self.successMessage = nil
+                }
+            } catch {
+                isLoading = false
+                errorMessage = error.localizedDescription
+                print("Erreur lors de la mise à jour de la fiche établissement: \(error)")
+            }
+        }
     }
 }
 

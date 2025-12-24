@@ -13,6 +13,18 @@ class ForgotPasswordViewModel: ObservableObject {
     @Published var email: String = ""
     @Published var isLoading: Bool = false
     @Published var isEmailSent: Bool = false
+    @Published var errorMessage: String?
+    
+    private let authAPIService: AuthAPIService
+    
+    init(authAPIService: AuthAPIService? = nil) {
+        // Créer le service dans un contexte MainActor
+        if let authAPIService = authAPIService {
+            self.authAPIService = authAPIService
+        } else {
+            self.authAPIService = AuthAPIService()
+        }
+    }
     
     var isValid: Bool {
         !email.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -27,12 +39,44 @@ class ForgotPasswordViewModel: ObservableObject {
     
     func sendResetEmail() {
         isLoading = true
+        errorMessage = nil
         
-        // Simuler l'envoi d'email
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-            guard let self = self else { return }
-            self.isLoading = false
-            self.isEmailSent = true
+        guard isValid else {
+            errorMessage = "Veuillez entrer une adresse email valide"
+            isLoading = false
+            return
+        }
+        
+        Task {
+            do {
+                // Appeler l'API
+                try await authAPIService.forgotPassword(email: email.trimmingCharacters(in: .whitespaces).lowercased())
+                
+                isLoading = false
+                isEmailSent = true
+            } catch {
+                isLoading = false
+                
+                // Gérer les erreurs
+                if let apiError = error as? APIError {
+                    switch apiError {
+                    case .httpError(let statusCode, let message):
+                        if statusCode == 404 {
+                            errorMessage = "Aucun compte trouvé avec cet email"
+                        } else {
+                            errorMessage = message ?? "Erreur lors de l'envoi de l'email"
+                        }
+                    case .networkError:
+                        errorMessage = "Erreur de connexion. Vérifiez votre connexion internet."
+                    default:
+                        errorMessage = apiError.localizedDescription
+                    }
+                } else {
+                    errorMessage = error.localizedDescription
+                }
+                
+                print("Erreur lors de l'envoi de l'email de réinitialisation: \(error)")
+            }
         }
     }
 }
@@ -111,6 +155,15 @@ struct ForgotPasswordView: View {
                         }
                         .padding(.horizontal, 20)
                         .padding(.top, 20)
+                        
+                        // Message d'erreur
+                        if let errorMessage = viewModel.errorMessage {
+                            Text(errorMessage)
+                                .font(.system(size: 13, weight: .regular))
+                                .foregroundColor(.red.opacity(0.9))
+                                .padding(.horizontal, 20)
+                                .padding(.top, 8)
+                        }
                         
                         // Bouton envoyer
                         Button(action: {

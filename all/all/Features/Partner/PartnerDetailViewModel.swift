@@ -15,10 +15,21 @@ class PartnerDetailViewModel: ObservableObject {
     @Published var currentOffers: [Offer] = []
     @Published var reviews: [Review] = []
     
+    private let favoritesAPIService: FavoritesAPIService
     private let dataService: MockDataService
     
-    init(partner: Partner, dataService: MockDataService = MockDataService.shared) {
+    init(
+        partner: Partner,
+        favoritesAPIService: FavoritesAPIService? = nil,
+        dataService: MockDataService = MockDataService.shared
+    ) {
         self.partner = partner
+        // Créer le service dans un contexte MainActor
+        if let favoritesAPIService = favoritesAPIService {
+            self.favoritesAPIService = favoritesAPIService
+        } else {
+            self.favoritesAPIService = FavoritesAPIService()
+        }
         self.dataService = dataService
         loadData()
     }
@@ -33,9 +44,32 @@ class PartnerDetailViewModel: ObservableObject {
     }
     
     func toggleFavorite() {
-        partner.isFavorite.toggle()
-        // Mettre à jour dans le service de données
-        dataService.togglePartnerFavorite(partnerId: partner.id)
+        guard let apiId = partner.apiId else {
+            // Si pas d'ID API, utiliser le fallback local
+            partner.isFavorite.toggle()
+            dataService.togglePartnerFavorite(partnerId: partner.id)
+            return
+        }
+        
+        Task {
+            do {
+                if partner.isFavorite {
+                    // Retirer des favoris
+                    try await favoritesAPIService.removeFavorite(professionalId: apiId)
+                } else {
+                    // Ajouter aux favoris
+                    try await favoritesAPIService.addFavorite(professionalId: apiId)
+                }
+                
+                // Mettre à jour l'état local
+                partner.isFavorite.toggle()
+            } catch {
+                print("Erreur lors de la modification du favori: \(error)")
+                // En cas d'erreur, utiliser le fallback local
+                partner.isFavorite.toggle()
+                dataService.togglePartnerFavorite(partnerId: partner.id)
+            }
+        }
     }
     
     func callPartner() {

@@ -19,7 +19,7 @@ struct SignUpView: View {
     @FocusState private var focusedField: Field?
     
     enum Field: Hashable {
-        case firstName, lastName, email, password, confirmPassword, postalCode
+        case firstName, lastName, email, password, confirmPassword, postalCode, birthDate
     }
     
     var body: some View {
@@ -241,6 +241,26 @@ struct SignUpView: View {
                                                 viewModel.postalCode = String(filtered.prefix(5))
                                             }
                                         }
+                                }
+                                .padding(.horizontal, 20)
+                                
+                                // Date de naissance
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Date de naissance")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(.white.opacity(0.9))
+                                    
+                                    DatePicker(
+                                        "",
+                                        selection: $viewModel.birthDate,
+                                        displayedComponents: .date
+                                    )
+                                    .datePickerStyle(.compact)
+                                    .colorScheme(.light)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 14)
+                                    .background(Color.white)
+                                    .cornerRadius(10)
                                 }
                                 .padding(.horizontal, 20)
                                 

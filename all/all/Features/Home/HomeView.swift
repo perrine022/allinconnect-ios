@@ -13,6 +13,7 @@ struct HomeView: View {
     @EnvironmentObject private var locationService: LocationService
     @State private var selectedProfessional: Professional?
     @State private var selectedPartner: Partner?
+    @State private var selectedOffer: Offer?
     @State private var showLocationPermission = false
     @State private var digitalCardInfoNavigationId: UUID?
     @State private var partnersListNavigationId: UUID?
@@ -327,9 +328,8 @@ struct HomeView: View {
                             HStack(spacing: 16) {
                                 ForEach(viewModel.offers) { offer in
                                     OfferCard(offer: offer) {
-                                        if let partner = viewModel.getPartner(for: offer) {
-                                            selectedPartner = partner
-                                        }
+                                        // Naviguer vers la page de détail de l'offre
+                                        selectedOffer = offer
                                     }
                                 }
                             }
@@ -376,6 +376,14 @@ struct HomeView: View {
         }
         .navigationDestination(item: $selectedPartner) { partner in
             PartnerDetailView(partner: partner)
+        }
+        .navigationDestination(item: $selectedOffer) { offer in
+            // Si l'offre a un ID API, charger depuis l'API, sinon utiliser l'offre directement
+            if let apiId = offer.extractApiId() {
+                OfferDetailView(offerId: apiId)
+            } else {
+                OfferDetailView(offer: offer)
+            }
         }
         .navigationDestination(item: $digitalCardInfoNavigationId) { _ in
             DigitalCardInfoView()

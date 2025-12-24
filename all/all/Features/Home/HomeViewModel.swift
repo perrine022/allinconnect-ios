@@ -43,10 +43,32 @@ class HomeViewModel: ObservableObject {
     let categories: [String]
     let cities: [String]
     
-    private let dataService: MockDataService
+    private let partnersAPIService: PartnersAPIService
+    private let favoritesAPIService: FavoritesAPIService
+    private let dataService: MockDataService // Gardé pour les catégories, villes et favoris
+    private let locationService: LocationService
     
-    init(dataService: MockDataService = MockDataService.shared) {
+    init(
+        partnersAPIService: PartnersAPIService? = nil,
+        favoritesAPIService: FavoritesAPIService? = nil,
+        dataService: MockDataService = MockDataService.shared,
+        locationService: LocationService = LocationService.shared
+    ) {
+        // Créer les services dans un contexte MainActor
+        if let partnersAPIService = partnersAPIService {
+            self.partnersAPIService = partnersAPIService
+        } else {
+            self.partnersAPIService = PartnersAPIService()
+        }
+        
+        if let favoritesAPIService = favoritesAPIService {
+            self.favoritesAPIService = favoritesAPIService
+        } else {
+            self.favoritesAPIService = FavoritesAPIService()
+        }
+        
         self.dataService = dataService
+        self.locationService = locationService
         self.categories = dataService.getCategories()
         self.cities = dataService.getCities()
         loadData()
@@ -55,16 +77,126 @@ class HomeViewModel: ObservableObject {
     func loadData() {
         professionals = dataService.getProfessionals()
         offers = dataService.getOffers()
-        partners = dataService.getPartners()
+        loadPartners()
         applyFilters()
     }
     
+    func loadPartners() {
+        Task {
+            do {
+                var professionalsResponse: [PartnerProfessionalResponse]
+                
+                // Si le rayon de recherche est activé et qu'on a la localisation
+                if searchRadius > 0, let location = locationService.currentLocation {
+                    let latitude = location.coordinate.latitude
+                    let longitude = location.coordinate.longitude
+                    
+                    // Convertir le secteur sélectionné en catégorie API
+                    let category: OfferCategory? = selectedSector.isEmpty ? nil : mapSectorToCategory(selectedSector)
+                    
+                    // Recherche par rayon avec filtres optionnels
+                    professionalsResponse = try await partnersAPIService.searchProfessionals(
+                        city: nil,
+                        category: category,
+                        name: cityText.isEmpty ? nil : cityText,
+                        latitude: latitude,
+                        longitude: longitude,
+                        radius: searchRadius
+                    )
+                } else {
+                    // Récupérer tous les professionnels depuis l'API
+                    professionalsResponse = try await partnersAPIService.getAllProfessionals()
+                }
+                
+                // Convertir en modèles Partner
+                partners = professionalsResponse.map { $0.toPartner() }
+                
+                // Appliquer les filtres
+                applyFilters()
+            } catch {
+                print("Erreur lors du chargement des partenaires: \(error)")
+                // En cas d'erreur, utiliser les données mockées en fallback
+                partners = dataService.getPartners()
+                applyFilters()
+            }
+        }
+    }
+    
+    private func syncFavorites() async {
+        do {
+            // Charger les favoris depuis l'API
+            let favoritesResponse = try await favoritesAPIService.getFavorites()
+            let favoriteIds = Set(favoritesResponse.map { $0.id })
+            
+            // Mettre à jour l'état isFavorite pour chaque partenaire
+            for index in partners.indices {
+                if let apiId = partners[index].apiId {
+                    partners[index].isFavorite = favoriteIds.contains(apiId)
+                }
+            }
+        } catch {
+            print("Erreur lors de la synchronisation des favoris: \(error)")
+            // En cas d'erreur, on garde l'état actuel
+        }
+    }
+    
+    private func mapSectorToCategory(_ sector: String) -> OfferCategory? {
+        switch sector.lowercased() {
+        case "santé & bien être", "sante & bien etre":
+            return .santeBienEtre
+        case "beauté & esthétique", "beaute & esthetique":
+            return .beauteEsthetique
+        case "food & plaisirs gourmands":
+            return .foodPlaisirs
+        case "loisirs & divertissements":
+            return .loisirsDivertissements
+        case "service & pratiques":
+            return .servicePratiques
+        case "entre pros":
+            return .entrePros
+        default:
+            return nil
+        }
+    }
+    
     func togglePartnerFavorite(for partner: Partner) {
-        if let index = partners.firstIndex(where: { $0.id == partner.id }) {
-            partners[index].isFavorite.toggle()
-            // Mettre à jour aussi dans la liste filtrée
-            if let filteredIndex = filteredPartners.firstIndex(where: { $0.id == partner.id }) {
-                filteredPartners[filteredIndex].isFavorite = partners[index].isFavorite
+        guard let apiId = partner.apiId else {
+            // Si pas d'ID API, utiliser le fallback local
+            if let index = partners.firstIndex(where: { $0.id == partner.id }) {
+                partners[index].isFavorite.toggle()
+                if let filteredIndex = filteredPartners.firstIndex(where: { $0.id == partner.id }) {
+                    filteredPartners[filteredIndex].isFavorite = partners[index].isFavorite
+                }
+            }
+            return
+        }
+        
+        Task {
+            do {
+                if partner.isFavorite {
+                    // Retirer des favoris
+                    try await favoritesAPIService.removeFavorite(professionalId: apiId)
+                } else {
+                    // Ajouter aux favoris
+                    try await favoritesAPIService.addFavorite(professionalId: apiId)
+                }
+                
+                // Mettre à jour l'état local
+                if let index = partners.firstIndex(where: { $0.id == partner.id }) {
+                    partners[index].isFavorite.toggle()
+                    if let filteredIndex = filteredPartners.firstIndex(where: { $0.id == partner.id }) {
+                        filteredPartners[filteredIndex].isFavorite = partners[index].isFavorite
+                    }
+                }
+            } catch {
+                print("Erreur lors de la modification du favori: \(error)")
+                // En cas d'erreur, utiliser le fallback local
+                if let index = partners.firstIndex(where: { $0.id == partner.id }) {
+                    partners[index].isFavorite.toggle()
+                    if let filteredIndex = filteredPartners.firstIndex(where: { $0.id == partner.id }) {
+                        filteredPartners[filteredIndex].isFavorite = partners[index].isFavorite
+                    }
+                }
             }
         }
     }
@@ -78,7 +210,8 @@ class HomeViewModel: ObservableObject {
     
     func searchProfessionals() {
         hasSearched = true
-        applyFilters()
+        // Recharger les partenaires depuis l'API avec les nouveaux filtres
+        loadPartners()
     }
     
     func selectCategory(_ category: String) {

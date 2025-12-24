@@ -12,18 +12,47 @@ import Combine
 class ProOffersViewModel: ObservableObject {
     @Published var myOffers: [Offer] = []
     @Published var isLoading: Bool = false
+    @Published var errorMessage: String?
     
-    private let dataService: MockDataService
+    private let offersAPIService: OffersAPIService
+    private let dataService: MockDataService // Gardé en fallback
     
-    init(dataService: MockDataService = MockDataService.shared) {
+    init(
+        offersAPIService: OffersAPIService? = nil,
+        dataService: MockDataService = MockDataService.shared
+    ) {
+        // Créer le service dans un contexte MainActor
+        if let offersAPIService = offersAPIService {
+            self.offersAPIService = offersAPIService
+        } else {
+            self.offersAPIService = OffersAPIService()
+        }
         self.dataService = dataService
         loadMyOffers()
     }
     
     func loadMyOffers() {
-        // Pour l'instant, on récupère toutes les offres
-        // Plus tard, on filtrera par l'ID du partenaire connecté
-        myOffers = dataService.getAllOffers()
+        isLoading = true
+        errorMessage = nil
+        
+        Task {
+            do {
+                // Appeler l'API pour récupérer les offres du professionnel connecté
+                let offersResponse = try await offersAPIService.getMyOffers()
+                
+                // Convertir les réponses en modèles Offer
+                myOffers = offersResponse.map { $0.toOffer() }
+                
+                isLoading = false
+            } catch {
+                isLoading = false
+                errorMessage = error.localizedDescription
+                print("Erreur lors du chargement de mes offres: \(error)")
+                
+                // En cas d'erreur, utiliser les données mockées en fallback
+                myOffers = dataService.getAllOffers()
+            }
+        }
     }
     
     func addOffer(_ offer: Offer) {

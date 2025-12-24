@@ -588,9 +588,12 @@ struct ProfileView: View {
 struct EditProfileView: View {
     @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) private var dismiss
-    @State private var firstName: String = "Marie"
-    @State private var lastName: String = "Dupont"
-    @State private var email: String = "marie@email.fr"
+    @StateObject private var viewModel = EditProfileViewModel()
+    @FocusState private var focusedField: Field?
+    
+    enum Field: Hashable {
+        case firstName, lastName, email, address, city, birthDate
+    }
     
     var body: some View {
         GeometryReader { geometry in
@@ -625,67 +628,122 @@ struct EditProfileView: View {
                                     .fill(Color.appGold)
                                     .frame(width: 100, height: 100)
                                 
-                                Text(String(firstName.prefix(1)).uppercased())
+                                Text(String(viewModel.firstName.prefix(1)).uppercased())
                                     .font(.system(size: 48, weight: .bold))
                                     .foregroundColor(.black)
                             }
                             .padding(.top, 8)
                             
-                            VStack(spacing: 16) {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Prénom")
-                                        .font(.system(size: 14, weight: .medium))
-                                        .foregroundColor(.gray)
-                                    
-                                    TextField("", text: $firstName)
-                                        .font(.system(size: 16))
-                                        .foregroundColor(.white)
-                                        .padding(12)
-                                        .background(Color.appDarkRed1.opacity(0.6))
-                                        .cornerRadius(10)
-                                }
-                                
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Nom")
-                                        .font(.system(size: 14, weight: .medium))
-                                        .foregroundColor(.gray)
-                                    
-                                    TextField("", text: $lastName)
-                                        .font(.system(size: 16))
-                                        .foregroundColor(.white)
-                                        .padding(12)
-                                        .background(Color.appDarkRed1.opacity(0.6))
-                                        .cornerRadius(10)
-                                }
-                                
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Email")
-                                        .font(.system(size: 14, weight: .medium))
-                                        .foregroundColor(.gray)
-                                    
-                                    TextField("", text: $email)
-                                        .font(.system(size: 16))
-                                        .foregroundColor(.white)
-                                        .keyboardType(.emailAddress)
-                                        .autocapitalization(.none)
-                                        .padding(12)
-                                        .background(Color.appDarkRed1.opacity(0.6))
-                                        .cornerRadius(10)
-                                }
+                            // Messages d'erreur et de succès
+                            if let errorMessage = viewModel.errorMessage {
+                                Text(errorMessage)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.red)
+                                    .padding(.horizontal, 20)
                             }
-                            .padding(.horizontal, 20)
                             
-                            Button(action: {
-                                // Action enregistrer
-                            }) {
-                                Text("Enregistrer")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.black)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 14)
-                                    .background(Color.appGold)
-                                    .cornerRadius(12)
+                            if let successMessage = viewModel.successMessage {
+                                Text(successMessage)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.green)
+                                    .padding(.horizontal, 20)
                             }
+                            
+                            VStack(spacing: 16) {
+                                // Prénom
+                                SignUpInputField(
+                                    title: "Prénom",
+                                    text: $viewModel.firstName,
+                                    placeholder: "Votre prénom",
+                                    isFocused: focusedField == .firstName
+                                )
+                                .focused($focusedField, equals: .firstName)
+                                
+                                // Nom
+                                SignUpInputField(
+                                    title: "Nom",
+                                    text: $viewModel.lastName,
+                                    placeholder: "Votre nom",
+                                    isFocused: focusedField == .lastName
+                                )
+                                .focused($focusedField, equals: .lastName)
+                                
+                                // Email
+                                SignUpInputField(
+                                    title: "Email",
+                                    text: $viewModel.email,
+                                    placeholder: "votre@email.com",
+                                    keyboardType: .emailAddress,
+                                    isFocused: focusedField == .email
+                                )
+                                .focused($focusedField, equals: .email)
+                                .autocapitalization(.none)
+                                
+                                // Adresse
+                                SignUpInputField(
+                                    title: "Adresse (optionnel)",
+                                    text: $viewModel.address,
+                                    placeholder: "Ex: 45 Rue de la République",
+                                    isFocused: focusedField == .address
+                                )
+                                .focused($focusedField, equals: .address)
+                                
+                                // Ville
+                                SignUpInputField(
+                                    title: "Ville",
+                                    text: $viewModel.city,
+                                    placeholder: "Ex: Paris",
+                                    isFocused: focusedField == .city
+                                )
+                                .focused($focusedField, equals: .city)
+                                
+                                // Date de naissance
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Date de naissance")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(.white.opacity(0.9))
+                                    
+                                    DatePicker(
+                                        "",
+                                        selection: $viewModel.birthDate,
+                                        displayedComponents: .date
+                                    )
+                                    .datePickerStyle(.compact)
+                                    .colorScheme(.light)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 14)
+                                    .background(Color.white)
+                                    .cornerRadius(10)
+                                }
+                                .padding(.horizontal, 20)
+                            }
+                            
+                            // Bouton Enregistrer
+                            Button(action: {
+                                viewModel.saveProfile()
+                                // Fermer après succès
+                                if viewModel.successMessage != nil {
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                                        dismiss()
+                                    }
+                                }
+                            }) {
+                                HStack {
+                                    if viewModel.isLoading {
+                                        ProgressView()
+                                            .progressViewStyle(CircularProgressViewStyle(tint: .black))
+                                    } else {
+                                        Text("Enregistrer")
+                                            .font(.system(size: 16, weight: .semibold))
+                                    }
+                                }
+                                .foregroundColor(.black)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background((viewModel.isValid && !viewModel.isLoading) ? Color.appGold : Color.gray.opacity(0.5))
+                                .cornerRadius(12)
+                            }
+                            .disabled(!viewModel.isValid || viewModel.isLoading)
                             .padding(.horizontal, 20)
                             .padding(.top, 8)
                             

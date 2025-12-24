@@ -25,7 +25,7 @@ struct CardView: View {
             )
             .ignoresSafeArea()
             
-            ScrollView {
+                    ScrollView {
                 VStack(spacing: 20) {
                     // Titre
                     HStack {
@@ -37,124 +37,171 @@ struct CardView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 16)
                     
-                    // Carte utilisateur principale
-                    VStack(alignment: .leading, spacing: 14) {
-                        HStack(alignment: .top) {
-                            // Logo ALL IN
-                            VStack(alignment: .leading, spacing: 4) {
-                                HStack(spacing: 4) {
-                                    Text("ALL")
-                                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                                        .foregroundColor(.white)
-                                    
-                                    ZStack {
-                                        Circle()
-                                            .fill(Color.appRed)
-                                            .frame(width: 24, height: 24)
+                    // États de chargement et d'erreur
+                    if viewModel.isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .appGold))
+                            .scaleEffect(1.5)
+                            .padding(.vertical, 50)
+                    } else if let errorMessage = viewModel.errorMessage {
+                        VStack(spacing: 12) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.system(size: 40))
+                                .foregroundColor(.appGold)
+                            Text("Erreur")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(.white)
+                            Text(errorMessage)
+                                .font(.system(size: 14))
+                                .foregroundColor(.gray)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                            
+                            Button(action: {
+                                viewModel.loadData()
+                            }) {
+                                Text("Réessayer")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(.black)
+                                    .padding(.horizontal, 24)
+                                    .padding(.vertical, 12)
+                                    .background(Color.appGold)
+                                    .cornerRadius(10)
+                            }
+                            .padding(.top, 8)
+                        }
+                        .padding(.vertical, 50)
+                    } else {
+                        // Carte utilisateur principale
+                        VStack(alignment: .leading, spacing: 14) {
+                            HStack(alignment: .top) {
+                                // Logo ALL IN
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack(spacing: 4) {
+                                        Text("ALL")
+                                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                                            .foregroundColor(.white)
                                         
-                                        Circle()
-                                            .fill(Color.appRed.opacity(0.6))
-                                            .frame(width: 20, height: 20)
+                                        ZStack {
+                                            Circle()
+                                                .fill(Color.appRed)
+                                                .frame(width: 24, height: 24)
+                                            
+                                            Circle()
+                                                .fill(Color.appRed.opacity(0.6))
+                                                .frame(width: 20, height: 20)
+                                            
+                                            Circle()
+                                                .fill(Color.appRed.opacity(0.3))
+                                                .frame(width: 16, height: 16)
+                                        }
                                         
-                                        Circle()
-                                            .fill(Color.appRed.opacity(0.3))
-                                            .frame(width: 16, height: 16)
+                                        Text("IN")
+                                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                                            .foregroundColor(.white)
                                     }
                                     
-                                    Text("IN")
-                                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                                        .foregroundColor(.white)
+                                    Text("Connect")
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundColor(Color.appRed.opacity(0.9))
                                 }
                                 
-                                Text("Connect")
-                                    .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(Color.appRed.opacity(0.9))
+                                Spacer()
+                                
+                                // Badge ACTIVE (seulement si la carte est active)
+                                if viewModel.isCardActive {
+                                    Text("ACTIVE")
+                                        .font(.system(size: 11, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 5)
+                                        .background(Color.green)
+                                        .cornerRadius(6)
+                                }
                             }
                             
-                            Spacer()
-                            
-                            // Badge ACTIVE
-                            Text("ACTIVE")
-                                .font(.system(size: 11, weight: .bold))
+                            // Nom utilisateur
+                            Text(viewModel.user.fullName)
+                                .font(.system(size: 26, weight: .bold))
                                 .foregroundColor(.white)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 5)
-                                .background(Color.green)
-                                .cornerRadius(6)
-                        }
-                        
-                        // Nom utilisateur
-                        Text(viewModel.user.fullName)
-                            .font(.system(size: 26, weight: .bold))
-                            .foregroundColor(.white)
-                            .padding(.top, 4)
-                        
-                        // Code utilisateur
-                        Text("Code: \(viewModel.referralCode)")
-                            .font(.system(size: 13, weight: .regular))
-                            .foregroundColor(.gray)
-                            .padding(.top, 2)
-                        
-                        // Membre CLUB10
-                        HStack(spacing: 6) {
-                            Image(systemName: "star.fill")
-                                .foregroundColor(.appGold)
-                                .font(.system(size: 14))
+                                .padding(.top, 4)
                             
-                            Text("Membre CLUB10")
-                                .font(.system(size: 15, weight: .semibold))
-                                .foregroundColor(.appGold)
-                        }
-                        .padding(.top, 4)
-                    }
-                    .padding(20)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(Color.appDarkRed1.opacity(0.85))
-                            .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 4)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
-                    )
-                    .padding(.horizontal, 20)
-                    
-                    // Grille de statistiques
-                    VStack(spacing: 10) {
-                        HStack(spacing: 10) {
-                            StatCard(
-                                icon: "banknote.fill",
-                                value: "\(Int(viewModel.savings))€",
-                                label: "Économies",
-                                iconColor: .appGold
-                            )
+                            // Numéro de carte si disponible
+                            if let cardNumber = viewModel.cardNumber {
+                                Text("Carte: \(cardNumber)")
+                                    .font(.system(size: 13, weight: .regular))
+                                    .foregroundColor(.gray)
+                                    .padding(.top, 2)
+                            }
                             
-                            StatCard(
-                                icon: "person.2.fill",
-                                value: "\(viewModel.referrals)",
-                                label: "Parrainages",
-                                iconColor: .appGold
-                            )
+                            // Code utilisateur
+                            Text("Code: \(viewModel.referralCode)")
+                                .font(.system(size: 13, weight: .regular))
+                                .foregroundColor(.gray)
+                                .padding(.top, 2)
+                            
+                            // Membre CLUB10 (seulement si membre)
+                            if viewModel.isMember {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "star.fill")
+                                        .foregroundColor(.appGold)
+                                        .font(.system(size: 14))
+                                    
+                                    Text("Membre CLUB10")
+                                        .font(.system(size: 15, weight: .semibold))
+                                        .foregroundColor(.appGold)
+                                }
+                                .padding(.top, 4)
+                            }
                         }
+                        .padding(20)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(Color.appDarkRed1.opacity(0.85))
+                                .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 4)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                        )
+                        .padding(.horizontal, 20)
                         
-                        HStack(spacing: 10) {
-                            StatCard(
-                                icon: "wallet.pass.fill",
-                                value: "\(Int(viewModel.wallet))€",
-                                label: "Cagnotte",
-                                iconColor: .appGold
-                            )
+                        // Grille de statistiques
+                        VStack(spacing: 10) {
+                            HStack(spacing: 10) {
+                                StatCard(
+                                    icon: "banknote.fill",
+                                    value: "\(Int(viewModel.savings))€",
+                                    label: "Économies",
+                                    iconColor: .appGold
+                                )
+                                
+                                StatCard(
+                                    icon: "person.2.fill",
+                                    value: "\(viewModel.referrals)",
+                                    label: "Parrainages",
+                                    iconColor: .appGold
+                                )
+                            }
                             
-                            StatCard(
-                                icon: "heart.fill",
-                                value: "\(viewModel.favoritesCount)",
-                                label: "Favoris",
-                                iconColor: .appGold
-                            )
+                            HStack(spacing: 10) {
+                                StatCard(
+                                    icon: "wallet.pass.fill",
+                                    value: "\(Int(viewModel.wallet))€",
+                                    label: "Cagnotte",
+                                    iconColor: .appGold
+                                )
+                                
+                                StatCard(
+                                    icon: "heart.fill",
+                                    value: "\(viewModel.favoritesCount)",
+                                    label: "Favoris",
+                                    iconColor: .appGold
+                                )
+                            }
                         }
-                    }
-                    .padding(.horizontal, 20)
+                        .padding(.horizontal, 20)
                     
                     // Section lien de parrainage
                     VStack(alignment: .leading, spacing: 12) {
@@ -274,9 +321,10 @@ struct CardView: View {
                         .padding(.top, 4)
                     }
                     
-                    // Espace pour le footer
-                    Spacer()
-                        .frame(height: 100)
+                        // Espace pour le footer
+                        Spacer()
+                            .frame(height: 100)
+                    }
                 }
             }
         }

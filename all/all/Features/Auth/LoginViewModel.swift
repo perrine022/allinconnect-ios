@@ -15,6 +15,17 @@ class LoginViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
     
+    private let authAPIService: AuthAPIService
+    
+    init(authAPIService: AuthAPIService? = nil) {
+        // Créer le service dans un contexte MainActor
+        if let authAPIService = authAPIService {
+            self.authAPIService = authAPIService
+        } else {
+            self.authAPIService = AuthAPIService()
+        }
+    }
+    
     var isValid: Bool {
         !email.trimmingCharacters(in: .whitespaces).isEmpty &&
         isValidEmail(email) &&
@@ -29,49 +40,90 @@ class LoginViewModel: ObservableObject {
     }
     
     func login() {
-        // Pour l'instant, on simule juste la connexion
-        // Plus tard, on appellera l'API
         isLoading = true
         errorMessage = nil
         
-        // Simuler un délai de connexion
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            // Créer un compte mocké avec accès aux deux espaces (Client et Pro)
-            UserDefaults.standard.set(true, forKey: "is_logged_in")
-            UserDefaults.standard.set(self.email.isEmpty ? "demo@allinconnect.fr" : self.email, forKey: "user_email")
-            
-            // Compte PRO pour avoir accès aux deux espaces
-            UserDefaults.standard.set("PRO", forKey: "user_type")
-            
-            // Données mockées
-            UserDefaults.standard.set("Marie", forKey: "user_first_name")
-            UserDefaults.standard.set("Dupont", forKey: "user_last_name")
-            UserDefaults.standard.set("69001", forKey: "user_postal_code")
-            
-            // Abonnement actif pour voir les deux espaces
-            UserDefaults.standard.set(true, forKey: "has_active_subscription")
-            UserDefaults.standard.set("PRO", forKey: "subscription_type")
-            let nextPaymentDate = Calendar.current.date(byAdding: .month, value: 1, to: Date()) ?? Date()
-            let formatter = DateFormatter()
-            formatter.dateFormat = "dd/MM/yyyy"
-            UserDefaults.standard.set(formatter.string(from: nextPaymentDate), forKey: "subscription_next_payment_date")
-            
-            self.isLoading = false
-            
-            // Notifier que la connexion est réussie
-            NotificationCenter.default.post(name: NSNotification.Name("UserDidLogin"), object: nil)
+        // Validation
+        guard isValid else {
+            errorMessage = "Veuillez remplir tous les champs correctement"
+            isLoading = false
+            return
+        }
+        
+        Task {
+            do {
+                // Appeler l'API d'authentification
+                let authResponse = try await authAPIService.authenticate(
+                    email: email.trimmingCharacters(in: .whitespaces).lowercased(),
+                    password: password
+                )
+                
+                // Sauvegarder le token
+                AuthTokenManager.shared.saveToken(authResponse.token)
+                
+                // Marquer l'utilisateur comme connecté
+                UserDefaults.standard.set(true, forKey: "is_logged_in")
+                UserDefaults.standard.set(email.trimmingCharacters(in: .whitespaces).lowercased(), forKey: "user_email")
+                
+                // Note: Les autres informations utilisateur (nom, prénom, etc.) devraient être récupérées
+                // depuis un endpoint de profil utilisateur après l'authentification
+                // Pour l'instant, on garde les valeurs par défaut si elles existent déjà
+                
+                isLoading = false
+                
+                // Notifier que la connexion est réussie
+                NotificationCenter.default.post(name: NSNotification.Name("UserDidLogin"), object: nil)
+            } catch {
+                isLoading = false
+                
+                // Gérer les erreurs spécifiques
+                if let apiError = error as? APIError {
+                    switch apiError {
+                    case .httpError(let statusCode, let message):
+                        if statusCode == 401 {
+                            errorMessage = "Email ou mot de passe incorrect"
+                        } else if statusCode == 404 {
+                            errorMessage = "Compte non trouvé"
+                        } else {
+                            errorMessage = message ?? "Erreur lors de la connexion"
+                        }
+                    case .networkError(let underlyingError):
+                        // Vérifier si c'est une erreur de connexion au serveur
+                        let nsError = underlyingError as NSError
+                        if nsError.domain == NSURLErrorDomain && (nsError.code == -1004 || nsError.code == NSURLErrorCannotConnectToHost) {
+                            errorMessage = "Impossible de se connecter au serveur. Vérifiez que le backend est démarré sur http://localhost:8000"
+                        } else {
+                            errorMessage = "Erreur de connexion. Vérifiez votre connexion internet."
+                        }
+                    case .unauthorized:
+                        errorMessage = "Email ou mot de passe incorrect"
+                    default:
+                        errorMessage = apiError.localizedDescription
+                    }
+                } else {
+                    errorMessage = error.localizedDescription
+                }
+                
+                print("Erreur lors de la connexion: \(error)")
+            }
         }
     }
     
     static func isLoggedIn() -> Bool {
-        return UserDefaults.standard.bool(forKey: "is_logged_in")
+        return AuthTokenManager.shared.hasToken() && UserDefaults.standard.bool(forKey: "is_logged_in")
     }
     
     static func logout() {
+        // Supprimer le token
+        AuthTokenManager.shared.removeToken()
+        
         // Nettoyer toutes les données de session
         UserDefaults.standard.set(false, forKey: "is_logged_in")
         UserDefaults.standard.removeObject(forKey: "user_email")
         UserDefaults.standard.removeObject(forKey: "user_type")
+        UserDefaults.standard.removeObject(forKey: "user_first_name")
+        UserDefaults.standard.removeObject(forKey: "user_last_name")
+        UserDefaults.standard.removeObject(forKey: "user_postal_code")
         
         // Notifier la déconnexion
         NotificationCenter.default.post(name: NSNotification.Name("UserDidLogout"), object: nil)

@@ -10,12 +10,7 @@ import SwiftUI
 struct ChangePasswordView: View {
     @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) private var dismiss
-    @State private var currentPassword: String = ""
-    @State private var newPassword: String = ""
-    @State private var confirmPassword: String = ""
-    @State private var showCurrentPassword: Bool = false
-    @State private var showNewPassword: Bool = false
-    @State private var showConfirmPassword: Bool = false
+    @StateObject private var viewModel = ChangePasswordViewModel()
     
     var body: some View {
         GeometryReader { geometry in
@@ -45,6 +40,21 @@ struct ChangePasswordView: View {
                             .padding(.horizontal, 20)
                             .padding(.top, 20)
                             
+                            // Messages d'erreur et de succès
+                            if let errorMessage = viewModel.errorMessage {
+                                Text(errorMessage)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.red)
+                                    .padding(.horizontal, 20)
+                            }
+                            
+                            if let successMessage = viewModel.successMessage {
+                                Text(successMessage)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.green)
+                                    .padding(.horizontal, 20)
+                            }
+                            
                             // Formulaire
                             VStack(spacing: 20) {
                                 // Mot de passe actuel
@@ -54,20 +64,20 @@ struct ChangePasswordView: View {
                                         .foregroundColor(.gray)
                                     
                                     HStack {
-                                        if showCurrentPassword {
-                                            TextField("", text: $currentPassword)
+                                        if viewModel.showOldPassword {
+                                            TextField("", text: $viewModel.oldPassword)
                                                 .font(.system(size: 16))
                                                 .foregroundColor(.white)
                                         } else {
-                                            SecureField("", text: $currentPassword)
+                                            SecureField("", text: $viewModel.oldPassword)
                                                 .font(.system(size: 16))
                                                 .foregroundColor(.white)
                                         }
                                         
                                         Button(action: {
-                                            showCurrentPassword.toggle()
+                                            viewModel.showOldPassword.toggle()
                                         }) {
-                                            Image(systemName: showCurrentPassword ? "eye.fill" : "eye.slash.fill")
+                                            Image(systemName: viewModel.showOldPassword ? "eye.fill" : "eye.slash.fill")
                                                 .foregroundColor(.gray)
                                                 .font(.system(size: 16))
                                         }
@@ -84,20 +94,20 @@ struct ChangePasswordView: View {
                                         .foregroundColor(.gray)
                                     
                                     HStack {
-                                        if showNewPassword {
-                                            TextField("", text: $newPassword)
+                                        if viewModel.showNewPassword {
+                                            TextField("", text: $viewModel.newPassword)
                                                 .font(.system(size: 16))
                                                 .foregroundColor(.white)
                                         } else {
-                                            SecureField("", text: $newPassword)
+                                            SecureField("", text: $viewModel.newPassword)
                                                 .font(.system(size: 16))
                                                 .foregroundColor(.white)
                                         }
                                         
                                         Button(action: {
-                                            showNewPassword.toggle()
+                                            viewModel.showNewPassword.toggle()
                                         }) {
-                                            Image(systemName: showNewPassword ? "eye.fill" : "eye.slash.fill")
+                                            Image(systemName: viewModel.showNewPassword ? "eye.fill" : "eye.slash.fill")
                                                 .foregroundColor(.gray)
                                                 .font(.system(size: 16))
                                         }
@@ -105,6 +115,12 @@ struct ChangePasswordView: View {
                                     .padding(12)
                                     .background(Color.appDarkRed1.opacity(0.6))
                                     .cornerRadius(10)
+                                    
+                                    if !viewModel.newPassword.isEmpty && viewModel.newPassword.count < 6 {
+                                        Text("Le mot de passe doit contenir au moins 6 caractères")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.red)
+                                    }
                                 }
                                 
                                 // Confirmer nouveau mot de passe
@@ -114,20 +130,20 @@ struct ChangePasswordView: View {
                                         .foregroundColor(.gray)
                                     
                                     HStack {
-                                        if showConfirmPassword {
-                                            TextField("", text: $confirmPassword)
+                                        if viewModel.showConfirmPassword {
+                                            TextField("", text: $viewModel.confirmPassword)
                                                 .font(.system(size: 16))
                                                 .foregroundColor(.white)
                                         } else {
-                                            SecureField("", text: $confirmPassword)
+                                            SecureField("", text: $viewModel.confirmPassword)
                                                 .font(.system(size: 16))
                                                 .foregroundColor(.white)
                                         }
                                         
                                         Button(action: {
-                                            showConfirmPassword.toggle()
+                                            viewModel.showConfirmPassword.toggle()
                                         }) {
-                                            Image(systemName: showConfirmPassword ? "eye.fill" : "eye.slash.fill")
+                                            Image(systemName: viewModel.showConfirmPassword ? "eye.fill" : "eye.slash.fill")
                                                 .foregroundColor(.gray)
                                                 .font(.system(size: 16))
                                         }
@@ -135,22 +151,42 @@ struct ChangePasswordView: View {
                                     .padding(12)
                                     .background(Color.appDarkRed1.opacity(0.6))
                                     .cornerRadius(10)
+                                    
+                                    if !viewModel.confirmPassword.isEmpty && viewModel.newPassword != viewModel.confirmPassword {
+                                        Text("Les mots de passe ne correspondent pas")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.red)
+                                    }
                                 }
                             }
                             .padding(.horizontal, 20)
                             
                             // Bouton valider
                             Button(action: {
-                                // Action changer mot de passe
+                                viewModel.changePassword()
+                                // Fermer après succès
+                                if viewModel.successMessage != nil {
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                                        dismiss()
+                                    }
+                                }
                             }) {
-                                Text("Valider")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.black)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 14)
-                                    .background(Color.appGold)
-                                    .cornerRadius(12)
+                                HStack {
+                                    if viewModel.isLoading {
+                                        ProgressView()
+                                            .progressViewStyle(CircularProgressViewStyle(tint: .black))
+                                    } else {
+                                        Text("Valider")
+                                            .font(.system(size: 16, weight: .semibold))
+                                    }
+                                }
+                                .foregroundColor(.black)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background((viewModel.isValid && !viewModel.isLoading) ? Color.appGold : Color.gray.opacity(0.5))
+                                .cornerRadius(12)
                             }
+                            .disabled(!viewModel.isValid || viewModel.isLoading)
                             .padding(.horizontal, 20)
                             
                             Spacer()

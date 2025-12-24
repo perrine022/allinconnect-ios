@@ -25,6 +25,7 @@ struct Partner: Identifiable, Hashable {
     let imageName: String
     let headerImageName: String
     var isFavorite: Bool
+    let apiId: Int? // ID original de l'API pour pouvoir gérer les favoris
     
     init(
         id: UUID = UUID(),
@@ -43,7 +44,8 @@ struct Partner: Identifiable, Hashable {
         discount: Int? = nil,
         imageName: String,
         headerImageName: String,
-        isFavorite: Bool = false
+        isFavorite: Bool = false,
+        apiId: Int? = nil
     ) {
         self.id = id
         self.name = name
@@ -62,6 +64,7 @@ struct Partner: Identifiable, Hashable {
         self.imageName = imageName
         self.headerImageName = headerImageName
         self.isFavorite = isFavorite
+        self.apiId = apiId
     }
 }
 

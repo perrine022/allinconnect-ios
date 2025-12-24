@@ -53,36 +53,84 @@ struct ProOffersView: View {
                             .padding(.horizontal, 20)
                             .padding(.top, 20)
                             
-                            // Liste des offres
-                            if viewModel.myOffers.isEmpty {
+                            // Indicateur de chargement
+                            if viewModel.isLoading {
                                 VStack(spacing: 16) {
-                                    VStack(spacing: 12) {
-                                        Image(systemName: "tag.fill")
-                                            .font(.system(size: 50))
-                                            .foregroundColor(.white.opacity(0.5))
-                                        
-                                        Text("Aucune offre pour le moment")
-                                            .font(.system(size: 16, weight: .medium))
-                                            .foregroundColor(.white.opacity(0.7))
-                                        
-                                        Text("Créez votre première offre en cliquant sur le bouton +")
-                                            .font(.system(size: 14, weight: .regular))
-                                            .foregroundColor(.white.opacity(0.6))
-                                            .multilineTextAlignment(.center)
-                                    }
-                                    .padding(.vertical, 40)
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .appGold))
+                                        .scaleEffect(1.5)
+                                    Text("Chargement de vos offres...")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(.white.opacity(0.8))
                                 }
                                 .frame(maxWidth: .infinity)
-                                .padding(.horizontal, 20)
-                            } else {
+                                .padding(.vertical, 40)
+                            }
+                            
+                            // Message d'erreur
+                            if let errorMessage = viewModel.errorMessage {
                                 VStack(spacing: 12) {
-                                    ForEach(viewModel.myOffers) { offer in
-                                        ProOfferCard(offer: offer) {
-                                            viewModel.deleteOffer(offer)
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .foregroundColor(.red)
+                                        .font(.system(size: 32))
+                                    Text("Erreur")
+                                        .font(.system(size: 18, weight: .bold))
+                                        .foregroundColor(.white)
+                                    Text(errorMessage)
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.white.opacity(0.8))
+                                        .multilineTextAlignment(.center)
+                                        .padding(.horizontal, 20)
+                                    
+                                    Button(action: {
+                                        viewModel.loadMyOffers()
+                                    }) {
+                                        Text("Réessayer")
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundColor(.black)
+                                            .padding(.horizontal, 24)
+                                            .padding(.vertical, 12)
+                                            .background(Color.appGold)
+                                            .cornerRadius(10)
+                                    }
+                                    .padding(.top, 8)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 40)
+                            }
+                            
+                            // Liste des offres
+                            if !viewModel.isLoading && viewModel.errorMessage == nil {
+                                if viewModel.myOffers.isEmpty {
+                                    VStack(spacing: 16) {
+                                        VStack(spacing: 12) {
+                                            Image(systemName: "tag.fill")
+                                                .font(.system(size: 50))
+                                                .foregroundColor(.white.opacity(0.5))
+                                            
+                                            Text("Aucune offre pour le moment")
+                                                .font(.system(size: 16, weight: .medium))
+                                                .foregroundColor(.white.opacity(0.7))
+                                            
+                                            Text("Créez votre première offre en cliquant sur le bouton +")
+                                                .font(.system(size: 14, weight: .regular))
+                                                .foregroundColor(.white.opacity(0.6))
+                                                .multilineTextAlignment(.center)
+                                        }
+                                        .padding(.vertical, 40)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.horizontal, 20)
+                                } else {
+                                    VStack(spacing: 12) {
+                                        ForEach(viewModel.myOffers) { offer in
+                                            ProOfferCard(offer: offer) {
+                                                viewModel.deleteOffer(offer)
+                                            }
                                         }
                                     }
+                                    .padding(.horizontal, 20)
                                 }
-                                .padding(.horizontal, 20)
                             }
                             
                             Spacer()

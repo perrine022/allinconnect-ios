@@ -34,10 +34,31 @@ class ProfileViewModel: ObservableObject {
     
     // Offres PRO
     @Published var myOffers: [Offer] = []
+    @Published var isLoadingFavorites: Bool = false
+    @Published var favoritesError: String?
     
+    private let favoritesAPIService: FavoritesAPIService
+    private let partnersAPIService: PartnersAPIService
     private let dataService: MockDataService
     
-    init(dataService: MockDataService = MockDataService.shared) {
+    init(
+        favoritesAPIService: FavoritesAPIService? = nil,
+        partnersAPIService: PartnersAPIService? = nil,
+        dataService: MockDataService = MockDataService.shared
+    ) {
+        // Créer les services dans un contexte MainActor
+        if let favoritesAPIService = favoritesAPIService {
+            self.favoritesAPIService = favoritesAPIService
+        } else {
+            self.favoritesAPIService = FavoritesAPIService()
+        }
+        
+        if let partnersAPIService = partnersAPIService {
+            self.partnersAPIService = partnersAPIService
+        } else {
+            self.partnersAPIService = PartnersAPIService()
+        }
+        
         self.dataService = dataService
         
         // Récupérer les données utilisateur depuis UserDefaults
@@ -70,12 +91,56 @@ class ProfileViewModel: ObservableObject {
     }
     
     func loadFavorites() {
-        favoritePartners = dataService.getPartners().filter { $0.isFavorite }
+        isLoadingFavorites = true
+        favoritesError = nil
+        
+        Task {
+            do {
+                // Charger les favoris depuis l'API
+                let favoritesResponse = try await favoritesAPIService.getFavorites()
+                
+                // Convertir en modèles Partner
+                favoritePartners = favoritesResponse.map { $0.toPartner() }
+                
+                isLoadingFavorites = false
+            } catch {
+                isLoadingFavorites = false
+                favoritesError = error.localizedDescription
+                print("Erreur lors du chargement des favoris: \(error)")
+                
+                // En cas d'erreur, utiliser les données mockées en fallback
+                favoritePartners = dataService.getPartners().filter { $0.isFavorite }
+            }
+        }
     }
     
     func togglePartnerFavorite(for partner: Partner) {
-        dataService.togglePartnerFavorite(partnerId: partner.id)
-        loadFavorites()
+        guard let apiId = partner.apiId else {
+            // Si pas d'ID API, utiliser le fallback local
+            dataService.togglePartnerFavorite(partnerId: partner.id)
+            loadFavorites()
+            return
+        }
+        
+        Task {
+            do {
+                if partner.isFavorite {
+                    // Retirer des favoris
+                    try await favoritesAPIService.removeFavorite(professionalId: apiId)
+                } else {
+                    // Ajouter aux favoris
+                    try await favoritesAPIService.addFavorite(professionalId: apiId)
+                }
+                
+                // Recharger les favoris depuis l'API
+                await loadFavorites()
+            } catch {
+                print("Erreur lors de la modification du favori: \(error)")
+                // En cas d'erreur, utiliser le fallback local
+                dataService.togglePartnerFavorite(partnerId: partner.id)
+                loadFavorites()
+            }
+        }
     }
     
     func loadMyOffers() {

@@ -8,10 +8,27 @@
 import SwiftUI
 
 struct OfferDetailView: View {
-    let offer: Offer
+    let offer: Offer? // Optionnel pour permettre le chargement depuis l'API
+    let offerId: Int? // ID de l'offre pour charger depuis l'API
+    
+    @StateObject private var viewModel: OfferDetailViewModel
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appState: AppState
     @State private var selectedPartner: Partner?
+    
+    // Initializer pour les offres déjà chargées (mockées)
+    init(offer: Offer) {
+        self.offer = offer
+        self.offerId = nil
+        _viewModel = StateObject(wrappedValue: OfferDetailViewModel(offer: offer))
+    }
+    
+    // Initializer pour charger depuis l'API avec l'ID
+    init(offerId: Int) {
+        self.offer = nil
+        self.offerId = offerId
+        _viewModel = StateObject(wrappedValue: OfferDetailViewModel(offerId: offerId))
+    }
     
     var body: some View {
         GeometryReader { geometry in
@@ -30,15 +47,59 @@ struct OfferDetailView: View {
                     .ignoresSafeArea()
                     
                     ScrollView {
-                        VStack(spacing: 0) {
-                            // Image header
-                            ZStack(alignment: .topLeading) {
-                                Image(systemName: offer.imageName)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(height: 200)
-                                    .clipped()
-                                    .foregroundColor(.gray.opacity(0.3))
+                        // États de chargement et d'erreur
+                        if viewModel.isLoading {
+                            VStack(spacing: 16) {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .appGold))
+                                    .scaleEffect(1.5)
+                                Text("Chargement des détails...")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(.white.opacity(0.8))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 100)
+                        } else if let errorMessage = viewModel.errorMessage {
+                            VStack(spacing: 12) {
+                                Image(systemName: "exclamationmark.triangle")
+                                    .font(.system(size: 40))
+                                    .foregroundColor(.appGold)
+                                Text("Erreur")
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundColor(.white)
+                                Text(errorMessage)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.gray)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal)
+                                
+                                Button(action: {
+                                    if let offerId = offerId {
+                                        viewModel.loadOfferDetail(id: offerId)
+                                    }
+                                }) {
+                                    Text("Réessayer")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.black)
+                                        .padding(.horizontal, 24)
+                                        .padding(.vertical, 12)
+                                        .background(Color.appGold)
+                                        .cornerRadius(10)
+                                }
+                                .padding(.top, 8)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 100)
+                        } else if let offer = viewModel.offer ?? offer {
+                            VStack(spacing: 0) {
+                                // Image header
+                                ZStack(alignment: .topLeading) {
+                                    Image(systemName: offer.imageName)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(height: 200)
+                                        .clipped()
+                                        .foregroundColor(.gray.opacity(0.3))
                                 
                                 // Overlay gradient
                                 LinearGradient(
@@ -163,8 +224,27 @@ struct OfferDetailView: View {
                                 .padding(.horizontal, 20)
                                 
                                 // Bouton voir le partenaire
-                                if let partnerId = offer.partnerId,
-                                   let partner = MockDataService.shared.getPartnerById(id: partnerId) {
+                                if let partner = viewModel.partner {
+                                    Button(action: {
+                                        selectedPartner = partner
+                                    }) {
+                                        HStack(spacing: 12) {
+                                            Image(systemName: "building.2.fill")
+                                                .font(.system(size: 18))
+                                            
+                                            Text("Voir le partenaire")
+                                                .font(.system(size: 16, weight: .semibold))
+                                        }
+                                        .foregroundColor(.black)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 14)
+                                        .background(Color.appGold)
+                                        .cornerRadius(12)
+                                    }
+                                    .padding(.horizontal, 20)
+                                } else if let partnerId = offer.partnerId,
+                                          let partner = MockDataService.shared.getPartnerById(id: partnerId) {
+                                    // Fallback vers MockDataService si le partenaire n'est pas chargé depuis l'API
                                     Button(action: {
                                         selectedPartner = partner
                                     }) {

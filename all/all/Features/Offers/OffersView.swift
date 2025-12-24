@@ -12,6 +12,7 @@ struct OffersView: View {
     @StateObject private var viewModel = OffersViewModel()
     @EnvironmentObject private var locationService: LocationService
     @State private var selectedPartner: Partner?
+    @State private var selectedOffer: Offer?
     @State private var showLocationPermission = false
     
     var body: some View {
@@ -150,18 +151,80 @@ struct OffersView: View {
                     .padding(.horizontal, 20)
                     .zIndex(1000) // zIndex élevé pour le VStack des champs de recherche
                     
+                    // Indicateur de chargement
+                    if viewModel.isLoading {
+                        VStack(spacing: 16) {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .appGold))
+                                .scaleEffect(1.5)
+                            Text("Chargement des offres...")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.white.opacity(0.8))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 40)
+                    }
+                    
+                    // Message d'erreur
+                    if let errorMessage = viewModel.errorMessage {
+                        VStack(spacing: 12) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.red)
+                                .font(.system(size: 32))
+                            Text("Erreur")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(.white)
+                            Text(errorMessage)
+                                .font(.system(size: 14))
+                                .foregroundColor(.white.opacity(0.8))
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 20)
+                            
+                            Button(action: {
+                                viewModel.loadOffers()
+                            }) {
+                                Text("Réessayer")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(.black)
+                                    .padding(.horizontal, 24)
+                                    .padding(.vertical, 12)
+                                    .background(Color.appGold)
+                                    .cornerRadius(10)
+                            }
+                            .padding(.top, 8)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 40)
+                    }
+                    
                     // Liste des offres
-                    VStack(spacing: 12) {
-                        ForEach(viewModel.filteredOffers) { offer in
-                            OfferListCard(offer: offer) {
-                                if let partner = viewModel.getPartner(for: offer) {
-                                    selectedPartner = partner
+                    if !viewModel.isLoading && viewModel.errorMessage == nil {
+                        if viewModel.filteredOffers.isEmpty {
+                            VStack(spacing: 12) {
+                                Image(systemName: "tag.slash.fill")
+                                    .foregroundColor(.gray.opacity(0.6))
+                                    .font(.system(size: 48))
+                                Text("Aucune offre trouvée")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(.white.opacity(0.8))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 40)
+                        } else {
+                            VStack(spacing: 12) {
+                                ForEach(viewModel.filteredOffers) { offer in
+                                    OfferListCard(offer: offer) {
+                                        // Naviguer vers la page de détail de l'offre
+                                        selectedOffer = offer
+                                    }
                                 }
                             }
+                            .padding(.horizontal, 20)
                         }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 100) // Espace pour le footer
+                    
+                    Spacer()
+                        .frame(height: 100) // Espace pour le footer
                 }
             }
         }
@@ -186,6 +249,14 @@ struct OffersView: View {
         .scrollDismissesKeyboard(.interactively)
         .navigationDestination(item: $selectedPartner) { partner in
             PartnerDetailView(partner: partner)
+        }
+        .navigationDestination(item: $selectedOffer) { offer in
+            // Si l'offre a un ID API, charger depuis l'API, sinon utiliser l'offre directement
+            if let apiId = offer.extractApiId() {
+                OfferDetailView(offerId: apiId)
+            } else {
+                OfferDetailView(offer: offer)
+            }
         }
     }
 }

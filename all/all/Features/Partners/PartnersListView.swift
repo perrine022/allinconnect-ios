@@ -161,7 +161,28 @@ struct PartnersListView: View {
                     .padding(.horizontal, 20)
                     
                     // Liste des partenaires
-                    if viewModel.filteredPartners.isEmpty {
+                    // États de chargement et d'erreur
+                    if viewModel.isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .appGold))
+                            .scaleEffect(1.5)
+                            .padding(.top, 50)
+                    } else if let errorMessage = viewModel.errorMessage {
+                        VStack(spacing: 10) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.system(size: 40))
+                                .foregroundColor(.appGold)
+                            Text("Erreur")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(.white)
+                            Text(errorMessage)
+                                .font(.system(size: 14))
+                                .foregroundColor(.gray)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                        }
+                        .padding(.top, 50)
+                    } else if viewModel.filteredPartners.isEmpty {
                         VStack(spacing: 16) {
                             Image(systemName: "magnifyingglass")
                                 .font(.system(size: 50))

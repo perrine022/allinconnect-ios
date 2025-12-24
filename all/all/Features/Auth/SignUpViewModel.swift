@@ -16,9 +16,21 @@ class SignUpViewModel: ObservableObject {
     @Published var password: String = ""
     @Published var confirmPassword: String = ""
     @Published var postalCode: String = ""
+    @Published var birthDate: Date = Calendar.current.date(byAdding: .year, value: -25, to: Date()) ?? Date()
     @Published var userType: UserType = .client
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
+    
+    private let authAPIService: AuthAPIService
+    
+    init(authAPIService: AuthAPIService? = nil) {
+        // Créer le service dans un contexte MainActor
+        if let authAPIService = authAPIService {
+            self.authAPIService = authAPIService
+        } else {
+            self.authAPIService = AuthAPIService()
+        }
+    }
     
     var isValid: Bool {
         !firstName.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -50,22 +62,84 @@ class SignUpViewModel: ObservableObject {
             return
         }
         
-        // Simuler un délai d'inscription
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            // Sauvegarder les données utilisateur
-            UserDefaults.standard.set(true, forKey: "is_logged_in")
-            UserDefaults.standard.set(self.email, forKey: "user_email")
-            UserDefaults.standard.set(self.firstName, forKey: "user_first_name")
-            UserDefaults.standard.set(self.lastName, forKey: "user_last_name")
-            UserDefaults.standard.set(self.postalCode, forKey: "user_postal_code")
-            UserDefaults.standard.set(self.userType == .pro ? "PRO" : "CLIENT", forKey: "user_type")
-            
-            self.isLoading = false
-            
-            // Notifier que l'inscription est réussie
-            NotificationCenter.default.post(name: NSNotification.Name("UserDidLogin"), object: nil)
-            
-            completion(true)
+        Task {
+            do {
+                // Convertir le code postal en ville (on peut extraire la ville du code postal ou utiliser le code postal comme ville)
+                let city = postalCode // Pour l'instant, on utilise le code postal comme ville
+                
+                // Formater la date de naissance au format YYYY-MM-DD
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "yyyy-MM-dd"
+                let birthDateString = dateFormatter.string(from: birthDate)
+                
+                // Créer la requête d'inscription
+                let registrationRequest = RegistrationRequest(
+                    firstName: firstName.trimmingCharacters(in: .whitespaces),
+                    lastName: lastName.trimmingCharacters(in: .whitespaces),
+                    email: email.trimmingCharacters(in: .whitespaces).lowercased(),
+                    password: password,
+                    address: nil, // Peut être ajouté plus tard
+                    city: city,
+                    birthDate: birthDateString,
+                    userType: userType == .pro ? .professional : .client,
+                    subscriptionType: .free, // Par défaut FREE
+                    profession: userType == .pro ? nil : nil, // Peut être ajouté plus tard
+                    category: nil, // Peut être sélectionné plus tard pour les PRO
+                    referralCode: nil // Peut être ajouté plus tard
+                )
+                
+                // Appeler l'API
+                let authResponse = try await authAPIService.register(registrationRequest)
+                
+                // Sauvegarder le token
+                AuthTokenManager.shared.saveToken(authResponse.token)
+                
+                // Sauvegarder les données utilisateur localement
+                UserDefaults.standard.set(true, forKey: "is_logged_in")
+                UserDefaults.standard.set(email.trimmingCharacters(in: .whitespaces).lowercased(), forKey: "user_email")
+                UserDefaults.standard.set(firstName.trimmingCharacters(in: .whitespaces), forKey: "user_first_name")
+                UserDefaults.standard.set(lastName.trimmingCharacters(in: .whitespaces), forKey: "user_last_name")
+                UserDefaults.standard.set(postalCode, forKey: "user_postal_code")
+                UserDefaults.standard.set(userType == .pro ? "PRO" : "CLIENT", forKey: "user_type")
+                
+                isLoading = false
+                
+                // Notifier que l'inscription est réussie
+                NotificationCenter.default.post(name: NSNotification.Name("UserDidLogin"), object: nil)
+                
+                completion(true)
+            } catch {
+                isLoading = false
+                
+                // Gérer les erreurs spécifiques
+                if let apiError = error as? APIError {
+                    switch apiError {
+                    case .httpError(let statusCode, let message):
+                        if statusCode == 400 {
+                            errorMessage = message ?? "Les informations fournies sont invalides"
+                        } else if statusCode == 409 {
+                            errorMessage = "Cet email est déjà utilisé"
+                        } else {
+                            errorMessage = message ?? "Erreur lors de l'inscription"
+                        }
+                    case .networkError(let underlyingError):
+                        // Vérifier si c'est une erreur de connexion au serveur
+                        let nsError = underlyingError as NSError
+                        if nsError.domain == NSURLErrorDomain && (nsError.code == -1004 || nsError.code == NSURLErrorCannotConnectToHost) {
+                            errorMessage = "Impossible de se connecter au serveur. Vérifiez que le backend est démarré sur http://localhost:8000"
+                        } else {
+                            errorMessage = "Erreur de connexion. Vérifiez votre connexion internet."
+                        }
+                    default:
+                        errorMessage = apiError.localizedDescription
+                    }
+                } else {
+                    errorMessage = error.localizedDescription
+                }
+                
+                print("Erreur lors de l'inscription: \(error)")
+                completion(false)
+            }
         }
     }
 }
