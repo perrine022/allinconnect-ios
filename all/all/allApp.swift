@@ -23,13 +23,11 @@ struct allApp: App {
                 }
             } else if !isLoggedIn {
                 // Étape 2: Connexion/Inscription (après onboarding)
-                NavigationStack {
-                    LoginViewWrapper()
-                        .environmentObject(AppState())
-                        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserDidLogin"))) { _ in
-                            isLoggedIn = true
-                        }
-                }
+                LoginViewWrapper()
+                    .environmentObject(AppState())
+                    .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserDidLogin"))) { _ in
+                        isLoggedIn = true
+                    }
             } else {
                 // Étape 3: App principale (si connecté)
                 TabBarView()

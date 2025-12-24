@@ -242,10 +242,13 @@ struct LoginViewWrapper: View {
     @EnvironmentObject private var appState: AppState
     
     var body: some View {
-        LoginView(signUpNavigationId: $signUpNavigationId)
-            .navigationDestination(item: $signUpNavigationId) { _ in
-                SignUpView()
-            }
+        NavigationStack {
+            LoginView(signUpNavigationId: $signUpNavigationId)
+                .navigationDestination(item: $signUpNavigationId) { _ in
+                    SignUpView()
+                        .environmentObject(appState)
+                }
+        }
     }
 }
 
