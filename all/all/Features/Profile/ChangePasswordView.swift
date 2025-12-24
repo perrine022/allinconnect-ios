@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ChangePasswordView: View {
     @EnvironmentObject private var appState: AppState
+    @Environment(\.dismiss) private var dismiss
     @State private var currentPassword: String = ""
     @State private var newPassword: String = ""
     @State private var confirmPassword: String = ""
@@ -162,7 +163,9 @@ struct ChangePasswordView: View {
                 VStack {
                     Spacer()
                     FooterBar(selectedTab: $appState.selectedTab) { tab in
-                        appState.navigateToTab(tab, dismiss: {})
+                        appState.navigateToTab(tab, dismiss: {
+                            dismiss()
+                        })
                     }
                     .frame(width: geometry.size.width)
                 }

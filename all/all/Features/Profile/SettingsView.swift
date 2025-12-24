@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var appState: AppState
+    @Environment(\.dismiss) private var dismiss
     @State private var selectedSection: SettingsSection?
     @State private var changePasswordNavigationId: UUID?
     
@@ -142,7 +143,9 @@ struct SettingsView: View {
                 VStack {
                     Spacer()
                     FooterBar(selectedTab: $appState.selectedTab) { tab in
-                        appState.navigateToTab(tab, dismiss: {})
+                        appState.navigateToTab(tab, dismiss: {
+                            dismiss()
+                        })
                     }
                     .frame(width: geometry.size.width)
                 }

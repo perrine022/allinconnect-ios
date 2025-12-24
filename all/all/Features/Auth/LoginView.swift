@@ -9,6 +9,8 @@ import SwiftUI
 
 struct LoginView: View {
     @Binding var signUpNavigationId: UUID?
+    @EnvironmentObject private var appState: AppState
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = LoginViewModel()
     @State private var showForgotPassword = false
     
@@ -23,7 +25,9 @@ struct LoginView: View {
     }
     
     var body: some View {
-        ZStack {
+        GeometryReader { geometry in
+            ZStack(alignment: .bottom) {
+                ZStack {
             // Background avec gradient
             LinearGradient(
                 gradient: Gradient(colors: [
@@ -203,8 +207,22 @@ struct LoginView: View {
                     .padding(.top, 12)
                     
                     Spacer()
-                        .frame(height: 40)
+                        .frame(height: 100)
                 }
+            }
+                }
+                
+                // Footer Bar - toujours visible
+                VStack {
+                    Spacer()
+                    FooterBar(selectedTab: $appState.selectedTab) { tab in
+                        appState.navigateToTab(tab, dismiss: {
+                            dismiss()
+                        })
+                    }
+                    .frame(width: geometry.size.width)
+                }
+                .ignoresSafeArea(edges: .bottom)
             }
         }
         .onTapGesture {
@@ -215,6 +233,19 @@ struct LoginView: View {
                 ForgotPasswordView()
             }
         }
+    }
+}
+
+// Wrapper pour LoginView depuis allApp (sans besoin de binding externe)
+struct LoginViewWrapper: View {
+    @State private var signUpNavigationId: UUID?
+    @EnvironmentObject private var appState: AppState
+    
+    var body: some View {
+        LoginView(signUpNavigationId: $signUpNavigationId)
+            .navigationDestination(item: $signUpNavigationId) { _ in
+                SignUpView()
+            }
     }
 }
 

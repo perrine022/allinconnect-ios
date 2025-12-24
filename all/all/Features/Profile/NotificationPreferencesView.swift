@@ -10,6 +10,7 @@ import SwiftUI
 struct NotificationPreferencesView: View {
     @StateObject private var viewModel = NotificationPreferencesViewModel()
     @EnvironmentObject private var appState: AppState
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         GeometryReader { geometry in
@@ -129,7 +130,9 @@ struct NotificationPreferencesView: View {
                 VStack {
                     Spacer()
                     FooterBar(selectedTab: $appState.selectedTab) { tab in
-                        appState.navigateToTab(tab, dismiss: {})
+                        appState.navigateToTab(tab, dismiss: {
+                            dismiss()
+                        })
                     }
                     .frame(width: geometry.size.width)
                 }

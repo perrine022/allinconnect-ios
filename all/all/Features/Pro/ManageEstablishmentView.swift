@@ -95,13 +95,13 @@ struct ManageEstablishmentView: View {
                                     TextEditor(text: $viewModel.description)
                                         .frame(height: 80)
                                         .padding(10)
-                                        .background(focusedField == .description ? Color.appDarkRed1.opacity(0.8) : Color.appDarkRed1.opacity(0.6))
+                                        .background(focusedField == .description ? Color.white.opacity(0.95) : Color.white)
                                         .overlay(
                                             RoundedRectangle(cornerRadius: 10)
                                                 .stroke(focusedField == .description ? Color.appGold : Color.clear, lineWidth: 2)
                                         )
                                         .cornerRadius(10)
-                                        .foregroundColor(.white)
+                                        .foregroundColor(.black)
                                         .accentColor(.appGold)
                                         .focused($focusedField, equals: .description)
                                 }
@@ -243,9 +243,9 @@ struct InputField: View {
             
             TextField("", text: $text, prompt: Text(placeholder).foregroundColor(.gray.opacity(0.6)))
                 .font(.system(size: 15))
-                .foregroundColor(.white)
+                .foregroundColor(.black)
                 .padding(12)
-                .background(isFocused ? Color.appDarkRed1.opacity(0.8) : Color.appDarkRed1.opacity(0.6))
+                .background(isFocused ? Color.white.opacity(0.95) : Color.white)
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
                         .stroke(isFocused ? Color.appGold : Color.clear, lineWidth: 2)

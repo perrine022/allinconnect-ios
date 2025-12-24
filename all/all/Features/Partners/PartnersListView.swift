@@ -12,6 +12,7 @@ struct PartnersListView: View {
     @StateObject private var viewModel = PartnersListViewModel()
     @EnvironmentObject private var locationService: LocationService
     @EnvironmentObject private var appState: AppState
+    @Environment(\.dismiss) private var dismiss
     @State private var selectedPartner: Partner?
     @State private var showLocationPermission = false
     
@@ -205,7 +206,9 @@ struct PartnersListView: View {
                 VStack {
                     Spacer()
                     FooterBar(selectedTab: $appState.selectedTab) { tab in
-                        appState.navigateToTab(tab, dismiss: {})
+                        appState.navigateToTab(tab, dismiss: {
+                            dismiss()
+                        })
                     }
                     .frame(width: geometry.size.width)
                 }

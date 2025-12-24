@@ -12,10 +12,26 @@ import CoreLocation
 struct allApp: App {
     @StateObject private var locationService = LocationService.shared
     @State private var hasCompletedOnboarding = OnboardingViewModel.hasCompletedOnboarding()
+    @State private var isLoggedIn = LoginViewModel.isLoggedIn()
     
     var body: some Scene {
         WindowGroup {
-            if hasCompletedOnboarding {
+            if !hasCompletedOnboarding {
+                // Étape 1: Onboarding
+                OnboardingView {
+                    hasCompletedOnboarding = true
+                }
+            } else if !isLoggedIn {
+                // Étape 2: Connexion/Inscription (après onboarding)
+                NavigationStack {
+                    LoginViewWrapper()
+                        .environmentObject(AppState())
+                        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserDidLogin"))) { _ in
+                            isLoggedIn = true
+                        }
+                }
+            } else {
+                // Étape 3: App principale (si connecté)
                 TabBarView()
                     .environmentObject(locationService)
                     .onAppear {
@@ -24,10 +40,9 @@ struct allApp: App {
                             // La permission sera demandée depuis HomeView ou OffersView
                         }
                     }
-            } else {
-                OnboardingView {
-                    hasCompletedOnboarding = true
-                }
+                    .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserDidLogout"))) { _ in
+                        isLoggedIn = false
+                    }
             }
         }
     }

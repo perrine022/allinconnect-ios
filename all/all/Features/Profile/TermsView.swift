@@ -9,6 +9,7 @@ import SwiftUI
 
 struct TermsView: View {
     @EnvironmentObject private var appState: AppState
+    @Environment(\.dismiss) private var dismiss
     let isPrivacyPolicy: Bool
     
     init(isPrivacyPolicy: Bool = false) {
@@ -66,7 +67,9 @@ struct TermsView: View {
                 VStack {
                     Spacer()
                     FooterBar(selectedTab: $appState.selectedTab) { tab in
-                        appState.navigateToTab(tab, dismiss: {})
+                        appState.navigateToTab(tab, dismiss: {
+                            dismiss()
+                        })
                     }
                     .frame(width: geometry.size.width)
                 }

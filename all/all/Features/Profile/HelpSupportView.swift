@@ -10,6 +10,7 @@ import UIKit
 
 struct HelpSupportView: View {
     @EnvironmentObject private var appState: AppState
+    @Environment(\.dismiss) private var dismiss
     @State private var selectedSection: HelpSection?
     
     enum HelpSection: String, Identifiable {
@@ -147,7 +148,7 @@ struct HelpSupportView: View {
                     Spacer()
                     FooterBar(selectedTab: $appState.selectedTab) { tab in
                         appState.navigateToTab(tab, dismiss: {
-                            // Pas de dismiss ici car on est déjà dans la navigation
+                            dismiss()
                         })
                     }
                     .frame(width: geometry.size.width)
@@ -175,6 +176,7 @@ struct HelpSupportView: View {
 // MARK: - FAQ View
 struct FAQView: View {
     @EnvironmentObject private var appState: AppState
+    @Environment(\.dismiss) private var dismiss
     @State private var expandedQuestion: Int? = nil
     
     let faqItems: [(question: String, answer: String)] = [
@@ -244,7 +246,9 @@ struct FAQView: View {
                 VStack {
                     Spacer()
                     FooterBar(selectedTab: $appState.selectedTab) { tab in
-                        appState.navigateToTab(tab, dismiss: {})
+                        appState.navigateToTab(tab, dismiss: {
+                            dismiss()
+                        })
                     }
                     .frame(width: geometry.size.width)
                 }
@@ -436,7 +440,9 @@ struct ContactFormView: View {
                 VStack {
                     Spacer()
                     FooterBar(selectedTab: $appState.selectedTab) { tab in
-                        appState.navigateToTab(tab, dismiss: {})
+                        appState.navigateToTab(tab, dismiss: {
+                            dismiss()
+                        })
                     }
                     .frame(width: geometry.size.width)
                 }
@@ -623,7 +629,9 @@ struct ReportProblemView: View {
                 VStack {
                     Spacer()
                     FooterBar(selectedTab: $appState.selectedTab) { tab in
-                        appState.navigateToTab(tab, dismiss: {})
+                        appState.navigateToTab(tab, dismiss: {
+                            dismiss()
+                        })
                     }
                     .frame(width: geometry.size.width)
                 }

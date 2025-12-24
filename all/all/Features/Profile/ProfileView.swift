@@ -108,35 +108,33 @@ struct ProfileView: View {
                         }
                         .padding(.horizontal, 20)
                         
-                        // Boutons Espace Client/Pro (si utilisateur PRO)
-                        if viewModel.user.userType == .pro {
-                            HStack(spacing: 12) {
-                                Button(action: {
-                                    viewModel.switchToClientSpace()
-                                }) {
-                                    Text("Espace Client")
-                                        .font(.system(size: 16, weight: .semibold))
-                                        .foregroundColor(viewModel.currentSpace == .client ? .black : .white)
-                                        .padding(.horizontal, 20)
-                                        .padding(.vertical, 12)
-                                        .background(viewModel.currentSpace == .client ? Color.appGold : Color.appDarkRed1.opacity(0.6))
-                                        .cornerRadius(10)
-                                }
-                                
-                                Button(action: {
-                                    viewModel.switchToProSpace()
-                                }) {
-                                    Text("Espace Pro")
-                                        .font(.system(size: 16, weight: .semibold))
-                                        .foregroundColor(viewModel.currentSpace == .pro ? .black : .white)
-                                        .padding(.horizontal, 20)
-                                        .padding(.vertical, 12)
-                                        .background(viewModel.currentSpace == .pro ? Color.appGold : Color.appDarkRed1.opacity(0.6))
-                                        .cornerRadius(10)
-                                }
+                        // Boutons Espace Client/Pro (toujours affichés pour les tests)
+                        HStack(spacing: 12) {
+                            Button(action: {
+                                viewModel.switchToClientSpace()
+                            }) {
+                                Text("Espace Client")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(viewModel.currentSpace == .client ? .black : .white)
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 12)
+                                    .background(viewModel.currentSpace == .client ? Color.appGold : Color.appDarkRed1.opacity(0.6))
+                                    .cornerRadius(10)
                             }
-                            .padding(.horizontal, 20)
+                            
+                            Button(action: {
+                                viewModel.switchToProSpace()
+                            }) {
+                                Text("Espace Pro")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(viewModel.currentSpace == .pro ? .black : .white)
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 12)
+                                    .background(viewModel.currentSpace == .pro ? Color.appGold : Color.appDarkRed1.opacity(0.6))
+                                    .cornerRadius(10)
+                            }
                         }
+                        .padding(.horizontal, 20)
                     }
                     .padding(.top, 20)
                     .padding(.bottom, 8)
@@ -214,8 +212,8 @@ struct ProfileView: View {
                         .padding(.bottom, 8)
                     }
                     
-                    // Bloc Abonnement PRO (uniquement si PRO, dans l'espace PRO et abonnement actif)
-                    if viewModel.user.userType == .pro && viewModel.currentSpace == .pro && viewModel.hasActiveProSubscription {
+                    // Bloc Abonnement PRO (dans l'espace PRO et abonnement actif - toujours affiché pour les tests)
+                    if viewModel.currentSpace == .pro && viewModel.hasActiveProSubscription {
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
                                 Image(systemName: "creditcard.fill")
@@ -404,8 +402,8 @@ struct ProfileView: View {
                     
                     // Menu options
                     VStack(spacing: 0) {
-                        // Options PRO uniquement dans l'espace PRO
-                        if viewModel.user.userType == .pro && viewModel.currentSpace == .pro {
+                        // Options PRO uniquement dans l'espace PRO (toujours affichées pour les tests)
+                        if viewModel.currentSpace == .pro {
                             ProfileMenuRow(
                                 icon: "building.2.fill",
                                 title: "Gérer mon établissement",
@@ -589,6 +587,7 @@ struct ProfileView: View {
 
 struct EditProfileView: View {
     @EnvironmentObject private var appState: AppState
+    @Environment(\.dismiss) private var dismiss
     @State private var firstName: String = "Marie"
     @State private var lastName: String = "Dupont"
     @State private var email: String = "marie@email.fr"
@@ -700,7 +699,9 @@ struct EditProfileView: View {
                 VStack {
                     Spacer()
                     FooterBar(selectedTab: $appState.selectedTab) { tab in
-                        appState.navigateToTab(tab, dismiss: {})
+                        appState.navigateToTab(tab, dismiss: {
+                            dismiss()
+                        })
                     }
                     .frame(width: geometry.size.width)
                 }

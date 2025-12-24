@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ProInfoView: View {
     @EnvironmentObject private var appState: AppState
+    @Environment(\.dismiss) private var dismiss
     @State private var selectedPlan: SubscriptionPlan = .monthly
     @State private var showStripePayment = false
     @State private var isProcessingPayment = false
@@ -211,7 +212,9 @@ struct ProInfoView: View {
                 VStack {
                     Spacer()
                     FooterBar(selectedTab: $appState.selectedTab) { tab in
-                        appState.navigateToTab(tab, dismiss: {})
+                        appState.navigateToTab(tab, dismiss: {
+                            dismiss()
+                        })
                     }
                     .frame(width: geometry.size.width)
                 }
