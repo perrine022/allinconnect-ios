@@ -32,11 +32,13 @@ class CardViewModel: ObservableObject {
     
     private let profileAPIService: ProfileAPIService
     private let favoritesAPIService: FavoritesAPIService
+    private let savingsAPIService: SavingsAPIService
     private let dataService: MockDataService // Gardé pour les favoris en fallback
     
     init(
         profileAPIService: ProfileAPIService? = nil,
         favoritesAPIService: FavoritesAPIService? = nil,
+        savingsAPIService: SavingsAPIService? = nil,
         dataService: MockDataService = MockDataService.shared
     ) {
         // Créer les services dans un contexte MainActor
@@ -50,6 +52,12 @@ class CardViewModel: ObservableObject {
             self.favoritesAPIService = favoritesAPIService
         } else {
             self.favoritesAPIService = FavoritesAPIService()
+        }
+        
+        if let savingsAPIService = savingsAPIService {
+            self.savingsAPIService = savingsAPIService
+        } else {
+            self.savingsAPIService = SavingsAPIService()
         }
         
         self.dataService = dataService
@@ -74,10 +82,9 @@ class CardViewModel: ObservableObject {
         self.referralCode = generateReferralCode(from: firstName, lastName: lastName)
         self.referralLink = "allin.fr/r/\(referralCode)"
         
-        // Charger les économies sauvegardées
-        loadSavings()
-        
+        // Charger les données
         loadData()
+        loadSavings()
     }
     
     func loadData() {
@@ -135,7 +142,30 @@ class CardViewModel: ObservableObject {
         do {
             // Charger les favoris depuis l'API
             let favoritesResponse = try await favoritesAPIService.getFavorites()
-            favoritePartners = favoritesResponse.map { $0.toPartner() }
+            // Marquer tous les favoris comme favoris
+            favoritePartners = favoritesResponse.map { response in
+                let basePartner = response.toPartner()
+                return Partner(
+                    id: basePartner.id,
+                    name: basePartner.name,
+                    category: basePartner.category,
+                    address: basePartner.address,
+                    city: basePartner.city,
+                    postalCode: basePartner.postalCode,
+                    phone: basePartner.phone,
+                    email: basePartner.email,
+                    website: basePartner.website,
+                    instagram: basePartner.instagram,
+                    description: basePartner.description,
+                    rating: basePartner.rating,
+                    reviewCount: basePartner.reviewCount,
+                    discount: basePartner.discount,
+                    imageName: basePartner.imageName,
+                    headerImageName: basePartner.headerImageName,
+                    isFavorite: true, // Les favoris récupérés depuis l'API sont forcément favoris
+                    apiId: basePartner.apiId
+                )
+            }
             // Mettre à jour le compteur
             favoritesCount = favoritePartners.count
         } catch {
@@ -185,35 +215,140 @@ class CardViewModel: ObservableObject {
     }
     
     // MARK: - Savings Management
-    func addSavings(amount: Double, date: Date, store: String) {
-        let entry = SavingsEntry(amount: amount, date: date, store: store)
-        savingsEntries.append(entry)
-        updateSavingsTotal()
-        saveSavings()
+    func loadSavings() {
+        isLoading = true
+        errorMessage = nil
+        
+        Task {
+            do {
+                // Charger depuis l'API
+                let savingsResponse = try await savingsAPIService.getSavings()
+                savingsEntries = savingsResponse.map { $0.toSavingsEntry() }
+                updateSavingsTotal()
+                isLoading = false
+            } catch {
+                isLoading = false
+                errorMessage = error.localizedDescription
+                print("Erreur lors du chargement des économies: \(error)")
+                
+                // En cas d'erreur, charger depuis UserDefaults en fallback
+                if let data = UserDefaults.standard.data(forKey: "savings_entries"),
+                   let decoded = try? JSONDecoder().decode([SavingsEntry].self, from: data) {
+                    savingsEntries = decoded
+                    updateSavingsTotal()
+                } else {
+                    savings = 0.0
+                }
+            }
+        }
+    }
+    
+    func addSavings(amount: Double, date: Date, store: String, description: String? = nil) {
+        isLoading = true
+        errorMessage = nil
+        
+        Task {
+            do {
+                // Formater la date en ISO 8601
+                let isoDateFormatter = ISO8601DateFormatter()
+                isoDateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                let dateString = isoDateFormatter.string(from: date)
+                
+                // Créer la requête
+                let request = SavingsRequest(
+                    shopName: store,
+                    description: description,
+                    amount: amount,
+                    date: dateString
+                )
+                
+                // Appeler l'API
+                let response = try await savingsAPIService.createSavings(request)
+                
+                // Ajouter à la liste locale
+                let newEntry = response.toSavingsEntry()
+                savingsEntries.append(newEntry)
+                updateSavingsTotal()
+                isLoading = false
+            } catch {
+                isLoading = false
+                errorMessage = "Erreur lors de l'ajout de l'économie: \(error.localizedDescription)"
+                print("Erreur lors de l'ajout de l'économie: \(error)")
+            }
+        }
+    }
+    
+    func updateSavings(entry: SavingsEntry, amount: Double, date: Date, store: String, description: String? = nil) {
+        guard let apiId = entry.apiId else {
+            errorMessage = "Impossible de modifier cette économie"
+            return
+        }
+        
+        isLoading = true
+        errorMessage = nil
+        
+        Task {
+            do {
+                // Formater la date en ISO 8601
+                let isoDateFormatter = ISO8601DateFormatter()
+                isoDateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                let dateString = isoDateFormatter.string(from: date)
+                
+                // Créer la requête
+                let request = SavingsRequest(
+                    shopName: store,
+                    description: description,
+                    amount: amount,
+                    date: dateString
+                )
+                
+                // Appeler l'API
+                let response = try await savingsAPIService.updateSavings(id: apiId, request: request)
+                
+                // Mettre à jour dans la liste locale
+                if let index = savingsEntries.firstIndex(where: { $0.id == entry.id }) {
+                    savingsEntries[index] = response.toSavingsEntry()
+                    updateSavingsTotal()
+                }
+                isLoading = false
+            } catch {
+                isLoading = false
+                errorMessage = "Erreur lors de la modification de l'économie: \(error.localizedDescription)"
+                print("Erreur lors de la modification de l'économie: \(error)")
+            }
+        }
+    }
+    
+    func deleteSavings(entry: SavingsEntry) {
+        guard let apiId = entry.apiId else {
+            // Si pas d'ID API, supprimer localement seulement
+            savingsEntries.removeAll { $0.id == entry.id }
+            updateSavingsTotal()
+            return
+        }
+        
+        isLoading = true
+        errorMessage = nil
+        
+        Task {
+            do {
+                // Appeler l'API pour supprimer
+                try await savingsAPIService.deleteSavings(id: apiId)
+                
+                // Retirer de la liste locale
+                savingsEntries.removeAll { $0.id == entry.id }
+                updateSavingsTotal()
+                isLoading = false
+            } catch {
+                isLoading = false
+                errorMessage = "Erreur lors de la suppression de l'économie: \(error.localizedDescription)"
+                print("Erreur lors de la suppression de l'économie: \(error)")
+            }
+        }
     }
     
     private func updateSavingsTotal() {
         savings = savingsEntries.reduce(0) { $0 + $1.amount }
-    }
-    
-    private func loadSavings() {
-        // Charger depuis UserDefaults
-        if let data = UserDefaults.standard.data(forKey: "savings_entries"),
-           let decoded = try? JSONDecoder().decode([SavingsEntry].self, from: data) {
-            savingsEntries = decoded
-            updateSavingsTotal()
-        } else {
-            // Si aucune économie sauvegardée, initialiser avec la valeur par défaut
-            // mais ne pas créer d'entrée vide
-            savings = 128.0
-        }
-    }
-    
-    private func saveSavings() {
-        // Sauvegarder dans UserDefaults
-        if let encoded = try? JSONEncoder().encode(savingsEntries) {
-            UserDefaults.standard.set(encoded, forKey: "savings_entries")
-        }
     }
 }
 

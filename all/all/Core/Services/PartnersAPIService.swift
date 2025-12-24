@@ -127,6 +127,17 @@ class PartnersAPIService: ObservableObject {
         )
         return professionals
     }
+    
+    // MARK: - Get Professional By ID
+    func getProfessionalById(id: Int) async throws -> PartnerProfessionalResponse {
+        let professional: PartnerProfessionalResponse = try await apiService.request(
+            endpoint: "/users/professionals/\(id)",
+            method: .get,
+            parameters: nil,
+            headers: nil
+        )
+        return professional
+    }
 }
 
 // MARK: - Mapping Extension

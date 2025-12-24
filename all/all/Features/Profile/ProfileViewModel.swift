@@ -176,7 +176,7 @@ class ProfileViewModel: ObservableObject {
                 }
                 
                 // Recharger les favoris depuis l'API
-                await loadFavorites()
+                loadFavorites()
             } catch {
                 print("Erreur lors de la modification du favori: \(error)")
                 // En cas d'erreur, utiliser le fallback local

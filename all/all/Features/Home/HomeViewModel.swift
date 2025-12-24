@@ -113,6 +113,9 @@ class HomeViewModel: ObservableObject {
                 // Convertir en modèles Partner
                 partners = professionalsResponse.map { $0.toPartner() }
                 
+                // Synchroniser les favoris depuis l'API
+                await syncFavorites()
+                
                 // Appliquer les filtres
                 applyFilters()
             } catch {
@@ -133,7 +136,30 @@ class HomeViewModel: ObservableObject {
             // Mettre à jour l'état isFavorite pour chaque partenaire
             for index in partners.indices {
                 if let apiId = partners[index].apiId {
-                    partners[index].isFavorite = favoriteIds.contains(apiId)
+                    let isFavorite = favoriteIds.contains(apiId)
+                    if partners[index].isFavorite != isFavorite {
+                        let partner = partners[index]
+                        partners[index] = Partner(
+                            id: partner.id,
+                            name: partner.name,
+                            category: partner.category,
+                            address: partner.address,
+                            city: partner.city,
+                            postalCode: partner.postalCode,
+                            phone: partner.phone,
+                            email: partner.email,
+                            website: partner.website,
+                            instagram: partner.instagram,
+                            description: partner.description,
+                            rating: partner.rating,
+                            reviewCount: partner.reviewCount,
+                            discount: partner.discount,
+                            imageName: partner.imageName,
+                            headerImageName: partner.headerImageName,
+                            isFavorite: isFavorite,
+                            apiId: partner.apiId
+                        )
+                    }
                 }
             }
         } catch {
@@ -165,9 +191,29 @@ class HomeViewModel: ObservableObject {
         guard let apiId = partner.apiId else {
             // Si pas d'ID API, utiliser le fallback local
             if let index = partners.firstIndex(where: { $0.id == partner.id }) {
-                partners[index].isFavorite.toggle()
+                let updatedPartner = partners[index]
+                partners[index] = Partner(
+                    id: updatedPartner.id,
+                    name: updatedPartner.name,
+                    category: updatedPartner.category,
+                    address: updatedPartner.address,
+                    city: updatedPartner.city,
+                    postalCode: updatedPartner.postalCode,
+                    phone: updatedPartner.phone,
+                    email: updatedPartner.email,
+                    website: updatedPartner.website,
+                    instagram: updatedPartner.instagram,
+                    description: updatedPartner.description,
+                    rating: updatedPartner.rating,
+                    reviewCount: updatedPartner.reviewCount,
+                    discount: updatedPartner.discount,
+                    imageName: updatedPartner.imageName,
+                    headerImageName: updatedPartner.headerImageName,
+                    isFavorite: !updatedPartner.isFavorite,
+                    apiId: updatedPartner.apiId
+                )
                 if let filteredIndex = filteredPartners.firstIndex(where: { $0.id == partner.id }) {
-                    filteredPartners[filteredIndex].isFavorite = partners[index].isFavorite
+                    filteredPartners[filteredIndex] = partners[index]
                 }
             }
             return
@@ -185,18 +231,58 @@ class HomeViewModel: ObservableObject {
                 
                 // Mettre à jour l'état local
                 if let index = partners.firstIndex(where: { $0.id == partner.id }) {
-                    partners[index].isFavorite.toggle()
+                    let updatedPartner = partners[index]
+                    partners[index] = Partner(
+                        id: updatedPartner.id,
+                        name: updatedPartner.name,
+                        category: updatedPartner.category,
+                        address: updatedPartner.address,
+                        city: updatedPartner.city,
+                        postalCode: updatedPartner.postalCode,
+                        phone: updatedPartner.phone,
+                        email: updatedPartner.email,
+                        website: updatedPartner.website,
+                        instagram: updatedPartner.instagram,
+                        description: updatedPartner.description,
+                        rating: updatedPartner.rating,
+                        reviewCount: updatedPartner.reviewCount,
+                        discount: updatedPartner.discount,
+                        imageName: updatedPartner.imageName,
+                        headerImageName: updatedPartner.headerImageName,
+                        isFavorite: !updatedPartner.isFavorite,
+                        apiId: updatedPartner.apiId
+                    )
                     if let filteredIndex = filteredPartners.firstIndex(where: { $0.id == partner.id }) {
-                        filteredPartners[filteredIndex].isFavorite = partners[index].isFavorite
+                        filteredPartners[filteredIndex] = partners[index]
                     }
                 }
             } catch {
                 print("Erreur lors de la modification du favori: \(error)")
                 // En cas d'erreur, utiliser le fallback local
                 if let index = partners.firstIndex(where: { $0.id == partner.id }) {
-                    partners[index].isFavorite.toggle()
+                    let updatedPartner = partners[index]
+                    partners[index] = Partner(
+                        id: updatedPartner.id,
+                        name: updatedPartner.name,
+                        category: updatedPartner.category,
+                        address: updatedPartner.address,
+                        city: updatedPartner.city,
+                        postalCode: updatedPartner.postalCode,
+                        phone: updatedPartner.phone,
+                        email: updatedPartner.email,
+                        website: updatedPartner.website,
+                        instagram: updatedPartner.instagram,
+                        description: updatedPartner.description,
+                        rating: updatedPartner.rating,
+                        reviewCount: updatedPartner.reviewCount,
+                        discount: updatedPartner.discount,
+                        imageName: updatedPartner.imageName,
+                        headerImageName: updatedPartner.headerImageName,
+                        isFavorite: !updatedPartner.isFavorite,
+                        apiId: updatedPartner.apiId
+                    )
                     if let filteredIndex = filteredPartners.firstIndex(where: { $0.id == partner.id }) {
-                        filteredPartners[filteredIndex].isFavorite = partners[index].isFavorite
+                        filteredPartners[filteredIndex] = partners[index]
                     }
                 }
             }

@@ -157,7 +157,30 @@ class PartnersListViewModel: ObservableObject {
             // Mettre à jour l'état isFavorite pour chaque partenaire
             for index in allPartners.indices {
                 if let apiId = allPartners[index].apiId {
-                    allPartners[index].isFavorite = favoriteIds.contains(apiId)
+                    let isFavorite = favoriteIds.contains(apiId)
+                    if allPartners[index].isFavorite != isFavorite {
+                        let partner = allPartners[index]
+                        allPartners[index] = Partner(
+                            id: partner.id,
+                            name: partner.name,
+                            category: partner.category,
+                            address: partner.address,
+                            city: partner.city,
+                            postalCode: partner.postalCode,
+                            phone: partner.phone,
+                            email: partner.email,
+                            website: partner.website,
+                            instagram: partner.instagram,
+                            description: partner.description,
+                            rating: partner.rating,
+                            reviewCount: partner.reviewCount,
+                            discount: partner.discount,
+                            imageName: partner.imageName,
+                            headerImageName: partner.headerImageName,
+                            isFavorite: isFavorite,
+                            apiId: partner.apiId
+                        )
+                    }
                 }
             }
         } catch {
@@ -186,16 +209,110 @@ class PartnersListViewModel: ObservableObject {
     }
     
     func togglePartnerFavorite(for partner: Partner) {
-        dataService.togglePartnerFavorite(partnerId: partner.id)
-        // Mettre à jour dans la liste
-        if let index = allPartners.firstIndex(where: { $0.id == partner.id }) {
-            allPartners[index].isFavorite.toggle()
-            // Mettre à jour aussi dans la liste filtrée
-            if let filteredIndex = filteredPartners.firstIndex(where: { $0.id == partner.id }) {
-                filteredPartners[filteredIndex].isFavorite = allPartners[index].isFavorite
+        guard let apiId = partner.apiId else {
+            // Si pas d'ID API, utiliser le fallback local
+            dataService.togglePartnerFavorite(partnerId: partner.id)
+            if let index = allPartners.firstIndex(where: { $0.id == partner.id }) {
+                let updatedPartner = allPartners[index]
+                allPartners[index] = Partner(
+                    id: updatedPartner.id,
+                    name: updatedPartner.name,
+                    category: updatedPartner.category,
+                    address: updatedPartner.address,
+                    city: updatedPartner.city,
+                    postalCode: updatedPartner.postalCode,
+                    phone: updatedPartner.phone,
+                    email: updatedPartner.email,
+                    website: updatedPartner.website,
+                    instagram: updatedPartner.instagram,
+                    description: updatedPartner.description,
+                    rating: updatedPartner.rating,
+                    reviewCount: updatedPartner.reviewCount,
+                    discount: updatedPartner.discount,
+                    imageName: updatedPartner.imageName,
+                    headerImageName: updatedPartner.headerImageName,
+                    isFavorite: !updatedPartner.isFavorite,
+                    apiId: updatedPartner.apiId
+                )
+                if let filteredIndex = filteredPartners.firstIndex(where: { $0.id == partner.id }) {
+                    filteredPartners[filteredIndex] = allPartners[index]
+                }
+            }
+            applyFilters()
+            return
+        }
+        
+        Task {
+            do {
+                if partner.isFavorite {
+                    // Retirer des favoris
+                    try await favoritesAPIService.removeFavorite(professionalId: apiId)
+                } else {
+                    // Ajouter aux favoris
+                    try await favoritesAPIService.addFavorite(professionalId: apiId)
+                }
+                
+                // Mettre à jour l'état local
+                if let index = allPartners.firstIndex(where: { $0.id == partner.id }) {
+                    let updatedPartner = allPartners[index]
+                    allPartners[index] = Partner(
+                        id: updatedPartner.id,
+                        name: updatedPartner.name,
+                        category: updatedPartner.category,
+                        address: updatedPartner.address,
+                        city: updatedPartner.city,
+                        postalCode: updatedPartner.postalCode,
+                        phone: updatedPartner.phone,
+                        email: updatedPartner.email,
+                        website: updatedPartner.website,
+                        instagram: updatedPartner.instagram,
+                        description: updatedPartner.description,
+                        rating: updatedPartner.rating,
+                        reviewCount: updatedPartner.reviewCount,
+                        discount: updatedPartner.discount,
+                        imageName: updatedPartner.imageName,
+                        headerImageName: updatedPartner.headerImageName,
+                        isFavorite: !updatedPartner.isFavorite,
+                        apiId: updatedPartner.apiId
+                    )
+                    if let filteredIndex = filteredPartners.firstIndex(where: { $0.id == partner.id }) {
+                        filteredPartners[filteredIndex] = allPartners[index]
+                    }
+                }
+                applyFilters()
+            } catch {
+                print("Erreur lors de la modification du favori: \(error)")
+                // En cas d'erreur, utiliser le fallback local
+                dataService.togglePartnerFavorite(partnerId: partner.id)
+                if let index = allPartners.firstIndex(where: { $0.id == partner.id }) {
+                    let updatedPartner = allPartners[index]
+                    allPartners[index] = Partner(
+                        id: updatedPartner.id,
+                        name: updatedPartner.name,
+                        category: updatedPartner.category,
+                        address: updatedPartner.address,
+                        city: updatedPartner.city,
+                        postalCode: updatedPartner.postalCode,
+                        phone: updatedPartner.phone,
+                        email: updatedPartner.email,
+                        website: updatedPartner.website,
+                        instagram: updatedPartner.instagram,
+                        description: updatedPartner.description,
+                        rating: updatedPartner.rating,
+                        reviewCount: updatedPartner.reviewCount,
+                        discount: updatedPartner.discount,
+                        imageName: updatedPartner.imageName,
+                        headerImageName: updatedPartner.headerImageName,
+                        isFavorite: !updatedPartner.isFavorite,
+                        apiId: updatedPartner.apiId
+                    )
+                    if let filteredIndex = filteredPartners.firstIndex(where: { $0.id == partner.id }) {
+                        filteredPartners[filteredIndex] = allPartners[index]
+                    }
+                }
+                applyFilters()
             }
         }
-        applyFilters()
     }
     
     private func applyFilters() {
