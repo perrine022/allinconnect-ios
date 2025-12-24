@@ -314,16 +314,41 @@ extension OfferResponse {
         let businessName = professional?.firstName ?? "Entreprise"
         let fullBusinessName = professional.map { "\($0.firstName) \($0.lastName)" } ?? businessName
         
-        // Convertir endDate en format français pour validUntil
+        // Convertir endDate en format français pour validUntil (DD/MM/YYYY)
         let validUntil: String
         if let endDate = endDate {
-            // Convertir de YYYY-MM-DD à DD/MM/YYYY
+            // Essayer différents formats de date
             let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "yyyy-MM-dd"
-            if let date = dateFormatter.date(from: endDate) {
+            dateFormatter.locale = Locale(identifier: "fr_FR")
+            
+            // Format ISO 8601 avec heures (ex: 2026-01-24T00:00:00 ou 2026-01-24T00:00:00.000Z)
+            dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+            var date = dateFormatter.date(from: endDate)
+            
+            // Si ça n'a pas fonctionné, essayer avec les millisecondes
+            if date == nil {
+                dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+                date = dateFormatter.date(from: endDate)
+            }
+            
+            // Si ça n'a pas fonctionné, essayer avec le Z à la fin
+            if date == nil {
+                dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+                date = dateFormatter.date(from: endDate)
+            }
+            
+            // Si ça n'a pas fonctionné, essayer le format simple YYYY-MM-DD
+            if date == nil {
+                dateFormatter.dateFormat = "yyyy-MM-dd"
+                date = dateFormatter.date(from: endDate)
+            }
+            
+            // Si on a réussi à parser la date, formater en DD/MM/YYYY
+            if let date = date {
                 dateFormatter.dateFormat = "dd/MM/yyyy"
                 validUntil = dateFormatter.string(from: date)
             } else {
+                // Si le parsing a échoué, utiliser la date telle quelle
                 validUntil = endDate
             }
         } else {

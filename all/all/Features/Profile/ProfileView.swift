@@ -721,27 +721,33 @@ struct EditProfileView: View {
                             }
                             
                             VStack(spacing: 16) {
-                                // Prénom
+                                // Nom (avant prénom)
                                 SignUpInputField(
-                                    title: "Prénom",
-                                    text: $viewModel.firstName,
-                                    placeholder: "Votre prénom",
-                                    isFocused: focusedField == .firstName
-                                )
-                                .focused($focusedField, equals: .firstName)
-                                
-                                // Nom
-                                SignUpInputField(
-                                    title: "Nom",
+                                    title: "Nom *",
                                     text: $viewModel.lastName,
                                     placeholder: "Votre nom",
                                     isFocused: focusedField == .lastName
                                 )
                                 .focused($focusedField, equals: .lastName)
+                                .onChange(of: viewModel.lastName) { _, _ in
+                                    viewModel.checkForChanges()
+                                }
+                                
+                                // Prénom
+                                SignUpInputField(
+                                    title: "Prénom *",
+                                    text: $viewModel.firstName,
+                                    placeholder: "Votre prénom",
+                                    isFocused: focusedField == .firstName
+                                )
+                                .focused($focusedField, equals: .firstName)
+                                .onChange(of: viewModel.firstName) { _, _ in
+                                    viewModel.checkForChanges()
+                                }
                                 
                                 // Email
                                 SignUpInputField(
-                                    title: "Email",
+                                    title: "Email *",
                                     text: $viewModel.email,
                                     placeholder: "votre@email.com",
                                     keyboardType: .emailAddress,
@@ -749,6 +755,9 @@ struct EditProfileView: View {
                                 )
                                 .focused($focusedField, equals: .email)
                                 .autocapitalization(.none)
+                                .onChange(of: viewModel.email) { _, _ in
+                                    viewModel.checkForChanges()
+                                }
                                 
                                 // Adresse
                                 SignUpInputField(
@@ -758,6 +767,9 @@ struct EditProfileView: View {
                                     isFocused: focusedField == .address
                                 )
                                 .focused($focusedField, equals: .address)
+                                .onChange(of: viewModel.address) { _, _ in
+                                    viewModel.checkForChanges()
+                                }
                                 
                                 // Ville
                                 SignUpInputField(
@@ -767,6 +779,9 @@ struct EditProfileView: View {
                                     isFocused: focusedField == .city
                                 )
                                 .focused($focusedField, equals: .city)
+                                .onChange(of: viewModel.city) { _, _ in
+                                    viewModel.checkForChanges()
+                                }
                                 
                                 // Date de naissance
                                 VStack(alignment: .leading, spacing: 8) {
@@ -791,6 +806,28 @@ struct EditProfileView: View {
                                                 .padding(.vertical, 12)
                                                 .background(Color.white)
                                                 .cornerRadius(10)
+                                                .onChange(of: viewModel.birthDay) { _, newValue in
+                                                    // Filtrer pour garder uniquement les chiffres
+                                                    let digitsOnly = newValue.filter { $0.isNumber }
+                                                    if digitsOnly != newValue {
+                                                        viewModel.birthDay = digitsOnly
+                                                        return
+                                                    }
+                                                    
+                                                    // Limiter à 2 chiffres max
+                                                    if digitsOnly.count > 2 {
+                                                        viewModel.birthDay = String(digitsOnly.prefix(2))
+                                                    } else {
+                                                        viewModel.birthDay = digitsOnly
+                                                    }
+                                                    
+                                                    // Valider que c'est un nombre entre 1 et 31
+                                                    if let day = Int(viewModel.birthDay), day > 31 {
+                                                        viewModel.birthDay = "31"
+                                                    }
+                                                    
+                                                    viewModel.checkForChanges()
+                                                }
                                         }
                                         
                                         // Mois
@@ -809,6 +846,28 @@ struct EditProfileView: View {
                                                 .padding(.vertical, 12)
                                                 .background(Color.white)
                                                 .cornerRadius(10)
+                                                .onChange(of: viewModel.birthMonth) { _, newValue in
+                                                    // Filtrer pour garder uniquement les chiffres
+                                                    let digitsOnly = newValue.filter { $0.isNumber }
+                                                    if digitsOnly != newValue {
+                                                        viewModel.birthMonth = digitsOnly
+                                                        return
+                                                    }
+                                                    
+                                                    // Limiter à 2 chiffres max
+                                                    if digitsOnly.count > 2 {
+                                                        viewModel.birthMonth = String(digitsOnly.prefix(2))
+                                                    } else {
+                                                        viewModel.birthMonth = digitsOnly
+                                                    }
+                                                    
+                                                    // Valider que c'est un nombre entre 1 et 12
+                                                    if let month = Int(viewModel.birthMonth), month > 12 {
+                                                        viewModel.birthMonth = "12"
+                                                    }
+                                                    
+                                                    viewModel.checkForChanges()
+                                                }
                                         }
                                         
                                         // Année
@@ -827,9 +886,39 @@ struct EditProfileView: View {
                                                 .padding(.vertical, 12)
                                                 .background(Color.white)
                                                 .cornerRadius(10)
+                                                .onChange(of: viewModel.birthYear) { _, newValue in
+                                                    // Filtrer pour garder uniquement les chiffres
+                                                    let digitsOnly = newValue.filter { $0.isNumber }
+                                                    if digitsOnly != newValue {
+                                                        viewModel.birthYear = digitsOnly
+                                                        return
+                                                    }
+                                                    
+                                                    // Limiter à 4 chiffres max
+                                                    if digitsOnly.count > 4 {
+                                                        viewModel.birthYear = String(digitsOnly.prefix(4))
+                                                    } else {
+                                                        viewModel.birthYear = digitsOnly
+                                                    }
+                                                    
+                                                    // Valider que l'année est avant l'année actuelle
+                                                    let currentYear = Calendar.current.component(.year, from: Date())
+                                                    if let year = Int(viewModel.birthYear), year > currentYear {
+                                                        viewModel.birthYear = String(currentYear)
+                                                    }
+                                                    
+                                                    viewModel.checkForChanges()
+                                                }
                                         }
                                         
                                         Spacer()
+                                    }
+                                    
+                                    // Message d'erreur pour la date
+                                    if let dateError = viewModel.birthDateError {
+                                        Text(dateError)
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.red)
                                     }
                                 }
                                 .padding(.horizontal, 20)

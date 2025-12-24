@@ -36,36 +36,33 @@ struct PartnerDetailView: View {
                     
                     ScrollView {
                         VStack(spacing: 0) {
-                            // Header avec image
+                            // Header avec fond rouge foncé et logo stylisé
                             ZStack(alignment: .topLeading) {
-                                Image(systemName: viewModel.partner.headerImageName)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(height: 150)
-                                    .clipped()
-                                    .foregroundColor(.gray.opacity(0.3))
+                                // Fond rouge foncé
+                                Color.appDarkRed2
+                                    .frame(height: 200)
                                 
-                                // Overlay gradient
-                                LinearGradient(
-                                    gradient: Gradient(colors: [
-                                        Color.clear,
-                                        Color.black.opacity(0.6)
-                                    ]),
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                                .frame(height: 150)
+                                // Logo stylisé "A" en arrière-plan
+                                Text("A")
+                                    .font(.system(size: 120, weight: .ultraLight))
+                                    .foregroundColor(Color.appDarkRed1.opacity(0.3))
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                                 
                                 // Boutons de navigation
                                 HStack {
-                                    NavigationButton(
-                                        icon: "arrow.left",
-                                        iconColor: .white,
-                                        backgroundColor: Color.black.opacity(0.5),
-                                        action: {
-                                            dismiss()
+                                    Button(action: {
+                                        dismiss()
+                                    }) {
+                                        ZStack {
+                                            Circle()
+                                                .fill(Color.black.opacity(0.6))
+                                                .frame(width: 40, height: 40)
+                                            
+                                            Image(systemName: "arrow.left")
+                                                .foregroundColor(.white)
+                                                .font(.system(size: 16, weight: .semibold))
                                         }
-                                    )
+                                    }
                                     
                                     Spacer()
                                     
@@ -75,67 +72,77 @@ struct PartnerDetailView: View {
                                                 viewModel.toggleFavorite()
                                             }
                                         }) {
-                                            NavigationButton(
-                                                icon: viewModel.partner.isFavorite ? "heart.fill" : "heart",
-                                                iconColor: viewModel.partner.isFavorite ? .red : .white,
-                                                backgroundColor: Color.black.opacity(0.5),
-                                                action: {}
-                                            )
+                                            ZStack {
+                                                Circle()
+                                                    .fill(Color.black.opacity(0.6))
+                                                    .frame(width: 40, height: 40)
+                                                
+                                                if viewModel.isTogglingFavorite {
+                                                    ProgressView()
+                                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                                        .scaleEffect(0.7)
+                                                } else {
+                                                    Image(systemName: viewModel.partner.isFavorite ? "heart.fill" : "heart")
+                                                        .foregroundColor(viewModel.partner.isFavorite ? .red : .white)
+                                                        .font(.system(size: 16, weight: .semibold))
+                                                }
+                                            }
                                         }
+                                        .disabled(viewModel.isTogglingFavorite)
                                         
                                         Button(action: {
                                             // Action de partage
                                         }) {
-                                            NavigationButton(
-                                                icon: "square.and.arrow.up",
-                                                iconColor: .white,
-                                                backgroundColor: Color.black.opacity(0.5),
-                                                action: {}
-                                            )
+                                            ZStack {
+                                                Circle()
+                                                    .fill(Color.black.opacity(0.6))
+                                                    .frame(width: 40, height: 40)
+                                                
+                                                Image(systemName: "square.and.arrow.up")
+                                                    .foregroundColor(.white)
+                                                    .font(.system(size: 16, weight: .semibold))
+                                            }
                                         }
                                     }
                                 }
                                 .padding(.horizontal, 20)
                                 .padding(.top, 8)
                             }
-                            .frame(height: 150)
+                            .frame(height: 200)
                             
                             // Contenu principal
                             VStack(alignment: .leading, spacing: 18) {
-                                // Nom et catégorie
-                                HStack(alignment: .top) {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text(viewModel.partner.name)
-                                            .font(.system(size: 28, weight: .bold))
+                                // Nom du studio
+                                Text(viewModel.partner.name)
+                                    .font(.system(size: 32, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 20)
+                                    .padding(.top, 20)
+                                
+                                // Badge catégorie et note sur la même ligne
+                                HStack(spacing: 12) {
+                                    BadgeView(
+                                        text: viewModel.partner.category,
+                                        gradientColors: [Color.appDarkRed2, Color.appDarkRed1],
+                                        fontSize: 12
+                                    )
+                                    
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "star.fill")
+                                            .foregroundColor(.appGold)
+                                            .font(.system(size: 14))
+                                        
+                                        Text(String(format: "%.1f", viewModel.partner.rating))
+                                            .font(.system(size: 16, weight: .semibold))
                                             .foregroundColor(.white)
                                         
-                                        HStack(spacing: 8) {
-                                            BadgeView(
-                                                text: viewModel.partner.category,
-                                                gradientColors: [Color.appDarkRed2, Color.appDarkRed1],
-                                                fontSize: 12
-                                            )
-                                            
-                                            HStack(spacing: 4) {
-                                                Image(systemName: "star.fill")
-                                                    .foregroundColor(.appGold)
-                                                    .font(.system(size: 14))
-                                                
-                                                Text(String(format: "%.1f", viewModel.partner.rating))
-                                                    .font(.system(size: 16, weight: .semibold))
-                                                    .foregroundColor(.white)
-                                                
-                                                Text("(\(viewModel.partner.reviewCount) avis)")
-                                                    .font(.system(size: 14, weight: .regular))
-                                                    .foregroundColor(.gray)
-                                            }
-                                        }
+                                        Text("(\(viewModel.partner.reviewCount) avis)")
+                                            .font(.system(size: 14, weight: .regular))
+                                            .foregroundColor(.gray)
                                     }
-                                    
-                                    Spacer()
                                 }
                                 .padding(.horizontal, 20)
-                                .padding(.top, 20)
+                                .padding(.top, 8)
                                 
                                 // Description
                                 if let description = viewModel.partner.description {
@@ -147,44 +154,93 @@ struct PartnerDetailView: View {
                                         .padding(.top, 4)
                                 }
                                 
-                                // Informations de contact
-                                VStack(alignment: .leading, spacing: 6) {
-                                    ContactRow(
-                                        icon: "mappin.circle.fill",
-                                        text: "\(viewModel.partner.address), \(viewModel.partner.postalCode) \(viewModel.partner.city)",
-                                        iconColor: .appGold,
-                                        action: {
-                                            viewModel.openMaps()
+                                // Message d'erreur favoris
+                                if let errorMessage = viewModel.favoriteErrorMessage {
+                                    Text(errorMessage)
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundColor(.red.opacity(0.9))
+                                        .padding(.horizontal, 20)
+                                        .padding(.vertical, 8)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .background(Color.red.opacity(0.1))
+                                        .cornerRadius(8)
+                                        .padding(.horizontal, 20)
+                                        .padding(.top, 8)
+                                }
+                                
+                                // Informations de contact avec icônes circulaires jaunes
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Button(action: {
+                                        viewModel.openMaps()
+                                    }) {
+                                        HStack(spacing: 12) {
+                                            ZStack {
+                                                Circle()
+                                                    .fill(Color.appGold)
+                                                    .frame(width: 40, height: 40)
+                                                
+                                                Image(systemName: "info.circle.fill")
+                                                    .foregroundColor(.white)
+                                                    .font(.system(size: 18))
+                                            }
+                                            
+                                            Text("\(viewModel.partner.address), \(viewModel.partner.postalCode) \(viewModel.partner.city)")
+                                                .font(.system(size: 15, weight: .regular))
+                                                .foregroundColor(.white)
+                                            
+                                            Spacer()
+                                            
+                                            Image(systemName: "chevron.right")
+                                                .foregroundColor(.gray)
+                                                .font(.system(size: 14))
                                         }
-                                    )
+                                    }
                                     
                                     if let phone = viewModel.partner.phone {
-                                        ContactRow(
-                                            icon: "phone.fill",
-                                            text: phone,
-                                            iconColor: .appGold,
-                                            action: {
-                                                viewModel.callPartner()
+                                        Button(action: {
+                                            viewModel.callPartner()
+                                        }) {
+                                            HStack(spacing: 12) {
+                                                ZStack {
+                                                    Circle()
+                                                        .fill(Color.appGold)
+                                                        .frame(width: 40, height: 40)
+                                                    
+                                                    Image(systemName: "phone.fill")
+                                                        .foregroundColor(.white)
+                                                        .font(.system(size: 18))
+                                                }
+                                                
+                                                Text(phone)
+                                                    .font(.system(size: 15, weight: .regular))
+                                                    .foregroundColor(.white)
+                                                
+                                                Spacer()
+                                                
+                                                Image(systemName: "chevron.right")
+                                                    .foregroundColor(.gray)
+                                                    .font(.system(size: 14))
                                             }
-                                        )
+                                        }
                                     }
                                 }
                                 .padding(.horizontal, 20)
+                                .padding(.top, 8)
                                 
-                                // Boutons d'action - Instagram, Email, Website sur la même ligne
+                                // Boutons d'action
                                 HStack(spacing: 12) {
+                                    // Photos (Instagram)
                                     if viewModel.partner.instagram != nil {
                                         Button(action: {
                                             viewModel.openInstagram()
                                         }) {
                                             ZStack {
-                                                RoundedRectangle(cornerRadius: 8)
+                                                RoundedRectangle(cornerRadius: 10)
                                                     .fill(
                                                         LinearGradient(
                                                             gradient: Gradient(colors: [
-                                                                Color(red: 0.8, green: 0.3, blue: 0.6),
-                                                                Color(red: 0.9, green: 0.5, blue: 0.3),
-                                                                Color(red: 0.95, green: 0.7, blue: 0.2)
+                                                                Color(red: 0.9, green: 0.4, blue: 0.5),
+                                                                Color(red: 0.95, green: 0.6, blue: 0.3)
                                                             ]),
                                                             startPoint: .topLeading,
                                                             endPoint: .bottomTrailing
@@ -199,12 +255,13 @@ struct PartnerDetailView: View {
                                         }
                                     }
                                     
+                                    // Email
                                     if viewModel.partner.email != nil {
                                         Button(action: {
                                             viewModel.openEmail()
                                         }) {
                                             ZStack {
-                                                RoundedRectangle(cornerRadius: 8)
+                                                RoundedRectangle(cornerRadius: 10)
                                                     .fill(Color.appGold)
                                                     .frame(width: 50, height: 50)
                                                 
@@ -215,12 +272,13 @@ struct PartnerDetailView: View {
                                         }
                                     }
                                     
+                                    // Website
                                     if viewModel.partner.website != nil {
                                         Button(action: {
                                             viewModel.openWebsite()
                                         }) {
                                             ZStack {
-                                                RoundedRectangle(cornerRadius: 8)
+                                                RoundedRectangle(cornerRadius: 10)
                                                     .fill(Color.appGold)
                                                     .frame(width: 50, height: 50)
                                                 
@@ -233,19 +291,28 @@ struct PartnerDetailView: View {
                                     
                                     Spacer()
                                     
-                                    Button(action: {
-                                        viewModel.callPartner()
-                                    }) {
-                                        Image(systemName: "phone.fill")
-                                            .font(.system(size: 18, weight: .semibold))
+                                    // Appel (bouton large)
+                                    if let phone = viewModel.partner.phone {
+                                        Button(action: {
+                                            viewModel.callPartner()
+                                        }) {
+                                            HStack(spacing: 8) {
+                                                Image(systemName: "phone.fill")
+                                                    .font(.system(size: 16, weight: .semibold))
+                                                
+                                                Text("Appeler")
+                                                    .font(.system(size: 15, weight: .semibold))
+                                            }
                                             .foregroundColor(.black)
                                             .frame(maxWidth: .infinity)
                                             .padding(.vertical, 12)
                                             .background(Color.appGold)
-                                            .cornerRadius(12)
+                                            .cornerRadius(10)
+                                        }
                                     }
                                 }
                                 .padding(.horizontal, 20)
+                                .padding(.top, 8)
                                 
                                 // Section "Offres en cours"
                                 if !viewModel.currentOffers.isEmpty {

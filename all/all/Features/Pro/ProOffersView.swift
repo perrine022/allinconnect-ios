@@ -53,20 +53,6 @@ struct ProOffersView: View {
                             .padding(.horizontal, 20)
                             .padding(.top, 20)
                             
-                            // Indicateur de chargement
-                            if viewModel.isLoading {
-                                VStack(spacing: 16) {
-                                    ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .appGold))
-                                        .scaleEffect(1.5)
-                                    Text("Chargement de vos offres...")
-                                        .font(.system(size: 14, weight: .medium))
-                                        .foregroundColor(.white.opacity(0.8))
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 40)
-                            }
-                            
                             // Message d'erreur
                             if let errorMessage = viewModel.errorMessage {
                                 VStack(spacing: 12) {
@@ -99,9 +85,17 @@ struct ProOffersView: View {
                                 .padding(.vertical, 40)
                             }
                             
-                            // Liste des offres
-                            if !viewModel.isLoading && viewModel.errorMessage == nil {
-                                if viewModel.myOffers.isEmpty {
+                            // Liste des offres ou skeletons de chargement
+                            if viewModel.errorMessage == nil {
+                                if viewModel.isLoading {
+                                    // Afficher des skeletons pendant le chargement
+                                    VStack(spacing: 12) {
+                                        ForEach(0..<5, id: \.self) { _ in
+                                            OfferListCardSkeleton()
+                                        }
+                                    }
+                                    .padding(.horizontal, 20)
+                                } else if viewModel.myOffers.isEmpty {
                                     VStack(spacing: 16) {
                                         VStack(spacing: 12) {
                                             Image(systemName: "tag.fill")

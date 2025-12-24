@@ -25,6 +25,18 @@ class EditProfileViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
     @Published var successMessage: String?
+    @Published var hasChanges: Bool = false
+    @Published var birthDateError: String? = nil
+    
+    // Valeurs initiales pour détecter les changements
+    private var initialFirstName: String = ""
+    private var initialLastName: String = ""
+    private var initialEmail: String = ""
+    private var initialAddress: String = ""
+    private var initialCity: String = ""
+    private var initialBirthDay: String = ""
+    private var initialBirthMonth: String = ""
+    private var initialBirthYear: String = ""
     
     private let profileAPIService: ProfileAPIService
     private let locationService: LocationService
@@ -73,10 +85,35 @@ class EditProfileViewModel: ObservableObject {
             }
         }
         
+        // Sauvegarder les valeurs initiales
+        saveInitialValues()
+        
         // Charger les données depuis l'API pour préremplir
         Task {
             await loadUserDataFromAPI()
         }
+    }
+    
+    private func saveInitialValues() {
+        initialFirstName = firstName
+        initialLastName = lastName
+        initialEmail = email
+        initialAddress = address
+        initialCity = city
+        initialBirthDay = birthDay
+        initialBirthMonth = birthMonth
+        initialBirthYear = birthYear
+    }
+    
+    func checkForChanges() {
+        hasChanges = firstName != initialFirstName ||
+                     lastName != initialLastName ||
+                     email != initialEmail ||
+                     address != initialAddress ||
+                     city != initialCity ||
+                     birthDay != initialBirthDay ||
+                     birthMonth != initialBirthMonth ||
+                     birthYear != initialBirthYear
     }
     
     private func loadUserDataFromAPI() async {
@@ -93,6 +130,9 @@ class EditProfileViewModel: ObservableObject {
             // Les autres champs (email, address, city, birthDate) ne sont pas dans /users/me/light
             // On garde les valeurs de UserDefaults si elles existent
             
+            // Sauvegarder les nouvelles valeurs initiales après chargement API
+            saveInitialValues()
+            
             isLoading = false
         } catch {
             isLoading = false
@@ -102,18 +142,82 @@ class EditProfileViewModel: ObservableObject {
     }
     
     var isValid: Bool {
-        !firstName.trimmingCharacters(in: .whitespaces).isEmpty &&
-        !lastName.trimmingCharacters(in: .whitespaces).isEmpty &&
-        !email.trimmingCharacters(in: .whitespaces).isEmpty &&
-        isValidEmail(email) &&
-        isValidBirthDate()
+        // Le bouton est valide si :
+        // 1. Il y a des changements
+        // 2. Les champs obligatoires sont remplis et valides
+        guard hasChanges else {
+            return false
+        }
+        
+        // Vérifier les champs obligatoires
+        guard !firstName.trimmingCharacters(in: .whitespaces).isEmpty else {
+            return false
+        }
+        
+        guard !lastName.trimmingCharacters(in: .whitespaces).isEmpty else {
+            return false
+        }
+        
+        guard !email.trimmingCharacters(in: .whitespaces).isEmpty && isValidEmail(email) else {
+            return false
+        }
+        
+        // La date de naissance est optionnelle mais si remplie, doit être valide
+        if !birthDay.isEmpty || !birthMonth.isEmpty || !birthYear.isEmpty {
+            return isValidBirthDate()
+        }
+        
+        return true
     }
     
     private func isValidBirthDate() -> Bool {
-        guard let day = Int(birthDay), let month = Int(birthMonth), let year = Int(birthYear) else {
+        // Si tous les champs sont vides, c'est valide (optionnel)
+        if birthDay.isEmpty && birthMonth.isEmpty && birthYear.isEmpty {
+            return true
+        }
+        
+        // Si un champ est rempli, tous doivent l'être
+        guard !birthDay.isEmpty, !birthMonth.isEmpty, !birthYear.isEmpty else {
+            birthDateError = "Tous les champs de date doivent être remplis"
             return false
         }
-        return day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 1900 && year <= Calendar.current.component(.year, from: Date())
+        
+        guard let day = Int(birthDay), let month = Int(birthMonth), let year = Int(birthYear) else {
+            birthDateError = "La date doit contenir uniquement des chiffres"
+            return false
+        }
+        
+        // Valider le jour (1-31)
+        if day < 1 || day > 31 {
+            birthDateError = "Le jour doit être entre 1 et 31"
+            return false
+        }
+        
+        // Valider le mois (1-12)
+        if month < 1 || month > 12 {
+            birthDateError = "Le mois doit être entre 1 et 12"
+            return false
+        }
+        
+        // Valider l'année (1900 à année actuelle)
+        let currentYear = Calendar.current.component(.year, from: Date())
+        if year < 1900 || year > currentYear {
+            birthDateError = "L'année doit être entre 1900 et \(currentYear)"
+            return false
+        }
+        
+        // Valider que la date existe (ex: pas de 31 février)
+        var components = DateComponents()
+        components.year = year
+        components.month = month
+        components.day = day
+        guard Calendar.current.date(from: components) != nil else {
+            birthDateError = "Cette date n'existe pas"
+            return false
+        }
+        
+        birthDateError = nil
+        return true
     }
     
     private func formatBirthDate() -> String? {
@@ -154,11 +258,17 @@ class EditProfileViewModel: ObservableObject {
         
         Task {
             do {
-                // Formater la date de naissance au format YYYY-MM-DD
-                guard let birthDateString = formatBirthDate() else {
-                    errorMessage = "Date de naissance invalide"
-                    isLoading = false
-                    return
+                // Formater la date de naissance au format YYYY-MM-DD (optionnelle)
+                let birthDateString: String?
+                if !birthDay.isEmpty || !birthMonth.isEmpty || !birthYear.isEmpty {
+                    guard let formatted = formatBirthDate() else {
+                        errorMessage = "Date de naissance invalide"
+                        isLoading = false
+                        return
+                    }
+                    birthDateString = formatted
+                } else {
+                    birthDateString = nil
                 }
                 
                 // Créer la requête de mise à jour
@@ -188,7 +298,13 @@ class EditProfileViewModel: ObservableObject {
                 UserDefaults.standard.set(lastName.trimmingCharacters(in: .whitespaces), forKey: "user_last_name")
                 UserDefaults.standard.set(email.trimmingCharacters(in: .whitespaces).lowercased(), forKey: "user_email")
                 UserDefaults.standard.set(city.trimmingCharacters(in: .whitespaces), forKey: "user_postal_code")
-                UserDefaults.standard.set(birthDateString, forKey: "user_birth_date")
+                if let birthDateString = birthDateString {
+                    UserDefaults.standard.set(birthDateString, forKey: "user_birth_date")
+                }
+                
+                // Mettre à jour les valeurs initiales après sauvegarde réussie
+                saveInitialValues()
+                hasChanges = false
                 
                 isLoading = false
                 successMessage = "Profil mis à jour avec succès"

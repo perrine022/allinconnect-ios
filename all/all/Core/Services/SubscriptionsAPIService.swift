@@ -126,7 +126,7 @@ class SubscriptionsAPIService: ObservableObject {
         )
     }
     
-    // MARK: - Get Stripe Payment Link
+    // MARK: - Get Stripe Payment Link (deprecated - utiliser createPaymentIntent à la place)
     func getStripePaymentLink(planId: Int) async throws -> String {
         struct PaymentLinkResponse: Codable {
             let paymentLinkUrl: String
@@ -144,6 +144,47 @@ class SubscriptionsAPIService: ObservableObject {
         )
         
         return response.paymentLinkUrl
+    }
+    
+    // MARK: - Create Payment Intent for Stripe Payment Sheet
+    func createPaymentIntent(planId: Int) async throws -> PaymentIntentResponse {
+        struct PaymentIntentRequest: Codable {
+            let planId: Int
+            
+            enum CodingKeys: String, CodingKey {
+                case planId = "planId"
+            }
+        }
+        
+        let request = PaymentIntentRequest(planId: planId)
+        let encoder = JSONEncoder()
+        let jsonData = try encoder.encode(request)
+        
+        guard let parameters = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
+            throw APIError.invalidResponse
+        }
+        
+        let response: PaymentIntentResponse = try await apiService.request(
+            endpoint: "/subscriptions/create-payment-intent",
+            method: .post,
+            parameters: parameters,
+            headers: nil
+        )
+        
+        return response
+    }
+}
+
+// MARK: - Payment Intent Response
+struct PaymentIntentResponse: Codable {
+    let clientSecret: String
+    let amount: Double
+    let currency: String
+    
+    enum CodingKeys: String, CodingKey {
+        case clientSecret = "clientSecret"
+        case amount
+        case currency
     }
 }
 

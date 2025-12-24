@@ -209,20 +209,6 @@ struct OffersView: View {
                     .padding(.horizontal, 20)
                     .zIndex(1000) // zIndex élevé pour le VStack des champs de recherche
                     
-                    // Indicateur de chargement
-                    if viewModel.isLoading {
-                        VStack(spacing: 16) {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .appGold))
-                                .scaleEffect(1.5)
-                            Text("Chargement des offres...")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.white.opacity(0.8))
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 40)
-                    }
-                    
                     // Message d'erreur
                     if let errorMessage = viewModel.errorMessage {
                         VStack(spacing: 12) {
@@ -255,9 +241,17 @@ struct OffersView: View {
                         .padding(.vertical, 40)
                     }
                     
-                    // Liste des offres
-                    if !viewModel.isLoading && viewModel.errorMessage == nil {
-                        if viewModel.filteredOffers.isEmpty {
+                    // Liste des offres ou skeletons de chargement
+                    if viewModel.errorMessage == nil {
+                        if viewModel.isLoading {
+                            // Afficher des skeletons pendant le chargement
+                            VStack(spacing: 12) {
+                                ForEach(0..<5, id: \.self) { _ in
+                                    OfferListCardSkeleton()
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                        } else if viewModel.filteredOffers.isEmpty {
                             VStack(spacing: 12) {
                                 Image(systemName: "tag.slash.fill")
                                     .foregroundColor(.gray.opacity(0.6))

@@ -14,6 +14,8 @@ class PartnerDetailViewModel: ObservableObject {
     @Published var partner: Partner
     @Published var currentOffers: [Offer] = []
     @Published var reviews: [Review] = []
+    @Published var isTogglingFavorite: Bool = false
+    @Published var favoriteErrorMessage: String?
     
     private let favoritesAPIService: FavoritesAPIService
     private let dataService: MockDataService
@@ -44,6 +46,9 @@ class PartnerDetailViewModel: ObservableObject {
     }
     
     func toggleFavorite() {
+        // Ne pas permettre plusieurs clics simultanés
+        guard !isTogglingFavorite else { return }
+        
         guard let apiId = partner.apiId else {
             // Si pas d'ID API, utiliser le fallback local
             partner.isFavorite.toggle()
@@ -51,9 +56,18 @@ class PartnerDetailViewModel: ObservableObject {
             return
         }
         
+        isTogglingFavorite = true
+        favoriteErrorMessage = nil
+        
+        // Sauvegarder l'état actuel pour pouvoir le restaurer en cas d'erreur
+        let previousFavoriteState = partner.isFavorite
+        
+        // Mettre à jour l'état immédiatement pour un feedback visuel
+        partner.isFavorite.toggle()
+        
         Task {
             do {
-                if partner.isFavorite {
+                if previousFavoriteState {
                     // Retirer des favoris
                     try await favoritesAPIService.removeFavorite(professionalId: apiId)
                 } else {
@@ -61,13 +75,34 @@ class PartnerDetailViewModel: ObservableObject {
                     try await favoritesAPIService.addFavorite(professionalId: apiId)
                 }
                 
-                // Mettre à jour l'état local
-                partner.isFavorite.toggle()
+                // Succès - l'état est déjà mis à jour
+                isTogglingFavorite = false
             } catch {
                 print("Erreur lors de la modification du favori: \(error)")
-                // En cas d'erreur, utiliser le fallback local
-                partner.isFavorite.toggle()
-                dataService.togglePartnerFavorite(partnerId: partner.id)
+                
+                // Restaurer l'état précédent en cas d'erreur
+                partner.isFavorite = previousFavoriteState
+                
+                // Afficher un message d'erreur
+                if let apiError = error as? APIError {
+                    switch apiError {
+                    case .networkError:
+                        favoriteErrorMessage = "Problème de connexion. Vérifiez votre connexion internet."
+                    case .unauthorized:
+                        favoriteErrorMessage = "Vous devez être connecté pour ajouter aux favoris"
+                    default:
+                        favoriteErrorMessage = "Une erreur s'est produite lors de la modification"
+                    }
+                } else {
+                    favoriteErrorMessage = "Une erreur s'est produite lors de la modification"
+                }
+                
+                // Effacer le message d'erreur après 3 secondes
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    self.favoriteErrorMessage = nil
+                }
+                
+                isTogglingFavorite = false
             }
         }
     }

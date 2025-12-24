@@ -11,6 +11,7 @@ struct CardView: View {
     @StateObject private var viewModel = CardViewModel()
     @State private var selectedPartner: Partner?
     @State private var showAddSavingsPopup: Bool = false
+    @State private var showSavingsList: Bool = false
     
     var body: some View {
         ZStack {
@@ -171,46 +172,51 @@ struct CardView: View {
                         // Grille de statistiques
                         VStack(spacing: 10) {
                             HStack(spacing: 10) {
-                                // Carte des économies avec bouton d'ajout
-                                VStack(spacing: 8) {
-                                    HStack {
-                                        Image(systemName: "banknote.fill")
-                                            .foregroundColor(.appGold)
-                                            .font(.system(size: 24))
-                                        
-                                        Spacer()
-                                        
-                                        Button(action: {
-                                            showAddSavingsPopup = true
-                                        }) {
-                                            Image(systemName: "plus.circle.fill")
+                                // Carte des économies avec bouton d'ajout (cliquable pour voir la liste)
+                                Button(action: {
+                                    showSavingsList = true
+                                }) {
+                                    VStack(spacing: 8) {
+                                        HStack {
+                                            Image(systemName: "banknote.fill")
                                                 .foregroundColor(.appGold)
-                                                .font(.system(size: 20))
+                                                .font(.system(size: 24))
+                                            
+                                            Spacer()
+                                            
+                                            Button(action: {
+                                                showAddSavingsPopup = true
+                                            }) {
+                                                Image(systemName: "plus.circle.fill")
+                                                    .foregroundColor(.appGold)
+                                                    .font(.system(size: 20))
+                                            }
                                         }
-                                    }
-                                    
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("\(Int(viewModel.savings))€")
-                                            .font(.system(size: 24, weight: .bold))
-                                            .foregroundColor(.white)
                                         
-                                        Text("Économies")
-                                            .font(.system(size: 13, weight: .medium))
-                                            .foregroundColor(.gray.opacity(0.9))
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("\(Int(viewModel.savings))€")
+                                                .font(.system(size: 24, weight: .bold))
+                                                .foregroundColor(.white)
+                                            
+                                            Text("Économies")
+                                                .font(.system(size: 13, weight: .medium))
+                                                .foregroundColor(.gray.opacity(0.9))
+                                        }
+                                        .frame(maxWidth: .infinity, alignment: .leading)
                                     }
-                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(16)
+                                    .frame(maxWidth: .infinity)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .fill(Color.appDarkRed1.opacity(0.85))
+                                            .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(Color.appGold.opacity(0.3), lineWidth: 1)
+                                    )
                                 }
-                                .padding(16)
-                                .frame(maxWidth: .infinity)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .fill(Color.appDarkRed1.opacity(0.85))
-                                        .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(Color.appGold.opacity(0.3), lineWidth: 1)
-                                )
+                                .buttonStyle(PlainButtonStyle())
                                 
                                 StatCard(
                                     icon: "person.2.fill",
@@ -380,6 +386,9 @@ struct CardView: View {
         }
         .navigationDestination(item: $selectedPartner) { partner in
             PartnerDetailView(partner: partner)
+        }
+        .navigationDestination(isPresented: $showSavingsList) {
+            SavingsListView()
         }
         .overlay {
             if showAddSavingsPopup {

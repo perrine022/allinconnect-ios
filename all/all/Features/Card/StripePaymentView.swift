@@ -81,9 +81,15 @@ struct StripePaymentView: View {
                     // Bouton Payer
                     if let selectedPlan = selectedPlan {
                         Button(action: {
-                            viewModel.openStripePaymentLink(plan: selectedPlan) { url in
-                                stripePaymentURL = url
-                                showSafari = true
+                            // Utiliser Payment Sheet au lieu de Payment Link
+                            viewModel.initiatePayment(plan: selectedPlan) { success, error in
+                                if success {
+                                    // Paiement réussi
+                                    NotificationCenter.default.post(name: NSNotification.Name("StripePaymentSuccess"), object: nil)
+                                    dismiss()
+                                } else if let error = error {
+                                    viewModel.errorMessage = error
+                                }
                             }
                         }) {
                             HStack {
@@ -123,9 +129,20 @@ struct StripePaymentView: View {
         .onAppear {
             viewModel.loadPlans()
         }
-        .sheet(isPresented: $showSafari) {
-            if let url = stripePaymentURL {
-                SafariView(url: url)
+        .sheet(isPresented: $viewModel.showPaymentSheet) {
+            if let clientSecret = viewModel.paymentClientSecret {
+                // Utiliser Payment Sheet si disponible, sinon fallback sur Safari
+                if #available(iOS 15.0, *) {
+                    // StripePaymentSheetView nécessite le SDK Stripe
+                    // Pour l'instant, on utilise Safari en fallback
+                    if let url = viewModel.paymentURL {
+                        SafariView(url: url)
+                    }
+                } else {
+                    if let url = viewModel.paymentURL {
+                        SafariView(url: url)
+                    }
+                }
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("StripePaymentSuccess"))) { _ in
@@ -234,6 +251,9 @@ class StripePaymentViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var isProcessingPayment: Bool = false
     @Published var errorMessage: String?
+    @Published var showPaymentSheet: Bool = false
+    @Published var paymentClientSecret: String? = nil
+    @Published var paymentURL: URL? = nil
     
     private let subscriptionsAPIService: SubscriptionsAPIService
     
@@ -331,6 +351,35 @@ class StripePaymentViewModel: ObservableObject {
                         if let url = components.url {
                             completion(url)
                         }
+                    }
+                }
+            }
+        }
+    }
+    
+    func initiatePayment(plan: SubscriptionPlanResponse, completion: @escaping (Bool, String?) -> Void) {
+        isProcessingPayment = true
+        errorMessage = nil
+        
+        Task {
+            do {
+                // Essayer d'abord d'utiliser Payment Sheet (nécessite le SDK Stripe)
+                // Si le SDK n'est pas disponible, fallback sur Payment Link
+                let paymentIntent = try await subscriptionsAPIService.createPaymentIntent(planId: plan.id)
+                
+                await MainActor.run {
+                    paymentClientSecret = paymentIntent.clientSecret
+                    showPaymentSheet = true
+                    isProcessingPayment = false
+                    // Le Payment Sheet gérera le callback
+                }
+            } catch {
+                // Fallback sur Payment Link si Payment Intent échoue
+                await MainActor.run {
+                    openStripePaymentLink(plan: plan) { url in
+                        self.paymentURL = url
+                        self.showPaymentSheet = true
+                        self.isProcessingPayment = false
                     }
                 }
             }

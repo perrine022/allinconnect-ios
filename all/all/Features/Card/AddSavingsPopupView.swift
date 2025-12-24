@@ -10,14 +10,15 @@ import SwiftUI
 struct AddSavingsPopupView: View {
     @Binding var isPresented: Bool
     @State private var amount: String = ""
-    @State private var selectedDate: Date = Date()
+    @State private var date: String = ""
     @State private var store: String = ""
+    @State private var errorMessage: String? = nil
     @FocusState private var focusedField: Field?
     
     var onSave: (Double, Date, String) -> Void
     
     enum Field {
-        case amount, store
+        case amount, date, store
     }
     
     var body: some View {
@@ -67,6 +68,13 @@ struct AddSavingsPopupView: View {
                                 .foregroundColor(.black)
                                 .font(.system(size: 16))
                                 .focused($focusedField, equals: .amount)
+                                .onChange(of: amount) { oldValue, newValue in
+                                    // Valider que ce sont uniquement des chiffres et des points
+                                    let filtered = newValue.filter { $0.isNumber || $0 == "." }
+                                    if filtered != newValue {
+                                        amount = filtered
+                                    }
+                                }
                             
                             Text("€")
                                 .font(.system(size: 16, weight: .semibold))
@@ -84,13 +92,32 @@ struct AddSavingsPopupView: View {
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.white.opacity(0.9))
                         
-                        DatePicker("", selection: $selectedDate, displayedComponents: .date)
-                            .datePickerStyle(.compact)
-                            .colorScheme(.dark)
-                            .accentColor(.appGold)
+                        TextField("", text: $date, prompt: Text("DD/MM/YYYY").foregroundColor(.gray.opacity(0.6)))
+                            .keyboardType(.numbersAndPunctuation)
+                            .foregroundColor(.black)
+                            .font(.system(size: 16))
+                            .focused($focusedField, equals: .date)
+                            .onChange(of: date) { oldValue, newValue in
+                                // Filtrer pour garder uniquement les chiffres
+                                let digitsOnly = newValue.filter { $0.isNumber }
+                                
+                                // Limiter à 8 chiffres (DDMMYYYY)
+                                let limited = String(digitsOnly.prefix(8))
+                                
+                                // Formater avec les slashes
+                                var formatted = ""
+                                for (index, char) in limited.enumerated() {
+                                    if index == 2 || index == 4 {
+                                        formatted += "/"
+                                    }
+                                    formatted += String(char)
+                                }
+                                
+                                date = formatted
+                            }
                             .padding(.horizontal, 14)
                             .padding(.vertical, 12)
-                            .background(Color.appDarkRed1.opacity(0.6))
+                            .background(Color.white)
                             .cornerRadius(10)
                     }
                     
@@ -112,12 +139,41 @@ struct AddSavingsPopupView: View {
                 }
                 .padding(.horizontal, 20)
                 
+                // Message d'erreur
+                if let errorMessage = errorMessage {
+                    Text(errorMessage)
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundColor(.red)
+                        .padding(.horizontal, 20)
+                }
+                
                 // Bouton sauvegarder
                 Button(action: {
-                    if let amountValue = Double(amount), amountValue > 0, !store.trimmingCharacters(in: .whitespaces).isEmpty {
-                        onSave(amountValue, selectedDate, store.trimmingCharacters(in: .whitespaces))
-                        isPresented = false
+                    // Valider le montant
+                    guard let amountValue = Double(amount), amountValue > 0 else {
+                        errorMessage = "Montant invalide"
+                        return
                     }
+                    
+                    // Valider la date (format DD/MM/YYYY)
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.dateFormat = "dd/MM/yyyy"
+                    dateFormatter.locale = Locale(identifier: "fr_FR")
+                    
+                    guard let dateValue = dateFormatter.date(from: date) else {
+                        errorMessage = "Date invalide. Format attendu: DD/MM/YYYY"
+                        return
+                    }
+                    
+                    // Valider le magasin
+                    guard !store.trimmingCharacters(in: .whitespaces).isEmpty else {
+                        errorMessage = "Nom du magasin requis"
+                        return
+                    }
+                    
+                    errorMessage = nil
+                    onSave(amountValue, dateValue, store.trimmingCharacters(in: .whitespaces))
+                    isPresented = false
                 }) {
                     Text("Ajouter")
                         .font(.system(size: 16, weight: .bold))
@@ -151,6 +207,15 @@ struct AddSavingsPopupView: View {
         guard let amountValue = Double(amount), amountValue > 0 else {
             return false
         }
+        
+        // Valider le format de date DD/MM/YYYY
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "dd/MM/yyyy"
+        dateFormatter.locale = Locale(identifier: "fr_FR")
+        guard dateFormatter.date(from: date) != nil else {
+            return false
+        }
+        
         return !store.trimmingCharacters(in: .whitespaces).isEmpty
     }
 }
