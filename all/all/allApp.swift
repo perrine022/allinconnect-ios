@@ -17,7 +17,7 @@ struct allApp: App {
     
     var body: some Scene {
         WindowGroup {
-            ContentView(
+            AppContentView(
                 hasCompletedOnboarding: $hasCompletedOnboarding,
                 isLoggedIn: $isLoggedIn,
                 locationService: locationService
@@ -26,8 +26,8 @@ struct allApp: App {
     }
 }
 
-// MARK: - Content View
-struct ContentView: View {
+// MARK: - App Content View
+struct AppContentView: View {
     @Binding var hasCompletedOnboarding: Bool
     @Binding var isLoggedIn: Bool
     @ObservedObject var locationService: LocationService
