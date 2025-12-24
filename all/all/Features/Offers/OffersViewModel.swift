@@ -20,6 +20,7 @@ class OffersViewModel: ObservableObject {
     @Published var selectedSector: String = ""
     @Published var searchRadius: Double = 10.0 // Rayon en km (0 = désactivé)
     @Published var onlyClub10: Bool = false
+    @Published var selectedOfferType: OfferType? = nil // nil = tous, .offer = offres, .event = événements
     
     // Secteurs disponibles
     let sectors: [String] = [
@@ -69,10 +70,14 @@ class OffersViewModel: ObservableObject {
                     category = mapSectorToCategory(selectedSector)
                 }
                 
+                // Convertir le type sélectionné en type API
+                let apiType: String? = selectedOfferType == .event ? "EVENEMENT" : (selectedOfferType == .offer ? "OFFRE" : nil)
+                
                 // Appeler l'API
                 let offersResponse = try await offersAPIService.getAllOffers(
                     city: city,
-                    category: category
+                    category: category,
+                    type: apiType
                 )
                 
                 // Convertir les réponses en modèles Offer
@@ -118,8 +123,13 @@ class OffersViewModel: ObservableObject {
         }
     }
     
-    private func applyFilters() {
+    func applyFilters() {
         var filtered = allOffers
+        
+        // Filtre par type (Offres ou Événements)
+        if let selectedType = selectedOfferType {
+            filtered = filtered.filter { $0.offerType == selectedType }
+        }
         
         // Filtre par texte de recherche (recherche locale)
         if !cityText.isEmpty {

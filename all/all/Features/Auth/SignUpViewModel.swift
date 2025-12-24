@@ -16,7 +16,9 @@ class SignUpViewModel: ObservableObject {
     @Published var password: String = ""
     @Published var confirmPassword: String = ""
     @Published var postalCode: String = ""
-    @Published var birthDate: Date = Calendar.current.date(byAdding: .year, value: -25, to: Date()) ?? Date()
+    @Published var birthDay: String = ""
+    @Published var birthMonth: String = ""
+    @Published var birthYear: String = ""
     @Published var userType: UserType = .client
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
@@ -41,7 +43,35 @@ class SignUpViewModel: ObservableObject {
         password.count >= 6 &&
         password == confirmPassword &&
         !postalCode.trimmingCharacters(in: .whitespaces).isEmpty &&
-        postalCode.count == 5
+        postalCode.count == 5 &&
+        isValidBirthDate()
+    }
+    
+    private func isValidBirthDate() -> Bool {
+        guard let day = Int(birthDay), let month = Int(birthMonth), let year = Int(birthYear) else {
+            return false
+        }
+        return day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 1900 && year <= Calendar.current.component(.year, from: Date())
+    }
+    
+    private func formatBirthDate() -> String? {
+        guard let day = Int(birthDay), let month = Int(birthMonth), let year = Int(birthYear) else {
+            return nil
+        }
+        guard day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 1900 && year <= Calendar.current.component(.year, from: Date()) else {
+            return nil
+        }
+        // Valider que la date existe (ex: pas de 31 février)
+        var components = DateComponents()
+        components.year = year
+        components.month = month
+        components.day = day
+        guard let date = Calendar.current.date(from: components) else {
+            return nil
+        }
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        return dateFormatter.string(from: date)
     }
     
     private func isValidEmail(_ email: String) -> Bool {
@@ -68,9 +98,12 @@ class SignUpViewModel: ObservableObject {
                 let city = postalCode // Pour l'instant, on utilise le code postal comme ville
                 
                 // Formater la date de naissance au format YYYY-MM-DD
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "yyyy-MM-dd"
-                let birthDateString = dateFormatter.string(from: birthDate)
+                guard let birthDateString = formatBirthDate() else {
+                    errorMessage = "Date de naissance invalide"
+                    isLoading = false
+                    completion(false)
+                    return
+                }
                 
                 // Créer la requête d'inscription
                 let registrationRequest = RegistrationRequest(

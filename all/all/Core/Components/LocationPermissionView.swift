@@ -71,6 +71,15 @@ struct LocationPermissionView: View {
                 .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
         .padding(.horizontal, 30)
+        .onChange(of: locationService.authorizationStatus) { oldValue, newValue in
+            // Fermer automatiquement la popup quand l'utilisateur accepte la géolocalisation
+            if newValue == .authorizedWhenInUse || newValue == .authorizedAlways {
+                // Petit délai pour laisser le temps à l'utilisateur de voir la confirmation
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    onDismiss()
+                }
+            }
+        }
     }
 }
 

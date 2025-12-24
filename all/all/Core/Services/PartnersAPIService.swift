@@ -8,13 +8,6 @@
 import Foundation
 import Combine
 
-// MARK: - Subscription Plan Response
-struct SubscriptionPlanResponse: Codable {
-    let id: Int
-    let title: String
-    let price: Double
-}
-
 // MARK: - Professional Response Model (for Partners API)
 struct PartnerProfessionalResponse: Codable, Identifiable {
     let id: Int

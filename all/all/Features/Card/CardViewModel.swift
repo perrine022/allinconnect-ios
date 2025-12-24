@@ -13,6 +13,7 @@ import UIKit
 class CardViewModel: ObservableObject {
     @Published var user: User
     @Published var savings: Double = 128.0
+    @Published var savingsEntries: [SavingsEntry] = []
     @Published var referrals: Int = 0
     @Published var wallet: Double = 15.0
     @Published var favoritesCount: Int = 0
@@ -73,6 +74,9 @@ class CardViewModel: ObservableObject {
         self.referralCode = generateReferralCode(from: firstName, lastName: lastName)
         self.referralLink = "allin.fr/r/\(referralCode)"
         
+        // Charger les économies sauvegardées
+        loadSavings()
+        
         loadData()
     }
     
@@ -90,7 +94,7 @@ class CardViewModel: ObservableObject {
                     firstName: userLight.firstName,
                     lastName: userLight.lastName,
                     username: user.firstName.lowercased(),
-                    bio: userLight.isMember ? "Membre CLUB10" : "",
+                    bio: (userLight.isMember ?? false) ? "Membre CLUB10" : "",
                     profileImageName: "person.circle.fill",
                     publications: 0,
                     subscribers: 0,
@@ -98,14 +102,14 @@ class CardViewModel: ObservableObject {
                 )
                 
                 // Mettre à jour les données de la carte
-                isMember = userLight.isMember
-                isCardActive = userLight.isCardActive
+                isMember = userLight.isMember ?? false
+                isCardActive = userLight.isCardActive ?? false
                 cardNumber = userLight.card?.cardNumber
                 cardType = userLight.card?.type
                 
                 // Mettre à jour les compteurs
-                referrals = userLight.referralCount
-                favoritesCount = userLight.favoriteCount
+                referrals = userLight.referralCount ?? 0
+                favoritesCount = userLight.favoriteCount ?? 0
                 
                 // Générer le code de parrainage
                 referralCode = generateReferralCode(from: userLight.firstName, lastName: userLight.lastName)
@@ -132,10 +136,40 @@ class CardViewModel: ObservableObject {
             // Charger les favoris depuis l'API
             let favoritesResponse = try await favoritesAPIService.getFavorites()
             favoritePartners = favoritesResponse.map { $0.toPartner() }
+            // Mettre à jour le compteur
+            favoritesCount = favoritePartners.count
         } catch {
             print("Erreur lors du chargement des favoris: \(error)")
             // En cas d'erreur, utiliser les données mockées en fallback
             favoritePartners = dataService.getPartners().filter { $0.isFavorite }
+            favoritesCount = favoritePartners.count
+        }
+    }
+    
+    func removeFavorite(partner: Partner) {
+        guard let apiId = partner.apiId else {
+            // Si pas d'ID API, retirer localement seulement
+            favoritePartners.removeAll { $0.id == partner.id }
+            favoritesCount = favoritePartners.count
+            return
+        }
+        
+        Task {
+            do {
+                // Appeler l'API pour retirer des favoris
+                try await favoritesAPIService.removeFavorite(professionalId: apiId)
+                
+                // Retirer de la liste locale
+                favoritePartners.removeAll { $0.id == partner.id }
+                favoritesCount = favoritePartners.count
+            } catch {
+                print("Erreur lors de la suppression du favori: \(error)")
+                errorMessage = "Erreur lors de la suppression du favori"
+                
+                // En cas d'erreur, retirer localement quand même
+                favoritePartners.removeAll { $0.id == partner.id }
+                favoritesCount = favoritePartners.count
+            }
         }
     }
     
@@ -148,6 +182,38 @@ class CardViewModel: ObservableObject {
     
     func copyReferralLink() {
         UIPasteboard.general.string = referralLink
+    }
+    
+    // MARK: - Savings Management
+    func addSavings(amount: Double, date: Date, store: String) {
+        let entry = SavingsEntry(amount: amount, date: date, store: store)
+        savingsEntries.append(entry)
+        updateSavingsTotal()
+        saveSavings()
+    }
+    
+    private func updateSavingsTotal() {
+        savings = savingsEntries.reduce(0) { $0 + $1.amount }
+    }
+    
+    private func loadSavings() {
+        // Charger depuis UserDefaults
+        if let data = UserDefaults.standard.data(forKey: "savings_entries"),
+           let decoded = try? JSONDecoder().decode([SavingsEntry].self, from: data) {
+            savingsEntries = decoded
+            updateSavingsTotal()
+        } else {
+            // Si aucune économie sauvegardée, initialiser avec la valeur par défaut
+            // mais ne pas créer d'entrée vide
+            savings = 128.0
+        }
+    }
+    
+    private func saveSavings() {
+        // Sauvegarder dans UserDefaults
+        if let encoded = try? JSONEncoder().encode(savingsEntries) {
+            UserDefaults.standard.set(encoded, forKey: "savings_entries")
+        }
     }
 }
 

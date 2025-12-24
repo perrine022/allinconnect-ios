@@ -19,7 +19,7 @@ struct SignUpView: View {
     @FocusState private var focusedField: Field?
     
     enum Field: Hashable {
-        case firstName, lastName, email, password, confirmPassword, postalCode, birthDate
+        case firstName, lastName, email, password, confirmPassword, postalCode, birthDay, birthMonth, birthYear
     }
     
     var body: some View {
@@ -250,17 +250,63 @@ struct SignUpView: View {
                                         .font(.system(size: 14, weight: .medium))
                                         .foregroundColor(.white.opacity(0.9))
                                     
-                                    DatePicker(
-                                        "",
-                                        selection: $viewModel.birthDate,
-                                        displayedComponents: .date
-                                    )
-                                    .datePickerStyle(.compact)
-                                    .colorScheme(.light)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 14)
-                                    .background(Color.white)
-                                    .cornerRadius(10)
+                                    HStack(spacing: 12) {
+                                        // Jour
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Jour")
+                                                .font(.system(size: 12, weight: .regular))
+                                                .foregroundColor(.gray.opacity(0.7))
+                                            
+                                            TextField("", text: $viewModel.birthDay, prompt: Text("JJ").foregroundColor(.gray.opacity(0.5)))
+                                                .keyboardType(.numberPad)
+                                                .foregroundColor(.black)
+                                                .font(.system(size: 16))
+                                                .focused($focusedField, equals: .birthDay)
+                                                .frame(width: 60)
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 12)
+                                                .background(Color.white)
+                                                .cornerRadius(10)
+                                        }
+                                        
+                                        // Mois
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Mois")
+                                                .font(.system(size: 12, weight: .regular))
+                                                .foregroundColor(.gray.opacity(0.7))
+                                            
+                                            TextField("", text: $viewModel.birthMonth, prompt: Text("MM").foregroundColor(.gray.opacity(0.5)))
+                                                .keyboardType(.numberPad)
+                                                .foregroundColor(.black)
+                                                .font(.system(size: 16))
+                                                .focused($focusedField, equals: .birthMonth)
+                                                .frame(width: 60)
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 12)
+                                                .background(Color.white)
+                                                .cornerRadius(10)
+                                        }
+                                        
+                                        // Année
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Année")
+                                                .font(.system(size: 12, weight: .regular))
+                                                .foregroundColor(.gray.opacity(0.7))
+                                            
+                                            TextField("", text: $viewModel.birthYear, prompt: Text("AAAA").foregroundColor(.gray.opacity(0.5)))
+                                                .keyboardType(.numberPad)
+                                                .foregroundColor(.black)
+                                                .font(.system(size: 16))
+                                                .focused($focusedField, equals: .birthYear)
+                                                .frame(width: 80)
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 12)
+                                                .background(Color.white)
+                                                .cornerRadius(10)
+                                        }
+                                        
+                                        Spacer()
+                                    }
                                 }
                                 .padding(.horizontal, 20)
                                 

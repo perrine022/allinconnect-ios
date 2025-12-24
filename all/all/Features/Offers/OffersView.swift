@@ -41,6 +41,64 @@ struct OffersView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 20)
                     
+                    // Pastilles de filtre par type
+                    HStack(spacing: 12) {
+                        // Pastille "Offres"
+                        Button(action: {
+                            withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+                                if viewModel.selectedOfferType == .offer {
+                                    viewModel.selectedOfferType = nil // Désélectionner
+                                } else {
+                                    viewModel.selectedOfferType = .offer
+                                }
+                                viewModel.applyFilters()
+                            }
+                        }) {
+                            Text("Offres")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(viewModel.selectedOfferType == .offer ? .black : .white)
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 10)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .fill(viewModel.selectedOfferType == .offer ? Color.appGold : Color.clear)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 20)
+                                                .stroke(Color.appGold, lineWidth: 1.5)
+                                        )
+                                )
+                        }
+                        
+                        // Pastille "Événements"
+                        Button(action: {
+                            withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+                                if viewModel.selectedOfferType == .event {
+                                    viewModel.selectedOfferType = nil // Désélectionner
+                                } else {
+                                    viewModel.selectedOfferType = .event
+                                }
+                                viewModel.applyFilters()
+                            }
+                        }) {
+                            Text("Événements")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(viewModel.selectedOfferType == .event ? .black : .white)
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 10)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .fill(viewModel.selectedOfferType == .event ? Color.appGold : Color.clear)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 20)
+                                                .stroke(Color.appGold, lineWidth: 1.5)
+                                        )
+                                )
+                        }
+                        
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
+                    
                     // Champs de recherche - Design compact et épuré (comme HomeView)
                     VStack(spacing: 6) {
                         // Champ Ville, nom, activité

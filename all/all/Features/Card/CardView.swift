@@ -10,6 +10,7 @@ import SwiftUI
 struct CardView: View {
     @StateObject private var viewModel = CardViewModel()
     @State private var selectedPartner: Partner?
+    @State private var showAddSavingsPopup: Bool = false
     
     var body: some View {
         ZStack {
@@ -170,11 +171,45 @@ struct CardView: View {
                         // Grille de statistiques
                         VStack(spacing: 10) {
                             HStack(spacing: 10) {
-                                StatCard(
-                                    icon: "banknote.fill",
-                                    value: "\(Int(viewModel.savings))€",
-                                    label: "Économies",
-                                    iconColor: .appGold
+                                // Carte des économies avec bouton d'ajout
+                                VStack(spacing: 8) {
+                                    HStack {
+                                        Image(systemName: "banknote.fill")
+                                            .foregroundColor(.appGold)
+                                            .font(.system(size: 24))
+                                        
+                                        Spacer()
+                                        
+                                        Button(action: {
+                                            showAddSavingsPopup = true
+                                        }) {
+                                            Image(systemName: "plus.circle.fill")
+                                                .foregroundColor(.appGold)
+                                                .font(.system(size: 20))
+                                        }
+                                    }
+                                    
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("\(Int(viewModel.savings))€")
+                                            .font(.system(size: 24, weight: .bold))
+                                            .foregroundColor(.white)
+                                        
+                                        Text("Économies")
+                                            .font(.system(size: 13, weight: .medium))
+                                            .foregroundColor(.gray.opacity(0.9))
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                                .padding(16)
+                                .frame(maxWidth: .infinity)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(Color.appDarkRed1.opacity(0.85))
+                                        .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(Color.appGold.opacity(0.3), lineWidth: 1)
                                 )
                                 
                                 StatCard(
@@ -265,55 +300,70 @@ struct CardView: View {
                             
                             VStack(spacing: 10) {
                                 ForEach(viewModel.favoritePartners) { partner in
-                                    Button(action: {
-                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                            selectedPartner = partner
-                                        }
-                                    }) {
-                                        HStack(spacing: 12) {
-                                            // Image
-                                            Image(systemName: partner.imageName)
-                                                .resizable()
-                                                .scaledToFill()
-                                                .frame(width: 56, height: 56)
-                                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                                                .foregroundColor(.gray.opacity(0.3))
-                                            
-                                            VStack(alignment: .leading, spacing: 3) {
-                                                Text(partner.name)
-                                                    .font(.system(size: 15, weight: .bold))
-                                                    .foregroundColor(.white)
+                                    HStack(spacing: 12) {
+                                        // Bouton pour ouvrir le détail
+                                        Button(action: {
+                                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                                selectedPartner = partner
+                                            }
+                                        }) {
+                                            HStack(spacing: 12) {
+                                                // Image
+                                                Image(systemName: partner.imageName)
+                                                    .resizable()
+                                                    .scaledToFill()
+                                                    .frame(width: 56, height: 56)
+                                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                                    .foregroundColor(.gray.opacity(0.3))
                                                 
-                                                Text(partner.category)
-                                                    .font(.system(size: 13, weight: .regular))
-                                                    .foregroundColor(.gray.opacity(0.9))
-                                            }
-                                            
-                                            Spacer()
-                                            
-                                            // Badge réduction
-                                            if let discount = partner.discount {
-                                                Text("-\(discount)%")
-                                                    .font(.system(size: 11, weight: .bold))
-                                                    .foregroundColor(.white)
-                                                    .padding(.horizontal, 9)
-                                                    .padding(.vertical, 5)
-                                                    .background(Color.green)
-                                                    .cornerRadius(6)
+                                                VStack(alignment: .leading, spacing: 3) {
+                                                    Text(partner.name)
+                                                        .font(.system(size: 15, weight: .bold))
+                                                        .foregroundColor(.white)
+                                                    
+                                                    Text(partner.category)
+                                                        .font(.system(size: 13, weight: .regular))
+                                                        .foregroundColor(.gray.opacity(0.9))
+                                                }
+                                                
+                                                Spacer()
+                                                
+                                                // Badge réduction
+                                                if let discount = partner.discount {
+                                                    Text("-\(discount)%")
+                                                        .font(.system(size: 11, weight: .bold))
+                                                        .foregroundColor(.white)
+                                                        .padding(.horizontal, 9)
+                                                        .padding(.vertical, 5)
+                                                        .background(Color.green)
+                                                        .cornerRadius(6)
+                                                }
                                             }
                                         }
-                                        .padding(12)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .fill(Color.appDarkRed1.opacity(0.7))
-                                                .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-                                        )
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                                        )
+                                        .buttonStyle(PlainButtonStyle())
+                                        
+                                        // Bouton cœur pour retirer des favoris
+                                        Button(action: {
+                                            withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+                                                viewModel.removeFavorite(partner: partner)
+                                            }
+                                        }) {
+                                            Image(systemName: "heart.fill")
+                                                .foregroundColor(.appRed)
+                                                .font(.system(size: 18))
+                                                .frame(width: 32, height: 32)
+                                        }
                                     }
-                                    .buttonStyle(PlainButtonStyle())
+                                    .padding(12)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(Color.appDarkRed1.opacity(0.7))
+                                            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                    )
                                 }
                             }
                             .padding(.horizontal, 20)
@@ -330,6 +380,13 @@ struct CardView: View {
         }
         .navigationDestination(item: $selectedPartner) { partner in
             PartnerDetailView(partner: partner)
+        }
+        .overlay {
+            if showAddSavingsPopup {
+                AddSavingsPopupView(isPresented: $showAddSavingsPopup) { amount, date, store in
+                    viewModel.addSavings(amount: amount, date: date, store: store)
+                }
+            }
         }
     }
 }

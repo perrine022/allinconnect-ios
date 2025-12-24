@@ -81,11 +81,11 @@ class LoginViewModel: ObservableObject {
                     switch apiError {
                     case .httpError(let statusCode, let message):
                         if statusCode == 401 {
-                            errorMessage = "Email ou mot de passe incorrect"
+                            errorMessage = "Les informations de connexion sont incorrectes"
                         } else if statusCode == 404 {
                             errorMessage = "Compte non trouvé"
                         } else {
-                            errorMessage = message ?? "Erreur lors de la connexion"
+                            errorMessage = message ?? "Un problème s'est produit lors de la connexion"
                         }
                     case .networkError(let underlyingError):
                         // Vérifier si c'est une erreur de connexion au serveur
@@ -93,15 +93,22 @@ class LoginViewModel: ObservableObject {
                         if nsError.domain == NSURLErrorDomain && (nsError.code == -1004 || nsError.code == NSURLErrorCannotConnectToHost) {
                             errorMessage = "Impossible de se connecter au serveur. Vérifiez que le backend est démarré sur http://localhost:8000"
                         } else {
-                            errorMessage = "Erreur de connexion. Vérifiez votre connexion internet."
+                            errorMessage = "Problème de connexion. Vérifiez votre connexion internet."
                         }
                     case .unauthorized:
-                        errorMessage = "Email ou mot de passe incorrect"
-                    default:
-                        errorMessage = apiError.localizedDescription
+                        errorMessage = "Les informations de connexion sont incorrectes"
+                    case .invalidResponse:
+                        errorMessage = "Réponse invalide du serveur"
+                    case .decodingError:
+                        errorMessage = "Problème lors du traitement de la réponse"
+                    case .invalidURL:
+                        errorMessage = "URL invalide"
+                    case .notFound:
+                        errorMessage = "Compte non trouvé"
                     }
                 } else {
-                    errorMessage = error.localizedDescription
+                    // Pour les autres erreurs, afficher un message générique
+                    errorMessage = "Les informations de connexion sont incorrectes"
                 }
                 
                 print("Erreur lors de la connexion: \(error)")

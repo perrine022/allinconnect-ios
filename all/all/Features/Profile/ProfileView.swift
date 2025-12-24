@@ -20,6 +20,7 @@ struct ProfileView: View {
     @State private var settingsNavigationId: UUID?
     @State private var selectedPartner: Partner?
     @State private var signUpNavigationId: UUID?
+    @State private var familyCardEmailsNavigationId: UUID?
     
     var body: some View {
         if isLoggedIn {
@@ -347,45 +348,104 @@ struct ProfileView: View {
                         .padding(.bottom, 8)
                     }
                     
-                    // Section Favoris (espace client)
+                    // Section Abonnement et Carte (espace client)
                     if viewModel.currentSpace == .client {
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
-                                Image(systemName: "heart.fill")
+                                Image(systemName: "creditcard.fill")
                                     .foregroundColor(.appGold)
                                     .font(.system(size: 18))
                                 
-                                Text("Mes favoris")
+                                Text("Mon abonnement")
                                     .font(.system(size: 18, weight: .bold))
                                     .foregroundColor(.white)
                                 
                                 Spacer()
-                                
-                                if !viewModel.favoritePartners.isEmpty {
-                                    Text("\(viewModel.favoritePartners.count)")
+                            }
+                            
+                            // Type de carte
+                            if let cardType = viewModel.cardType {
+                                HStack {
+                                    Text("Type de carte:")
                                         .font(.system(size: 14, weight: .medium))
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(.white.opacity(0.9))
+                                    
+                                    Spacer()
+                                    
+                                    Text(cardType == "FAMILY" ? "Famille" : "Individuelle")
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundColor(.appGold)
                                 }
                             }
                             
-                            // Liste des favoris (limités à 3 pour l'aperçu)
-                            if viewModel.favoritePartners.isEmpty {
-                                Text("Aucun favori pour le moment")
+                            // Abonnement actif
+                            if viewModel.hasActiveClub10Subscription {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack {
+                                        Text("Abonnement actif")
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundColor(.white.opacity(0.9))
+                                        
+                                        Spacer()
+                                        
+                                        Text("ACTIF")
+                                            .font(.system(size: 11, weight: .bold))
+                                            .foregroundColor(.white)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 4)
+                                            .background(Color.green)
+                                            .cornerRadius(6)
+                                    }
+                                    
+                                    if !viewModel.club10NextPaymentDate.isEmpty {
+                                        HStack {
+                                            Text("Prochain paiement:")
+                                                .font(.system(size: 13, weight: .regular))
+                                                .foregroundColor(.gray.opacity(0.9))
+                                            
+                                            Spacer()
+                                            
+                                            Text(viewModel.club10NextPaymentDate)
+                                                .font(.system(size: 13, weight: .semibold))
+                                                .foregroundColor(.white)
+                                        }
+                                    }
+                                    
+                                    if !viewModel.club10Amount.isEmpty {
+                                        HStack {
+                                            Text("Montant:")
+                                                .font(.system(size: 13, weight: .regular))
+                                                .foregroundColor(.gray.opacity(0.9))
+                                            
+                                            Spacer()
+                                            
+                                            Text(viewModel.club10Amount)
+                                                .font(.system(size: 13, weight: .semibold))
+                                                .foregroundColor(.white)
+                                        }
+                                    }
+                                }
+                            } else {
+                                Text("Aucun abonnement actif")
                                     .font(.system(size: 14, weight: .regular))
                                     .foregroundColor(.white.opacity(0.7))
-                            } else {
-                                VStack(spacing: 8) {
-                                    ForEach(Array(viewModel.favoritePartners.prefix(3))) { partner in
-                                        PartnerCard(
-                                            partner: partner,
-                                            onFavoriteToggle: {
-                                                viewModel.togglePartnerFavorite(for: partner)
-                                            },
-                                            onTap: {
-                                                selectedPartner = partner
-                                            }
-                                        )
+                            }
+                            
+                            // Bouton pour gérer les emails de la carte famille
+                            if viewModel.cardType == "FAMILY" && viewModel.isCardOwner {
+                                Button(action: {
+                                    familyCardEmailsNavigationId = UUID()
+                                }) {
+                                    HStack {
+                                        Spacer()
+                                        Text("Gérer les emails de la carte famille")
+                                            .font(.system(size: 15, weight: .semibold))
+                                            .foregroundColor(.black)
+                                        Spacer()
                                     }
+                                    .padding(.vertical, 12)
+                                    .background(Color.appGold)
+                                    .cornerRadius(10)
                                 }
                             }
                         }
@@ -579,8 +639,11 @@ struct ProfileView: View {
         .navigationDestination(item: $settingsNavigationId) { _ in
             SettingsView()
         }
+        .navigationDestination(item: $familyCardEmailsNavigationId) { _ in
+            FamilyCardEmailsView(viewModel: FamilyCardEmailsViewModel())
+        }
         .navigationDestination(item: $selectedPartner) { partner in
-            PartnerDetailView(partner: partner)
+PartnerDetailView(partner: partner)
         }
     }
 }
@@ -592,7 +655,7 @@ struct EditProfileView: View {
     @FocusState private var focusedField: Field?
     
     enum Field: Hashable {
-        case firstName, lastName, email, address, city, birthDate
+        case firstName, lastName, email, address, city, birthDay, birthMonth, birthYear
     }
     
     var body: some View {
@@ -621,6 +684,14 @@ struct EditProfileView: View {
                             }
                             .padding(.horizontal, 20)
                             .padding(.top, 20)
+                            
+                            // Indicateur de chargement
+                            if viewModel.isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .appGold))
+                                    .scaleEffect(1.5)
+                                    .padding(.vertical, 20)
+                            }
                             
                             // Avatar
                             ZStack {
@@ -703,17 +774,63 @@ struct EditProfileView: View {
                                         .font(.system(size: 14, weight: .medium))
                                         .foregroundColor(.white.opacity(0.9))
                                     
-                                    DatePicker(
-                                        "",
-                                        selection: $viewModel.birthDate,
-                                        displayedComponents: .date
-                                    )
-                                    .datePickerStyle(.compact)
-                                    .colorScheme(.light)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 14)
-                                    .background(Color.white)
-                                    .cornerRadius(10)
+                                    HStack(spacing: 12) {
+                                        // Jour
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Jour")
+                                                .font(.system(size: 12, weight: .regular))
+                                                .foregroundColor(.gray.opacity(0.7))
+                                            
+                                            TextField("", text: $viewModel.birthDay, prompt: Text("JJ").foregroundColor(.gray.opacity(0.5)))
+                                                .keyboardType(.numberPad)
+                                                .foregroundColor(.black)
+                                                .font(.system(size: 16))
+                                                .focused($focusedField, equals: .birthDay)
+                                                .frame(width: 60)
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 12)
+                                                .background(Color.white)
+                                                .cornerRadius(10)
+                                        }
+                                        
+                                        // Mois
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Mois")
+                                                .font(.system(size: 12, weight: .regular))
+                                                .foregroundColor(.gray.opacity(0.7))
+                                            
+                                            TextField("", text: $viewModel.birthMonth, prompt: Text("MM").foregroundColor(.gray.opacity(0.5)))
+                                                .keyboardType(.numberPad)
+                                                .foregroundColor(.black)
+                                                .font(.system(size: 16))
+                                                .focused($focusedField, equals: .birthMonth)
+                                                .frame(width: 60)
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 12)
+                                                .background(Color.white)
+                                                .cornerRadius(10)
+                                        }
+                                        
+                                        // Année
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Année")
+                                                .font(.system(size: 12, weight: .regular))
+                                                .foregroundColor(.gray.opacity(0.7))
+                                            
+                                            TextField("", text: $viewModel.birthYear, prompt: Text("AAAA").foregroundColor(.gray.opacity(0.5)))
+                                                .keyboardType(.numberPad)
+                                                .foregroundColor(.black)
+                                                .font(.system(size: 16))
+                                                .focused($focusedField, equals: .birthYear)
+                                                .frame(width: 80)
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 12)
+                                                .background(Color.white)
+                                                .cornerRadius(10)
+                                        }
+                                        
+                                        Spacer()
+                                    }
                                 }
                                 .padding(.horizontal, 20)
                             }

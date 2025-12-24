@@ -67,6 +67,8 @@ struct OfferResponse: Codable, Identifiable {
     let featured: Bool?
     let status: String?
     let professional: ProfessionalResponse?
+    let type: String? // "OFFRE" ou "EVENEMENT"
+    let imageUrl: String?
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -78,6 +80,8 @@ struct OfferResponse: Codable, Identifiable {
         case featured
         case status
         case professional
+        case type
+        case imageUrl = "imageUrl"
     }
 }
 
@@ -100,7 +104,8 @@ class OffersAPIService: ObservableObject {
     func getAllOffers(
         city: String? = nil,
         category: OfferCategory? = nil,
-        professionalId: Int? = nil
+        professionalId: Int? = nil,
+        type: String? = nil // "OFFRE" ou "EVENEMENT" pour filtrer
     ) async throws -> [OfferResponse] {
         var parameters: [String: Any] = [:]
         
@@ -114,6 +119,10 @@ class OffersAPIService: ObservableObject {
         
         if let professionalId = professionalId {
             parameters["professionalId"] = professionalId
+        }
+        
+        if let type = type {
+            parameters["type"] = type
         }
         
         // L'API retourne directement un tableau d'offres, pas un objet avec une clé "offers"
@@ -166,11 +175,14 @@ class OffersAPIService: ObservableObject {
         price: Double?,
         startDate: String?,
         endDate: String?,
-        featured: Bool?
+        featured: Bool?,
+        type: String, // "OFFRE" ou "EVENEMENT"
+        imageUrl: String? = nil
     ) async throws -> OfferResponse {
         var parameters: [String: Any] = [
             "title": title,
-            "description": description
+            "description": description,
+            "type": type
         ]
         
         if let price = price {
@@ -187,6 +199,10 @@ class OffersAPIService: ObservableObject {
         
         if let featured = featured {
             parameters["featured"] = featured
+        }
+        
+        if let imageUrl = imageUrl {
+            parameters["imageUrl"] = imageUrl
         }
         
         let offer: OfferResponse = try await apiService.request(
@@ -206,7 +222,9 @@ class OffersAPIService: ObservableObject {
         price: Double? = nil,
         startDate: String? = nil,
         endDate: String? = nil,
-        featured: Bool? = nil
+        featured: Bool? = nil,
+        type: String? = nil, // "OFFRE" ou "EVENEMENT"
+        imageUrl: String? = nil
     ) async throws -> OfferResponse {
         var parameters: [String: Any] = [:]
         
@@ -232,6 +250,14 @@ class OffersAPIService: ObservableObject {
         
         if let featured = featured {
             parameters["featured"] = featured
+        }
+        
+        if let type = type {
+            parameters["type"] = type
+        }
+        
+        if let imageUrl = imageUrl {
+            parameters["imageUrl"] = imageUrl
         }
         
         let offer: OfferResponse = try await apiService.request(
@@ -312,8 +338,18 @@ extension OfferResponse {
             discount = "Sur devis"
         }
         
-        // Déterminer le type d'offre (par défaut "offer")
-        let offerTypeEnum: OfferType = .offer
+        // Déterminer le type d'offre depuis le champ type de l'API
+        let offerTypeEnum: OfferType
+        if let typeString = type?.uppercased() {
+            if typeString == "EVENEMENT" {
+                offerTypeEnum = .event
+            } else {
+                offerTypeEnum = .offer
+            }
+        } else {
+            // Par défaut, considérer comme une offre
+            offerTypeEnum = .offer
+        }
         
         // Déterminer si c'est CLUB10 (basé sur featured ou autre logique)
         let isClub10 = featured ?? false

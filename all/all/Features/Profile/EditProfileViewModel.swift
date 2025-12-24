@@ -16,7 +16,9 @@ class EditProfileViewModel: ObservableObject {
     @Published var email: String = ""
     @Published var address: String = ""
     @Published var city: String = ""
-    @Published var birthDate: Date = Date()
+    @Published var birthDay: String = ""
+    @Published var birthMonth: String = ""
+    @Published var birthYear: String = ""
     @Published var latitude: Double? = nil
     @Published var longitude: Double? = nil
     
@@ -40,7 +42,7 @@ class EditProfileViewModel: ObservableObject {
         // Accéder à LocationService.shared dans un contexte MainActor
         self.locationService = locationService ?? LocationService.shared
         
-        // Charger les données utilisateur depuis UserDefaults
+        // Charger les données utilisateur depuis l'API
         loadUserData()
         
         // Charger la localisation si disponible
@@ -51,7 +53,7 @@ class EditProfileViewModel: ObservableObject {
     }
     
     func loadUserData() {
-        // Charger depuis UserDefaults
+        // Charger d'abord depuis UserDefaults comme fallback
         firstName = UserDefaults.standard.string(forKey: "user_first_name") ?? ""
         lastName = UserDefaults.standard.string(forKey: "user_last_name") ?? ""
         email = UserDefaults.standard.string(forKey: "user_email") ?? ""
@@ -63,8 +65,39 @@ class EditProfileViewModel: ObservableObject {
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd"
             if let date = dateFormatter.date(from: birthDateString) {
-                birthDate = date
+                let calendar = Calendar.current
+                let components = calendar.dateComponents([.day, .month, .year], from: date)
+                birthDay = String(components.day ?? 1)
+                birthMonth = String(components.month ?? 1)
+                birthYear = String(components.year ?? 2000)
             }
+        }
+        
+        // Charger les données depuis l'API pour préremplir
+        Task {
+            await loadUserDataFromAPI()
+        }
+    }
+    
+    private func loadUserDataFromAPI() async {
+        isLoading = true
+        
+        do {
+            // Charger les données light depuis l'API
+            let userLight = try await profileAPIService.getUserLight()
+            
+            // Préremplir les champs disponibles
+            firstName = userLight.firstName
+            lastName = userLight.lastName
+            
+            // Les autres champs (email, address, city, birthDate) ne sont pas dans /users/me/light
+            // On garde les valeurs de UserDefaults si elles existent
+            
+            isLoading = false
+        } catch {
+            isLoading = false
+            print("Erreur lors du chargement des données utilisateur: \(error)")
+            // En cas d'erreur, on garde les valeurs de UserDefaults
         }
     }
     
@@ -72,7 +105,35 @@ class EditProfileViewModel: ObservableObject {
         !firstName.trimmingCharacters(in: .whitespaces).isEmpty &&
         !lastName.trimmingCharacters(in: .whitespaces).isEmpty &&
         !email.trimmingCharacters(in: .whitespaces).isEmpty &&
-        isValidEmail(email)
+        isValidEmail(email) &&
+        isValidBirthDate()
+    }
+    
+    private func isValidBirthDate() -> Bool {
+        guard let day = Int(birthDay), let month = Int(birthMonth), let year = Int(birthYear) else {
+            return false
+        }
+        return day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 1900 && year <= Calendar.current.component(.year, from: Date())
+    }
+    
+    private func formatBirthDate() -> String? {
+        guard let day = Int(birthDay), let month = Int(birthMonth), let year = Int(birthYear) else {
+            return nil
+        }
+        guard day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 1900 && year <= Calendar.current.component(.year, from: Date()) else {
+            return nil
+        }
+        // Valider que la date existe (ex: pas de 31 février)
+        var components = DateComponents()
+        components.year = year
+        components.month = month
+        components.day = day
+        guard let date = Calendar.current.date(from: components) else {
+            return nil
+        }
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        return dateFormatter.string(from: date)
     }
     
     private func isValidEmail(_ email: String) -> Bool {
@@ -94,9 +155,11 @@ class EditProfileViewModel: ObservableObject {
         Task {
             do {
                 // Formater la date de naissance au format YYYY-MM-DD
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "yyyy-MM-dd"
-                let birthDateString = dateFormatter.string(from: birthDate)
+                guard let birthDateString = formatBirthDate() else {
+                    errorMessage = "Date de naissance invalide"
+                    isLoading = false
+                    return
+                }
                 
                 // Créer la requête de mise à jour
                 let updateRequest = UpdateProfileRequest(

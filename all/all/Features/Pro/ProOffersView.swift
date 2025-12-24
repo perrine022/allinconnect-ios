@@ -159,8 +159,8 @@ struct ProOffersView: View {
         .sheet(isPresented: $showCreateOffer) {
             NavigationStack {
                 CreateOfferView { newOffer in
-                    // Ajouter la nouvelle offre à la liste
-                    viewModel.addOffer(newOffer)
+                    // Recharger les offres depuis l'API pour avoir la liste à jour
+                    viewModel.loadMyOffers()
                 }
             }
         }

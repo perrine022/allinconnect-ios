@@ -14,7 +14,7 @@ struct CreateOfferView: View {
     var onOfferCreated: ((Offer) -> Void)?
     
     enum Field {
-        case title, description, validUntil, discount
+        case title, description, startDate, validUntil, discount
     }
     
     var body: some View {
@@ -78,6 +78,33 @@ struct CreateOfferView: View {
                                 .scrollContentBackground(.hidden)
                         }
                         
+                        // Date de début
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Date de début")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.white.opacity(0.9))
+                            
+                            TextField("", text: $viewModel.startDate, prompt: Text("JJ/MM/AAAA").foregroundColor(.gray.opacity(0.6)))
+                                .focused($focusedField, equals: .startDate)
+                                .foregroundColor(.black)
+                                .font(.system(size: 16))
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 14)
+                                .background(Color.white)
+                                .cornerRadius(10)
+                                .keyboardType(.numbersAndPunctuation)
+                                .submitLabel(.next)
+                                .onSubmit {
+                                    focusedField = .validUntil
+                                }
+                            
+                            if !viewModel.startDate.isEmpty {
+                                Text("Format: JJ/MM/AAAA (doit être après aujourd'hui)")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.white.opacity(0.7))
+                            }
+                        }
+                        
                         // Date de validité
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Valable jusqu'au")
@@ -97,6 +124,12 @@ struct CreateOfferView: View {
                                 .onSubmit {
                                     focusedField = .discount
                                 }
+                            
+                            if !viewModel.validUntil.isEmpty {
+                                Text("Format: JJ/MM/AAAA (doit être après la date de début)")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.white.opacity(0.7))
+                            }
                         }
                         
                         // Réduction
@@ -193,23 +226,50 @@ struct CreateOfferView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 20)
                     
+                    // Message d'erreur
+                    if let errorMessage = viewModel.errorMessage {
+                        Text(errorMessage)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.red.opacity(0.9))
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 8)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.red.opacity(0.1))
+                            .cornerRadius(8)
+                            .padding(.horizontal, 20)
+                    }
+                    
                     // Bouton publier
                     Button(action: {
                         hideKeyboard()
-                        let newOffer = viewModel.publishOffer()
-                        // Passer l'offre créée au callback
-                        onOfferCreated?(newOffer)
-                        dismiss()
+                        Task {
+                            do {
+                                let newOffer = try await viewModel.publishOffer()
+                                // Passer l'offre créée au callback
+                                onOfferCreated?(newOffer)
+                                dismiss()
+                            } catch {
+                                viewModel.errorMessage = error.localizedDescription
+                                print("Erreur lors de la création de l'offre: \(error)")
+                            }
+                        }
                     }) {
-                        Text("Publier l'offre")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.black)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(viewModel.isValid ? Color.appGold : Color.gray.opacity(0.5))
-                            .cornerRadius(12)
+                        HStack {
+                            if viewModel.isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .black))
+                                    .scaleEffect(0.8)
+                            }
+                            Text(viewModel.isLoading ? "Publication..." : "Publier l'offre")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(.black)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background((viewModel.isValid && !viewModel.isLoading) ? Color.appGold : Color.gray.opacity(0.5))
+                        .cornerRadius(12)
                     }
-                    .disabled(!viewModel.isValid)
+                    .disabled(!viewModel.isValid || viewModel.isLoading)
                     .padding(.horizontal, 20)
                     .padding(.top, 20)
                     

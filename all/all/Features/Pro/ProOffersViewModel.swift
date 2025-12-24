@@ -35,7 +35,7 @@ class ProOffersViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         
-        Task {
+        Task { @MainActor in
             do {
                 // Appeler l'API pour récupérer les offres du professionnel connecté
                 let offersResponse = try await offersAPIService.getMyOffers()
@@ -56,13 +56,32 @@ class ProOffersViewModel: ObservableObject {
     }
     
     func addOffer(_ offer: Offer) {
-        myOffers.append(offer)
-        // Plus tard, appeler l'API pour créer l'offre
+        // Recharger depuis l'API pour avoir les données à jour
+        loadMyOffers()
     }
     
     func deleteOffer(_ offer: Offer) {
-        myOffers.removeAll { $0.id == offer.id }
-        // Plus tard, appeler l'API pour supprimer
+        guard let apiId = offer.apiId else {
+            // Si pas d'ID API, supprimer localement seulement
+            myOffers.removeAll { $0.id == offer.id }
+            return
+        }
+        
+        Task {
+            do {
+                // Appeler l'API pour supprimer l'offre
+                try await offersAPIService.deleteOffer(id: apiId)
+                
+                // Recharger depuis l'API pour avoir la liste à jour
+                await loadMyOffers()
+            } catch {
+                print("Erreur lors de la suppression de l'offre: \(error)")
+                errorMessage = "Erreur lors de la suppression de l'offre"
+                
+                // En cas d'erreur, supprimer localement quand même
+                myOffers.removeAll { $0.id == offer.id }
+            }
+        }
     }
 }
 

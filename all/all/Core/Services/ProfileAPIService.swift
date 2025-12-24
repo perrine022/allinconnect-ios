@@ -76,11 +76,15 @@ struct CardResponse: Codable {
 struct UserLightResponse: Codable {
     let firstName: String
     let lastName: String
-    let isMember: Bool
+    let isMember: Bool?
     let card: CardResponse?
-    let isCardActive: Bool
-    let referralCount: Int
-    let favoriteCount: Int
+    let isCardActive: Bool?
+    let referralCount: Int?
+    let favoriteCount: Int?
+    let subscriptionDate: String?
+    let renewalDate: String?
+    let subscriptionAmount: Double?
+    let payments: [PaymentResponse]?
     
     enum CodingKeys: String, CodingKey {
         case firstName = "firstName"
@@ -90,6 +94,41 @@ struct UserLightResponse: Codable {
         case isCardActive = "isCardActive"
         case referralCount = "referralCount"
         case favoriteCount = "favoriteCount"
+        case subscriptionDate = "subscriptionDate"
+        case renewalDate = "renewalDate"
+        case subscriptionAmount = "subscriptionAmount"
+        case payments
+    }
+    
+    // Initializer personnalisé pour gérer les valeurs optionnelles avec valeurs par défaut
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        firstName = try container.decode(String.self, forKey: .firstName)
+        lastName = try container.decode(String.self, forKey: .lastName)
+        isMember = try container.decodeIfPresent(Bool.self, forKey: .isMember) ?? false
+        card = try container.decodeIfPresent(CardResponse.self, forKey: .card)
+        isCardActive = try container.decodeIfPresent(Bool.self, forKey: .isCardActive) ?? false
+        referralCount = try container.decodeIfPresent(Int.self, forKey: .referralCount) ?? 0
+        favoriteCount = try container.decodeIfPresent(Int.self, forKey: .favoriteCount) ?? 0
+        subscriptionDate = try container.decodeIfPresent(String.self, forKey: .subscriptionDate)
+        renewalDate = try container.decodeIfPresent(String.self, forKey: .renewalDate)
+        subscriptionAmount = try container.decodeIfPresent(Double.self, forKey: .subscriptionAmount)
+        payments = try container.decodeIfPresent([PaymentResponse].self, forKey: .payments)
+    }
+}
+
+// MARK: - Payment Response Model
+struct PaymentResponse: Codable {
+    let id: Int
+    let amount: Double
+    let date: String
+    let status: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case amount
+        case date
+        case status
     }
 }
 

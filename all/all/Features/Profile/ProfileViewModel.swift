@@ -24,10 +24,14 @@ class ProfileViewModel: ObservableObject {
     @Published var commitmentUntil: String = "15/02/2027"
     
     // Données abonnement CLUB10 (client)
-    @Published var club10NextPaymentDate: String = "15/02/2026"
-    @Published var club10CommitmentUntil: String = "15/08/2026"
-    @Published var club10Amount: String = "2,99€"
+    @Published var club10NextPaymentDate: String = ""
+    @Published var club10CommitmentUntil: String = ""
+    @Published var club10Amount: String = ""
     @Published var hasActiveClub10Subscription: Bool = false
+    @Published var subscriptionPlan: SubscriptionPlanResponse?
+    @Published var cardType: String? // "INDIVIDUAL" ou "FAMILY"
+    @Published var isCardOwner: Bool = false
+    @Published var familyCardEmails: [String] = []
     
     // Abonnement PRO
     @Published var hasActiveProSubscription: Bool = false
@@ -39,11 +43,15 @@ class ProfileViewModel: ObservableObject {
     
     private let favoritesAPIService: FavoritesAPIService
     private let partnersAPIService: PartnersAPIService
+    private let profileAPIService: ProfileAPIService
+    private let subscriptionsAPIService: SubscriptionsAPIService
     private let dataService: MockDataService
     
     init(
         favoritesAPIService: FavoritesAPIService? = nil,
         partnersAPIService: PartnersAPIService? = nil,
+        profileAPIService: ProfileAPIService? = nil,
+        subscriptionsAPIService: SubscriptionsAPIService? = nil,
         dataService: MockDataService = MockDataService.shared
     ) {
         // Créer les services dans un contexte MainActor
@@ -57,6 +65,18 @@ class ProfileViewModel: ObservableObject {
             self.partnersAPIService = partnersAPIService
         } else {
             self.partnersAPIService = PartnersAPIService()
+        }
+        
+        if let profileAPIService = profileAPIService {
+            self.profileAPIService = profileAPIService
+        } else {
+            self.profileAPIService = ProfileAPIService()
+        }
+        
+        if let subscriptionsAPIService = subscriptionsAPIService {
+            self.subscriptionsAPIService = subscriptionsAPIService
+        } else {
+            self.subscriptionsAPIService = SubscriptionsAPIService()
         }
         
         self.dataService = dataService
@@ -99,8 +119,31 @@ class ProfileViewModel: ObservableObject {
                 // Charger les favoris depuis l'API
                 let favoritesResponse = try await favoritesAPIService.getFavorites()
                 
-                // Convertir en modèles Partner
-                favoritePartners = favoritesResponse.map { $0.toPartner() }
+                // Convertir en modèles Partner et marquer comme favoris
+                favoritePartners = favoritesResponse.map { response in
+                    let basePartner = response.toPartner()
+                    // Créer une nouvelle instance avec isFavorite = true
+                    return Partner(
+                        id: basePartner.id,
+                        name: basePartner.name,
+                        category: basePartner.category,
+                        address: basePartner.address,
+                        city: basePartner.city,
+                        postalCode: basePartner.postalCode,
+                        phone: basePartner.phone,
+                        email: basePartner.email,
+                        website: basePartner.website,
+                        instagram: basePartner.instagram,
+                        description: basePartner.description,
+                        rating: basePartner.rating,
+                        reviewCount: basePartner.reviewCount,
+                        discount: basePartner.discount,
+                        imageName: basePartner.imageName,
+                        headerImageName: basePartner.headerImageName,
+                        isFavorite: true, // Les favoris récupérés depuis l'API sont forcément favoris
+                        apiId: basePartner.apiId
+                    )
+                }
                 
                 isLoadingFavorites = false
             } catch {
@@ -151,6 +194,8 @@ class ProfileViewModel: ObservableObject {
     
     func switchToClientSpace() {
         currentSpace = .client
+        // Recharger les favoris quand on passe en espace client
+        loadFavorites()
     }
     
     func switchToProSpace() {
@@ -158,7 +203,53 @@ class ProfileViewModel: ObservableObject {
     }
     
     func loadSubscriptionData() {
-        // Recharger les données d'abonnement depuis UserDefaults
+        Task {
+            do {
+                // Charger les données light depuis l'API
+                let userLight = try await profileAPIService.getUserLight()
+                
+                // Mettre à jour les informations de la carte
+                cardType = userLight.card?.type
+                hasActiveClub10Subscription = userLight.isCardActive ?? false
+                
+                // Mettre à jour les dates d'abonnement
+                if let renewalDate = userLight.renewalDate {
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"
+                    dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+                    
+                    if let date = dateFormatter.date(from: renewalDate) {
+                        let displayFormatter = DateFormatter()
+                        displayFormatter.dateFormat = "dd/MM/yyyy"
+                        club10NextPaymentDate = displayFormatter.string(from: date)
+                    } else {
+                        // Essayer un autre format
+                        dateFormatter.dateFormat = "yyyy-MM-dd"
+                        if let date = dateFormatter.date(from: renewalDate) {
+                            let displayFormatter = DateFormatter()
+                            displayFormatter.dateFormat = "dd/MM/yyyy"
+                            club10NextPaymentDate = displayFormatter.string(from: date)
+                        }
+                    }
+                }
+                
+                if let subscriptionAmount = userLight.subscriptionAmount {
+                    club10Amount = String(format: "%.2f€", subscriptionAmount)
+                }
+                
+                // Si c'est une carte FAMILY, charger les emails
+                if cardType == "FAMILY" {
+                    await loadFamilyCardEmails()
+                }
+            } catch {
+                print("Erreur lors du chargement des données d'abonnement: \(error)")
+                // En cas d'erreur, utiliser les données UserDefaults comme fallback
+                loadSubscriptionDataFromDefaults()
+            }
+        }
+    }
+    
+    private func loadSubscriptionDataFromDefaults() {
         hasActiveClub10Subscription = false
         hasActiveProSubscription = false
         
@@ -166,33 +257,34 @@ class ProfileViewModel: ObservableObject {
             if let subscriptionType = UserDefaults.standard.string(forKey: "subscription_type") {
                 if subscriptionType == "CLUB10" {
                     hasActiveClub10Subscription = true
-                    // Charger les dates d'abonnement CLUB10
                     if let nextPaymentDate = UserDefaults.standard.string(forKey: "subscription_next_payment_date") {
                         club10NextPaymentDate = nextPaymentDate
-                        // Calculer la date d'engagement (6 mois après la date de paiement)
-                        let formatter = DateFormatter()
-                        formatter.dateFormat = "dd/MM/yyyy"
-                        if let date = formatter.date(from: nextPaymentDate) {
-                            let commitmentDate = Calendar.current.date(byAdding: .month, value: 6, to: date) ?? date
-                            club10CommitmentUntil = formatter.string(from: commitmentDate)
-                        }
                     }
                 } else if subscriptionType == "PRO" {
                     hasActiveProSubscription = true
-                    // Charger les dates d'abonnement PRO
                     if let nextPaymentDateString = UserDefaults.standard.string(forKey: "subscription_next_payment_date") {
                         self.nextPaymentDate = nextPaymentDateString
-                        // Calculer la date d'engagement (1 an après la date de paiement)
-                        let formatter = DateFormatter()
-                        formatter.dateFormat = "dd/MM/yyyy"
-                        if let date = formatter.date(from: nextPaymentDateString) {
-                            let commitmentDate = Calendar.current.date(byAdding: .year, value: 1, to: date) ?? date
-                            self.commitmentUntil = formatter.string(from: commitmentDate)
-                        }
                     }
                 }
             }
         }
+    }
+    
+    private func loadFamilyCardEmails() async {
+        do {
+            let familyEmails = try await subscriptionsAPIService.getFamilyCardEmails()
+            isCardOwner = familyEmails.isOwner
+            familyCardEmails = familyEmails.emails
+        } catch {
+            print("Erreur lors du chargement des emails de la carte famille: \(error)")
+        }
+    }
+    
+    func updateFamilyCardEmails(_ emails: [String]) async throws {
+        let request = UpdateFamilyCardEmailsRequest(emails: emails)
+        try await subscriptionsAPIService.updateFamilyCardEmails(request)
+        // Recharger les emails après mise à jour
+        await loadFamilyCardEmails()
     }
     
     func reset() {
