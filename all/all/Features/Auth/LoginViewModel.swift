@@ -36,13 +36,25 @@ class LoginViewModel: ObservableObject {
         
         // Simuler un délai de connexion
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            // Sauvegarder l'état de connexion
+            // Créer un compte mocké avec accès aux deux espaces (Client et Pro)
             UserDefaults.standard.set(true, forKey: "is_logged_in")
-            UserDefaults.standard.set(self.email, forKey: "user_email")
+            UserDefaults.standard.set(self.email.isEmpty ? "demo@allinconnect.fr" : self.email, forKey: "user_email")
             
-            // Pour tester, on peut définir le type d'utilisateur
-            // Par défaut CLIENT, mais on peut le changer pour tester PRO
-            // UserDefaults.standard.set("PRO", forKey: "user_type") // Décommenter pour tester PRO
+            // Compte PRO pour avoir accès aux deux espaces
+            UserDefaults.standard.set("PRO", forKey: "user_type")
+            
+            // Données mockées
+            UserDefaults.standard.set("Marie", forKey: "user_first_name")
+            UserDefaults.standard.set("Dupont", forKey: "user_last_name")
+            UserDefaults.standard.set("69001", forKey: "user_postal_code")
+            
+            // Abonnement actif pour voir les deux espaces
+            UserDefaults.standard.set(true, forKey: "has_active_subscription")
+            UserDefaults.standard.set("PRO", forKey: "subscription_type")
+            let nextPaymentDate = Calendar.current.date(byAdding: .month, value: 1, to: Date()) ?? Date()
+            let formatter = DateFormatter()
+            formatter.dateFormat = "dd/MM/yyyy"
+            UserDefaults.standard.set(formatter.string(from: nextPaymentDate), forKey: "subscription_next_payment_date")
             
             self.isLoading = false
             

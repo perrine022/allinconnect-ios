@@ -140,7 +140,6 @@ struct HomeView: View {
                                 viewModel.searchProfessionals()
                             }
                         )
-                        .zIndex(1000) // zIndex très élevé pour passer au-dessus de tout
                         
                         // Slider Rayon de recherche
                         HStack(spacing: 8) {

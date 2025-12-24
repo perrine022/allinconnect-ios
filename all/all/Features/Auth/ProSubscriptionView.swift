@@ -64,76 +64,73 @@ struct ProSubscriptionView: View {
                     .ignoresSafeArea()
                     
                     ScrollView {
-                        VStack(spacing: 24) {
+                        VStack(spacing: 16) {
                             // Titre de bienvenue
-                            VStack(spacing: 12) {
+                            VStack(spacing: 8) {
                                 Text("Bienvenue sur ALL IN Connect")
-                                    .font(.system(size: 24, weight: .bold))
+                                    .font(.system(size: 22, weight: .bold))
                                     .foregroundColor(.white)
                                     .multilineTextAlignment(.center)
                                 
                                 if !firstName.isEmpty {
                                     Text(firstName)
-                                        .font(.system(size: 20, weight: .semibold))
+                                        .font(.system(size: 18, weight: .semibold))
                                         .foregroundColor(.appGold)
                                 }
                             }
-                            .padding(.top, 20)
+                            .padding(.top, 16)
                             .padding(.horizontal, 20)
                             
                             // Texte explicatif
-                            VStack(spacing: 8) {
-                                Text("Pour accéder à tous les avantages de la plateforme, vous devez souscrire à un abonnement Pro.")
-                                    .font(.system(size: 15, weight: .regular))
-                                    .foregroundColor(.white.opacity(0.9))
-                                    .multilineTextAlignment(.center)
-                                    .lineSpacing(4)
-                            }
-                            .padding(.horizontal, 20)
+                            Text("Pour accéder à tous les avantages de la plateforme, vous devez souscrire à un abonnement Pro.")
+                                .font(.system(size: 14, weight: .regular))
+                                .foregroundColor(.white.opacity(0.9))
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(3)
+                                .padding(.horizontal, 20)
                             
                             // Titre principal
-                            VStack(spacing: 12) {
+                            VStack(spacing: 8) {
                                 Text("Le bouche-à-oreille, enfin digitalisé ! 🚀")
-                                    .font(.system(size: 24, weight: .bold))
+                                    .font(.system(size: 20, weight: .bold))
                                     .foregroundColor(.white)
                                     .multilineTextAlignment(.center)
                                 
                                 Text("ALL IN Connect, c'est la plateforme locale qui connecte les indépendants et commerçants aux habitants de leur secteur.")
-                                    .font(.system(size: 15, weight: .regular))
-                                    .foregroundColor(.white.opacity(0.9))
+                                    .font(.system(size: 13, weight: .regular))
+                                    .foregroundColor(.white.opacity(0.85))
                                     .multilineTextAlignment(.center)
-                                    .lineSpacing(4)
+                                    .lineSpacing(3)
                             }
-                            .padding(.top, 8)
                             .padding(.horizontal, 20)
                             
                             // Plans d'abonnement
-                            VStack(spacing: 16) {
+                            VStack(spacing: 12) {
                                 ForEach(SubscriptionPlan.allCases, id: \.self) { plan in
                                     Button(action: {
                                         selectedPlan = plan
                                     }) {
-                                        VStack(alignment: .leading, spacing: 8) {
+                                        VStack(alignment: .leading, spacing: 6) {
                                             Text(plan.rawValue)
-                                                .font(.system(size: 14, weight: .medium))
-                                                .foregroundColor(.white.opacity(0.9))
+                                                .font(.system(size: 13, weight: .medium))
+                                                .foregroundColor(.black.opacity(0.7))
                                             
                                             Text(plan.priceLabel)
-                                                .font(.system(size: 24, weight: .bold))
-                                                .foregroundColor(.white)
+                                                .font(.system(size: 22, weight: .bold))
+                                                .foregroundColor(.black)
                                             
                                             if let savings = plan.savings {
                                                 Text(savings)
-                                                    .font(.system(size: 13, weight: .medium))
-                                                    .foregroundColor(.white.opacity(0.9))
+                                                    .font(.system(size: 12, weight: .medium))
+                                                    .foregroundColor(.black.opacity(0.7))
                                             }
                                         }
                                         .frame(maxWidth: .infinity, alignment: .leading)
-                                        .padding(20)
-                                        .background(selectedPlan == plan ? Color.appDarkRed1.opacity(0.9) : Color.appDarkRed1.opacity(0.5))
+                                        .padding(16)
+                                        .background(Color.white)
                                         .overlay(
                                             RoundedRectangle(cornerRadius: 12)
-                                                .stroke(selectedPlan == plan ? Color.appGold : Color.clear, lineWidth: 2)
+                                                .stroke(selectedPlan == plan ? Color.appGold : Color.gray.opacity(0.3), lineWidth: selectedPlan == plan ? 2 : 1)
                                         )
                                         .cornerRadius(12)
                                     }
@@ -142,16 +139,16 @@ struct ProSubscriptionView: View {
                             .padding(.horizontal, 20)
                             
                             // Section "Ce que tu obtiens"
-                            VStack(alignment: .leading, spacing: 20) {
-                                HStack(spacing: 8) {
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack(spacing: 6) {
                                     Text("🎁")
-                                        .font(.system(size: 24))
+                                        .font(.system(size: 20))
                                     Text("Ce que tu obtiens")
-                                        .font(.system(size: 20, weight: .bold))
+                                        .font(.system(size: 18, weight: .bold))
                                         .foregroundColor(.white)
                                 }
                                 
-                                VStack(spacing: 16) {
+                                VStack(spacing: 12) {
                                     // Visibilité locale
                                     ProBenefitCard(
                                         icon: "mappin.circle.fill",
@@ -163,7 +160,7 @@ struct ProSubscriptionView: View {
                                     // Tes offres diffusées
                                     ProBenefitCard(
                                         icon: "megaphone.fill",
-                                        iconColor: .white,
+                                        iconColor: .appRed,
                                         title: "Tes offres diffusées",
                                         description: "À toute la communauté ALL IN Connect"
                                     )
@@ -223,18 +220,18 @@ struct ProSubscriptionView: View {
                                             .progressViewStyle(CircularProgressViewStyle(tint: .black))
                                     } else {
                                         Text(showStripePayment ? "Confirmer le paiement" : (selectedPlan == .yearly ? "S'abonner - \(selectedPlan.price)/an" : "S'abonner - \(selectedPlan.price)/mois"))
-                                            .font(.system(size: 18, weight: .bold))
+                                            .font(.system(size: 16, weight: .bold))
                                     }
                                 }
                                 .foregroundColor(.black)
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
+                                .padding(.vertical, 14)
                                 .background(Color.appGold)
                                 .cornerRadius(12)
                             }
                             .disabled(isProcessingPayment)
                             .padding(.horizontal, 20)
-                            .padding(.top, 8)
+                            .padding(.top, 4)
                             
                             Spacer()
                                 .frame(height: 100)
@@ -267,32 +264,32 @@ struct ProBenefitCard: View {
     let description: String
     
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 12) {
             // Icône
             ZStack {
                 Circle()
                     .fill(Color.appDarkRed1.opacity(0.8))
-                    .frame(width: 50, height: 50)
+                    .frame(width: 44, height: 44)
                 
                 Image(systemName: icon)
                     .foregroundColor(iconColor)
-                    .font(.system(size: 24))
+                    .font(.system(size: 20))
             }
             
             // Texte
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: 15, weight: .bold))
                     .foregroundColor(.white)
                 
                 Text(description)
-                    .font(.system(size: 14, weight: .regular))
+                    .font(.system(size: 13, weight: .regular))
                     .foregroundColor(.white.opacity(0.8))
             }
             
             Spacer()
         }
-        .padding(16)
+        .padding(14)
         .background(
             ZStack {
                 // Fond avec effet de blur simulé

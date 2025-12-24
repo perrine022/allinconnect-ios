@@ -198,7 +198,8 @@ struct PartnersListView: View {
                     Spacer()
                         .frame(height: 100) // Espace pour le footer
                 }
-            }
+                    }
+                }
                 
                 // Footer Bar - toujours visible
                 VStack {

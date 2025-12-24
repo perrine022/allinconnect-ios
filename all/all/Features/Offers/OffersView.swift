@@ -68,7 +68,7 @@ struct OffersView: View {
                         .background(Color.white)
                         .cornerRadius(8)
                         
-                        // Menu déroulant Secteur
+                        // Menu déroulant Secteur - avec zIndex élevé
                         CustomSectorPicker(
                             sectors: viewModel.sectors,
                             selectedSector: $viewModel.selectedSector,
@@ -76,6 +76,7 @@ struct OffersView: View {
                                 viewModel.searchOffers()
                             }
                         )
+                        .zIndex(1000)
                         
                         // Slider Rayon de recherche
                         HStack(spacing: 8) {
@@ -147,6 +148,7 @@ struct OffersView: View {
                         .buttonStyle(PlainButtonStyle())
                     }
                     .padding(.horizontal, 20)
+                    .zIndex(1000) // zIndex élevé pour le VStack des champs de recherche
                     
                     // Liste des offres
                     VStack(spacing: 12) {
