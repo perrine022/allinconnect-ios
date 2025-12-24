@@ -17,9 +17,20 @@ class HomeViewModel: ObservableObject {
     
     // Search fields
     @Published var cityText: String = ""
-    @Published var activityText: String = ""
+    @Published var selectedSector: String = ""
     @Published var searchRadius: Double = 10.0 // Rayon en km (0 = désactivé)
     @Published var onlyClub10: Bool = false
+    
+    // Secteurs disponibles
+    let sectors: [String] = [
+        "",
+        "Santé & bien être",
+        "Beauté & Esthétique",
+        "Food & plaisirs gourmands",
+        "Loisirs & Divertissements",
+        "Service & pratiques",
+        "Entre pros"
+    ]
     
     // Filters
     @Published var selectedCategory: String = "Toutes"
@@ -91,11 +102,10 @@ class HomeViewModel: ObservableObject {
             }
         }
         
-        // Filtre par activité
-        if !activityText.isEmpty {
+        // Filtre par secteur
+        if !selectedSector.isEmpty {
             filtered = filtered.filter { professional in
-                professional.profession.localizedCaseInsensitiveContains(activityText) ||
-                professional.category.localizedCaseInsensitiveContains(activityText)
+                professional.category.localizedCaseInsensitiveContains(selectedSector)
             }
         }
         

@@ -13,10 +13,11 @@ struct ProfileView: View {
     @State private var showNotificationPreferences = false
     @State private var showEditProfile = false
     @State private var showChangePassword = false
-    @State private var showHelpSupport = false
-    @State private var showTerms = false
-    @State private var showPrivacyPolicy = false
-    @State private var showProOffers = false
+    @State private var proOffersNavigationId: UUID?
+    @State private var manageEstablishmentNavigationId: UUID?
+    @State private var helpSupportNavigationId: UUID?
+    @State private var termsNavigationId: UUID?
+    @State private var privacyPolicyNavigationId: UUID?
     @State private var selectedPartner: Partner?
     
     var body: some View {
@@ -46,31 +47,39 @@ struct ProfileView: View {
             
             ScrollView {
                 VStack(spacing: 24) {
+                    // Titre
+                    HStack {
+                        Text("Profil")
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundColor(.white)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
+                    
                     // Section utilisateur
                     VStack(spacing: 16) {
-                        // Avatar
-                        ZStack {
-                            Circle()
-                                .fill(Color.appGold)
-                                .frame(width: 100, height: 100)
+                        // Photo, prénom et badge CLUB10 sur la même ligne
+                        HStack(spacing: 12) {
+                            // Avatar (réduit de 5 fois : 100/5 = 20)
+                            ZStack {
+                                Circle()
+                                    .fill(Color.appGold)
+                                    .frame(width: 20, height: 20)
+                                
+                                Text(String(viewModel.user.firstName.prefix(1)).uppercased())
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(.black)
+                            }
                             
-                            Text(String(viewModel.user.firstName.prefix(1)).uppercased())
-                                .font(.system(size: 48, weight: .bold))
-                                .foregroundColor(.black)
-                        }
-                        
-                        // Nom
-                        Text(viewModel.user.fullName)
-                            .font(.system(size: 24, weight: .bold))
-                            .foregroundColor(.white)
-                        
-                        // Email
-                        Text("marie@email.fr")
-                            .font(.system(size: 15, weight: .regular))
-                            .foregroundColor(.white.opacity(0.8))
-                        
-                        // Badge CLUB10 et boutons Espace (si PRO)
-                        VStack(spacing: 12) {
+                            // Prénom
+                            Text(viewModel.user.firstName)
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundColor(.white)
+                            
+                            Spacer()
+                            
+                            // Badge CLUB10 au bout de la ligne
                             Text("MEMBRE CLUB10")
                                 .font(.system(size: 13, weight: .bold))
                                 .foregroundColor(.white)
@@ -78,35 +87,37 @@ struct ProfileView: View {
                                 .padding(.vertical, 8)
                                 .background(Color.green)
                                 .cornerRadius(8)
-                            
-                            // Boutons Espace Client/Pro (si utilisateur PRO)
-                            if viewModel.user.userType == .pro {
-                                HStack(spacing: 12) {
-                                    Button(action: {
-                                        viewModel.switchToClientSpace()
-                                    }) {
-                                        Text("Espace Client")
-                                            .font(.system(size: 13, weight: .semibold))
-                                            .foregroundColor(viewModel.currentSpace == .client ? .black : .white)
-                                            .padding(.horizontal, 16)
-                                            .padding(.vertical, 8)
-                                            .background(viewModel.currentSpace == .client ? Color.appGold : Color.appDarkRed1.opacity(0.6))
-                                            .cornerRadius(8)
-                                    }
-                                    
-                                    Button(action: {
-                                        viewModel.switchToProSpace()
-                                    }) {
-                                        Text("Espace Pro")
-                                            .font(.system(size: 13, weight: .semibold))
-                                            .foregroundColor(viewModel.currentSpace == .pro ? .black : .white)
-                                            .padding(.horizontal, 16)
-                                            .padding(.vertical, 8)
-                                            .background(viewModel.currentSpace == .pro ? Color.appGold : Color.appDarkRed1.opacity(0.6))
-                                            .cornerRadius(8)
-                                    }
+                        }
+                        .padding(.horizontal, 20)
+                        
+                        // Boutons Espace Client/Pro (si utilisateur PRO)
+                        if viewModel.user.userType == .pro {
+                            HStack(spacing: 12) {
+                                Button(action: {
+                                    viewModel.switchToClientSpace()
+                                }) {
+                                    Text("Espace Client")
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundColor(viewModel.currentSpace == .client ? .black : .white)
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 8)
+                                        .background(viewModel.currentSpace == .client ? Color.appGold : Color.appDarkRed1.opacity(0.6))
+                                        .cornerRadius(8)
+                                }
+                                
+                                Button(action: {
+                                    viewModel.switchToProSpace()
+                                }) {
+                                    Text("Espace Pro")
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundColor(viewModel.currentSpace == .pro ? .black : .white)
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 8)
+                                        .background(viewModel.currentSpace == .pro ? Color.appGold : Color.appDarkRed1.opacity(0.6))
+                                        .cornerRadius(8)
                                 }
                             }
+                            .padding(.horizontal, 20)
                         }
                     }
                     .padding(.top, 20)
@@ -167,17 +178,95 @@ struct ProfileView: View {
                         )
                         .padding(.horizontal, 20)
                         .padding(.bottom, 8)
+                        
+                        // Bloc "Mes offres" (uniquement si PRO et dans l'espace PRO)
+                        VStack(alignment: .leading, spacing: 16) {
+                            HStack {
+                                Image(systemName: "tag.fill")
+                                    .foregroundColor(.appGold)
+                                    .font(.system(size: 18))
+                                
+                                Text("Mes offres")
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundColor(.white)
+                                
+                                Spacer()
+                            }
+                            
+                            // Liste des offres (limitées à 3 pour l'aperçu)
+                            if viewModel.myOffers.isEmpty {
+                                Text("Aucune offre pour le moment")
+                                    .font(.system(size: 14, weight: .regular))
+                                    .foregroundColor(.white.opacity(0.7))
+                            } else {
+                                VStack(spacing: 8) {
+                                    ForEach(Array(viewModel.myOffers.prefix(3))) { offer in
+                                        HStack(spacing: 10) {
+                                            Image(systemName: offer.imageName)
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: 50, height: 50)
+                                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                                .foregroundColor(.gray.opacity(0.3))
+                                            
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text(offer.title)
+                                                    .font(.system(size: 14, weight: .semibold))
+                                                    .foregroundColor(.white)
+                                                    .lineLimit(1)
+                                                
+                                                Text("Jusqu'au \(offer.validUntil)")
+                                                    .font(.system(size: 12, weight: .regular))
+                                                    .foregroundColor(.gray)
+                                            }
+                                            
+                                            Spacer()
+                                        }
+                                        
+                                        if offer.id != viewModel.myOffers.prefix(3).last?.id {
+                                            Divider()
+                                                .background(Color.white.opacity(0.1))
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // Bouton "Gérer mes offres"
+                            Button(action: {
+                                proOffersNavigationId = UUID()
+                            }) {
+                                HStack {
+                                    Spacer()
+                                    Text("Gérer mes offres")
+                                        .font(.system(size: 15, weight: .semibold))
+                                        .foregroundColor(.black)
+                                    Spacer()
+                                }
+                                .padding(.vertical, 12)
+                                .background(Color.appGold)
+                                .cornerRadius(10)
+                            }
+                        }
+                        .padding(16)
+                        .background(Color.appDarkRed1.opacity(0.8))
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                        )
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 8)
                     }
                     
                     // Menu options
                     VStack(spacing: 0) {
-                        // Option "Mes offres" uniquement dans l'espace PRO
+                        // Option "Gérer mon établissement" uniquement dans l'espace PRO
                         if viewModel.user.userType == .pro && viewModel.currentSpace == .pro {
                             ProfileMenuRow(
-                                icon: "tag.fill",
-                                title: "Mes offres",
+                                icon: "building.2.fill",
+                                title: "Gérer mon établissement",
                                 action: {
-                                    showProOffers = true
+                                    manageEstablishmentNavigationId = UUID()
                                 }
                             )
                             
@@ -226,7 +315,7 @@ struct ProfileView: View {
                             icon: "questionmark.circle.fill",
                             title: "Aide & Support",
                             action: {
-                                showHelpSupport = true
+                                helpSupportNavigationId = UUID()
                             }
                         )
                         
@@ -238,7 +327,7 @@ struct ProfileView: View {
                             icon: "doc.text.fill",
                             title: "Conditions générales",
                             action: {
-                                showTerms = true
+                                termsNavigationId = UUID()
                             }
                         )
                         
@@ -250,9 +339,46 @@ struct ProfileView: View {
                             icon: "shield.fill",
                             title: "Politique de confidentialité",
                             action: {
-                                showPrivacyPolicy = true
+                                privacyPolicyNavigationId = UUID()
                             }
                         )
+                        
+                        ProfileMenuRow(
+                            icon: "person.fill",
+                            title: "Modifier mon profil",
+                            action: {
+                                showEditProfile = true
+                            }
+                        )
+                        
+                        Divider()
+                            .background(Color.white.opacity(0.1))
+                            .padding(.leading, 54)
+                        
+                        ProfileMenuRow(
+                            icon: "bell.fill",
+                            title: "Préférences de notifications",
+                            action: {
+                                showNotificationPreferences = true
+                            }
+                        )
+                        
+                        Divider()
+                            .background(Color.white.opacity(0.1))
+                            .padding(.leading, 54)
+                        
+                        ProfileMenuRow(
+                            icon: "lock.fill",
+                            title: "Changer mon mot de passe",
+                            action: {
+                                showChangePassword = true
+                            }
+                        )
+                        
+                        Divider()
+                            .background(Color.white.opacity(0.1))
+                            .padding(.leading, 54)
+                        
                     }
                     .background(Color.appDarkRed1.opacity(0.8))
                     .cornerRadius(16)
@@ -297,8 +423,8 @@ struct ProfileView: View {
                 }
             }
         }
-        .navigationTitle("Profil")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .sheet(isPresented: $showNotificationPreferences) {
@@ -316,25 +442,20 @@ struct ProfileView: View {
                 ChangePasswordView()
             }
         }
-        .sheet(isPresented: $showHelpSupport) {
-            NavigationStack {
-                HelpSupportView()
-            }
+        .navigationDestination(item: $proOffersNavigationId) { _ in
+            ProOffersView()
         }
-        .sheet(isPresented: $showTerms) {
-            NavigationStack {
-                TermsView(isPrivacyPolicy: false)
-            }
+        .navigationDestination(item: $manageEstablishmentNavigationId) { _ in
+            ManageEstablishmentView()
         }
-        .sheet(isPresented: $showPrivacyPolicy) {
-            NavigationStack {
-                TermsView(isPrivacyPolicy: true)
-            }
+        .navigationDestination(item: $helpSupportNavigationId) { _ in
+            HelpSupportView()
         }
-        .sheet(isPresented: $showProOffers) {
-            NavigationStack {
-                ProOffersView()
-            }
+        .navigationDestination(item: $termsNavigationId) { _ in
+            TermsView(isPrivacyPolicy: false)
+        }
+        .navigationDestination(item: $privacyPolicyNavigationId) { _ in
+            TermsView(isPrivacyPolicy: true)
         }
         .navigationDestination(item: $selectedPartner) { partner in
             PartnerDetailView(partner: partner)

@@ -33,6 +33,8 @@ class PartnerDetailViewModel: ObservableObject {
     
     func toggleFavorite() {
         partner.isFavorite.toggle()
+        // Mettre à jour dans le service de données
+        dataService.togglePartnerFavorite(partnerId: partner.id)
     }
     
     func callPartner() {

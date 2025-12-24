@@ -23,6 +23,9 @@ class ProfileViewModel: ObservableObject {
     @Published var nextPaymentDate: String = "15/02/2026"
     @Published var commitmentUntil: String = "15/02/2027"
     
+    // Offres PRO
+    @Published var myOffers: [Offer] = []
+    
     private let dataService: MockDataService
     
     init(dataService: MockDataService = MockDataService.shared) {
@@ -30,7 +33,8 @@ class ProfileViewModel: ObservableObject {
         
         // Pour l'instant, on simule un utilisateur PRO
         // Plus tard, on récupérera depuis UserDefaults ou l'API
-        let userType = UserDefaults.standard.string(forKey: "user_type") == "PRO" ? UserType.pro : UserType.client
+        // Par défaut, on met PRO pour voir les boutons (à changer plus tard)
+        let userType = UserDefaults.standard.string(forKey: "user_type") == "PRO" ? UserType.pro : UserType.pro
         
         self.user = User(
             firstName: "Marie",
@@ -50,10 +54,17 @@ class ProfileViewModel: ObservableObject {
         }
         
         loadFavorites()
+        loadMyOffers()
     }
     
     func loadFavorites() {
         favoritePartners = dataService.getPartners().filter { $0.isFavorite }
+    }
+    
+    func loadMyOffers() {
+        // Pour l'instant, on récupère toutes les offres
+        // Plus tard, on filtrera par l'ID du partenaire connecté
+        myOffers = dataService.getAllOffers()
     }
     
     func switchToClientSpace() {

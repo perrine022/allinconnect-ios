@@ -25,64 +25,77 @@ struct ProOffersView: View {
             )
             .ignoresSafeArea()
             
-            VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Text("Mes offres")
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundColor(.white)
-                    Spacer()
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Titre
+                    HStack {
+                        Text("Mes offres")
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundColor(.white)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
                     
-                    Button(action: {
-                        showCreateOffer = true
-                    }) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "plus.circle.fill")
+                    // Bloc "Mes offres" (comme Abonnement PRO)
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            Image(systemName: "tag.fill")
+                                .foregroundColor(.appGold)
                                 .font(.system(size: 18))
-                            Text("Nouvelle offre")
-                                .font(.system(size: 15, weight: .semibold))
+                            
+                            Text("Mes offres")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(.white)
+                            
+                            Spacer()
                         }
-                        .foregroundColor(.black)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(Color.appGold)
-                        .cornerRadius(10)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
-                .padding(.bottom, 16)
-                
-                // Liste des offres
-                if viewModel.myOffers.isEmpty {
-                    VStack(spacing: 20) {
-                        Image(systemName: "tag.fill")
-                            .font(.system(size: 60))
-                            .foregroundColor(.gray.opacity(0.5))
                         
-                        Text("Aucune offre pour le moment")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(.white.opacity(0.8))
-                        
-                        Text("Créez votre première offre pour commencer")
-                            .font(.system(size: 14, weight: .regular))
-                            .foregroundColor(.gray)
-                            .multilineTextAlignment(.center)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(.top, 100)
-                } else {
-                    ScrollView {
-                        VStack(spacing: 12) {
-                            ForEach(viewModel.myOffers) { offer in
-                                ProOfferCard(offer: offer) {
-                                    viewModel.deleteOffer(offer)
+                        // Liste des offres
+                        if viewModel.myOffers.isEmpty {
+                            VStack(spacing: 12) {
+                                Text("Aucune offre pour le moment")
+                                    .font(.system(size: 14, weight: .regular))
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        } else {
+                            VStack(spacing: 12) {
+                                ForEach(viewModel.myOffers) { offer in
+                                    ProOfferCard(offer: offer) {
+                                        viewModel.deleteOffer(offer)
+                                    }
                                 }
                             }
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 100)
+                        
+                        // Bouton "Gérer mes offres"
+                        Button(action: {
+                            showCreateOffer = true
+                        }) {
+                            HStack {
+                                Spacer()
+                                Text("Gérer mes offres")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundColor(.black)
+                                Spacer()
+                            }
+                            .padding(.vertical, 12)
+                            .background(Color.appGold)
+                            .cornerRadius(10)
+                        }
                     }
+                    .padding(16)
+                    .background(Color.appDarkRed1.opacity(0.8))
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    )
+                    .padding(.horizontal, 20)
+                    
+                    Spacer()
+                        .frame(height: 100)
                 }
             }
         }

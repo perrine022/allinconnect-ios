@@ -1,7 +1,15 @@
 {
   "colors" : [
     {
-      "filename" : "ipad_app_2x_152x152.png",
+      "color" : {
+        "color-space" : "srgb",
+        "components" : {
+          "alpha" : "1.000",
+          "blue" : "0.000",
+          "green" : "0.000",
+          "red" : "1.000"
+        }
+      },
       "idiom" : "universal"
     }
   ],

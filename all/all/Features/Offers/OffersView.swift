@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreLocation
 
 struct OffersView: View {
     @StateObject private var viewModel = OffersViewModel()
@@ -67,67 +68,40 @@ struct OffersView: View {
                         .background(Color.white)
                         .cornerRadius(8)
                         
-                        // Champ Secteur/Activité
-                        HStack(spacing: 10) {
-                            Image(systemName: "briefcase.fill")
-                                .foregroundColor(.gray.opacity(0.6))
-                                .font(.system(size: 13))
-                            
-                            TextField("", text: $viewModel.activityText, prompt: Text("Secteur...").foregroundColor(.gray.opacity(0.6)))
-                                .foregroundColor(.black)
-                                .font(.system(size: 14))
-                                .autocorrectionDisabled()
-                                .textInputAutocapitalization(.never)
-                                .onChange(of: viewModel.activityText) { _, _ in
-                                    viewModel.searchOffers()
-                                }
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 9)
-                        .background(Color.white)
-                        .cornerRadius(8)
+                        // Menu déroulant Secteur
+                        CustomSectorPicker(
+                            sectors: viewModel.sectors,
+                            selectedSector: $viewModel.selectedSector,
+                            onSelectionChange: {
+                                viewModel.searchOffers()
+                            }
+                        )
                         
                         // Slider Rayon de recherche
-                        VStack(spacing: 6) {
-                            HStack {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "location.fill")
-                                        .foregroundColor(.gray.opacity(0.6))
-                                        .font(.system(size: 12))
-                                    
-                                    Text("Rayon de recherche")
-                                        .font(.system(size: 13, weight: .medium))
-                                        .foregroundColor(.white)
-                                }
-                                
-                                Spacer()
-                                
-                                Text(viewModel.searchRadius == 0 ? "Désactivé" : "\(Int(viewModel.searchRadius)) km")
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .foregroundColor(viewModel.searchRadius == 0 ? .gray.opacity(0.7) : .appGold)
-                                    .frame(minWidth: 70, alignment: .trailing)
-                            }
+                        HStack(spacing: 8) {
+                            Text("0")
+                                .font(.system(size: 11, weight: .regular))
+                                .foregroundColor(.gray.opacity(0.6))
+                                .frame(width: 20)
                             
-                            HStack(spacing: 8) {
-                                Text("0")
-                                    .font(.system(size: 11, weight: .regular))
-                                    .foregroundColor(.gray.opacity(0.6))
-                                    .frame(width: 20)
-                                
-                                Slider(value: $viewModel.searchRadius, in: 0...50, step: 5)
-                                    .tint(.appRed)
-                                    .onChange(of: viewModel.searchRadius) { _, _ in
-                                        viewModel.searchOffers()
-                                    }
-                                
-                                Text("50")
-                                    .font(.system(size: 11, weight: .regular))
-                                    .foregroundColor(.gray.opacity(0.6))
-                                    .frame(width: 20)
-                            }
+                            Slider(value: $viewModel.searchRadius, in: 0...50, step: 5)
+                                .tint(.appRed)
+                                .onChange(of: viewModel.searchRadius) { _, _ in
+                                    viewModel.searchOffers()
+                                }
+                            
+                            Text("50")
+                                .font(.system(size: 11, weight: .regular))
+                                .foregroundColor(.gray.opacity(0.6))
+                                .frame(width: 20)
+                            
+                            Text(viewModel.searchRadius == 0 ? "Désactivé" : "\(Int(viewModel.searchRadius)) km")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(viewModel.searchRadius == 0 ? .gray.opacity(0.7) : .appGold)
+                                .frame(minWidth: 60, alignment: .trailing)
                         }
                         .padding(.horizontal, 12)
-                        .padding(.vertical, 10)
+                        .padding(.vertical, 8)
                         .background(Color.white)
                         .cornerRadius(8)
                         

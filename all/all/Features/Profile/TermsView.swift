@@ -58,8 +58,8 @@ struct TermsView: View {
                 }
             }
         }
-        .navigationTitle(isPrivacyPolicy ? "Politique de confidentialité" : "Conditions générales")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
     }

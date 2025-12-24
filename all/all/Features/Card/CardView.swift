@@ -208,46 +208,6 @@ struct CardView: View {
                     )
                     .padding(.horizontal, 20)
                     
-                    // Boutons portefeuille
-                    HStack(spacing: 10) {
-                        Button(action: {
-                            // Action Apple Wallet
-                        }) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "applelogo")
-                                    .font(.system(size: 16, weight: .medium))
-                                Text("Apple Wallet")
-                                    .font(.system(size: 14, weight: .semibold))
-                            }
-                            .foregroundColor(.black)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(Color.white)
-                            .cornerRadius(10)
-                            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        
-                        Button(action: {
-                            // Action Google Wallet
-                        }) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "wallet.pass.fill")
-                                    .font(.system(size: 16, weight: .medium))
-                                Text("Google Wallet")
-                                    .font(.system(size: 14, weight: .semibold))
-                            }
-                            .foregroundColor(.black)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(Color.white)
-                            .cornerRadius(10)
-                            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                    }
-                    .padding(.horizontal, 20)
-                    
                     // Section Mes favoris
                     if !viewModel.favoritePartners.isEmpty {
                         VStack(alignment: .leading, spacing: 14) {

@@ -10,6 +10,7 @@ import SwiftUI
 struct OnboardingView: View {
     @StateObject private var viewModel = OnboardingViewModel()
     @FocusState private var focusedField: Field?
+    @State private var showLogin = false
     var onComplete: () -> Void
     
     enum Field {
@@ -65,6 +66,25 @@ struct OnboardingView: View {
                         .foregroundColor(.white.opacity(0.8))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 30)
+                    
+                    // Bouton Se connecter
+                    Button(action: {
+                        // Fake connexion pour l'instant
+                        UserDefaults.standard.set(true, forKey: "is_logged_in")
+                        UserDefaults.standard.set("fake@email.com", forKey: "user_email")
+                        hideKeyboard()
+                        onComplete()
+                    }) {
+                        Text("Se connecter")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.black)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color.appGold)
+                            .cornerRadius(12)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 30)
                     
                     // Formulaire
                     VStack(spacing: 16) {
@@ -124,7 +144,11 @@ struct OnboardingView: View {
                                 .font(.system(size: 16))
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 14)
-                                .background(Color.white)
+                                .background(viewModel.emailError != nil ? Color.red.opacity(0.1) : Color.white)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(viewModel.emailError != nil ? Color.red.opacity(0.5) : Color.clear, lineWidth: 1)
+                                )
                                 .cornerRadius(10)
                                 .keyboardType(.emailAddress)
                                 .autocorrectionDisabled()
@@ -133,6 +157,13 @@ struct OnboardingView: View {
                                 .onSubmit {
                                     focusedField = .postalCode
                                 }
+                            
+                            if let error = viewModel.emailError {
+                                Text(error)
+                                    .font(.system(size: 12, weight: .regular))
+                                    .foregroundColor(.red.opacity(0.9))
+                                    .padding(.leading, 4)
+                            }
                         }
                         
                         // Code postal
@@ -147,16 +178,30 @@ struct OnboardingView: View {
                                 .font(.system(size: 16))
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 14)
-                                .background(Color.white)
+                                .background(viewModel.postalCodeError != nil ? Color.red.opacity(0.1) : Color.white)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(viewModel.postalCodeError != nil ? Color.red.opacity(0.5) : Color.clear, lineWidth: 1)
+                                )
                                 .cornerRadius(10)
                                 .keyboardType(.numberPad)
                                 .autocorrectionDisabled()
                                 .onChange(of: viewModel.postalCode) { _, newValue in
-                                    // Limiter à 5 chiffres
-                                    if newValue.count > 5 {
-                                        viewModel.postalCode = String(newValue.prefix(5))
+                                    // Limiter à 5 chiffres uniquement
+                                    let filtered = newValue.filter { $0.isNumber }
+                                    if filtered.count <= 5 {
+                                        viewModel.postalCode = filtered
+                                    } else {
+                                        viewModel.postalCode = String(filtered.prefix(5))
                                     }
                                 }
+                            
+                            if let error = viewModel.postalCodeError {
+                                Text(error)
+                                    .font(.system(size: 12, weight: .regular))
+                                    .foregroundColor(.red.opacity(0.9))
+                                    .padding(.leading, 4)
+                            }
                         }
                     }
                     .padding(.horizontal, 20)

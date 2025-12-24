@@ -11,12 +11,10 @@ struct PartnerDetailView: View {
     @StateObject private var viewModel: PartnerDetailViewModel
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appState: AppState
-    @State private var isFavorite: Bool
     @State private var selectedOffer: Offer?
     
     init(partner: Partner) {
         _viewModel = StateObject(wrappedValue: PartnerDetailViewModel(partner: partner))
-        _isFavorite = State(initialValue: partner.isFavorite)
     }
     
     var body: some View {
@@ -73,13 +71,12 @@ struct PartnerDetailView: View {
                                     HStack(spacing: 12) {
                                         Button(action: {
                                             withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                                                isFavorite.toggle()
                                                 viewModel.toggleFavorite()
                                             }
                                         }) {
                                             NavigationButton(
-                                                icon: isFavorite ? "heart.fill" : "heart",
-                                                iconColor: isFavorite ? .red : .white,
+                                                icon: viewModel.partner.isFavorite ? "heart.fill" : "heart",
+                                                iconColor: viewModel.partner.isFavorite ? .red : .white,
                                                 backgroundColor: Color.black.opacity(0.5),
                                                 action: {}
                                             )
@@ -322,8 +319,9 @@ struct PartnerDetailView: View {
                 VStack {
                     Spacer()
                     FooterBar(selectedTab: $appState.selectedTab) { tab in
-                        appState.navigateToTab(tab)
-                        dismiss()
+                        appState.navigateToTab(tab, dismiss: {
+                            dismiss()
+                        })
                     }
                     .frame(width: geometry.size.width)
                 }
@@ -334,6 +332,15 @@ struct PartnerDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .toolbarBackground(.hidden, for: .navigationBar)
+        .gesture(
+            DragGesture(minimumDistance: 50, coordinateSpace: .local)
+                .onEnded { value in
+                    // Swipe vers la droite (translation.width > 0) pour revenir en arrière
+                    if value.translation.width > 50 && abs(value.translation.width) > abs(value.translation.height) {
+                        dismiss()
+                    }
+                }
+        )
         .navigationDestination(item: $selectedOffer) { offer in
             OfferDetailView(offer: offer)
         }

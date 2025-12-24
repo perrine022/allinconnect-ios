@@ -21,7 +21,27 @@ class OnboardingViewModel: ObservableObject {
         !email.trimmingCharacters(in: .whitespaces).isEmpty &&
         isValidEmail(email) &&
         !postalCode.trimmingCharacters(in: .whitespaces).isEmpty &&
-        postalCode.count >= 5
+        postalCode.count == 5 &&
+        postalCode.allSatisfy { $0.isNumber }
+    }
+    
+    var emailError: String? {
+        if !email.isEmpty && !isValidEmail(email) {
+            return "Format d'email invalide"
+        }
+        return nil
+    }
+    
+    var postalCodeError: String? {
+        if !postalCode.isEmpty {
+            if postalCode.count != 5 {
+                return "Le code postal doit contenir 5 chiffres"
+            }
+            if !postalCode.allSatisfy({ $0.isNumber }) {
+                return "Le code postal doit contenir uniquement des chiffres"
+            }
+        }
+        return nil
     }
     
     private func isValidEmail(_ email: String) -> Bool {

@@ -15,9 +15,20 @@ class OffersViewModel: ObservableObject {
     
     // Search fields (comme HomeView)
     @Published var cityText: String = ""
-    @Published var activityText: String = ""
+    @Published var selectedSector: String = ""
     @Published var searchRadius: Double = 10.0 // Rayon en km (0 = désactivé)
     @Published var onlyClub10: Bool = false
+    
+    // Secteurs disponibles
+    let sectors: [String] = [
+        "",
+        "Santé & bien être",
+        "Beauté & Esthétique",
+        "Food & plaisirs gourmands",
+        "Loisirs & Divertissements",
+        "Service & pratiques",
+        "Entre pros"
+    ]
     
     private let dataService: MockDataService
     
@@ -47,13 +58,13 @@ class OffersViewModel: ObservableObject {
             }
         }
         
-        // Filtre par activité/secteur
-        if !activityText.isEmpty {
+        // Filtre par secteur
+        if !selectedSector.isEmpty {
             filtered = filtered.filter { offer in
                 // Vérifier via le partenaire
                 if let partnerId = offer.partnerId,
                    let partner = dataService.getPartnerById(id: partnerId) {
-                    return partner.category.localizedCaseInsensitiveContains(activityText)
+                    return partner.category.localizedCaseInsensitiveContains(selectedSector)
                 }
                 return false
             }

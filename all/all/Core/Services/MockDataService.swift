@@ -10,6 +10,9 @@ import Foundation
 class MockDataService {
     nonisolated static let shared = MockDataService()
     
+    // Stockage des favoris par ID de partenaire
+    private var partnerFavorites: [UUID: Bool] = [:]
+    
     func getProfessionals() -> [Professional] {
         return [
             Professional(
@@ -93,6 +96,8 @@ class MockDataService {
     
     private static let fitFormeId = UUID()
     private static let gameZoneId = UUID()
+    private static let belleZenId = UUID()
+    private static let comptoirGourmandId = UUID()
     
     func getPartners() -> [Partner] {
         return [
@@ -113,9 +118,10 @@ class MockDataService {
                 discount: 10,
                 imageName: "figure.strengthtraining.traditional",
                 headerImageName: "figure.strengthtraining.traditional",
-                isFavorite: true
+                isFavorite: partnerFavorites[MockDataService.fitFormeId] ?? true
             ),
             Partner(
+                id: MockDataService.belleZenId,
                 name: "Belle & Zen Spa",
                 category: "Esthétique",
                 address: "15 Rue de la République",
@@ -131,9 +137,10 @@ class MockDataService {
                 discount: 10,
                 imageName: "sparkles",
                 headerImageName: "sparkles",
-                isFavorite: false
+                isFavorite: partnerFavorites[MockDataService.belleZenId] ?? false
             ),
             Partner(
+                id: MockDataService.comptoirGourmandId,
                 name: "Le Comptoir Gourmand",
                 category: "Food",
                 address: "42 Boulevard Gambetta",
@@ -149,7 +156,7 @@ class MockDataService {
                 discount: 10,
                 imageName: "fork.knife",
                 headerImageName: "fork.knife",
-                isFavorite: true
+                isFavorite: partnerFavorites[MockDataService.comptoirGourmandId] ?? true
             ),
             Partner(
                 id: MockDataService.gameZoneId,
@@ -168,9 +175,18 @@ class MockDataService {
                 discount: nil,
                 imageName: "gamecontroller.fill",
                 headerImageName: "gamecontroller.fill",
-                isFavorite: false
+                isFavorite: partnerFavorites[MockDataService.gameZoneId] ?? false
             )
         ]
+    }
+    
+    func togglePartnerFavorite(partnerId: UUID) {
+        let currentValue = partnerFavorites[partnerId] ?? false
+        partnerFavorites[partnerId] = !currentValue
+    }
+    
+    func isPartnerFavorite(partnerId: UUID) -> Bool {
+        return partnerFavorites[partnerId] ?? false
     }
     
     func getAllOffers() -> [Offer] {

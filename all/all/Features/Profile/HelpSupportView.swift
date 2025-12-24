@@ -136,11 +136,11 @@ struct HelpSupportView: View {
                 }
             }
         }
-        .navigationTitle("Aide & Support")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
-        .sheet(item: $selectedSection) { section in
+        .navigationDestination(item: $selectedSection) { section in
             HelpSectionDetailView(section: section)
         }
     }
@@ -185,17 +185,35 @@ struct HelpSectionDetailView: View {
             return """
             Questions fréquentes
             
-            Comment créer un compte ?
-            Vous pouvez créer un compte directement depuis l'application en cliquant sur "S'inscrire".
+            1. Comment créer un compte ?
+            Vous pouvez créer un compte directement depuis l'application en cliquant sur "S'inscrire" lors de votre première utilisation.
             
-            Comment utiliser ma carte digitale ?
-            Votre carte digitale est disponible dans l'onglet "Ma Carte". Vous pouvez l'ajouter à Apple Wallet ou Google Wallet.
+            2. Comment utiliser ma carte digitale ?
+            Votre carte digitale est disponible dans l'onglet "Ma Carte". Elle contient votre code de parrainage et vos informations de membre CLUB10.
             
-            Comment bénéficier des réductions CLUB10 ?
-            Les membres CLUB10 bénéficient automatiquement de 10% de réduction chez tous les partenaires membres du club.
+            3. Comment bénéficier des réductions CLUB10 ?
+            Les membres CLUB10 bénéficient automatiquement de 10% de réduction chez tous les partenaires membres du club. La réduction est appliquée automatiquement lors de votre visite.
             
-            Comment contacter un partenaire ?
-            Sur la fiche du partenaire, vous pouvez utiliser le bouton "Contact" pour l'appeler directement.
+            4. Comment contacter un partenaire ?
+            Sur la fiche du partenaire, vous pouvez utiliser le bouton "Contact" pour l'appeler directement, ou consulter son email et son site web.
+            
+            5. Comment rechercher un partenaire ?
+            Utilisez les filtres de recherche sur la page d'accueil : ville, secteur d'activité, rayon de recherche et filtre CLUB10.
+            
+            6. Comment ajouter un partenaire en favoris ?
+            Cliquez sur l'icône cœur en haut à droite de la fiche du partenaire pour l'ajouter à vos favoris.
+            
+            7. Comment voir mes offres favorites ?
+            Vos offres favorites sont visibles dans l'onglet "Ma Carte" dans la section "Mes favoris".
+            
+            8. Comment fonctionne le système de parrainage ?
+            Partagez votre lien de parrainage et gagnez 50% de la première mensualité de chaque filleul. Votre lien est disponible dans "Ma Carte".
+            
+            9. Les offres sont-elles valables immédiatement ?
+            Oui, les offres sont valables dès leur publication jusqu'à la date d'expiration indiquée sur chaque offre.
+            
+            10. Comment modifier mes préférences de notifications ?
+            Allez dans votre profil, puis "Préférences de notifications" pour gérer les types de notifications que vous souhaitez recevoir.
             """
         case .contact:
             return """
