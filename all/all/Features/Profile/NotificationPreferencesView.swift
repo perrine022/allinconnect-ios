@@ -57,6 +57,15 @@ struct NotificationPreferencesView: View {
                                 title: "Événements locaux",
                                 isOn: $viewModel.localEvents
                             )
+                            
+                            Divider()
+                                .background(Color.white.opacity(0.1))
+                                .padding(.leading, 60)
+                            
+                            NotificationToggleRow(
+                                title: "Nouvelles offres selon ma localisation",
+                                isOn: $viewModel.localizedOffers
+                            )
                         }
                         .background(Color.appDarkRed1.opacity(0.8))
                         .cornerRadius(16)

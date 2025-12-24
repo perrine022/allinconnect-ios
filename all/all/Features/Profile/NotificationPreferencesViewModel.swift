@@ -14,6 +14,7 @@ class NotificationPreferencesViewModel: ObservableObject {
     @Published var newOffers: Bool = true
     @Published var newIndependent: Bool = true
     @Published var localEvents: Bool = true
+    @Published var localizedOffers: Bool = true // Nouvelles offres selon la localisation
     
     // Catégories
     @Published var sportHealth: Bool = true

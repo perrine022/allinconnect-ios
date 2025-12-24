@@ -7,6 +7,11 @@
 
 import Foundation
 
+enum UserType: String {
+    case client = "CLIENT"
+    case pro = "PRO"
+}
+
 struct User: Identifiable {
     let id: UUID
     let firstName: String
@@ -17,6 +22,7 @@ struct User: Identifiable {
     let publications: Int
     let subscribers: Int
     let subscriptions: Int
+    let userType: UserType
     
     var fullName: String {
         "\(firstName) \(lastName)"
@@ -31,7 +37,8 @@ struct User: Identifiable {
         profileImageName: String,
         publications: Int = 0,
         subscribers: Int = 0,
-        subscriptions: Int = 0
+        subscriptions: Int = 0,
+        userType: UserType = .client
     ) {
         self.id = id
         self.firstName = firstName
@@ -42,6 +49,7 @@ struct User: Identifiable {
         self.publications = publications
         self.subscribers = subscribers
         self.subscriptions = subscriptions
+        self.userType = userType
     }
 }
 

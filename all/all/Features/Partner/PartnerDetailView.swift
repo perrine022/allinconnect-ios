@@ -265,9 +265,9 @@ struct PartnerDetailView: View {
                                             .foregroundColor(.white)
                                             .padding(.horizontal, 20)
                                         
-                                        VStack(spacing: 10) {
+                                        VStack(spacing: 12) {
                                             ForEach(viewModel.currentOffers) { offer in
-                                                CurrentOfferCard(offer: offer) {
+                                                OfferListCard(offer: offer) {
                                                     selectedOffer = offer
                                                 }
                                             }

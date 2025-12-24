@@ -9,15 +9,28 @@ import SwiftUI
 
 struct ProfileView: View {
     @StateObject private var viewModel = ProfileViewModel()
+    @State private var isLoggedIn = LoginViewModel.isLoggedIn()
     @State private var showNotificationPreferences = false
     @State private var showEditProfile = false
     @State private var showChangePassword = false
     @State private var showHelpSupport = false
     @State private var showTerms = false
     @State private var showPrivacyPolicy = false
+    @State private var showProOffers = false
     @State private var selectedPartner: Partner?
     
     var body: some View {
+        if isLoggedIn {
+            profileContent
+        } else {
+            LoginView()
+                .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserDidLogin"))) { _ in
+                    isLoggedIn = true
+                }
+        }
+    }
+    
+    private var profileContent: some View {
         ZStack {
             // Background avec gradient
             LinearGradient(
@@ -56,20 +69,123 @@ struct ProfileView: View {
                             .font(.system(size: 15, weight: .regular))
                             .foregroundColor(.white.opacity(0.8))
                         
-                        // Badge CLUB10
-                        Text("MEMBRE CLUB10")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(Color.green)
-                            .cornerRadius(8)
+                        // Badge CLUB10 et boutons Espace (si PRO)
+                        VStack(spacing: 12) {
+                            Text("MEMBRE CLUB10")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(Color.green)
+                                .cornerRadius(8)
+                            
+                            // Boutons Espace Client/Pro (si utilisateur PRO)
+                            if viewModel.user.userType == .pro {
+                                HStack(spacing: 12) {
+                                    Button(action: {
+                                        viewModel.switchToClientSpace()
+                                    }) {
+                                        Text("Espace Client")
+                                            .font(.system(size: 13, weight: .semibold))
+                                            .foregroundColor(viewModel.currentSpace == .client ? .black : .white)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 8)
+                                            .background(viewModel.currentSpace == .client ? Color.appGold : Color.appDarkRed1.opacity(0.6))
+                                            .cornerRadius(8)
+                                    }
+                                    
+                                    Button(action: {
+                                        viewModel.switchToProSpace()
+                                    }) {
+                                        Text("Espace Pro")
+                                            .font(.system(size: 13, weight: .semibold))
+                                            .foregroundColor(viewModel.currentSpace == .pro ? .black : .white)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 8)
+                                            .background(viewModel.currentSpace == .pro ? Color.appGold : Color.appDarkRed1.opacity(0.6))
+                                            .cornerRadius(8)
+                                    }
+                                }
+                            }
+                        }
                     }
                     .padding(.top, 20)
                     .padding(.bottom, 8)
                     
+                    // Bloc Abonnement PRO (uniquement si PRO et dans l'espace PRO)
+                    if viewModel.user.userType == .pro && viewModel.currentSpace == .pro {
+                        VStack(alignment: .leading, spacing: 16) {
+                            HStack {
+                                Image(systemName: "creditcard.fill")
+                                    .foregroundColor(.appGold)
+                                    .font(.system(size: 18))
+                                
+                                Text("Abonnement Pro")
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundColor(.white)
+                                
+                                Spacer()
+                            }
+                            
+                            VStack(spacing: 12) {
+                                // Prochain prélèvement
+                                HStack {
+                                    Text("Prochain prélèvement")
+                                        .font(.system(size: 14, weight: .regular))
+                                        .foregroundColor(.white.opacity(0.8))
+                                    
+                                    Spacer()
+                                    
+                                    Text(viewModel.nextPaymentDate)
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundColor(.appGold)
+                                }
+                                
+                                Divider()
+                                    .background(Color.white.opacity(0.1))
+                                
+                                // Engagement
+                                HStack {
+                                    Text("Engagement jusqu'au")
+                                        .font(.system(size: 14, weight: .regular))
+                                        .foregroundColor(.white.opacity(0.8))
+                                    
+                                    Spacer()
+                                    
+                                    Text(viewModel.commitmentUntil)
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundColor(.white)
+                                }
+                            }
+                        }
+                        .padding(16)
+                        .background(Color.appDarkRed1.opacity(0.8))
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                        )
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 8)
+                    }
+                    
                     // Menu options
                     VStack(spacing: 0) {
+                        // Option "Mes offres" uniquement dans l'espace PRO
+                        if viewModel.user.userType == .pro && viewModel.currentSpace == .pro {
+                            ProfileMenuRow(
+                                icon: "tag.fill",
+                                title: "Mes offres",
+                                action: {
+                                    showProOffers = true
+                                }
+                            )
+                            
+                            Divider()
+                                .background(Color.white.opacity(0.1))
+                                .padding(.leading, 54)
+                        }
+                        
                         ProfileMenuRow(
                             icon: "person.fill",
                             title: "Modifier mon profil",
@@ -146,75 +262,10 @@ struct ProfileView: View {
                     )
                     .padding(.horizontal, 20)
                     
-                    // Section Mes favoris
-                    if !viewModel.favoritePartners.isEmpty {
-                        VStack(alignment: .leading, spacing: 14) {
-                            Text("Mes favoris")
-                                .font(.system(size: 20, weight: .bold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 20)
-                            
-                            VStack(spacing: 10) {
-                                ForEach(viewModel.favoritePartners) { partner in
-                                    Button(action: {
-                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                            selectedPartner = partner
-                                        }
-                                    }) {
-                                        HStack(spacing: 12) {
-                                            // Image
-                                            Image(systemName: partner.imageName)
-                                                .resizable()
-                                                .scaledToFill()
-                                                .frame(width: 56, height: 56)
-                                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                                                .foregroundColor(.gray.opacity(0.3))
-                                            
-                                            VStack(alignment: .leading, spacing: 3) {
-                                                Text(partner.name)
-                                                    .font(.system(size: 15, weight: .bold))
-                                                    .foregroundColor(.white)
-                                                
-                                                Text(partner.category)
-                                                    .font(.system(size: 13, weight: .regular))
-                                                    .foregroundColor(.gray.opacity(0.9))
-                                            }
-                                            
-                                            Spacer()
-                                            
-                                            // Badge réduction
-                                            if let discount = partner.discount {
-                                                Text("-\(discount)%")
-                                                    .font(.system(size: 11, weight: .bold))
-                                                    .foregroundColor(.white)
-                                                    .padding(.horizontal, 9)
-                                                    .padding(.vertical, 5)
-                                                    .background(Color.green)
-                                                    .cornerRadius(6)
-                                            }
-                                        }
-                                        .padding(12)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .fill(Color.appDarkRed1.opacity(0.7))
-                                                .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-                                        )
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                                        )
-                                    }
-                                    .buttonStyle(PlainButtonStyle())
-                                }
-                            }
-                            .padding(.horizontal, 20)
-                        }
-                        .padding(.top, 4)
-                    }
-                    
                     // Bouton déconnexion
                     Button(action: {
-                        // Action déconnexion
+                        LoginViewModel.logout()
+                        isLoggedIn = false
                     }) {
                         HStack(spacing: 10) {
                             Image(systemName: "rectangle.portrait.and.arrow.right")
@@ -278,6 +329,11 @@ struct ProfileView: View {
         .sheet(isPresented: $showPrivacyPolicy) {
             NavigationStack {
                 TermsView(isPrivacyPolicy: true)
+            }
+        }
+        .sheet(isPresented: $showProOffers) {
+            NavigationStack {
+                ProOffersView()
             }
         }
         .navigationDestination(item: $selectedPartner) { partner in

@@ -8,27 +8,21 @@
 import Foundation
 import Combine
 
-enum OfferFilterType: String, CaseIterable {
-    case all = "Tous"
-    case offer = "Offres"
-    case event = "Événements"
-}
-
 @MainActor
 class OffersViewModel: ObservableObject {
     @Published var allOffers: [Offer] = []
     @Published var filteredOffers: [Offer] = []
-    @Published var selectedFilter: OfferFilterType = .all
-    @Published var selectedSector: String = "Tous les secteurs"
-    @Published var showSectorFilter: Bool = false
     
-    let sectors: [String]
+    // Search fields (comme HomeView)
+    @Published var cityText: String = ""
+    @Published var activityText: String = ""
+    @Published var searchRadius: Double = 10.0 // Rayon en km (0 = désactivé)
+    @Published var onlyClub10: Bool = false
     
     private let dataService: MockDataService
     
     init(dataService: MockDataService = MockDataService.shared) {
         self.dataService = dataService
-        self.sectors = ["Tous les secteurs", "Sport & Santé", "Esthétique", "Food", "Divertissement"]
         loadOffers()
     }
     
@@ -37,33 +31,37 @@ class OffersViewModel: ObservableObject {
         applyFilters()
     }
     
-    func selectFilter(_ filter: OfferFilterType) {
-        selectedFilter = filter
-        applyFilters()
-    }
-    
-    func selectSector(_ sector: String) {
-        selectedSector = sector
-        showSectorFilter = false
+    func searchOffers() {
         applyFilters()
     }
     
     private func applyFilters() {
         var filtered = allOffers
         
-        // Filtre par type
-        switch selectedFilter {
-        case .all:
-            break // Pas de filtre
-        case .offer:
-            filtered = filtered.filter { $0.offerType == .offer }
-        case .event:
-            filtered = filtered.filter { $0.offerType == .event }
+        // Filtre par ville/nom/activité
+        if !cityText.isEmpty {
+            filtered = filtered.filter { offer in
+                offer.businessName.localizedCaseInsensitiveContains(cityText) ||
+                offer.title.localizedCaseInsensitiveContains(cityText) ||
+                offer.description.localizedCaseInsensitiveContains(cityText)
+            }
         }
         
-        // Filtre par secteur (si implémenté avec catégorie du partenaire)
-        if selectedSector != "Tous les secteurs" {
-            // À implémenter avec la catégorie du partenaire
+        // Filtre par activité/secteur
+        if !activityText.isEmpty {
+            filtered = filtered.filter { offer in
+                // Vérifier via le partenaire
+                if let partnerId = offer.partnerId,
+                   let partner = dataService.getPartnerById(id: partnerId) {
+                    return partner.category.localizedCaseInsensitiveContains(activityText)
+                }
+                return false
+            }
+        }
+        
+        // Filtre CLUB10
+        if onlyClub10 {
+            filtered = filtered.filter { $0.isClub10 }
         }
         
         filteredOffers = filtered

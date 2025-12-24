@@ -9,8 +9,10 @@ import SwiftUI
 
 struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
+    @EnvironmentObject private var locationService: LocationService
     @State private var selectedProfessional: Professional?
     @State private var selectedPartner: Partner?
+    @State private var showLocationPermission = false
     
     var body: some View {
         ZStack {
@@ -323,6 +325,21 @@ struct HomeView: View {
         .onTapGesture {
             hideKeyboard()
         }
+        .onAppear {
+            // Demander la permission de localisation si pas encore demandée
+            if locationService.authorizationStatus == .notDetermined {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    showLocationPermission = true
+                }
+            }
+        }
+        .sheet(isPresented: $showLocationPermission) {
+            LocationPermissionView(locationService: locationService) {
+                showLocationPermission = false
+            }
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+        }
         .navigationDestination(item: $selectedPartner) { partner in
             PartnerDetailView(partner: partner)
         }
@@ -332,5 +349,6 @@ struct HomeView: View {
 #Preview {
     NavigationStack {
         HomeView()
+            .environmentObject(LocationService.shared)
     }
 }
