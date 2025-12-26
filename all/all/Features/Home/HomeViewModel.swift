@@ -46,12 +46,16 @@ class HomeViewModel: ObservableObject {
     
     private let partnersAPIService: PartnersAPIService
     private let favoritesAPIService: FavoritesAPIService
+    private let offersAPIService: OffersAPIService
+    private let profileAPIService: ProfileAPIService
     private let dataService: MockDataService // Gardé pour les catégories, villes et favoris
     private let locationService: LocationService
     
     init(
         partnersAPIService: PartnersAPIService? = nil,
         favoritesAPIService: FavoritesAPIService? = nil,
+        offersAPIService: OffersAPIService? = nil,
+        profileAPIService: ProfileAPIService? = nil,
         dataService: MockDataService = MockDataService.shared,
         locationService: LocationService? = nil
     ) {
@@ -68,6 +72,18 @@ class HomeViewModel: ObservableObject {
             self.favoritesAPIService = FavoritesAPIService()
         }
         
+        if let offersAPIService = offersAPIService {
+            self.offersAPIService = offersAPIService
+        } else {
+            self.offersAPIService = OffersAPIService()
+        }
+        
+        if let profileAPIService = profileAPIService {
+            self.profileAPIService = profileAPIService
+        } else {
+            self.profileAPIService = ProfileAPIService()
+        }
+        
         self.dataService = dataService
         // Accéder à LocationService.shared dans un contexte MainActor
         self.locationService = locationService ?? LocationService.shared
@@ -78,9 +94,43 @@ class HomeViewModel: ObservableObject {
     
     func loadData() {
         professionals = dataService.getProfessionals()
-        offers = dataService.getOffers()
+        loadOffersByCity()
         loadPartners()
         applyFilters()
+    }
+    
+    func loadOffersByCity() {
+        Task { @MainActor in
+            do {
+                // Récupérer la ville de l'utilisateur depuis son profil
+                let userProfile = try await profileAPIService.getUserMe()
+                
+                guard let userCity = userProfile.city, !userCity.isEmpty else {
+                    print("⚠️ Aucune ville trouvée pour l'utilisateur, chargement des offres sans filtre")
+                    // Si pas de ville, charger toutes les offres actives (limitées à 5)
+                    let allOffers = try await offersAPIService.getAllOffers()
+                    offers = Array(allOffers.prefix(5)).map { $0.toOffer() }
+                    return
+                }
+                
+                print("📍 Chargement des offres pour la ville: \(userCity)")
+                
+                // Charger les offres filtrées par ville depuis l'API
+                let offersResponse = try await offersAPIService.getAllOffers(city: userCity)
+                
+                // Limiter à 5 offres maximum
+                let limitedOffers = Array(offersResponse.prefix(5))
+                
+                print("✅ \(limitedOffers.count) offres chargées pour \(userCity)")
+                
+                // Convertir les réponses API en modèles Offer
+                offers = limitedOffers.map { $0.toOffer() }
+            } catch {
+                print("❌ Erreur lors du chargement des offres par ville: \(error)")
+                // En cas d'erreur, utiliser les données mockées en fallback
+                offers = Array(dataService.getOffers().prefix(5))
+            }
+        }
     }
     
     func loadPartners() {

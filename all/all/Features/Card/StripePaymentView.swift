@@ -107,6 +107,7 @@ struct StripePaymentView: View {
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
@@ -267,21 +268,29 @@ class StripePaymentViewModel: ObservableObject {
         Task {
             do {
                 let allPlans = try await subscriptionsAPIService.getPlans()
+                print("📦 Plans récupérés depuis l'API: \(allPlans.count) plans")
+                for plan in allPlans {
+                    print("  - \(plan.title): \(plan.formattedPrice) (\(plan.category ?? "N/A") - \(plan.duration ?? "N/A"))")
+                }
+                
                 // Filtrer les plans si une catégorie est spécifiée
                 if let filterCategory = filterCategory {
                     plans = allPlans.filter { $0.category == filterCategory }
+                    print("📦 Plans filtrés pour '\(filterCategory)': \(plans.count) plans")
                 } else {
                     plans = allPlans
                 }
+                
                 // Sélectionner le premier plan par défaut
                 if self.selectedPlan == nil && !plans.isEmpty {
                     self.selectedPlan = plans.first
+                    print("📦 Plan sélectionné par défaut: \(plans.first?.title ?? "N/A")")
                 }
                 isLoading = false
             } catch {
                 isLoading = false
                 errorMessage = "Erreur lors du chargement des plans"
-                print("Erreur lors du chargement des plans: \(error)")
+                print("❌ Erreur lors du chargement des plans: \(error)")
             }
         }
     }

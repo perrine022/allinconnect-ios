@@ -324,16 +324,26 @@ struct HomeView: View {
                         .padding(.horizontal, 20)
                         
                         // Scroll horizontal des offres
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 16) {
-                                ForEach(viewModel.offers) { offer in
-                                    OfferCard(offer: offer) {
-                                        // Naviguer vers la page de détail de l'offre
-                                        selectedOffer = offer
+                        if viewModel.offers.isEmpty {
+                            VStack(spacing: 8) {
+                                Text("Aucune offre disponible pour le moment")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .padding(.vertical, 20)
+                            }
+                            .frame(maxWidth: .infinity)
+                        } else {
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 16) {
+                                    ForEach(viewModel.offers) { offer in
+                                        OfferCard(offer: offer) {
+                                            // Naviguer vers la page de détail de l'offre
+                                            selectedOffer = offer
+                                        }
                                     }
                                 }
+                                .padding(.horizontal, 20)
                             }
-                            .padding(.horizontal, 20)
                         }
                     }
                     .padding(.top, viewModel.hasSearched ? 24 : 8)

@@ -444,6 +444,17 @@ extension OfferResponse {
             UUID(uuidString: String(format: "%08x-0000-0000-0000-%012x", prof.id, prof.id)) ?? UUID()
         }
         
+        // Déterminer l'image par défaut selon la catégorie du professionnel
+        // Si imageUrl est fourni et non vide, on pourrait l'utiliser, sinon utiliser l'image par défaut
+        let defaultImage: String
+        if let imageUrl = imageUrl, !imageUrl.isEmpty {
+            // Si une URL d'image est fournie, on utilise quand même une image par défaut pour l'instant
+            // (car on utilise des SF Symbols, pas des URLs d'images)
+            defaultImage = DefaultImageHelper.defaultImageForOfferCategory(professional?.category)
+        } else {
+            defaultImage = DefaultImageHelper.defaultImageForOfferCategory(professional?.category)
+        }
+        
         return Offer(
             id: offerUUID,
             title: title,
@@ -451,7 +462,7 @@ extension OfferResponse {
             businessName: fullBusinessName,
             validUntil: validUntil,
             discount: discount,
-            imageName: "tag.fill", // Par défaut, peut être amélioré plus tard
+            imageName: defaultImage,
             offerType: offerTypeEnum,
             isClub10: isClub10,
             partnerId: partnerId,

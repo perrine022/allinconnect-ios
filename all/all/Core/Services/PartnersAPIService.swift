@@ -167,6 +167,14 @@ extension PartnerProfessionalResponse {
         // Déterminer si c'est CLUB10 (basé sur subscriptionType PREMIUM)
         let isClub10 = subscriptionType == "PREMIUM"
         
+        // Déterminer l'image par défaut selon la catégorie
+        let defaultImage: String
+        if let category = category {
+            defaultImage = DefaultImageHelper.defaultImageForOfferCategory(category)
+        } else {
+            defaultImage = DefaultImageHelper.defaultImageForPartnerCategory(categoryName)
+        }
+        
         // Créer un Partner avec les données disponibles
         return Partner(
             id: partnerUUID,
@@ -183,8 +191,8 @@ extension PartnerProfessionalResponse {
             rating: 4.5, // Par défaut, peut être récupéré depuis un autre endpoint
             reviewCount: 0, // Par défaut, peut être récupéré depuis un autre endpoint
             discount: isClub10 ? 10 : nil, // Réduction si CLUB10
-            imageName: "person.circle.fill", // Par défaut
-            headerImageName: "person.circle.fill", // Par défaut
+            imageName: defaultImage,
+            headerImageName: defaultImage,
             isFavorite: false, // Sera géré via l'API
             apiId: id // Stocker l'ID original de l'API
         )

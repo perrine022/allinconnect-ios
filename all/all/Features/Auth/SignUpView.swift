@@ -240,10 +240,14 @@ struct SignUpView: View {
                                         .foregroundColor(.black)
                                         .padding(.horizontal, 16)
                                         .padding(.vertical, 14)
-                                        .background(focusedField == .postalCode ? Color.white.opacity(0.95) : Color.white)
+                                        .background(Color.white)
                                         .overlay(
                                             RoundedRectangle(cornerRadius: 10)
-                                                .stroke(focusedField == .postalCode ? Color.appGold : Color.clear, lineWidth: 2)
+                                                .stroke(
+                                                    viewModel.postalCodeError != nil ? Color.red :
+                                                    focusedField == .postalCode ? Color.appGold : Color.clear,
+                                                    lineWidth: viewModel.postalCodeError != nil ? 1 : 2
+                                                )
                                         )
                                         .cornerRadius(10)
                                         .keyboardType(.numberPad)
@@ -256,7 +260,21 @@ struct SignUpView: View {
                                             } else {
                                                 viewModel.postalCode = String(filtered.prefix(5))
                                             }
+                                            // Valider le code postal
+                                            viewModel.validatePostalCode()
                                         }
+                                    
+                                    // Message d'erreur pour le code postal
+                                    if let postalCodeError = viewModel.postalCodeError {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "exclamationmark.circle.fill")
+                                                .foregroundColor(.red)
+                                                .font(.system(size: 12))
+                                            Text(postalCodeError)
+                                                .font(.system(size: 12, weight: .regular))
+                                                .foregroundColor(.red)
+                                        }
+                                    }
                                 }
                                 .padding(.horizontal, 20)
                                 
@@ -281,7 +299,7 @@ struct SignUpView: View {
                                                 .frame(width: 60)
                                                 .padding(.horizontal, 12)
                                                 .padding(.vertical, 12)
-                                                .background(viewModel.birthDayError != nil ? Color.red.opacity(0.1) : Color.white)
+                                                .background(Color.white)
                                                 .overlay(
                                                     RoundedRectangle(cornerRadius: 10)
                                                         .stroke(viewModel.birthDayError != nil ? Color.red : Color.clear, lineWidth: 1)
@@ -306,7 +324,7 @@ struct SignUpView: View {
                                                 .frame(width: 60)
                                                 .padding(.horizontal, 12)
                                                 .padding(.vertical, 12)
-                                                .background(viewModel.birthMonthError != nil ? Color.red.opacity(0.1) : Color.white)
+                                                .background(Color.white)
                                                 .overlay(
                                                     RoundedRectangle(cornerRadius: 10)
                                                         .stroke(viewModel.birthMonthError != nil ? Color.red : Color.clear, lineWidth: 1)
@@ -331,7 +349,7 @@ struct SignUpView: View {
                                                 .frame(width: 80)
                                                 .padding(.horizontal, 12)
                                                 .padding(.vertical, 12)
-                                                .background(viewModel.birthYearError != nil ? Color.red.opacity(0.1) : Color.white)
+                                                .background(Color.white)
                                                 .overlay(
                                                     RoundedRectangle(cornerRadius: 10)
                                                         .stroke(viewModel.birthYearError != nil ? Color.red : Color.clear, lineWidth: 1)

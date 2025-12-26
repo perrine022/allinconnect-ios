@@ -28,6 +28,7 @@ class SignUpViewModel: ObservableObject {
     @Published var birthMonthError: String? = nil
     @Published var birthYearError: String? = nil
     @Published var birthDateError: String? = nil
+    @Published var postalCodeError: String? = nil
     
     var isValidEmail: Bool {
         isValidEmail(email)
@@ -55,6 +56,16 @@ class SignUpViewModel: ObservableObject {
         !postalCode.trimmingCharacters(in: .whitespaces).isEmpty &&
         postalCode.count == 5 &&
         isValidBirthDate()
+    }
+    
+    func validatePostalCode() {
+        postalCodeError = nil
+        
+        if !postalCode.isEmpty {
+            if postalCode.count != 5 {
+                postalCodeError = "Le code postal doit contenir exactement 5 chiffres"
+            }
+        }
     }
     
     func validateBirthDate() {
