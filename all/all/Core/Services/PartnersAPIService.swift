@@ -67,13 +67,27 @@ class PartnersAPIService: ObservableObject {
     // MARK: - Get All Professionals
     func getAllProfessionals() async throws -> [PartnerProfessionalResponse] {
         // L'API retourne directement un tableau de professionnels
-        let professionals: [PartnerProfessionalResponse] = try await apiService.request(
-            endpoint: "/users/professionals",
-            method: .get,
-            parameters: nil,
-            headers: nil
-        )
-        return professionals
+        do {
+            let professionals: [PartnerProfessionalResponse] = try await apiService.request(
+                endpoint: "/users/professionals",
+                method: .get,
+                parameters: nil,
+                headers: nil
+            )
+            return professionals
+        } catch let error as APIError {
+            // Gérer spécifiquement l'erreur de décodage pour les réponses corrompues
+            if case .decodingError(let underlyingError) = error,
+               let nsError = underlyingError as NSError?,
+               nsError.domain == NSCocoaErrorDomain,
+               nsError.code == 3840 {
+                // Erreur de décodage JSON (réponse corrompue ou malformée)
+                // Retourner un tableau vide plutôt que de faire planter l'app
+                print("[PartnersAPIService] Erreur de décodage JSON, retour d'un tableau vide")
+                return []
+            }
+            throw error
+        }
     }
     
     // MARK: - Get Professionals By City
@@ -82,13 +96,25 @@ class PartnersAPIService: ObservableObject {
             "city": city
         ]
         
-        let professionals: [PartnerProfessionalResponse] = try await apiService.request(
-            endpoint: "/users/professionals/by-city",
-            method: .get,
-            parameters: parameters,
-            headers: nil
-        )
-        return professionals
+        do {
+            let professionals: [PartnerProfessionalResponse] = try await apiService.request(
+                endpoint: "/users/professionals/by-city",
+                method: .get,
+                parameters: parameters,
+                headers: nil
+            )
+            return professionals
+        } catch let error as APIError {
+            // Gérer spécifiquement l'erreur de décodage pour les réponses corrompues
+            if case .decodingError(let underlyingError) = error,
+               let nsError = underlyingError as NSError?,
+               nsError.domain == NSCocoaErrorDomain,
+               nsError.code == 3840 {
+                print("[PartnersAPIService] Erreur de décodage JSON, retour d'un tableau vide")
+                return []
+            }
+            throw error
+        }
     }
     
     // MARK: - Search Professionals
@@ -121,13 +147,25 @@ class PartnersAPIService: ObservableObject {
             parameters["radius"] = radius
         }
         
-        let professionals: [PartnerProfessionalResponse] = try await apiService.request(
-            endpoint: "/users/professionals/search",
-            method: .get,
-            parameters: parameters.isEmpty ? nil : parameters,
-            headers: nil
-        )
-        return professionals
+        do {
+            let professionals: [PartnerProfessionalResponse] = try await apiService.request(
+                endpoint: "/users/professionals/search",
+                method: .get,
+                parameters: parameters.isEmpty ? nil : parameters,
+                headers: nil
+            )
+            return professionals
+        } catch let error as APIError {
+            // Gérer spécifiquement l'erreur de décodage pour les réponses corrompues
+            if case .decodingError(let underlyingError) = error,
+               let nsError = underlyingError as NSError?,
+               nsError.domain == NSCocoaErrorDomain,
+               nsError.code == 3840 {
+                print("[PartnersAPIService] Erreur de décodage JSON, retour d'un tableau vide")
+                return []
+            }
+            throw error
+        }
     }
     
     // MARK: - Get Professional By ID

@@ -209,8 +209,23 @@ struct OffersView: View {
                     .padding(.horizontal, 20)
                     .zIndex(1000) // zIndex élevé pour le VStack des champs de recherche
                     
-                    // Message d'erreur
-                    if let errorMessage = viewModel.errorMessage {
+                    // États de chargement et d'erreur - selon guidelines Apple
+                    // Afficher le loader uniquement pendant le chargement initial
+                    if viewModel.isLoading && !viewModel.hasLoadedOnce {
+                        VStack(spacing: 20) {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .appGold))
+                                .scaleEffect(1.5)
+                            
+                            Text("Chargement des offres...")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.white.opacity(0.9))
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(.vertical, 100)
+                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                        .animation(.easeInOut(duration: 0.3), value: viewModel.isLoading)
+                    } else if let errorMessage = viewModel.errorMessage {
                         VStack(spacing: 12) {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .foregroundColor(.red)
@@ -239,12 +254,10 @@ struct OffersView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 40)
-                    }
-                    
-                    // Liste des offres ou skeletons de chargement
-                    if viewModel.errorMessage == nil {
+                    } else if viewModel.hasLoadedOnce {
+                        // Afficher le contenu seulement après le premier chargement
                         if viewModel.isLoading {
-                            // Afficher des skeletons pendant le chargement
+                            // Afficher des skeletons pendant un rechargement (après le premier chargement)
                             VStack(spacing: 12) {
                                 ForEach(0..<5, id: \.self) { _ in
                                     OfferListCardSkeleton()
@@ -272,6 +285,8 @@ struct OffersView: View {
                                 }
                             }
                             .padding(.horizontal, 20)
+                            .transition(.opacity.combined(with: .move(edge: .bottom)))
+                            .animation(.easeInOut(duration: 0.3), value: viewModel.filteredOffers.count)
                         }
                     }
                     

@@ -112,20 +112,22 @@ struct ProfileView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 20)
                     
-                    // Indicateur de chargement initial
-                    if viewModel.isLoadingInitialData {
-                        VStack(spacing: 16) {
+                    // Indicateur de chargement initial - selon guidelines Apple
+                    if viewModel.isLoadingInitialData && !viewModel.hasLoadedOnce {
+                        VStack(spacing: 20) {
                             ProgressView()
                                 .progressViewStyle(CircularProgressViewStyle(tint: .appGold))
                                 .scaleEffect(1.5)
                             
                             Text("Chargement de votre profil...")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.white.opacity(0.8))
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.white.opacity(0.9))
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 60)
-                    } else {
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(.vertical, 100)
+                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                        .animation(.easeInOut(duration: 0.3), value: viewModel.isLoadingInitialData)
+                    } else if viewModel.hasLoadedOnce {
                         // Section utilisateur
                         VStack(spacing: 16) {
                             // Photo, prénom et badge CLUB10 sur la même ligne

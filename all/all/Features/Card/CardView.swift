@@ -42,13 +42,22 @@ struct CardView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 16)
                     
-                    // États de chargement et d'erreur
+                    // États de chargement et d'erreur - selon guidelines Apple
                     // Afficher le loader uniquement pendant le chargement initial
                     if viewModel.isLoading && !viewModel.hasLoadedOnce {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .appGold))
-                            .scaleEffect(1.5)
-                            .padding(.vertical, 50)
+                        VStack(spacing: 20) {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .appGold))
+                                .scaleEffect(1.5)
+                            
+                            Text("Chargement de votre carte...")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.white.opacity(0.9))
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(.vertical, 100)
+                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                        .animation(.easeInOut(duration: 0.3), value: viewModel.isLoading)
                     } else if let errorMessage = viewModel.errorMessage {
                         VStack(spacing: 12) {
                             Image(systemName: "exclamationmark.triangle")
@@ -77,8 +86,8 @@ struct CardView: View {
                             .padding(.top, 8)
                         }
                         .padding(.vertical, 50)
-                    } else if viewModel.cardNumber != nil, viewModel.isCardActive {
-                        // Afficher la carte si elle existe et est active
+                    } else if viewModel.hasLoadedOnce && viewModel.cardNumber != nil && viewModel.isCardActive {
+                        // Afficher la carte si elle existe et est active - avec transition fluide
                         // Carte utilisateur principale
                         let cardBackgroundColor = viewModel.isCardValid ? Color.white : Color.red
                         let textColor = viewModel.isCardValid ? Color.black : Color.white
@@ -222,6 +231,8 @@ struct CardView: View {
                                 .stroke(viewModel.isCardValid ? Color.gray.opacity(0.2) : Color.white.opacity(0.3), lineWidth: 1)
                         )
                         .padding(.horizontal, 20)
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        .animation(.easeInOut(duration: 0.3), value: viewModel.hasLoadedOnce)
                         
                         // Grille de statistiques
                         VStack(spacing: 10) {
@@ -353,8 +364,8 @@ struct CardView: View {
                         // Espace pour le footer
                         Spacer()
                             .frame(height: 100)
-                    } else {
-                        // Vue d'abonnement si pas de carte ou carte inactive
+                    } else if viewModel.hasLoadedOnce {
+                        // Vue d'abonnement si pas de carte ou carte inactive (seulement après chargement)
                         CardSubscriptionView()
                             .padding(.top, 20)
                     }

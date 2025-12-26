@@ -12,7 +12,8 @@ import Combine
 class OffersViewModel: ObservableObject {
     @Published var allOffers: [Offer] = []
     @Published var filteredOffers: [Offer] = []
-    @Published var isLoading: Bool = false
+    @Published var isLoading: Bool = true // Commencer en état de chargement
+    @Published var hasLoadedOnce: Bool = false // Pour savoir si on a déjà chargé une fois
     @Published var errorMessage: String?
     
     // Search fields (comme HomeView)
@@ -86,8 +87,10 @@ class OffersViewModel: ObservableObject {
                 // Appliquer les filtres locaux (CLUB10, recherche texte)
                 applyFilters()
                 
+                hasLoadedOnce = true
                 isLoading = false
             } catch {
+                hasLoadedOnce = true
                 isLoading = false
                 errorMessage = error.localizedDescription
                 print("Erreur lors du chargement des offres: \(error)")

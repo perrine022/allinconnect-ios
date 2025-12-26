@@ -58,6 +58,7 @@ class ProfileViewModel: ObservableObject {
     
     // État de chargement initial
     @Published var isLoadingInitialData: Bool = true
+    @Published var hasLoadedOnce: Bool = false // Pour savoir si on a déjà chargé une fois
     
     private let favoritesAPIService: FavoritesAPIService
     private let partnersAPIService: PartnersAPIService
@@ -147,6 +148,7 @@ class ProfileViewModel: ObservableObject {
             // Charger les offres (pas async, donc on l'appelle directement)
             loadMyOffers()
             
+            hasLoadedOnce = true
             isLoadingInitialData = false
         }
     }
