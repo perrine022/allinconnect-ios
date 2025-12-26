@@ -169,10 +169,23 @@ class HomeViewModel: ObservableObject {
                 // Appliquer les filtres
                 applyFilters()
             } catch {
-                print("Erreur lors du chargement des partenaires: \(error)")
-                // En cas d'erreur, utiliser les données mockées en fallback
-                partners = dataService.getPartners()
-                applyFilters()
+                // Vérifier si c'est une erreur de décodage JSON corrompu
+                if let apiError = error as? APIError,
+                   case .decodingError(let underlyingError) = apiError,
+                   let nsError = underlyingError as NSError?,
+                   nsError.domain == NSCocoaErrorDomain,
+                   nsError.code == 3840 {
+                    // Erreur de décodage JSON corrompu - utiliser données mockées sans afficher d'erreur
+                    print("Erreur de décodage JSON lors du chargement des partenaires, utilisation des données mockées")
+                    partners = dataService.getPartners()
+                    applyFilters()
+                } else {
+                    // Autre type d'erreur
+                    print("Erreur lors du chargement des partenaires: \(error)")
+                    // En cas d'erreur, utiliser les données mockées en fallback
+                    partners = dataService.getPartners()
+                    applyFilters()
+                }
             }
         }
     }

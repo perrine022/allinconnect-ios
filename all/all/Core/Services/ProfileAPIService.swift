@@ -133,6 +133,31 @@ struct UserMeResponse: Codable {
         case profession
         case category
     }
+    
+    // Initializer personnalisé pour gérer les valeurs optionnelles avec valeurs par défaut
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(Int.self, forKey: .id)
+        email = try container.decodeIfPresent(String.self, forKey: .email)
+        // Rendre firstName et lastName optionnels avec valeurs par défaut
+        firstName = try container.decodeIfPresent(String.self, forKey: .firstName) ?? ""
+        lastName = try container.decodeIfPresent(String.self, forKey: .lastName) ?? ""
+        address = try container.decodeIfPresent(String.self, forKey: .address)
+        city = try container.decodeIfPresent(String.self, forKey: .city)
+        postalCode = try container.decodeIfPresent(String.self, forKey: .postalCode)
+        latitude = try container.decodeIfPresent(Double.self, forKey: .latitude)
+        longitude = try container.decodeIfPresent(Double.self, forKey: .longitude)
+        card = try container.decodeIfPresent(CardResponse.self, forKey: .card)
+        isCardActive = try container.decodeIfPresent(Bool.self, forKey: .isCardActive)
+        establishmentName = try container.decodeIfPresent(String.self, forKey: .establishmentName)
+        establishmentDescription = try container.decodeIfPresent(String.self, forKey: .establishmentDescription)
+        phoneNumber = try container.decodeIfPresent(String.self, forKey: .phoneNumber)
+        website = try container.decodeIfPresent(String.self, forKey: .website)
+        instagram = try container.decodeIfPresent(String.self, forKey: .instagram)
+        openingHours = try container.decodeIfPresent(String.self, forKey: .openingHours)
+        profession = try container.decodeIfPresent(String.self, forKey: .profession)
+        category = try container.decodeIfPresent(OfferCategory.self, forKey: .category)
+    }
 }
 
 // MARK: - User Light Response Model
@@ -166,8 +191,9 @@ struct UserLightResponse: Codable {
     // Initializer personnalisé pour gérer les valeurs optionnelles avec valeurs par défaut
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        firstName = try container.decode(String.self, forKey: .firstName)
-        lastName = try container.decode(String.self, forKey: .lastName)
+        // Rendre firstName et lastName optionnels avec valeurs par défaut
+        firstName = try container.decodeIfPresent(String.self, forKey: .firstName) ?? ""
+        lastName = try container.decodeIfPresent(String.self, forKey: .lastName) ?? ""
         isMember = try container.decodeIfPresent(Bool.self, forKey: .isMember) ?? false
         card = try container.decodeIfPresent(CardResponse.self, forKey: .card)
         isCardActive = try container.decodeIfPresent(Bool.self, forKey: .isCardActive) ?? false

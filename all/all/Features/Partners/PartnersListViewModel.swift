@@ -133,12 +133,27 @@ class PartnersListViewModel: ObservableObject {
                 isLoading = false
             } catch {
                 isLoading = false
-                errorMessage = error.localizedDescription
-                print("Erreur lors du chargement des partenaires: \(error)")
                 
-                // En cas d'erreur, utiliser les données mockées en fallback
-                allPartners = dataService.getPartners()
-                applyFilters()
+                // Vérifier si c'est une erreur de décodage JSON corrompu
+                if let apiError = error as? APIError,
+                   case .decodingError(let underlyingError) = apiError,
+                   let nsError = underlyingError as NSError?,
+                   nsError.domain == NSCocoaErrorDomain,
+                   nsError.code == 3840 {
+                    // Erreur de décodage JSON corrompu - ne pas afficher d'erreur, utiliser données mockées
+                    print("Erreur de décodage JSON lors du chargement des partenaires, utilisation des données mockées")
+                    allPartners = dataService.getPartners()
+                    applyFilters()
+                    errorMessage = nil // Ne pas afficher d'erreur pour les réponses corrompues
+                } else {
+                    // Autre type d'erreur - afficher le message
+                    errorMessage = error.localizedDescription
+                    print("Erreur lors du chargement des partenaires: \(error)")
+                    
+                    // En cas d'erreur, utiliser les données mockées en fallback
+                    allPartners = dataService.getPartners()
+                    applyFilters()
+                }
             }
         }
     }

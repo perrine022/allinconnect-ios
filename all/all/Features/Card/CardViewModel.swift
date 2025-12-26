@@ -112,10 +112,13 @@ class CardViewModel: ObservableObject {
                 let userLight = try await profileAPIService.getUserLight()
                 
                 // Mettre à jour les données utilisateur
+                let firstName = userLight.firstName.isEmpty ? (userMe.firstName.isEmpty ? "Utilisateur" : userMe.firstName) : userLight.firstName
+                let lastName = userLight.lastName.isEmpty ? (userMe.lastName.isEmpty ? "" : userMe.lastName) : userLight.lastName
+                
                 user = User(
-                    firstName: userLight.firstName,
-                    lastName: userLight.lastName,
-                    username: user.firstName.lowercased(),
+                    firstName: firstName,
+                    lastName: lastName,
+                    username: firstName.lowercased(),
                     bio: (userLight.isMember ?? false) ? "Membre CLUB10" : "",
                     profileImageName: "person.circle.fill",
                     publications: 0,
@@ -171,7 +174,9 @@ class CardViewModel: ObservableObject {
                 favoritesCount = userLight.favoriteCount ?? 0
                 
                 // Générer le code de parrainage
-                referralCode = generateReferralCode(from: userLight.firstName, lastName: userLight.lastName)
+                let firstNameForCode = userLight.firstName.isEmpty ? (userMe.firstName.isEmpty ? "User" : userMe.firstName) : userLight.firstName
+                let lastNameForCode = userLight.lastName.isEmpty ? (userMe.lastName.isEmpty ? "Name" : userMe.lastName) : userLight.lastName
+                referralCode = generateReferralCode(from: firstNameForCode, lastName: lastNameForCode)
                 referralLink = "allin.fr/r/\(referralCode)"
                 
                 // Charger les partenaires favoris depuis l'API

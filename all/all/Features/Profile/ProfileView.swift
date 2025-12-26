@@ -210,7 +210,7 @@ struct ProfileView: View {
                     .padding(.bottom, 8)
                     
                     // Bloc Abonnement PRO (dans l'espace PRO - toujours affiché)
-                    if !viewModel.isLoadingInitialData && viewModel.currentSpace == .pro {
+                    if viewModel.hasLoadedOnce && viewModel.currentSpace == .pro {
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
                                 Image(systemName: "creditcard.fill")
@@ -267,7 +267,7 @@ struct ProfileView: View {
                     }
                     
                     // Bloc "Mes offres" (dans l'espace PRO - toujours affiché)
-                    if !viewModel.isLoadingInitialData && viewModel.currentSpace == .pro {
+                    if viewModel.hasLoadedOnce && viewModel.currentSpace == .pro {
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
                                 Image(systemName: "tag.fill")
@@ -347,7 +347,7 @@ struct ProfileView: View {
                     }
                     
                     // Section Abonnement et Carte (espace client)
-                    if !viewModel.isLoadingInitialData && viewModel.currentSpace == .client {
+                    if viewModel.hasLoadedOnce && viewModel.currentSpace == .client {
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
                                 Image(systemName: "creditcard.fill")
@@ -539,7 +539,7 @@ struct ProfileView: View {
                     }
                     
                     // Bloc "Mes favoris" (espace client uniquement)
-                    if !viewModel.isLoadingInitialData && viewModel.currentSpace == .client {
+                    if viewModel.hasLoadedOnce && viewModel.currentSpace == .client {
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
                                 Image(systemName: "heart.fill")
@@ -639,7 +639,7 @@ struct ProfileView: View {
                     }
                     
                     // Menu options (affiché seulement après chargement)
-                    if !viewModel.isLoadingInitialData {
+                    if viewModel.hasLoadedOnce {
                         VStack(spacing: 0) {
                         // Options PRO uniquement dans l'espace PRO (toujours affichées pour les tests)
                         if viewModel.currentSpace == .pro {
@@ -725,7 +725,7 @@ struct ProfileView: View {
                     }
                     
                     // Bouton déconnexion (affiché seulement après chargement)
-                    if !viewModel.isLoadingInitialData {
+                    if viewModel.hasLoadedOnce {
                         Button(action: {
                             // Afficher une confirmation avant de déconnecter
                             withAnimation {
@@ -762,7 +762,7 @@ struct ProfileView: View {
                     }
                     
                     // Version de l'app (affichée seulement après chargement)
-                    if !viewModel.isLoadingInitialData {
+                    if viewModel.hasLoadedOnce {
                         Text("All In Connect v1.0.0")
                             .font(.system(size: 12, weight: .regular))
                             .foregroundColor(.gray.opacity(0.7))

@@ -91,7 +91,7 @@ class LoginViewModel: ObservableObject {
                         // Vérifier si c'est une erreur de connexion au serveur
                         let nsError = underlyingError as NSError
                         if nsError.domain == NSURLErrorDomain && (nsError.code == -1004 || nsError.code == NSURLErrorCannotConnectToHost) {
-                            errorMessage = "Impossible de se connecter au serveur. Vérifiez que le backend est démarré sur http://localhost:8000"
+                            errorMessage = "Impossible de se connecter au serveur. Vérifiez votre connexion internet."
                         } else {
                             errorMessage = "Problème de connexion. Vérifiez votre connexion internet."
                         }
