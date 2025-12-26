@@ -36,6 +36,10 @@ struct ProfileView: View {
                                 }
                                 if viewModel.currentSpace == .client {
                                     await viewModel.loadFavorites()
+                                    // Charger aussi les offres si l'utilisateur a une carte professionnelle
+                                    if viewModel.cardType == "PROFESSIONAL" {
+                                        viewModel.loadMyOffers()
+                                    }
                                 }
                             }
                         }
@@ -452,6 +456,86 @@ struct ProfileView: View {
                         )
                         .padding(.horizontal, 20)
                         .padding(.bottom, 8)
+                        
+                        // Bloc "Mes offres" (uniquement pour carte professionnelle)
+                        if viewModel.cardType == "PROFESSIONAL" {
+                            VStack(alignment: .leading, spacing: 16) {
+                                HStack {
+                                    Image(systemName: "tag.fill")
+                                        .foregroundColor(.appGold)
+                                        .font(.system(size: 18))
+                                    
+                                    Text("Mes offres")
+                                        .font(.system(size: 18, weight: .bold))
+                                        .foregroundColor(.white)
+                                    
+                                    Spacer()
+                                }
+                                
+                                // Liste des offres (limitées à 3 pour l'aperçu)
+                                if viewModel.myOffers.isEmpty {
+                                    Text("Aucune offre pour le moment")
+                                        .font(.system(size: 14, weight: .regular))
+                                        .foregroundColor(.white.opacity(0.7))
+                                } else {
+                                    VStack(spacing: 8) {
+                                        ForEach(Array(viewModel.myOffers.prefix(3))) { offer in
+                                            HStack(spacing: 10) {
+                                                Image(systemName: offer.imageName)
+                                                    .resizable()
+                                                    .scaledToFill()
+                                                    .frame(width: 50, height: 50)
+                                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                                    .foregroundColor(.gray.opacity(0.3))
+                                                
+                                                VStack(alignment: .leading, spacing: 4) {
+                                                    Text(offer.title)
+                                                        .font(.system(size: 14, weight: .semibold))
+                                                        .foregroundColor(.white)
+                                                        .lineLimit(1)
+                                                    
+                                                    Text("Jusqu'au \(offer.validUntil)")
+                                                        .font(.system(size: 12, weight: .regular))
+                                                        .foregroundColor(.gray)
+                                                }
+                                                
+                                                Spacer()
+                                            }
+                                            
+                                            if offer.id != viewModel.myOffers.prefix(3).last?.id {
+                                                Divider()
+                                                    .background(Color.white.opacity(0.1))
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                // Bouton "Gérer mes offres"
+                                Button(action: {
+                                    proOffersNavigationId = UUID()
+                                }) {
+                                    HStack {
+                                        Spacer()
+                                        Text("Gérer mes offres")
+                                            .font(.system(size: 15, weight: .semibold))
+                                            .foregroundColor(.black)
+                                        Spacer()
+                                    }
+                                    .padding(.vertical, 12)
+                                    .background(Color.appGold)
+                                    .cornerRadius(10)
+                                }
+                            }
+                            .padding(16)
+                            .background(Color.appDarkRed1.opacity(0.8))
+                            .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                            )
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 8)
+                        }
                     }
                     
                     // Bloc "Mes favoris" (espace client uniquement)
