@@ -11,6 +11,7 @@ import CoreLocation
 struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
     @EnvironmentObject private var locationService: LocationService
+    @EnvironmentObject private var appState: AppState
     @State private var selectedProfessional: Professional?
     @State private var selectedPartner: Partner?
     @State private var selectedOffer: Offer?
@@ -311,7 +312,9 @@ struct HomeView: View {
                             
                             Spacer()
                             
-                            Button(action: {}) {
+                            Button(action: {
+                                appState.navigateToTab(.offers)
+                            }) {
                                 HStack(spacing: 4) {
                                     Text("Voir tout")
                                         .font(.system(size: 14, weight: .medium))

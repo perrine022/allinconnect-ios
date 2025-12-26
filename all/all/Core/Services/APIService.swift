@@ -140,12 +140,21 @@ class APIService: APIServiceProtocol, ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
         
+        // Ajouter les headers par défaut (incluant Authorization: Bearer TOKEN)
         APIConfig.defaultHeaders.forEach { key, value in
             request.setValue(value, forHTTPHeaderField: key)
         }
         
+        // Ajouter les headers personnalisés (peuvent override les headers par défaut)
         headers?.forEach { key, value in
             request.setValue(value, forHTTPHeaderField: key)
+        }
+        
+        // Log pour debug : vérifier que le token est bien envoyé
+        if let authHeader = request.value(forHTTPHeaderField: "Authorization") {
+            print("🔐 [APIService] Authorization header: \(authHeader.prefix(20))...")
+        } else {
+            print("⚠️ [APIService] Aucun token d'authentification trouvé")
         }
         
         if method != .get, let parameters = parameters {
