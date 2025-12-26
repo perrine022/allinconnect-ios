@@ -9,9 +9,12 @@ import SwiftUI
 
 struct CardView: View {
     @StateObject private var viewModel = CardViewModel()
-    @State private var selectedPartner: Partner?
+    @EnvironmentObject private var appState: AppState
     @State private var showAddSavingsPopup: Bool = false
     @State private var showSavingsList: Bool = false
+    @State private var showFamilyManagement: Bool = false
+    @State private var showPaymentResult: Bool = false
+    @State private var paymentResultStatus: PaymentResultView.PaymentResultStatus? = nil
     
     var body: some View {
         ZStack {
@@ -79,6 +82,10 @@ struct CardView: View {
                             .padding(.top, 20)
                     } else {
                         // Carte utilisateur principale
+                        let cardBackgroundColor = viewModel.isCardValid ? Color.white : Color.red
+                        let textColor = viewModel.isCardValid ? Color.black : Color.white
+                        let secondaryTextColor = viewModel.isCardValid ? Color.gray : Color.white.opacity(0.8)
+                        
                         VStack(alignment: .leading, spacing: 14) {
                             HStack(alignment: .top) {
                                 // Logo ALL IN
@@ -86,7 +93,7 @@ struct CardView: View {
                                     HStack(spacing: 4) {
                                         Text("ALL")
                                             .font(.system(size: 32, weight: .bold, design: .rounded))
-                                            .foregroundColor(.white)
+                                            .foregroundColor(textColor)
                                         
                                         ZStack {
                                             Circle()
@@ -104,12 +111,12 @@ struct CardView: View {
                                         
                                         Text("IN")
                                             .font(.system(size: 32, weight: .bold, design: .rounded))
-                                            .foregroundColor(.white)
+                                            .foregroundColor(textColor)
                                     }
                                     
                                     Text("Connect")
                                         .font(.system(size: 16, weight: .medium))
-                                        .foregroundColor(Color.appRed.opacity(0.9))
+                                        .foregroundColor(viewModel.isCardValid ? Color.appRed : Color.white.opacity(0.9))
                                 }
                                 
                                 Spacer()
@@ -126,50 +133,95 @@ struct CardView: View {
                                 }
                             }
                             
+                            // Badge "Carte familiale" si type FAMILY
+                            if viewModel.cardType == "FAMILY" {
+                                Text("Carte familiale")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(viewModel.isCardValid ? .appGold : .white)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(viewModel.isCardValid ? Color.appGold.opacity(0.2) : Color.white.opacity(0.2))
+                                    .cornerRadius(8)
+                                    .padding(.top, 4)
+                            }
+                            
                             // Nom utilisateur
                             Text(viewModel.user.fullName)
                                 .font(.system(size: 26, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundColor(textColor)
                                 .padding(.top, 4)
                             
                             // Numéro de carte si disponible
                             if let cardNumber = viewModel.cardNumber {
                                 Text("Carte: \(cardNumber)")
                                     .font(.system(size: 13, weight: .regular))
-                                    .foregroundColor(.gray)
+                                    .foregroundColor(secondaryTextColor)
                                     .padding(.top, 2)
                             }
+                            
+                            // Date de validité
+                            HStack(spacing: 4) {
+                                Image(systemName: "calendar")
+                                    .foregroundColor(secondaryTextColor)
+                                    .font(.system(size: 12))
+                                Text("Valide jusqu'au: \(viewModel.formattedExpirationDate)")
+                                    .font(.system(size: 13, weight: .regular))
+                                    .foregroundColor(secondaryTextColor)
+                            }
+                            .padding(.top, 2)
                             
                             // Code utilisateur
                             Text("Code: \(viewModel.referralCode)")
                                 .font(.system(size: 13, weight: .regular))
-                                .foregroundColor(.gray)
+                                .foregroundColor(secondaryTextColor)
                                 .padding(.top, 2)
                             
                             // Membre CLUB10 (seulement si membre)
                             if viewModel.isMember {
                                 HStack(spacing: 6) {
                                     Image(systemName: "star.fill")
-                                        .foregroundColor(.appGold)
+                                        .foregroundColor(viewModel.isCardValid ? .appGold : .white)
                                         .font(.system(size: 14))
                                     
                                     Text("Membre CLUB10")
                                         .font(.system(size: 15, weight: .semibold))
-                                        .foregroundColor(.appGold)
+                                        .foregroundColor(viewModel.isCardValid ? .appGold : .white)
                                 }
                                 .padding(.top, 4)
+                            }
+                            
+                            // Bouton "Gérer ma famille" si carte familiale
+                            if viewModel.cardType == "FAMILY" {
+                                Button(action: {
+                                    showFamilyManagement = true
+                                }) {
+                                    HStack {
+                                        Image(systemName: "person.2.fill")
+                                            .foregroundColor(viewModel.isCardValid ? .appGold : .white)
+                                            .font(.system(size: 16))
+                                        
+                                        Text("Gérer ma famille")
+                                            .font(.system(size: 15, weight: .semibold))
+                                            .foregroundColor(viewModel.isCardValid ? .appGold : .white)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(viewModel.isCardValid ? Color.appGold.opacity(0.2) : Color.white.opacity(0.2))
+                                    .cornerRadius(10)
+                                }
+                                .padding(.top, 12)
                             }
                         }
                         .padding(20)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(
                             RoundedRectangle(cornerRadius: 20)
-                                .fill(Color.appDarkRed1.opacity(0.85))
+                                .fill(cardBackgroundColor)
                                 .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 4)
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 20)
-                                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                                .stroke(viewModel.isCardValid ? Color.gray.opacity(0.2) : Color.white.opacity(0.3), lineWidth: 1)
                         )
                         .padding(.horizontal, 20)
                         
@@ -300,87 +352,6 @@ struct CardView: View {
                         )
                         .padding(.horizontal, 20)
                         
-                        // Section Mes favoris
-                        if !viewModel.favoritePartners.isEmpty {
-                            VStack(alignment: .leading, spacing: 14) {
-                            Text("Mes favoris")
-                                .font(.system(size: 20, weight: .bold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 20)
-                            
-                            VStack(spacing: 10) {
-                                ForEach(viewModel.favoritePartners) { partner in
-                                    HStack(spacing: 12) {
-                                        // Bouton pour ouvrir le détail
-                                        Button(action: {
-                                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                                selectedPartner = partner
-                                            }
-                                        }) {
-                                            HStack(spacing: 12) {
-                                                // Image
-                                                Image(systemName: partner.imageName)
-                                                    .resizable()
-                                                    .scaledToFill()
-                                                    .frame(width: 56, height: 56)
-                                                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                                                    .foregroundColor(.gray.opacity(0.3))
-                                                
-                                                VStack(alignment: .leading, spacing: 3) {
-                                                    Text(partner.name)
-                                                        .font(.system(size: 15, weight: .bold))
-                                                        .foregroundColor(.white)
-                                                    
-                                                    Text(partner.category)
-                                                        .font(.system(size: 13, weight: .regular))
-                                                        .foregroundColor(.gray.opacity(0.9))
-                                                }
-                                                
-                                                Spacer()
-                                                
-                                                // Badge réduction
-                                                if let discount = partner.discount {
-                                                    Text("-\(discount)%")
-                                                        .font(.system(size: 11, weight: .bold))
-                                                        .foregroundColor(.white)
-                                                        .padding(.horizontal, 9)
-                                                        .padding(.vertical, 5)
-                                                        .background(Color.green)
-                                                        .cornerRadius(6)
-                                                }
-                                            }
-                                        }
-                                        .buttonStyle(PlainButtonStyle())
-                                        
-                                        // Bouton cœur pour retirer des favoris
-                                        Button(action: {
-                                            withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
-                                                viewModel.removeFavorite(partner: partner)
-                                            }
-                                        }) {
-                                            Image(systemName: "heart.fill")
-                                                .foregroundColor(.appRed)
-                                                .font(.system(size: 18))
-                                                .frame(width: 32, height: 32)
-                                        }
-                                    }
-                                    .padding(12)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .fill(Color.appDarkRed1.opacity(0.7))
-                                            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-                                    )
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                                    )
-                                }
-                            }
-                            .padding(.horizontal, 20)
-                        }
-                            .padding(.top, 4)
-                        }
-                        
                         // Espace pour le footer
                         Spacer()
                             .frame(height: 100)
@@ -388,11 +359,11 @@ struct CardView: View {
                 }
             }
         }
-        .navigationDestination(item: $selectedPartner) { partner in
-            PartnerDetailView(partner: partner)
-        }
         .navigationDestination(isPresented: $showSavingsList) {
             SavingsListView(viewModel: viewModel)
+        }
+        .navigationDestination(isPresented: $showFamilyManagement) {
+            FamilyCardManagementView()
         }
         .overlay {
             if showAddSavingsPopup {
@@ -402,6 +373,21 @@ struct CardView: View {
                         viewModel.addSavings(amount: amount, date: date, store: store, description: description)
                     }
                 )
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("PaymentSuccess"))) { _ in
+            paymentResultStatus = .success
+            showPaymentResult = true
+            // Recharger les données de la carte
+            viewModel.loadData()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("PaymentFailed"))) { _ in
+            paymentResultStatus = .failed
+            showPaymentResult = true
+        }
+        .sheet(isPresented: $showPaymentResult) {
+            if let status = paymentResultStatus {
+                PaymentResultView(status: status)
             }
         }
     }

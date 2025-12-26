@@ -12,14 +12,48 @@ import Combine
 struct SubscriptionPlanResponse: Codable, Identifiable {
     let id: Int
     let title: String
+    let description: String?
     let price: Double
-    let category: String? // "INDIVIDUAL" ou "FAMILY" (optionnel pour compatibilité avec Partners API)
+    let category: String? // "PROFESSIONAL", "INDIVIDUAL", ou "FAMILY"
+    let duration: String? // "MONTHLY" ou "ANNUAL"
     
     enum CodingKeys: String, CodingKey {
         case id
         case title
+        case description
         case price
         case category
+        case duration
+    }
+    
+    // Helper pour formater le prix
+    var formattedPrice: String {
+        String(format: "%.2f€", price)
+    }
+    
+    // Helper pour obtenir le label de prix avec durée
+    var priceLabel: String {
+        if let duration = duration {
+            switch duration {
+            case "MONTHLY":
+                return "\(formattedPrice) / mois"
+            case "ANNUAL":
+                return "\(formattedPrice) / an"
+            default:
+                return formattedPrice
+            }
+        }
+        return formattedPrice
+    }
+    
+    // Helper pour vérifier si c'est un plan annuel
+    var isAnnual: Bool {
+        duration == "ANNUAL"
+    }
+    
+    // Helper pour vérifier si c'est un plan mensuel
+    var isMonthly: Bool {
+        duration == "MONTHLY"
     }
 }
 

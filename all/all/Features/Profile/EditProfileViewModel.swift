@@ -285,6 +285,7 @@ class EditProfileViewModel: ObservableObject {
                     establishmentDescription: nil,
                     phoneNumber: nil,
                     website: nil,
+                    instagram: nil,
                     openingHours: nil,
                     profession: nil,
                     category: nil

@@ -26,6 +26,7 @@ class CardViewModel: ObservableObject {
     @Published var cardNumber: String? = nil
     @Published var cardType: String? = nil
     @Published var isCardActive: Bool = false
+    @Published var cardExpirationDate: Date? = nil
     
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
@@ -103,7 +104,10 @@ class CardViewModel: ObservableObject {
         
         Task {
             do {
-                // Charger les données light depuis l'API
+                // Charger les données complètes depuis /users/me pour avoir le type de carte
+                let userMe = try await profileAPIService.getUserMe()
+                
+                // Charger aussi les données light pour les autres infos
                 let userLight = try await profileAPIService.getUserLight()
                 
                 // Mettre à jour les données utilisateur
@@ -118,11 +122,32 @@ class CardViewModel: ObservableObject {
                     subscriptions: 0
                 )
                 
-                // Mettre à jour les données de la carte
+                // Mettre à jour les données de la carte (utiliser userMe pour le type)
                 isMember = userLight.isMember ?? false
                 isCardActive = userLight.isCardActive ?? false
-                cardNumber = userLight.card?.cardNumber
-                cardType = userLight.card?.type
+                cardNumber = userMe.card?.cardNumber ?? userLight.card?.cardNumber
+                cardType = userMe.card?.type ?? userLight.card?.type
+                
+                // Récupérer la date de validité (renewalDate)
+                if let renewalDateString = userLight.renewalDate {
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"
+                    dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+                    
+                    if let date = dateFormatter.date(from: renewalDateString) {
+                        cardExpirationDate = date
+                    } else {
+                        // Essayer un autre format
+                        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+                        if let date = dateFormatter.date(from: renewalDateString) {
+                            cardExpirationDate = date
+                        } else {
+                            // Essayer format simple
+                            dateFormatter.dateFormat = "yyyy-MM-dd"
+                            cardExpirationDate = dateFormatter.date(from: renewalDateString)
+                        }
+                    }
+                }
                 
                 // Mettre à jour les compteurs
                 referrals = userLight.referralCount ?? 0
@@ -359,6 +384,26 @@ class CardViewModel: ObservableObject {
     
     private func updateSavingsTotal() {
         savings = savingsEntries.reduce(0) { $0 + $1.amount }
+    }
+    
+    // MARK: - Card Validity
+    var isCardValid: Bool {
+        guard let expirationDate = cardExpirationDate else {
+            // Si pas de date, considérer comme valide si isCardActive
+            return isCardActive
+        }
+        // La carte est valide si la date d'expiration est dans le futur
+        return expirationDate > Date()
+    }
+    
+    var formattedExpirationDate: String {
+        guard let expirationDate = cardExpirationDate else {
+            return "N/A"
+        }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yyyy"
+        formatter.locale = Locale(identifier: "fr_FR")
+        return formatter.string(from: expirationDate)
     }
 }
 

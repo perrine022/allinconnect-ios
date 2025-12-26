@@ -23,6 +23,16 @@ class SignUpViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
     
+    // Messages d'erreur pour la validation en temps réel
+    @Published var birthDayError: String? = nil
+    @Published var birthMonthError: String? = nil
+    @Published var birthYearError: String? = nil
+    @Published var birthDateError: String? = nil
+    
+    var isValidEmail: Bool {
+        isValidEmail(email)
+    }
+    
     private let authAPIService: AuthAPIService
     
     init(authAPIService: AuthAPIService? = nil) {
@@ -47,11 +57,92 @@ class SignUpViewModel: ObservableObject {
         isValidBirthDate()
     }
     
+    func validateBirthDate() {
+        // Réinitialiser les erreurs
+        birthDayError = nil
+        birthMonthError = nil
+        birthYearError = nil
+        birthDateError = nil
+        
+        // Valider le jour
+        if !birthDay.isEmpty {
+            if let day = Int(birthDay) {
+                if day < 1 || day > 31 {
+                    birthDayError = "Le jour doit être entre 1 et 31"
+                }
+            } else {
+                birthDayError = "Le jour doit être un nombre"
+            }
+        }
+        
+        // Valider le mois
+        if !birthMonth.isEmpty {
+            if let month = Int(birthMonth) {
+                if month < 1 || month > 12 {
+                    birthMonthError = "Le mois doit être entre 1 et 12"
+                }
+            } else {
+                birthMonthError = "Le mois doit être un nombre"
+            }
+        }
+        
+        // Valider l'année
+        if !birthYear.isEmpty {
+            if let year = Int(birthYear) {
+                let currentYear = Calendar.current.component(.year, from: Date())
+                if year < 1900 || year > currentYear {
+                    birthYearError = "L'année doit être entre 1900 et \(currentYear)"
+                }
+            } else {
+                birthYearError = "L'année doit être un nombre"
+            }
+        }
+        
+        // Valider la date complète si tous les champs sont remplis
+        if !birthDay.isEmpty && !birthMonth.isEmpty && !birthYear.isEmpty {
+            if birthDayError == nil && birthMonthError == nil && birthYearError == nil {
+                if let day = Int(birthDay), let month = Int(birthMonth), let year = Int(birthYear) {
+                    var components = DateComponents()
+                    components.year = year
+                    components.month = month
+                    components.day = day
+                    
+                    if let date = Calendar.current.date(from: components) {
+                        // Vérifier que la date correspond bien aux valeurs entrées
+                        let calendar = Calendar.current
+                        if calendar.component(.day, from: date) != day ||
+                           calendar.component(.month, from: date) != month ||
+                           calendar.component(.year, from: date) != year {
+                            birthDateError = "Cette date n'existe pas (ex: pas de 31 février)"
+                        }
+                    } else {
+                        birthDateError = "Cette date n'existe pas"
+                    }
+                }
+            }
+        }
+    }
+    
     private func isValidBirthDate() -> Bool {
         guard let day = Int(birthDay), let month = Int(birthMonth), let year = Int(birthYear) else {
             return false
         }
-        return day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 1900 && year <= Calendar.current.component(.year, from: Date())
+        guard day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 1900 && year <= Calendar.current.component(.year, from: Date()) else {
+            return false
+        }
+        // Vérifier que la date existe
+        var components = DateComponents()
+        components.year = year
+        components.month = month
+        components.day = day
+        guard let date = Calendar.current.date(from: components) else {
+            return false
+        }
+        // Vérifier que la date correspond bien aux valeurs entrées
+        let calendar = Calendar.current
+        return calendar.component(.day, from: date) == day &&
+               calendar.component(.month, from: date) == month &&
+               calendar.component(.year, from: date) == year
     }
     
     private func formatBirthDate() -> String? {

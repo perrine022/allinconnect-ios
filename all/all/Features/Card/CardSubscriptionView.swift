@@ -13,56 +13,56 @@ struct CardSubscriptionView: View {
     
     var body: some View {
         ScrollView {
-            VStack(spacing: 24) {
+            VStack(spacing: 12) {
                 // Icône de la carte
                 Image(systemName: "creditcard.fill")
-                    .font(.system(size: 60))
+                    .font(.system(size: 45))
                     .foregroundColor(.appGold)
-                    .padding(.top, 20)
+                    .padding(.top, 10)
                 
                 // Titre
                 Text("Ta carte digitale ALL IN")
-                    .font(.system(size: 28, weight: .bold))
+                    .font(.system(size: 22, weight: .bold))
                     .foregroundColor(.white)
                 
                 // Sous-titre
                 Text("Rejoins la communauté et profite d'avantages exclusifs")
-                    .font(.system(size: 16, weight: .regular))
+                    .font(.system(size: 14, weight: .regular))
                     .foregroundColor(.white.opacity(0.9))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
                 
                 // Liste des avantages
-                VStack(spacing: 16) {
-                    BenefitCard(
+                VStack(spacing: 10) {
+                    CardBenefitCard(
                         icon: "percent",
                         iconColor: .green,
                         title: "-10% partout",
                         description: "Chez tous les membres CLUB10"
                     )
                     
-                    BenefitCard(
+                    CardBenefitCard(
                         icon: "tag.fill",
                         iconColor: .green,
                         title: "Offres exclusives",
                         description: "Accès aux promos réservées aux abonnés"
                     )
                     
-                    BenefitCard(
+                    CardBenefitCard(
                         icon: "eurosign.circle.fill",
                         iconColor: .green,
                         title: "Programme parrainage",
                         description: "50% du 1er mois de chaque filleul"
                     )
                     
-                    BenefitCard(
+                    CardBenefitCard(
                         icon: "wallet.pass.fill",
                         iconColor: .green,
                         title: "Wallet intégré",
                         description: "Apple Wallet & Google Pay"
                     )
                     
-                    BenefitCard(
+                    CardBenefitCard(
                         icon: "bell.fill",
                         iconColor: .green,
                         title: "Alertes personnalisées",
@@ -70,7 +70,7 @@ struct CardSubscriptionView: View {
                     )
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 20)
+                .padding(.top, 12)
                 
                 // Bouton S'abonner
                 Button(action: {
@@ -85,7 +85,7 @@ struct CardSubscriptionView: View {
                         .cornerRadius(12)
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 8)
+                .padding(.top, 16)
                 
                 // Lien "Pourquoi ma carte digitale"
                 Button(action: {
@@ -115,44 +115,44 @@ struct CardSubscriptionView: View {
     }
 }
 
-struct BenefitCard: View {
+struct CardBenefitCard: View {
     let icon: String
     let iconColor: Color
     let title: String
     let description: String
     
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 12) {
             // Icône
             ZStack {
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: 8)
                     .fill(Color.appDarkRed1.opacity(0.6))
-                    .frame(width: 50, height: 50)
+                    .frame(width: 40, height: 40)
                 
                 Image(systemName: icon)
                     .foregroundColor(iconColor)
-                    .font(.system(size: 24))
+                    .font(.system(size: 20))
             }
             
             // Texte
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: 14, weight: .bold))
                     .foregroundColor(.white)
                 
                 Text(description)
-                    .font(.system(size: 14, weight: .regular))
+                    .font(.system(size: 12, weight: .regular))
                     .foregroundColor(.white.opacity(0.8))
             }
             
             Spacer()
         }
-        .padding(16)
+        .padding(12)
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: 10)
                 .fill(Color.appDarkRed1.opacity(0.6))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: 10)
                         .stroke(Color.white.opacity(0.1), lineWidth: 1)
                 )
         )
@@ -187,31 +187,31 @@ struct WhyCardDigitalView: View {
                     
                     // Contenu
                     VStack(alignment: .leading, spacing: 16) {
-                        InfoSection(
+                        CardInfoSection(
                             icon: "creditcard.fill",
                             title: "Carte digitale sécurisée",
                             description: "Votre carte est stockée de manière sécurisée dans votre téléphone. Plus besoin de transporter une carte physique."
                         )
                         
-                        InfoSection(
+                        CardInfoSection(
                             icon: "star.fill",
                             title: "Avantages exclusifs",
                             description: "Accédez à des réductions et offres spéciales réservées aux membres CLUB10."
                         )
                         
-                        InfoSection(
+                        CardInfoSection(
                             icon: "bell.fill",
                             title: "Notifications personnalisées",
                             description: "Recevez des alertes sur les nouvelles offres et promotions près de chez vous."
                         )
                         
-                        InfoSection(
+                        CardInfoSection(
                             icon: "wallet.pass.fill",
                             title: "Intégration Wallet",
                             description: "Ajoutez votre carte à Apple Wallet ou Google Pay pour un accès rapide."
                         )
                         
-                        InfoSection(
+                        CardInfoSection(
                             icon: "person.2.fill",
                             title: "Programme de parrainage",
                             description: "Gagnez 50% du premier mois de chaque personne que vous parrainez."
@@ -235,7 +235,7 @@ struct WhyCardDigitalView: View {
     }
 }
 
-struct InfoSection: View {
+struct CardInfoSection: View {
     let icon: String
     let title: String
     let description: String

@@ -67,16 +67,7 @@ struct SignUpView: View {
                             
                             // Formulaire
                             VStack(spacing: 16) {
-                                // Prénom
-                                SignUpInputField(
-                                    title: "Prénom",
-                                    text: $viewModel.firstName,
-                                    placeholder: "Votre prénom",
-                                    isFocused: focusedField == .firstName
-                                )
-                                .focused($focusedField, equals: .firstName)
-                                
-                                // Nom
+                                // Nom (en premier)
                                 SignUpInputField(
                                     title: "Nom",
                                     text: $viewModel.lastName,
@@ -85,16 +76,41 @@ struct SignUpView: View {
                                 )
                                 .focused($focusedField, equals: .lastName)
                                 
-                                // Email
+                                // Prénom (en deuxième)
                                 SignUpInputField(
-                                    title: "Email",
-                                    text: $viewModel.email,
-                                    placeholder: "votre@email.com",
-                                    keyboardType: .emailAddress,
-                                    isFocused: focusedField == .email
+                                    title: "Prénom",
+                                    text: $viewModel.firstName,
+                                    placeholder: "Votre prénom",
+                                    isFocused: focusedField == .firstName
                                 )
-                                .focused($focusedField, equals: .email)
-                                .autocapitalization(.none)
+                                .focused($focusedField, equals: .firstName)
+                                
+                                // Email
+                                VStack(alignment: .leading, spacing: 8) {
+                                    SignUpInputField(
+                                        title: "Email",
+                                        text: $viewModel.email,
+                                        placeholder: "votre@email.com",
+                                        keyboardType: .emailAddress,
+                                        isFocused: focusedField == .email,
+                                        hasError: !viewModel.email.isEmpty && !viewModel.isValidEmail
+                                    )
+                                    .focused($focusedField, equals: .email)
+                                    .autocapitalization(.none)
+                                    
+                                    // Message d'erreur pour l'email
+                                    if !viewModel.email.isEmpty && !viewModel.isValidEmail {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "exclamationmark.circle.fill")
+                                                .foregroundColor(.red)
+                                                .font(.system(size: 12))
+                                            Text("Format invalide. Utilisez le format : exemple@domaine.com")
+                                                .font(.system(size: 12, weight: .regular))
+                                                .foregroundColor(.red)
+                                        }
+                                        .padding(.horizontal, 20)
+                                    }
+                                }
                                 
                                 // Mot de passe
                                 VStack(alignment: .leading, spacing: 8) {
@@ -265,8 +281,15 @@ struct SignUpView: View {
                                                 .frame(width: 60)
                                                 .padding(.horizontal, 12)
                                                 .padding(.vertical, 12)
-                                                .background(Color.white)
+                                                .background(viewModel.birthDayError != nil ? Color.red.opacity(0.1) : Color.white)
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 10)
+                                                        .stroke(viewModel.birthDayError != nil ? Color.red : Color.clear, lineWidth: 1)
+                                                )
                                                 .cornerRadius(10)
+                                                .onChange(of: viewModel.birthDay) { _, _ in
+                                                    viewModel.validateBirthDate()
+                                                }
                                         }
                                         
                                         // Mois
@@ -283,8 +306,15 @@ struct SignUpView: View {
                                                 .frame(width: 60)
                                                 .padding(.horizontal, 12)
                                                 .padding(.vertical, 12)
-                                                .background(Color.white)
+                                                .background(viewModel.birthMonthError != nil ? Color.red.opacity(0.1) : Color.white)
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 10)
+                                                        .stroke(viewModel.birthMonthError != nil ? Color.red : Color.clear, lineWidth: 1)
+                                                )
                                                 .cornerRadius(10)
+                                                .onChange(of: viewModel.birthMonth) { _, _ in
+                                                    viewModel.validateBirthDate()
+                                                }
                                         }
                                         
                                         // Année
@@ -301,11 +331,57 @@ struct SignUpView: View {
                                                 .frame(width: 80)
                                                 .padding(.horizontal, 12)
                                                 .padding(.vertical, 12)
-                                                .background(Color.white)
+                                                .background(viewModel.birthYearError != nil ? Color.red.opacity(0.1) : Color.white)
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 10)
+                                                        .stroke(viewModel.birthYearError != nil ? Color.red : Color.clear, lineWidth: 1)
+                                                )
                                                 .cornerRadius(10)
+                                                .onChange(of: viewModel.birthYear) { _, _ in
+                                                    viewModel.validateBirthDate()
+                                                }
                                         }
                                         
                                         Spacer()
+                                    }
+                                    
+                                    // Messages d'erreur pour la date de naissance
+                                    if let dayError = viewModel.birthDayError {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "exclamationmark.circle.fill")
+                                                .foregroundColor(.red)
+                                                .font(.system(size: 12))
+                                            Text(dayError)
+                                                .font(.system(size: 12, weight: .regular))
+                                                .foregroundColor(.red)
+                                        }
+                                    } else if let monthError = viewModel.birthMonthError {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "exclamationmark.circle.fill")
+                                                .foregroundColor(.red)
+                                                .font(.system(size: 12))
+                                            Text(monthError)
+                                                .font(.system(size: 12, weight: .regular))
+                                                .foregroundColor(.red)
+                                        }
+                                    } else if let yearError = viewModel.birthYearError {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "exclamationmark.circle.fill")
+                                                .foregroundColor(.red)
+                                                .font(.system(size: 12))
+                                            Text(yearError)
+                                                .font(.system(size: 12, weight: .regular))
+                                                .foregroundColor(.red)
+                                        }
+                                    } else if let dateError = viewModel.birthDateError {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "exclamationmark.circle.fill")
+                                                .foregroundColor(.red)
+                                                .font(.system(size: 12))
+                                            Text(dateError)
+                                                .font(.system(size: 12, weight: .regular))
+                                                .foregroundColor(.red)
+                                        }
                                     }
                                 }
                                 .padding(.horizontal, 20)
@@ -473,6 +549,7 @@ struct SignUpInputField: View {
     let placeholder: String
     var keyboardType: UIKeyboardType = .default
     var isFocused: Bool = false
+    var hasError: Bool = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -485,10 +562,14 @@ struct SignUpInputField: View {
                 .foregroundColor(.black)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
-                .background(isFocused ? Color.white.opacity(0.95) : Color.white)
+                .background(isFocused ? Color.white.opacity(0.95) : (hasError ? Color.red.opacity(0.1) : Color.white))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
-                        .stroke(isFocused ? Color.appGold : Color.clear, lineWidth: 2)
+                        .stroke(
+                            hasError ? Color.red :
+                            isFocused ? Color.appGold : Color.clear,
+                            lineWidth: hasError ? 1 : 2
+                        )
                 )
                 .cornerRadius(10)
                 .keyboardType(keyboardType)

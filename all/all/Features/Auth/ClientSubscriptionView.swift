@@ -12,6 +12,7 @@ struct ClientSubscriptionView: View {
     @EnvironmentObject private var appState: AppState
     @Binding var userType: UserType
     let onComplete: () -> Void
+    @StateObject private var viewModel = ClientSubscriptionViewModel()
     @State private var showStripePayment = false
     @State private var isProcessingPayment = false
     
@@ -75,41 +76,67 @@ struct ClientSubscriptionView: View {
                             }
                             .padding(.top, 8)
                             
-                            // Carte d'abonnement
-                            VStack(alignment: .leading, spacing: 16) {
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("2,99€")
-                                            .font(.system(size: 36, weight: .bold))
-                                            .foregroundColor(.white)
-                                        
-                                        Text("par mois")
-                                            .font(.system(size: 16, weight: .regular))
-                                            .foregroundColor(.white.opacity(0.8))
+                            // Plans d'abonnement
+                            if viewModel.isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .padding()
+                            } else if viewModel.plans.isEmpty {
+                                Text("Aucun plan disponible")
+                                    .font(.system(size: 14, weight: .regular))
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .padding()
+                            } else {
+                                VStack(spacing: 12) {
+                                    ForEach(viewModel.plans) { plan in
+                                        Button(action: {
+                                            viewModel.selectedPlan = plan
+                                        }) {
+                                            VStack(alignment: .leading, spacing: 12) {
+                                                HStack {
+                                                    VStack(alignment: .leading, spacing: 4) {
+                                                        Text(plan.formattedPrice)
+                                                            .font(.system(size: 32, weight: .bold))
+                                                            .foregroundColor(.white)
+                                                        
+                                                        Text(plan.isMonthly ? "par mois" : "par an")
+                                                            .font(.system(size: 16, weight: .regular))
+                                                            .foregroundColor(.white.opacity(0.8))
+                                                    }
+                                                    
+                                                    Spacer()
+                                                    
+                                                    Image(systemName: "star.fill")
+                                                        .foregroundColor(.appGold)
+                                                        .font(.system(size: 28))
+                                                }
+                                                
+                                                Divider()
+                                                    .background(Color.white.opacity(0.2))
+                                                
+                                                Text(plan.title)
+                                                    .font(.system(size: 14, weight: .medium))
+                                                    .foregroundColor(.white.opacity(0.9))
+                                                
+                                                if let description = plan.description {
+                                                    Text(description)
+                                                        .font(.system(size: 12, weight: .regular))
+                                                        .foregroundColor(.white.opacity(0.7))
+                                                }
+                                            }
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(20)
+                                            .background(viewModel.selectedPlan?.id == plan.id ? Color.appDarkRed1.opacity(0.9) : Color.appDarkRed1.opacity(0.8))
+                                            .cornerRadius(16)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 16)
+                                                    .stroke(viewModel.selectedPlan?.id == plan.id ? Color.appGold : Color.clear, lineWidth: 2)
+                                            )
+                                        }
                                     }
-                                    
-                                    Spacer()
-                                    
-                                    Image(systemName: "star.fill")
-                                        .foregroundColor(.appGold)
-                                        .font(.system(size: 32))
                                 }
-                                
-                                Divider()
-                                    .background(Color.white.opacity(0.2))
-                                
-                                Text("Pour avoir accès à tout")
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(.white.opacity(0.9))
+                                .padding(.horizontal, 20)
                             }
-                            .padding(20)
-                            .background(Color.appDarkRed1.opacity(0.8))
-                            .cornerRadius(16)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .stroke(Color.appGold, lineWidth: 2)
-                            )
-                            .padding(.horizontal, 20)
                             
                             // Avantages CLUB10
                             VStack(alignment: .leading, spacing: 16) {
@@ -170,8 +197,13 @@ struct ClientSubscriptionView: View {
                                         ProgressView()
                                             .progressViewStyle(CircularProgressViewStyle(tint: .black))
                                     } else {
-                                        Text(showStripePayment ? "Confirmer le paiement" : "Payer 2,99€ / mois")
-                                            .font(.system(size: 18, weight: .bold))
+                                        if let selectedPlan = viewModel.selectedPlan {
+                                            Text(showStripePayment ? "Confirmer le paiement" : "Payer \(selectedPlan.priceLabel)")
+                                                .font(.system(size: 18, weight: .bold))
+                                        } else {
+                                            Text("Sélectionnez un plan")
+                                                .font(.system(size: 18, weight: .bold))
+                                        }
                                     }
                                 }
                                 .foregroundColor(.black)
@@ -180,7 +212,7 @@ struct ClientSubscriptionView: View {
                                 .background(Color.appGold)
                                 .cornerRadius(12)
                             }
-                            .disabled(isProcessingPayment)
+                            .disabled(isProcessingPayment || viewModel.selectedPlan == nil)
                             .padding(.horizontal, 20)
                             .padding(.top, 8)
                             
@@ -202,6 +234,9 @@ struct ClientSubscriptionView: View {
                 }
                 .ignoresSafeArea(edges: .bottom)
             }
+        }
+        .onAppear {
+            viewModel.loadPlans()
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)

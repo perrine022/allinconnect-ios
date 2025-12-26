@@ -29,9 +29,22 @@
 		BF76DDEC2EFAFD400045AF92 /* allUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = allUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		BF76E31B2EFC23FB0045AF92 /* Exceptions for "all" folder in "all" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = BF76DDD42EFAFD3F0045AF92 /* all */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		BF76DDD72EFAFD3F0045AF92 /* all */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				BF76E31B2EFC23FB0045AF92 /* Exceptions for "all" folder in "all" target */,
+			);
 			path = all;
 			sourceTree = "<group>";
 		};
@@ -396,11 +409,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_ENTITLEMENTS = all/all.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = FD54KA89U4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = all/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "All In Connect";
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "All In Connect a besoin de votre localisation pour vous proposer les offres et partenaires les plus proches de vous.";
@@ -433,11 +448,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_ENTITLEMENTS = all/all.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = FD54KA89U4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = all/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "All In Connect";
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "All In Connect a besoin de votre localisation pour vous proposer les offres et partenaires les plus proches de vous.";

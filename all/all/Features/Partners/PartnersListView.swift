@@ -109,7 +109,7 @@ struct PartnersListView: View {
                             
                             Text(viewModel.searchRadius == 0 ? "Désactivé" : "\(Int(viewModel.searchRadius)) km")
                                 .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(viewModel.searchRadius == 0 ? .gray.opacity(0.7) : .appGold)
+                                .foregroundColor(viewModel.searchRadius == 0 ? .gray.opacity(0.7) : .appRed)
                                 .frame(minWidth: 60, alignment: .trailing)
                         }
                         .padding(.horizontal, 12)

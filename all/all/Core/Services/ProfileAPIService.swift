@@ -25,6 +25,7 @@ struct UpdateProfileRequest: Codable {
     let establishmentDescription: String?
     let phoneNumber: String?
     let website: String?
+    let instagram: String?
     let openingHours: String?
     let profession: String?
     let category: OfferCategory?
@@ -42,6 +43,7 @@ struct UpdateProfileRequest: Codable {
         case establishmentDescription = "establishmentDescription"
         case phoneNumber = "phoneNumber"
         case website
+        case instagram
         case openingHours = "openingHours"
         case profession
         case category
@@ -69,6 +71,51 @@ struct CardResponse: Codable {
         case id
         case cardNumber = "cardNumber"
         case type
+    }
+}
+
+// MARK: - User Me Response Model (Full User)
+struct UserMeResponse: Codable {
+    let id: Int
+    let email: String
+    let firstName: String
+    let lastName: String
+    let address: String?
+    let city: String?
+    let postalCode: String?
+    let latitude: Double?
+    let longitude: Double?
+    let card: CardResponse?
+    
+    // Champs professionnel (établissement)
+    let establishmentName: String?
+    let establishmentDescription: String?
+    let phoneNumber: String?
+    let website: String?
+    let instagram: String?
+    let openingHours: String?
+    let profession: String?
+    let category: OfferCategory?
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case email
+        case firstName = "firstName"
+        case lastName = "lastName"
+        case address
+        case city
+        case postalCode = "postalCode"
+        case latitude
+        case longitude
+        case card
+        case establishmentName = "establishmentName"
+        case establishmentDescription = "establishmentDescription"
+        case phoneNumber = "phoneNumber"
+        case website
+        case instagram
+        case openingHours = "openingHours"
+        case profession
+        case category
     }
 }
 
@@ -205,20 +252,19 @@ class ProfileAPIService: ObservableObject {
         )
     }
     
-    // MARK: - Get Current User ID
-    func getCurrentUserId() async throws -> String {
-        // Essayer de récupérer depuis /users/me qui devrait retourner l'ID
-        struct UserMeResponse: Codable {
-            let id: Int
-        }
-        
-        let userMe: UserMeResponse = try await apiService.request(
+    // MARK: - Get Current User (Full)
+    func getUserMe() async throws -> UserMeResponse {
+        return try await apiService.request(
             endpoint: "/users/me",
             method: .get,
             parameters: nil,
             headers: nil
         )
-        
+    }
+    
+    // MARK: - Get Current User ID
+    func getCurrentUserId() async throws -> String {
+        let userMe = try await getUserMe()
         return String(userMe.id)
     }
 }

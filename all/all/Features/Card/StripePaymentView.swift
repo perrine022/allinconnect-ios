@@ -13,9 +13,10 @@ import Combine
 struct StripePaymentView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = StripePaymentViewModel()
-    @State private var selectedPlan: SubscriptionPlanResponse?
     @State private var showSafari = false
-    @State private var stripePaymentURL: URL?
+    
+    // Paramètre optionnel pour filtrer les plans par catégorie
+    var filterCategory: String? = nil // "PROFESSIONAL", "INDIVIDUAL", ou "FAMILY"
     
     var body: some View {
         ZStack {
@@ -60,9 +61,9 @@ struct StripePaymentView: View {
                             ForEach(viewModel.plans) { plan in
                                 PlanCard(
                                     plan: plan,
-                                    isSelected: selectedPlan?.id == plan.id,
+                                    isSelected: viewModel.selectedPlan?.id == plan.id,
                                     onSelect: {
-                                        selectedPlan = plan
+                                        viewModel.selectedPlan = plan
                                     }
                                 )
                             }
@@ -79,36 +80,22 @@ struct StripePaymentView: View {
                     }
                     
                     // Bouton Payer
-                    if let selectedPlan = selectedPlan {
+                    if let selectedPlan = viewModel.selectedPlan {
                         Button(action: {
-                            // Utiliser Payment Sheet au lieu de Payment Link
-                            viewModel.initiatePayment(plan: selectedPlan) { success, error in
-                                if success {
-                                    // Paiement réussi
-                                    NotificationCenter.default.post(name: NSNotification.Name("StripePaymentSuccess"), object: nil)
-                                    dismiss()
-                                } else if let error = error {
-                                    viewModel.errorMessage = error
-                                }
-                            }
+                            // Ouvrir le Payment Link Stripe dans Safari
+                            viewModel.openPaymentLink(plan: selectedPlan)
+                            showSafari = true
                         }) {
                             HStack {
-                                if viewModel.isProcessingPayment {
-                                    ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .black))
-                                        .scaleEffect(0.8)
-                                } else {
-                                    Text("Payer \(String(format: "%.2f€", selectedPlan.price))")
-                                        .font(.system(size: 18, weight: .bold))
-                                }
+                                Text("Payer \(selectedPlan.formattedPrice)")
+                                    .font(.system(size: 18, weight: .bold))
                             }
                             .foregroundColor(.black)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(viewModel.isProcessingPayment ? Color.gray.opacity(0.5) : Color.appGold)
+                            .background(Color.appGold)
                             .cornerRadius(12)
                         }
-                        .disabled(viewModel.isProcessingPayment)
                         .padding(.horizontal, 20)
                         .padding(.top, 8)
                     }
@@ -127,28 +114,30 @@ struct StripePaymentView: View {
             }
         }
         .onAppear {
-            viewModel.loadPlans()
+            viewModel.loadPlans(filterCategory: filterCategory)
         }
-        .sheet(isPresented: $viewModel.showPaymentSheet) {
-            if let clientSecret = viewModel.paymentClientSecret {
-                // Utiliser Payment Sheet si disponible, sinon fallback sur Safari
-                if #available(iOS 15.0, *) {
-                    // StripePaymentSheetView nécessite le SDK Stripe
-                    // Pour l'instant, on utilise Safari en fallback
-                    if let url = viewModel.paymentURL {
-                        SafariView(url: url)
-                    }
-                } else {
-                    if let url = viewModel.paymentURL {
-                        SafariView(url: url)
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("StripePaymentReturned"))) { notification in
+            // Gérer le retour depuis Stripe via Universal Link
+            if let userInfo = notification.userInfo,
+               let status = userInfo["status"] as? String {
+                if status == "success" {
+                    // Le paiement a réussi, vérifier le statut
+                    Task { @MainActor in
+                        await PaymentStatusManager.shared.checkPaymentStatus()
                     }
                 }
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("StripePaymentSuccess"))) { _ in
-            // Recharger les données après paiement réussi
-            viewModel.handlePaymentSuccess()
-            dismiss()
+        .sheet(isPresented: $showSafari) {
+            if let paymentURL = viewModel.paymentURL {
+                SafariView(
+                    url: paymentURL,
+                    onDismiss: {
+                        // Quand l'utilisateur ferme Safari manuellement, vérifier le statut
+                        viewModel.handlePaymentReturn()
+                    }
+                )
+            }
         }
     }
 }
@@ -167,7 +156,7 @@ struct PlanCard: View {
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                         
-                        Text(String(format: "%.2f€", plan.price))
+                        Text(plan.formattedPrice)
                             .font(.system(size: 32, weight: .bold))
                             .foregroundColor(.appGold)
                     }
@@ -222,12 +211,14 @@ struct PlanCard: View {
 // MARK: - Safari View Controller Wrapper
 struct SafariView: UIViewControllerRepresentable {
     let url: URL
+    var onDismiss: (() -> Void)? = nil
     
     func makeUIViewController(context: Context) -> SFSafariViewController {
         let config = SFSafariViewController.Configuration()
         config.entersReaderIfAvailable = false
         let safariVC = SFSafariViewController(url: url, configuration: config)
         safariVC.delegate = context.coordinator
+        context.coordinator.onDismiss = onDismiss
         return safariVC
     }
     
@@ -238,8 +229,11 @@ struct SafariView: UIViewControllerRepresentable {
     }
     
     class Coordinator: NSObject, SFSafariViewControllerDelegate {
+        var onDismiss: (() -> Void)?
+        
         func safariViewControllerDidFinish(_ controller: SFSafariViewController) {
             // L'utilisateur a fermé Safari
+            onDismiss?()
         }
     }
 }
@@ -248,17 +242,15 @@ struct SafariView: UIViewControllerRepresentable {
 @MainActor
 class StripePaymentViewModel: ObservableObject {
     @Published var plans: [SubscriptionPlanResponse] = []
+    @Published var selectedPlan: SubscriptionPlanResponse? = nil
     @Published var isLoading: Bool = false
-    @Published var isProcessingPayment: Bool = false
     @Published var errorMessage: String?
-    @Published var showPaymentSheet: Bool = false
-    @Published var paymentClientSecret: String? = nil
     @Published var paymentURL: URL? = nil
     
     private let subscriptionsAPIService: SubscriptionsAPIService
     
-    // URL de base pour les Payment Links Stripe (fallback si le backend n'est pas disponible)
-    private let stripePaymentLinkBaseURL = "https://buy.stripe.com/test_"
+    // Payment Link Stripe fourni
+    private let stripePaymentLinkURL = "https://buy.stripe.com/test_9B614mbv4cH93KZ0cP87K01"
     
     init(subscriptionsAPIService: SubscriptionsAPIService? = nil) {
         if let subscriptionsAPIService = subscriptionsAPIService {
@@ -268,13 +260,23 @@ class StripePaymentViewModel: ObservableObject {
         }
     }
     
-    func loadPlans() {
+    func loadPlans(filterCategory: String? = nil) {
         isLoading = true
         errorMessage = nil
         
         Task {
             do {
-                plans = try await subscriptionsAPIService.getPlans()
+                let allPlans = try await subscriptionsAPIService.getPlans()
+                // Filtrer les plans si une catégorie est spécifiée
+                if let filterCategory = filterCategory {
+                    plans = allPlans.filter { $0.category == filterCategory }
+                } else {
+                    plans = allPlans
+                }
+                // Sélectionner le premier plan par défaut
+                if self.selectedPlan == nil && !plans.isEmpty {
+                    self.selectedPlan = plans.first
+                }
                 isLoading = false
             } catch {
                 isLoading = false
@@ -284,113 +286,49 @@ class StripePaymentViewModel: ObservableObject {
         }
     }
     
-    func openStripePaymentLink(plan: SubscriptionPlanResponse, completion: @escaping (URL) -> Void) {
-        isProcessingPayment = true
+    func openPaymentLink(plan: SubscriptionPlanResponse) {
         errorMessage = nil
         
-        Task {
-            do {
-                // Récupérer l'URL du Payment Link depuis le backend
-                var paymentLinkURL = try await subscriptionsAPIService.getStripePaymentLink(planId: plan.id)
-                
-                // Récupérer l'email de l'utilisateur depuis UserDefaults
-                let userEmail = UserDefaults.standard.string(forKey: "user_email") ?? ""
-                
-                // Ajouter les paramètres URL
-                guard var components = URLComponents(string: paymentLinkURL) else {
-                    errorMessage = "URL de paiement invalide"
-                    isProcessingPayment = false
-                    return
-                }
-                
-                var queryItems = components.queryItems ?? []
-                
-                // Ajouter l'email prérempli si disponible
-                if !userEmail.isEmpty {
-                    queryItems.append(URLQueryItem(name: "prefilled_email", value: userEmail))
-                }
-                
-                // Ajouter un client_reference_id pour identifier l'utilisateur
-                if let userId = UserDefaults.standard.string(forKey: "user_id") {
-                    queryItems.append(URLQueryItem(name: "client_reference_id", value: userId))
-                } else {
-                    // Utiliser l'email comme référence si pas d'ID utilisateur
-                    if !userEmail.isEmpty {
-                        queryItems.append(URLQueryItem(name: "client_reference_id", value: userEmail))
-                    }
-                }
-                
-                components.queryItems = queryItems
-                
-                guard let finalURL = components.url else {
-                    errorMessage = "Erreur lors de la création du lien de paiement"
-                    isProcessingPayment = false
-                    return
-                }
-                
-                await MainActor.run {
-                    isProcessingPayment = false
-                    completion(finalURL)
-                }
-            } catch {
-                await MainActor.run {
-                    errorMessage = "Erreur lors de la récupération du lien de paiement"
-                    isProcessingPayment = false
-                    print("Erreur lors de la récupération du lien de paiement: \(error)")
-                    
-                    // Fallback: utiliser une URL de test si le backend n'est pas disponible
-                    let userEmail = UserDefaults.standard.string(forKey: "user_email") ?? ""
-                    var fallbackURL = "\(stripePaymentLinkBaseURL)\(plan.id)"
-                    
-                    if var components = URLComponents(string: fallbackURL) {
-                        var queryItems: [URLQueryItem] = []
-                        if !userEmail.isEmpty {
-                            queryItems.append(URLQueryItem(name: "prefilled_email", value: userEmail))
-                        }
-                        components.queryItems = queryItems
-                        if let url = components.url {
-                            completion(url)
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    func initiatePayment(plan: SubscriptionPlanResponse, completion: @escaping (Bool, String?) -> Void) {
-        isProcessingPayment = true
-        errorMessage = nil
+        // Récupérer l'email de l'utilisateur depuis UserDefaults
+        let userEmail = UserDefaults.standard.string(forKey: "user_email") ?? ""
         
-        Task {
-            do {
-                // Essayer d'abord d'utiliser Payment Sheet (nécessite le SDK Stripe)
-                // Si le SDK n'est pas disponible, fallback sur Payment Link
-                let paymentIntent = try await subscriptionsAPIService.createPaymentIntent(planId: plan.id)
-                
-                await MainActor.run {
-                    paymentClientSecret = paymentIntent.clientSecret
-                    showPaymentSheet = true
-                    isProcessingPayment = false
-                    // Le Payment Sheet gérera le callback
-                }
-            } catch {
-                // Fallback sur Payment Link si Payment Intent échoue
-                await MainActor.run {
-                    openStripePaymentLink(plan: plan) { url in
-                        self.paymentURL = url
-                        self.showPaymentSheet = true
-                        self.isProcessingPayment = false
-                    }
-                }
-            }
+        // Construire l'URL avec les paramètres optionnels
+        guard var components = URLComponents(string: stripePaymentLinkURL) else {
+            errorMessage = "URL de paiement invalide"
+            return
         }
+        
+        var queryItems: [URLQueryItem] = []
+        
+        // Ajouter l'email de l'utilisateur comme référence client
+        if !userEmail.isEmpty {
+            queryItems.append(URLQueryItem(name: "client_reference_id", value: userEmail))
+        }
+        
+        // IMPORTANT: Configurer les URLs de retour dans Stripe Dashboard
+        // Après paiement réussi: https://votredomaine.com/payment-success?session_id={CHECKOUT_SESSION_ID}
+        // Après paiement échoué: https://votredomaine.com/payment-failed
+        // Ces URLs doivent être configurées dans Stripe Dashboard → Payment Links → After payment
+        
+        components.queryItems = queryItems.isEmpty ? nil : queryItems
+        
+        guard let finalURL = components.url else {
+            errorMessage = "Erreur lors de la création du lien de paiement"
+            return
+        }
+        
+        paymentURL = finalURL
     }
     
-    func handlePaymentSuccess() {
-        // Recharger les données d'abonnement après un paiement réussi
-        // Cette fonction sera appelée quand le webhook Stripe confirmera le paiement
-        // Pour l'instant, on peut juste notifier l'utilisateur
+    func handlePaymentReturn() {
+        // Cette fonction est appelée quand l'utilisateur ferme Safari après le paiement
+        // Vérifier le statut du paiement via l'API
+        Task { @MainActor in
+            await PaymentStatusManager.shared.checkPaymentStatus()
+        }
+        
         NotificationCenter.default.post(name: NSNotification.Name("SubscriptionUpdated"), object: nil)
+        print("Retour du paiement Stripe - Vérification de l'abonnement en cours...")
     }
 }
 

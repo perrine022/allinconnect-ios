@@ -20,6 +20,71 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         return true
     }
     
+    // MARK: - Universal Links / Deep Links
+    func application(
+        _ application: UIApplication,
+        continue userActivity: NSUserActivity,
+        restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void
+    ) -> Bool {
+        // Gérer les Universal Links
+        guard userActivity.activityType == NSUserActivityTypeBrowsingWeb,
+              let url = userActivity.webpageURL else {
+            return false
+        }
+        
+        return handleUniversalLink(url: url)
+    }
+    
+    func application(
+        _ app: UIApplication,
+        open url: URL,
+        options: [UIApplication.OpenURLOptionsKey : Any] = [:]
+    ) -> Bool {
+        // Gérer les deep links (URL scheme)
+        return handleUniversalLink(url: url)
+    }
+    
+    private func handleUniversalLink(url: URL) -> Bool {
+        print("📱 Universal Link reçu: \(url.absoluteString)")
+        
+        // Vérifier si c'est un retour de paiement Stripe
+        if url.absoluteString.contains("payment-success") || url.absoluteString.contains("payment_success") {
+            // Extraire les paramètres de l'URL
+            let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+            let sessionId = components?.queryItems?.first(where: { $0.name == "session_id" })?.value
+            
+            print("✅ Paiement réussi - Session ID: \(sessionId ?? "N/A")")
+            
+            // Notifier que le paiement est terminé
+            Task { @MainActor in
+                // Attendre un peu pour que le backend traite le webhook
+                try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 secondes
+                await PaymentStatusManager.shared.checkPaymentStatus()
+            }
+            
+            // Poster une notification pour afficher le résultat
+            NotificationCenter.default.post(
+                name: NSNotification.Name("StripePaymentReturned"),
+                object: nil,
+                userInfo: ["status": "success", "session_id": sessionId ?? ""]
+            )
+            
+            return true
+        } else if url.absoluteString.contains("payment-failed") || url.absoluteString.contains("payment_failed") {
+            print("❌ Paiement échoué")
+            
+            NotificationCenter.default.post(
+                name: NSNotification.Name("StripePaymentReturned"),
+                object: nil,
+                userInfo: ["status": "failed"]
+            )
+            
+            return true
+        }
+        
+        return false
+    }
+    
     // MARK: - Remote Notifications Registration
     func application(
         _ application: UIApplication,

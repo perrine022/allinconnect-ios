@@ -16,7 +16,7 @@ struct ManageEstablishmentView: View {
     @FocusState private var focusedField: Field?
     
     enum Field: Hashable {
-        case name, description, address, city, postalCode, phone, email, website, openingHours
+        case name, description, address, city, postalCode, phone, email, website, instagram, openingHours
     }
     
     var body: some View {
@@ -46,6 +46,13 @@ struct ManageEstablishmentView: View {
                             }
                             .padding(.horizontal, 20)
                             .padding(.top, 20)
+                            
+                            // Indicateur de chargement des données
+                            if viewModel.isLoadingData {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .padding()
+                            }
                             
                             // Photo de l'établissement
                             VStack(spacing: 8) {
@@ -169,6 +176,17 @@ struct ManageEstablishmentView: View {
                                 .keyboardType(.URL)
                                 .autocapitalization(.none)
                                 
+                                // Instagram
+                                InputField(
+                                    title: "Instagram (optionnel)",
+                                    text: $viewModel.instagram,
+                                    placeholder: "https://instagram.com/votrecompte",
+                                    isFocused: focusedField == .instagram
+                                )
+                                .focused($focusedField, equals: .instagram)
+                                .keyboardType(.URL)
+                                .autocapitalization(.none)
+                                
                                 // Horaires d'ouverture
                                 InputField(
                                     title: "Horaires d'ouverture",
@@ -178,6 +196,8 @@ struct ManageEstablishmentView: View {
                                 )
                                 .focused($focusedField, equals: .openingHours)
                             }
+                            .disabled(viewModel.isLoadingData)
+                            .opacity(viewModel.isLoadingData ? 0.5 : 1.0)
                             
                             // Messages d'erreur et de succès
                             if let errorMessage = viewModel.errorMessage {
@@ -221,7 +241,7 @@ struct ManageEstablishmentView: View {
                                 .background((viewModel.isValid && !viewModel.isLoading) ? Color.appGold : Color.gray.opacity(0.5))
                                 .cornerRadius(12)
                             }
-                            .disabled(!viewModel.isValid || viewModel.isLoading)
+                            .disabled(!viewModel.isValid || viewModel.isLoading || viewModel.isLoadingData)
                             .padding(.horizontal, 20)
                             .padding(.top, 8)
                             
@@ -264,6 +284,10 @@ struct ManageEstablishmentView: View {
         .onTapGesture {
             hideKeyboard()
         }
+        .onAppear {
+            // Charger les données au démarrage
+            viewModel.loadEstablishmentData()
+        }
     }
 }
 
@@ -300,21 +324,23 @@ struct InputField: View {
 
 @MainActor
 class ManageEstablishmentViewModel: ObservableObject {
-    @Published var name: String = "Fit & Forme Studio"
-    @Published var description: String = "Salle de sport moderne avec équipements de dernière génération."
-    @Published var address: String = "28 Avenue Victor Hugo"
-    @Published var city: String = "Lyon"
-    @Published var postalCode: String = "69001"
-    @Published var phone: String = "04 78 12 34 56"
-    @Published var email: String = "contact@fitforme.fr"
-    @Published var website: String = "https://fitforme.fr"
-    @Published var openingHours: String = "Lun-Ven: 9h-19h, Sam: 9h-18h"
+    @Published var name: String = ""
+    @Published var description: String = ""
+    @Published var address: String = ""
+    @Published var city: String = ""
+    @Published var postalCode: String = ""
+    @Published var phone: String = ""
+    @Published var email: String = ""
+    @Published var website: String = ""
+    @Published var instagram: String = ""
+    @Published var openingHours: String = ""
     @Published var latitude: Double? = nil
     @Published var longitude: Double? = nil
     @Published var profession: String? = nil
     @Published var category: OfferCategory? = nil
     
     @Published var isLoading: Bool = false
+    @Published var isLoadingData: Bool = false
     @Published var errorMessage: String?
     @Published var successMessage: String?
     
@@ -338,6 +364,40 @@ class ManageEstablishmentViewModel: ObservableObject {
         if let location = self.locationService.currentLocation {
             self.latitude = location.coordinate.latitude
             self.longitude = location.coordinate.longitude
+        }
+    }
+    
+    // Charger les données depuis l'API
+    func loadEstablishmentData() {
+        isLoadingData = true
+        errorMessage = nil
+        
+        Task {
+            do {
+                let userMe = try await profileAPIService.getUserMe()
+                
+                // Remplir les champs avec les données de l'API
+                name = userMe.establishmentName ?? ""
+                description = userMe.establishmentDescription ?? ""
+                address = userMe.address ?? ""
+                city = userMe.city ?? ""
+                postalCode = userMe.postalCode ?? ""
+                phone = userMe.phoneNumber ?? ""
+                email = userMe.email
+                website = userMe.website ?? ""
+                instagram = userMe.instagram ?? ""
+                openingHours = userMe.openingHours ?? ""
+                latitude = userMe.latitude
+                longitude = userMe.longitude
+                profession = userMe.profession
+                category = userMe.category
+                
+                isLoadingData = false
+            } catch {
+                isLoadingData = false
+                errorMessage = "Erreur lors du chargement des données"
+                print("Erreur lors du chargement des données de l'établissement: \(error)")
+            }
         }
     }
     
@@ -377,6 +437,7 @@ class ManageEstablishmentViewModel: ObservableObject {
                     establishmentDescription: description.trimmingCharacters(in: .whitespaces),
                     phoneNumber: phone.trimmingCharacters(in: .whitespaces),
                     website: website.trimmingCharacters(in: .whitespaces).isEmpty ? nil : website.trimmingCharacters(in: .whitespaces),
+                    instagram: instagram.trimmingCharacters(in: .whitespaces).isEmpty ? nil : instagram.trimmingCharacters(in: .whitespaces),
                     openingHours: openingHours.trimmingCharacters(in: .whitespaces).isEmpty ? nil : openingHours.trimmingCharacters(in: .whitespaces),
                     profession: profession?.trimmingCharacters(in: .whitespaces),
                     category: category
@@ -387,6 +448,12 @@ class ManageEstablishmentViewModel: ObservableObject {
                 
                 isLoading = false
                 successMessage = "Fiche établissement mise à jour avec succès"
+                
+                // Recharger les données depuis l'API pour s'assurer qu'on a les dernières valeurs
+                loadEstablishmentData()
+                
+                // Notifier que les données ont été mises à jour
+                NotificationCenter.default.post(name: NSNotification.Name("EstablishmentUpdated"), object: nil)
                 
                 // Effacer le message de succès après 3 secondes
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3) {

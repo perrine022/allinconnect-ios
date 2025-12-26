@@ -73,7 +73,7 @@ class ProOffersViewModel: ObservableObject {
                 try await offersAPIService.deleteOffer(id: apiId)
                 
                 // Recharger depuis l'API pour avoir la liste à jour
-                await loadMyOffers()
+                loadMyOffers()
             } catch {
                 print("Erreur lors de la suppression de l'offre: \(error)")
                 errorMessage = "Erreur lors de la suppression de l'offre"

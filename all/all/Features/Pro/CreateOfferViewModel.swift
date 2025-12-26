@@ -67,8 +67,8 @@ class CreateOfferViewModel: ObservableObject {
         }
         
         // Vérifier que les dates peuvent être parsées (format valide)
-        guard let startDateParsed = parseDate(startDate),
-              let endDateParsed = parseDate(validUntil) else {
+        guard parseDate(startDate) != nil,
+              parseDate(validUntil) != nil else {
             return false
         }
         

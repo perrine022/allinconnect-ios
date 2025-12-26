@@ -12,7 +12,7 @@ struct ProSubscriptionView: View {
     @EnvironmentObject private var appState: AppState
     @Binding var userType: UserType
     let onComplete: () -> Void
-    @State private var selectedPlan: SubscriptionPlan = .monthly
+    @StateObject private var viewModel = ProSubscriptionViewModel()
     @State private var showPayment = false
     @State private var showStripePayment = false
     @State private var isProcessingPayment = false
@@ -20,32 +20,6 @@ struct ProSubscriptionView: View {
     // Récupérer le prénom depuis UserDefaults
     private var firstName: String {
         UserDefaults.standard.string(forKey: "user_first_name") ?? ""
-    }
-    
-    enum SubscriptionPlan: String, CaseIterable {
-        case monthly = "Paiement mensuel"
-        case yearly = "Paiement annuel"
-        
-        var price: String {
-            switch self {
-            case .monthly: return "9,99€"
-            case .yearly: return "99€"
-            }
-        }
-        
-        var priceLabel: String {
-            switch self {
-            case .monthly: return "\(price) / mois"
-            case .yearly: return "\(price) / an"
-            }
-        }
-        
-        var savings: String? {
-            switch self {
-            case .monthly: return nil
-            case .yearly: return "Économise 2 mois 🎉"
-            }
-        }
     }
     
     var body: some View {
@@ -105,38 +79,49 @@ struct ProSubscriptionView: View {
                             .padding(.horizontal, 20)
                             
                             // Plans d'abonnement
-                            VStack(spacing: 12) {
-                                ForEach(SubscriptionPlan.allCases, id: \.self) { plan in
-                                    Button(action: {
-                                        selectedPlan = plan
-                                    }) {
-                                        VStack(alignment: .leading, spacing: 6) {
-                                            Text(plan.rawValue)
-                                                .font(.system(size: 13, weight: .medium))
-                                                .foregroundColor(.black.opacity(0.7))
-                                            
-                                            Text(plan.priceLabel)
-                                                .font(.system(size: 22, weight: .bold))
-                                                .foregroundColor(.black)
-                                            
-                                            if let savings = plan.savings {
-                                                Text(savings)
-                                                    .font(.system(size: 12, weight: .medium))
+                            if viewModel.isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .padding()
+                            } else if viewModel.plans.isEmpty {
+                                Text("Aucun plan disponible")
+                                    .font(.system(size: 14, weight: .regular))
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .padding()
+                            } else {
+                                VStack(spacing: 12) {
+                                    ForEach(viewModel.plans) { plan in
+                                        Button(action: {
+                                            viewModel.selectedPlan = plan
+                                        }) {
+                                            VStack(alignment: .leading, spacing: 6) {
+                                                Text(plan.title)
+                                                    .font(.system(size: 13, weight: .medium))
                                                     .foregroundColor(.black.opacity(0.7))
+                                                
+                                                Text(plan.priceLabel)
+                                                    .font(.system(size: 22, weight: .bold))
+                                                    .foregroundColor(.black)
+                                                
+                                                if plan.isAnnual {
+                                                    Text("Économisez avec l'abonnement annuel 🎉")
+                                                        .font(.system(size: 12, weight: .medium))
+                                                        .foregroundColor(.black.opacity(0.7))
+                                                }
                                             }
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(16)
+                                            .background(Color.white)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 12)
+                                                    .stroke(viewModel.selectedPlan?.id == plan.id ? Color.appGold : Color.gray.opacity(0.3), lineWidth: viewModel.selectedPlan?.id == plan.id ? 2 : 1)
+                                            )
+                                            .cornerRadius(12)
                                         }
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .padding(16)
-                                        .background(Color.white)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .stroke(selectedPlan == plan ? Color.appGold : Color.gray.opacity(0.3), lineWidth: selectedPlan == plan ? 2 : 1)
-                                        )
-                                        .cornerRadius(12)
                                     }
                                 }
+                                .padding(.horizontal, 20)
                             }
-                            .padding(.horizontal, 20)
                             
                             // Section "Ce que tu obtiens"
                             VStack(alignment: .leading, spacing: 12) {
@@ -201,10 +186,12 @@ struct ProSubscriptionView: View {
                                         // Sauvegarder l'abonnement actif
                                         UserDefaults.standard.set(true, forKey: "has_active_subscription")
                                         UserDefaults.standard.set("PRO", forKey: "subscription_type")
-                                        let nextPaymentDate = Calendar.current.date(byAdding: selectedPlan == .yearly ? .year : .month, value: selectedPlan == .yearly ? 1 : 1, to: Date()) ?? Date()
-                                        let formatter = DateFormatter()
-                                        formatter.dateFormat = "dd/MM/yyyy"
-                                        UserDefaults.standard.set(formatter.string(from: nextPaymentDate), forKey: "subscription_next_payment_date")
+                                        if let selectedPlan = viewModel.selectedPlan {
+                                            let nextPaymentDate = Calendar.current.date(byAdding: selectedPlan.isAnnual ? .year : .month, value: 1, to: Date()) ?? Date()
+                                            let formatter = DateFormatter()
+                                            formatter.dateFormat = "dd/MM/yyyy"
+                                            UserDefaults.standard.set(formatter.string(from: nextPaymentDate), forKey: "subscription_next_payment_date")
+                                        }
                                         
                                         // Rediriger vers le profil
                                         onComplete()
@@ -219,8 +206,13 @@ struct ProSubscriptionView: View {
                                         ProgressView()
                                             .progressViewStyle(CircularProgressViewStyle(tint: .black))
                                     } else {
-                                        Text(showStripePayment ? "Confirmer le paiement" : (selectedPlan == .yearly ? "S'abonner - \(selectedPlan.price)/an" : "S'abonner - \(selectedPlan.price)/mois"))
-                                            .font(.system(size: 16, weight: .bold))
+                                        if let selectedPlan = viewModel.selectedPlan {
+                                            Text(showStripePayment ? "Confirmer le paiement" : "S'abonner - \(selectedPlan.priceLabel)")
+                                                .font(.system(size: 16, weight: .bold))
+                                        } else {
+                                            Text("Sélectionnez un plan")
+                                                .font(.system(size: 16, weight: .bold))
+                                        }
                                     }
                                 }
                                 .foregroundColor(.black)
@@ -229,7 +221,7 @@ struct ProSubscriptionView: View {
                                 .background(Color.appGold)
                                 .cornerRadius(12)
                             }
-                            .disabled(isProcessingPayment)
+                            .disabled(isProcessingPayment || viewModel.selectedPlan == nil)
                             .padding(.horizontal, 20)
                             .padding(.top, 4)
                             
@@ -251,6 +243,9 @@ struct ProSubscriptionView: View {
                 }
                 .ignoresSafeArea(edges: .bottom)
             }
+        }
+        .onAppear {
+            viewModel.loadPlans()
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)

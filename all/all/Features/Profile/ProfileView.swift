@@ -28,6 +28,10 @@ struct ProfileView: View {
                 .onAppear {
                     // Recharger les données d'abonnement quand on arrive sur la vue
                     viewModel.loadSubscriptionData()
+                    // Recharger les offres si on est en espace pro
+                    if viewModel.currentSpace == .pro {
+                        viewModel.loadMyOffers()
+                    }
                 }
                 .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserDidLogout"))) { _ in
                     // Réinitialiser l'état lors de la déconnexion
@@ -213,8 +217,8 @@ struct ProfileView: View {
                         .padding(.bottom, 8)
                     }
                     
-                    // Bloc Abonnement PRO (dans l'espace PRO et abonnement actif - toujours affiché pour les tests)
-                    if viewModel.currentSpace == .pro && viewModel.hasActiveProSubscription {
+                    // Bloc Abonnement PRO (dans l'espace PRO - toujours affiché)
+                    if viewModel.currentSpace == .pro {
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
                                 Image(systemName: "creditcard.fill")
@@ -268,8 +272,10 @@ struct ProfileView: View {
                         )
                         .padding(.horizontal, 20)
                         .padding(.bottom, 8)
-                        
-                        // Bloc "Mes offres" (uniquement si PRO et dans l'espace PRO)
+                    }
+                    
+                    // Bloc "Mes offres" (dans l'espace PRO - toujours affiché)
+                    if viewModel.currentSpace == .pro {
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
                                 Image(systemName: "tag.fill")

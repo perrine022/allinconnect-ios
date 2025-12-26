@@ -45,6 +45,7 @@ class ProfileViewModel: ObservableObject {
     private let partnersAPIService: PartnersAPIService
     private let profileAPIService: ProfileAPIService
     private let subscriptionsAPIService: SubscriptionsAPIService
+    private let offersAPIService: OffersAPIService
     private let dataService: MockDataService
     
     init(
@@ -52,6 +53,7 @@ class ProfileViewModel: ObservableObject {
         partnersAPIService: PartnersAPIService? = nil,
         profileAPIService: ProfileAPIService? = nil,
         subscriptionsAPIService: SubscriptionsAPIService? = nil,
+        offersAPIService: OffersAPIService? = nil,
         dataService: MockDataService = MockDataService.shared
     ) {
         // Créer les services dans un contexte MainActor
@@ -77,6 +79,12 @@ class ProfileViewModel: ObservableObject {
             self.subscriptionsAPIService = subscriptionsAPIService
         } else {
             self.subscriptionsAPIService = SubscriptionsAPIService()
+        }
+        
+        if let offersAPIService = offersAPIService {
+            self.offersAPIService = offersAPIService
+        } else {
+            self.offersAPIService = OffersAPIService()
         }
         
         self.dataService = dataService
@@ -187,9 +195,20 @@ class ProfileViewModel: ObservableObject {
     }
     
     func loadMyOffers() {
-        // Pour l'instant, on récupère toutes les offres
-        // Plus tard, on filtrera par l'ID du partenaire connecté
-        myOffers = dataService.getAllOffers()
+        Task { @MainActor in
+            do {
+                // Appeler l'API pour récupérer les offres du professionnel connecté
+                let offersResponse = try await offersAPIService.getMyOffers()
+                
+                // Convertir les réponses en modèles Offer
+                myOffers = offersResponse.map { $0.toOffer() }
+            } catch {
+                print("Erreur lors du chargement de mes offres: \(error)")
+                
+                // En cas d'erreur, utiliser les données mockées en fallback
+                myOffers = dataService.getAllOffers()
+            }
+        }
     }
     
     func switchToClientSpace() {
@@ -200,6 +219,8 @@ class ProfileViewModel: ObservableObject {
     
     func switchToProSpace() {
         currentSpace = .pro
+        // Recharger les offres quand on passe en espace pro
+        loadMyOffers()
     }
     
     func loadSubscriptionData() {

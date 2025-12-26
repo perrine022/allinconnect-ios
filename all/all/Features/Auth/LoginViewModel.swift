@@ -80,7 +80,7 @@ class LoginViewModel: ObservableObject {
                 if let apiError = error as? APIError {
                     switch apiError {
                     case .httpError(let statusCode, let message):
-                        if statusCode == 401 {
+                        if statusCode == 401 || statusCode == 403 {
                             errorMessage = "Les informations de connexion sont incorrectes"
                         } else if statusCode == 404 {
                             errorMessage = "Compte non trouvé"
