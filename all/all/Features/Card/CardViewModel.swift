@@ -172,6 +172,7 @@ class CardViewModel: ObservableObject {
                 // Mettre à jour les compteurs
                 referrals = userLight.referralCount ?? 0
                 favoritesCount = userLight.favoriteCount ?? 0
+                wallet = userLight.walletBalance ?? 0.0
                 
                 // Générer le code de parrainage
                 let firstNameForCode = userLight.firstName.isEmpty ? (userMe.firstName.isEmpty ? "User" : userMe.firstName) : userLight.firstName

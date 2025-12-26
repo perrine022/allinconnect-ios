@@ -173,6 +173,7 @@ struct UserLightResponse: Codable {
     let renewalDate: String?
     let subscriptionAmount: Double?
     let payments: [PaymentResponse]?
+    let walletBalance: Double?
     
     enum CodingKeys: String, CodingKey {
         case firstName = "firstName"
@@ -186,6 +187,7 @@ struct UserLightResponse: Codable {
         case renewalDate = "renewalDate"
         case subscriptionAmount = "subscriptionAmount"
         case payments
+        case walletBalance = "walletBalance"
     }
     
     // Initializer personnalisé pour gérer les valeurs optionnelles avec valeurs par défaut
@@ -203,6 +205,7 @@ struct UserLightResponse: Codable {
         renewalDate = try container.decodeIfPresent(String.self, forKey: .renewalDate)
         subscriptionAmount = try container.decodeIfPresent(Double.self, forKey: .subscriptionAmount)
         payments = try container.decodeIfPresent([PaymentResponse].self, forKey: .payments)
+        walletBalance = try container.decodeIfPresent(Double.self, forKey: .walletBalance) ?? 0.0
     }
 }
 

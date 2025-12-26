@@ -15,6 +15,7 @@ struct CardView: View {
     @State private var showFamilyManagement: Bool = false
     @State private var showPaymentResult: Bool = false
     @State private var paymentResultStatus: PaymentResultView.PaymentResultStatus? = nil
+    @State private var showWalletView: Bool = false
     
     var body: some View {
         ZStack {
@@ -292,12 +293,17 @@ struct CardView: View {
                             }
                             
                             HStack(spacing: 10) {
-                                StatCard(
-                                    icon: "wallet.pass.fill",
-                                    value: "\(Int(viewModel.wallet))€",
-                                    label: "Cagnotte",
-                                    iconColor: .appGold
-                                )
+                                Button(action: {
+                                    showWalletView = true
+                                }) {
+                                    StatCard(
+                                        icon: "wallet.pass.fill",
+                                        value: "\(Int(viewModel.wallet))€",
+                                        label: "Cagnotte",
+                                        iconColor: .appGold
+                                    )
+                                }
+                                .buttonStyle(PlainButtonStyle())
                                 
                                 StatCard(
                                     icon: "heart.fill",
@@ -377,6 +383,9 @@ struct CardView: View {
         }
         .navigationDestination(isPresented: $showFamilyManagement) {
             FamilyCardManagementView()
+        }
+        .navigationDestination(isPresented: $showWalletView) {
+            WalletView()
         }
         .overlay {
             if showAddSavingsPopup {
