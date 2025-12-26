@@ -450,15 +450,26 @@ extension OfferResponse {
             return UUID(uuidString: String(format: "%08x-0000-0000-0000-%012x", profId, profId))
         }
         
-        // Déterminer l'image par défaut selon la catégorie du professionnel
-        // Si imageUrl est fourni et non vide, on pourrait l'utiliser, sinon utiliser l'image par défaut
+        // Déterminer l'image par défaut selon l'activité/catégorie du professionnel
+        // Si aucune imageUrl n'est fournie, utiliser l'image par défaut basée sur la catégorie/profession
         let defaultImage: String
         if let imageUrl = imageUrl, !imageUrl.isEmpty {
             // Si une URL d'image est fournie, on utilise quand même une image par défaut pour l'instant
             // (car on utilise des SF Symbols, pas des URLs d'images)
+            // Mais on devrait idéalement charger l'image depuis l'URL
             defaultImage = DefaultImageHelper.defaultImageForOfferCategory(professional?.category)
         } else {
-            defaultImage = DefaultImageHelper.defaultImageForOfferCategory(professional?.category)
+            // Pas d'image fournie, utiliser l'image par défaut selon l'activité du professionnel
+            // D'abord essayer la catégorie (OfferCategory)
+            if let category = professional?.category {
+                defaultImage = DefaultImageHelper.defaultImageForOfferCategory(category)
+            } else if let profession = professional?.profession, !profession.isEmpty {
+                // Si pas de catégorie, utiliser la profession (String)
+                defaultImage = DefaultImageHelper.defaultImageForPartnerCategory(profession)
+            } else {
+                // Par défaut si aucune info n'est disponible
+                defaultImage = "tag.fill"
+            }
         }
         
         return Offer(
