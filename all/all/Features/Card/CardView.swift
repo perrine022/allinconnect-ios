@@ -73,6 +73,10 @@ struct CardView: View {
                             .padding(.top, 8)
                         }
                         .padding(.vertical, 50)
+                    } else if viewModel.cardNumber == nil || !viewModel.isCardActive {
+                        // Vue d'abonnement si pas de carte ou carte inactive
+                        CardSubscriptionView()
+                            .padding(.top, 20)
                     } else {
                         // Carte utilisateur principale
                         VStack(alignment: .leading, spacing: 14) {

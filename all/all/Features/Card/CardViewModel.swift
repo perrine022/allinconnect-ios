@@ -34,6 +34,7 @@ class CardViewModel: ObservableObject {
     private let favoritesAPIService: FavoritesAPIService
     private let savingsAPIService: SavingsAPIService
     private let dataService: MockDataService // Gardé pour les favoris en fallback
+    private var cancellables = Set<AnyCancellable>()
     
     init(
         profileAPIService: ProfileAPIService? = nil,
@@ -85,6 +86,15 @@ class CardViewModel: ObservableObject {
         // Charger les données
         loadData()
         loadSavings()
+        
+        // Écouter les mises à jour d'abonnement
+        NotificationCenter.default.publisher(for: NSNotification.Name("SubscriptionUpdated"))
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    self?.loadData()
+                }
+            }
+            .store(in: &cancellables)
     }
     
     func loadData() {
