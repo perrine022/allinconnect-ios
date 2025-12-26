@@ -306,7 +306,7 @@ struct ProfileView: View {
                                     
                                     Spacer()
                                     
-                                    Text(cardType == "FAMILY" ? "Famille" : "Individuelle")
+                                    Text(viewModel.formattedCardType)
                                         .font(.system(size: 14, weight: .semibold))
                                         .foregroundColor(.appGold)
                                 }
@@ -366,7 +366,7 @@ struct ProfileView: View {
                             }
                             
                             // Bouton pour gérer les emails de la carte famille
-                            if viewModel.cardType == "FAMILY" && viewModel.isCardOwner {
+                            if (viewModel.cardType == "FAMILY" || viewModel.cardType == "CLIENT_FAMILY") && viewModel.isCardOwner {
                                 Button(action: {
                                     familyCardEmailsNavigationId = UUID()
                                 }) {
@@ -381,6 +381,105 @@ struct ProfileView: View {
                                     .background(Color.appGold)
                                     .cornerRadius(10)
                                 }
+                            }
+                        }
+                        .padding(16)
+                        .background(Color.appDarkRed1.opacity(0.8))
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                        )
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 8)
+                    }
+                    
+                    // Bloc "Mes favoris" (espace client uniquement)
+                    if viewModel.currentSpace == .client {
+                        VStack(alignment: .leading, spacing: 16) {
+                            HStack {
+                                Image(systemName: "heart.fill")
+                                    .foregroundColor(.appGold)
+                                    .font(.system(size: 18))
+                                
+                                Text("Mes favoris")
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundColor(.white)
+                                
+                                Spacer()
+                                
+                                if viewModel.isLoadingFavorites {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .appGold))
+                                        .scaleEffect(0.8)
+                                }
+                            }
+                            
+                            // Liste des favoris
+                            if viewModel.favoritePartners.isEmpty {
+                                Text("Aucun favori pour le moment")
+                                    .font(.system(size: 14, weight: .regular))
+                                    .foregroundColor(.white.opacity(0.7))
+                            } else {
+                                VStack(spacing: 12) {
+                                    ForEach(Array(viewModel.favoritePartners.prefix(5))) { partner in
+                                        Button(action: {
+                                            selectedPartner = partner
+                                        }) {
+                                            HStack(spacing: 12) {
+                                                // Icône ou image
+                                                ZStack {
+                                                    RoundedRectangle(cornerRadius: 8)
+                                                        .fill(Color.appGold.opacity(0.2))
+                                                        .frame(width: 50, height: 50)
+                                                    
+                                                    Image(systemName: partner.imageName)
+                                                        .foregroundColor(.appGold)
+                                                        .font(.system(size: 20))
+                                                }
+                                                
+                                                // Informations
+                                                VStack(alignment: .leading, spacing: 4) {
+                                                    Text(partner.name)
+                                                        .font(.system(size: 15, weight: .semibold))
+                                                        .foregroundColor(.white)
+                                                        .lineLimit(1)
+                                                    
+                                                    Text(partner.category)
+                                                        .font(.system(size: 13, weight: .regular))
+                                                        .foregroundColor(.gray)
+                                                        .lineLimit(1)
+                                                }
+                                                
+                                                Spacer()
+                                                
+                                                // Bouton pour retirer des favoris
+                                                Button(action: {
+                                                    viewModel.togglePartnerFavorite(for: partner)
+                                                }) {
+                                                    Image(systemName: "heart.fill")
+                                                        .foregroundColor(.appRed)
+                                                        .font(.system(size: 18))
+                                                }
+                                                .buttonStyle(PlainButtonStyle())
+                                            }
+                                            .padding(.vertical, 8)
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
+                                        
+                                        if partner.id != viewModel.favoritePartners.prefix(5).last?.id {
+                                            Divider()
+                                                .background(Color.white.opacity(0.1))
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // Message d'erreur
+                            if let error = viewModel.favoritesError {
+                                Text(error)
+                                    .font(.system(size: 13, weight: .regular))
+                                    .foregroundColor(.red.opacity(0.9))
                             }
                         }
                         .padding(16)

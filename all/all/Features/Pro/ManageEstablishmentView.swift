@@ -383,7 +383,7 @@ class ManageEstablishmentViewModel: ObservableObject {
                 city = userMe.city ?? ""
                 postalCode = userMe.postalCode ?? ""
                 phone = userMe.phoneNumber ?? ""
-                email = userMe.email
+                email = userMe.email ?? ""
                 website = userMe.website ?? ""
                 instagram = userMe.instagram ?? ""
                 openingHours = userMe.openingHours ?? ""

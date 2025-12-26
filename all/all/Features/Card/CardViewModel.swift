@@ -124,12 +124,25 @@ class CardViewModel: ObservableObject {
                 
                 // Mettre à jour les données de la carte (utiliser userMe pour le type)
                 isMember = userLight.isMember ?? false
-                isCardActive = userLight.isCardActive ?? false
+                
+                // Déterminer si la carte est active : priorité à userMe.isCardActive, sinon vérifier si card existe
+                if let cardActive = userMe.isCardActive {
+                    isCardActive = cardActive
+                } else if let card = userMe.card, !card.cardNumber.isEmpty {
+                    // Si card existe avec cardNumber, la carte est active
+                    isCardActive = true
+                } else {
+                    // Sinon, utiliser isCardActive de userLight
+                    isCardActive = userLight.isCardActive ?? false
+                }
+                
+                // Récupérer cardNumber et cardType depuis userMe en priorité
                 cardNumber = userMe.card?.cardNumber ?? userLight.card?.cardNumber
                 cardType = userMe.card?.type ?? userLight.card?.type
                 
                 // Log pour debug
                 print("[CardViewModel] Carte chargée - cardNumber: \(cardNumber ?? "nil"), isCardActive: \(isCardActive), cardType: \(cardType ?? "nil")")
+                print("[CardViewModel] userMe.card: \(userMe.card != nil ? "exists" : "nil"), userMe.isCardActive: \(userMe.isCardActive?.description ?? "nil")")
                 
                 // Récupérer la date de validité (renewalDate)
                 if let renewalDateString = userLight.renewalDate {

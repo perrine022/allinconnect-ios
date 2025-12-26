@@ -63,7 +63,9 @@ class OfferDetailViewModel: ObservableObject {
                 if let professional = offerResponse.professional {
                     // Vérifier que les champs requis sont présents
                     guard let professionalId = professional.id,
-                          let professionalEmail = professional.email else {
+                          let professionalEmail = professional.email,
+                          let firstName = professional.firstName,
+                          let lastName = professional.lastName else {
                         // Si les champs requis ne sont pas disponibles, on ne peut pas créer le Partner
                         print("Warning: Professional data incomplete, cannot create Partner")
                         isLoading = false
@@ -74,8 +76,8 @@ class OfferDetailViewModel: ObservableObject {
                     let partnerProfessional = PartnerProfessionalResponse(
                         id: professionalId,
                         email: professionalEmail,
-                        firstName: professional.firstName,
-                        lastName: professional.lastName,
+                        firstName: firstName,
+                        lastName: lastName,
                         address: nil,
                         city: professional.city,
                         latitude: nil,

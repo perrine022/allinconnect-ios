@@ -73,7 +73,7 @@ struct CardMember: Codable {
 
 // MARK: - Card Response Model
 struct CardResponse: Codable {
-    let id: Int
+    let id: Int?
     let cardNumber: String
     let type: String
     let members: [CardMember]?
@@ -90,8 +90,8 @@ struct CardResponse: Codable {
 
 // MARK: - User Me Response Model (Full User)
 struct UserMeResponse: Codable {
-    let id: Int
-    let email: String
+    let id: Int?
+    let email: String?
     let firstName: String
     let lastName: String
     let address: String?
@@ -100,6 +100,7 @@ struct UserMeResponse: Codable {
     let latitude: Double?
     let longitude: Double?
     let card: CardResponse?
+    let isCardActive: Bool?
     
     // Champs professionnel (établissement)
     let establishmentName: String?
@@ -122,6 +123,7 @@ struct UserMeResponse: Codable {
         case latitude
         case longitude
         case card
+        case isCardActive = "cardActive" // Backend retourne "cardActive" au lieu de "isCardActive"
         case establishmentName = "establishmentName"
         case establishmentDescription = "establishmentDescription"
         case phoneNumber = "phoneNumber"
@@ -336,7 +338,10 @@ class ProfileAPIService: ObservableObject {
     // MARK: - Get Current User ID
     func getCurrentUserId() async throws -> String {
         let userMe = try await getUserMe()
-        return String(userMe.id)
+        guard let id = userMe.id else {
+            throw APIError.invalidResponse
+        }
+        return String(id)
     }
 }
 

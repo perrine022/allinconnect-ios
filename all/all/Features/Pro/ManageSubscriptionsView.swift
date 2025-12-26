@@ -89,36 +89,6 @@ struct ManageSubscriptionsView: View {
                                                 .font(.system(size: 14, weight: .semibold))
                                                 .foregroundColor(.white)
                                         }
-                                        
-                                        Divider()
-                                            .background(Color.white.opacity(0.1))
-                                        
-                                        HStack {
-                                            Text("Prochain prélèvement")
-                                                .font(.system(size: 14, weight: .regular))
-                                                .foregroundColor(.white.opacity(0.8))
-                                            
-                                            Spacer()
-                                            
-                                            Text(viewModel.nextPaymentDate.isEmpty ? "N/A" : viewModel.nextPaymentDate)
-                                                .font(.system(size: 14, weight: .semibold))
-                                                .foregroundColor(.appGold)
-                                        }
-                                        
-                                        Divider()
-                                            .background(Color.white.opacity(0.1))
-                                        
-                                        HStack {
-                                            Text("Engagement jusqu'au")
-                                                .font(.system(size: 14, weight: .regular))
-                                                .foregroundColor(.white.opacity(0.8))
-                                            
-                                            Spacer()
-                                            
-                                            Text(viewModel.commitmentUntil.isEmpty ? "N/A" : viewModel.commitmentUntil)
-                                                .font(.system(size: 14, weight: .semibold))
-                                                .foregroundColor(.white)
-                                        }
                                     }
                                 }
                                 .padding(16)

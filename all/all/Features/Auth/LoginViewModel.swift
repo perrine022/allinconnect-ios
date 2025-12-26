@@ -121,16 +121,31 @@ class LoginViewModel: ObservableObject {
     }
     
     static func logout() {
-        // Supprimer le token
+        // Supprimer le token d'authentification
         AuthTokenManager.shared.removeToken()
         
-        // Nettoyer toutes les données de session
+        // Nettoyer toutes les données de session utilisateur
         UserDefaults.standard.set(false, forKey: "is_logged_in")
+        
+        // Données de profil utilisateur
         UserDefaults.standard.removeObject(forKey: "user_email")
         UserDefaults.standard.removeObject(forKey: "user_type")
         UserDefaults.standard.removeObject(forKey: "user_first_name")
         UserDefaults.standard.removeObject(forKey: "user_last_name")
         UserDefaults.standard.removeObject(forKey: "user_postal_code")
+        UserDefaults.standard.removeObject(forKey: "user_birth_date")
+        UserDefaults.standard.removeObject(forKey: "user_id")
+        
+        // Données d'abonnement
+        UserDefaults.standard.removeObject(forKey: "has_active_subscription")
+        UserDefaults.standard.removeObject(forKey: "subscription_type")
+        UserDefaults.standard.removeObject(forKey: "subscription_next_payment_date")
+        
+        // Données économies (savings)
+        UserDefaults.standard.removeObject(forKey: "savings_entries")
+        
+        // Synchroniser immédiatement pour s'assurer que les données sont supprimées
+        UserDefaults.standard.synchronize()
         
         // Notifier la déconnexion
         NotificationCenter.default.post(name: NSNotification.Name("UserDidLogout"), object: nil)

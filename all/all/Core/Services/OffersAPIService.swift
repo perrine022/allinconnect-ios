@@ -38,8 +38,8 @@ enum OfferCategory: String, Codable, CaseIterable {
 // MARK: - Professional Response Model
 struct ProfessionalResponse: Codable {
     let id: Int?
-    let firstName: String
-    let lastName: String
+    let firstName: String?
+    let lastName: String?
     let email: String?
     let city: String?
     let profession: String?
@@ -372,7 +372,12 @@ extension OfferResponse {
         
         // Déterminer le nom de l'entreprise depuis le professionnel
         let businessName = professional?.firstName ?? "Entreprise"
-        let fullBusinessName = professional.map { "\($0.firstName) \($0.lastName)" } ?? businessName
+        let fullBusinessName: String
+        if let prof = professional, let firstName = prof.firstName, let lastName = prof.lastName {
+            fullBusinessName = "\(firstName) \(lastName)"
+        } else {
+            fullBusinessName = businessName
+        }
         
         // Convertir endDate en format français pour validUntil (DD/MM/YYYY)
         let validUntil: String

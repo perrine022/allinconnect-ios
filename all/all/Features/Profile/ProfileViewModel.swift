@@ -29,9 +29,24 @@ class ProfileViewModel: ObservableObject {
     @Published var club10Amount: String = ""
     @Published var hasActiveClub10Subscription: Bool = false
     @Published var subscriptionPlan: SubscriptionPlanResponse?
-    @Published var cardType: String? // "INDIVIDUAL" ou "FAMILY"
+    @Published var cardType: String? // "PROFESSIONAL", "CLIENT_INDIVIDUAL", "CLIENT_FAMILY", "INDIVIDUAL" (ancien), "FAMILY" (ancien)
     @Published var isCardOwner: Bool = false
     @Published var familyCardEmails: [String] = []
+    
+    // Helper pour formater le type de carte pour l'affichage
+    var formattedCardType: String {
+        guard let cardType = cardType else { return "N/A" }
+        switch cardType {
+        case "PROFESSIONAL":
+            return "Professionnelle"
+        case "CLIENT_INDIVIDUAL", "INDIVIDUAL":
+            return "Individuelle"
+        case "CLIENT_FAMILY", "FAMILY":
+            return "Famille"
+        default:
+            return cardType
+        }
+    }
     
     // Abonnement PRO
     @Published var hasActiveProSubscription: Bool = false
@@ -156,7 +171,22 @@ class ProfileViewModel: ObservableObject {
                 isLoadingFavorites = false
             } catch {
                 isLoadingFavorites = false
-                favoritesError = error.localizedDescription
+                // Afficher un message d'erreur user-friendly
+                if let apiError = error as? APIError {
+                    switch apiError {
+                    case .networkError:
+                        favoritesError = "Problème de connexion. Vérifiez votre connexion internet."
+                    case .unauthorized:
+                        favoritesError = "Vous devez être connecté pour voir vos favoris"
+                    case .decodingError:
+                        // Erreur de décodage - probablement un problème côté backend
+                        favoritesError = "Impossible de charger les favoris. Veuillez réessayer plus tard."
+                    default:
+                        favoritesError = "Erreur lors du chargement des favoris"
+                    }
+                } else {
+                    favoritesError = "Erreur lors du chargement des favoris"
+                }
                 print("Erreur lors du chargement des favoris: \(error)")
                 
                 // En cas d'erreur, utiliser les données mockées en fallback
@@ -233,6 +263,19 @@ class ProfileViewModel: ObservableObject {
                 // Charger les données light depuis l'API
                 let userLight = try await profileAPIService.getUserLight()
                 
+                // Mettre à jour le prénom et nom depuis le backend
+                user = User(
+                    firstName: userLight.firstName,
+                    lastName: userLight.lastName,
+                    username: user.username,
+                    bio: user.bio,
+                    profileImageName: user.profileImageName,
+                    publications: user.publications,
+                    subscribers: user.subscribers,
+                    subscriptions: user.subscriptions,
+                    userType: user.userType
+                )
+                
                 // Mettre à jour les informations de la carte
                 cardType = userLight.card?.type
                 hasActiveClub10Subscription = userLight.isCardActive ?? false
@@ -249,11 +292,19 @@ class ProfileViewModel: ObservableObject {
                         club10NextPaymentDate = displayFormatter.string(from: date)
                     } else {
                         // Essayer un autre format
-                        dateFormatter.dateFormat = "yyyy-MM-dd"
+                        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
                         if let date = dateFormatter.date(from: renewalDate) {
                             let displayFormatter = DateFormatter()
                             displayFormatter.dateFormat = "dd/MM/yyyy"
                             club10NextPaymentDate = displayFormatter.string(from: date)
+                        } else {
+                            // Essayer format simple
+                            dateFormatter.dateFormat = "yyyy-MM-dd"
+                            if let date = dateFormatter.date(from: renewalDate) {
+                                let displayFormatter = DateFormatter()
+                                displayFormatter.dateFormat = "dd/MM/yyyy"
+                                club10NextPaymentDate = displayFormatter.string(from: date)
+                            }
                         }
                     }
                 }
@@ -262,8 +313,8 @@ class ProfileViewModel: ObservableObject {
                     club10Amount = String(format: "%.2f€", subscriptionAmount)
                 }
                 
-                // Si c'est une carte FAMILY, charger les emails
-                if cardType == "FAMILY" {
+                // Si c'est une carte FAMILY ou CLIENT_FAMILY, charger les emails
+                if cardType == "FAMILY" || cardType == "CLIENT_FAMILY" {
                     await loadFamilyCardEmails()
                 }
             } catch {
@@ -319,10 +370,17 @@ class ProfileViewModel: ObservableObject {
         currentSpace = .client
         hasActiveClub10Subscription = false
         hasActiveProSubscription = false
+        nextPaymentDate = ""
+        commitmentUntil = ""
+        club10NextPaymentDate = ""
+        club10CommitmentUntil = ""
+        club10Amount = ""
+        cardType = nil
+        isCardOwner = false
+        familyCardEmails = []
+        subscriptionPlan = nil
         
         // Réinitialiser l'utilisateur avec des valeurs par défaut
-        let userType = UserDefaults.standard.string(forKey: "user_type") == "PRO" ? UserType.pro : UserType.client
-        
         self.user = User(
             firstName: "",
             lastName: "",
@@ -332,7 +390,7 @@ class ProfileViewModel: ObservableObject {
             publications: 0,
             subscribers: 0,
             subscriptions: 0,
-            userType: userType
+            userType: .client // Par défaut, on remet en client
         )
     }
 }

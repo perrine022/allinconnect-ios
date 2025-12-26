@@ -191,13 +191,24 @@ class APIService: APIServiceProtocol, ObservableObject {
                 throw APIError.httpError(statusCode: httpResponse.statusCode, message: errorMessage)
             }
             
-            if httpResponse.statusCode == 204 && data.isEmpty {
-                if let emptyJSON = "{}".data(using: .utf8),
-                   let decoded = try? decoder.decode(T.self, from: emptyJSON) {
-                    return decoded
+            // Gérer les réponses vides (204 No Content ou 200 OK avec corps vide)
+            if httpResponse.statusCode == 204 || data.isEmpty {
+                // Pour les réponses vides, essayer de décoder un JSON vide {}
+                if let emptyJSON = "{}".data(using: .utf8) {
+                    do {
+                        let decoded = try decoder.decode(T.self, from: emptyJSON)
+                        return decoded
+                    } catch {
+                        // Si le décodage échoue même avec {}, c'est peut-être normal
+                        // On laisse l'erreur remonter pour que l'appelant puisse la gérer
+                        throw APIError.decodingError(error)
+                    }
                 }
+                // Si on ne peut pas créer de JSON vide, retourner une erreur
+                throw APIError.invalidResponse
             }
             
+            // Si les données ne sont pas vides, décoder normalement
             do {
                 let decoded = try decoder.decode(T.self, from: data)
                 return decoded
