@@ -140,8 +140,15 @@ struct SettingsView: View {
                 }
                 
                 // Footer Bar - toujours visible
-                VStack {
+                VStack(spacing: 8) {
                     Spacer()
+                    
+                    // Texte "développé par Codyxo.com 2025"
+                    Text("développé par Codyxo.com 2025")
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(.white.opacity(0.6))
+                        .padding(.bottom, 4)
+                    
                     FooterBar(selectedTab: $appState.selectedTab) { tab in
                         appState.navigateToTab(tab, dismiss: {
                             dismiss()

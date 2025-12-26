@@ -26,6 +26,7 @@ struct PartnerProfessionalResponse: Codable, Identifiable {
     let hasConnectedBefore: Bool?
     let referralCode: String?
     let subscriptionPlan: SubscriptionPlanResponse?
+    let establishmentName: String? // Ajouté pour les favoris
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -44,6 +45,7 @@ struct PartnerProfessionalResponse: Codable, Identifiable {
         case hasConnectedBefore = "hasConnectedBefore"
         case referralCode = "referralCode"
         case subscriptionPlan = "subscriptionPlan"
+        case establishmentName = "establishmentName"
     }
 }
 
@@ -146,8 +148,13 @@ extension PartnerProfessionalResponse {
         // Convertir l'ID Int en UUID
         let partnerUUID = UUID(uuidString: String(format: "%08x-0000-0000-0000-%012x", id, id)) ?? UUID()
         
-        // Construire le nom complet
-        let name = "\(firstName) \(lastName)"
+        // Construire le nom complet - utiliser establishmentName si disponible, sinon firstName + lastName
+        let name: String
+        if let establishmentName = establishmentName, !establishmentName.isEmpty {
+            name = establishmentName
+        } else {
+            name = "\(firstName) \(lastName)"
+        }
         
         // Déterminer la catégorie depuis le champ category ou profession
         let categoryName: String

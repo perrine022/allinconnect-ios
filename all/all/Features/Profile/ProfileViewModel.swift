@@ -56,6 +56,9 @@ class ProfileViewModel: ObservableObject {
     @Published var isLoadingFavorites: Bool = false
     @Published var favoritesError: String?
     
+    // État de chargement initial
+    @Published var isLoadingInitialData: Bool = true
+    
     private let favoritesAPIService: FavoritesAPIService
     private let partnersAPIService: PartnersAPIService
     private let profileAPIService: ProfileAPIService
@@ -104,18 +107,15 @@ class ProfileViewModel: ObservableObject {
         
         self.dataService = dataService
         
-        // Récupérer les données utilisateur depuis UserDefaults
-        let firstName = UserDefaults.standard.string(forKey: "user_first_name") ?? "Marie"
-        let lastName = UserDefaults.standard.string(forKey: "user_last_name") ?? "Dupont"
-        let email = UserDefaults.standard.string(forKey: "user_email") ?? "marie@email.fr"
+        // Initialiser avec des valeurs vides pour éviter d'afficher des données fake
         let userTypeString = UserDefaults.standard.string(forKey: "user_type") ?? "CLIENT"
         let userType = userTypeString == "PRO" ? UserType.pro : UserType.client
         
         self.user = User(
-            firstName: firstName,
-            lastName: lastName,
-            username: email.components(separatedBy: "@").first ?? "user",
-            bio: "Membre CLUB10",
+            firstName: "",
+            lastName: "",
+            username: "",
+            bio: "",
             profileImageName: "person.circle.fill",
             publications: 0,
             subscribers: 0,
@@ -128,98 +128,135 @@ class ProfileViewModel: ObservableObject {
             currentSpace = .pro
         }
         
-        loadSubscriptionData()
-        loadFavorites()
-        loadMyOffers()
+        // Charger toutes les données depuis l'API
+        loadInitialData()
     }
     
-    func loadFavorites() {
+    func loadInitialData() {
+        isLoadingInitialData = true
+        
+        Task {
+            // Charger les données en parallèle
+            async let subscriptionTask = loadSubscriptionData()
+            async let favoritesTask = loadFavorites()
+            
+            // Attendre que les données soient chargées
+            await subscriptionTask
+            await favoritesTask
+            
+            // Charger les offres (pas async, donc on l'appelle directement)
+            loadMyOffers()
+            
+            isLoadingInitialData = false
+        }
+    }
+    
+    func loadFavorites() async {
+        isLoadingFavorites = true
+        favoritesError = nil
+        
+        do {
+            // Charger les favoris depuis l'API
+            print("📥 Chargement des favoris depuis l'API...")
+            let favoritesResponse = try await favoritesAPIService.getFavorites()
+            print("✅ \(favoritesResponse.count) favoris récupérés")
+            
+            // Convertir en modèles Partner et marquer comme favoris
+            favoritePartners = favoritesResponse.map { response in
+                let basePartner = response.toPartner()
+                // Créer une nouvelle instance avec isFavorite = true
+                return Partner(
+                    id: basePartner.id,
+                    name: basePartner.name,
+                    category: basePartner.category,
+                    address: basePartner.address,
+                    city: basePartner.city,
+                    postalCode: basePartner.postalCode,
+                    phone: basePartner.phone,
+                    email: basePartner.email,
+                    website: basePartner.website,
+                    instagram: basePartner.instagram,
+                    description: basePartner.description,
+                    rating: basePartner.rating,
+                    reviewCount: basePartner.reviewCount,
+                    discount: basePartner.discount,
+                    imageName: basePartner.imageName,
+                    headerImageName: basePartner.headerImageName,
+                    isFavorite: true, // Les favoris récupérés depuis l'API sont forcément favoris
+                    apiId: basePartner.apiId
+                )
+            }
+            
+            isLoadingFavorites = false
+        } catch {
+            isLoadingFavorites = false
+            // Afficher un message d'erreur user-friendly
+            if let apiError = error as? APIError {
+                switch apiError {
+                case .networkError:
+                    favoritesError = "Problème de connexion. Vérifiez votre connexion internet."
+                case .unauthorized:
+                    favoritesError = "Vous devez être connecté pour voir vos favoris"
+                case .decodingError:
+                    // Erreur de décodage - probablement un problème côté backend
+                    favoritesError = "Impossible de charger les favoris. Veuillez réessayer plus tard."
+                default:
+                    favoritesError = "Erreur lors du chargement des favoris"
+                }
+            } else {
+                favoritesError = "Erreur lors du chargement des favoris"
+            }
+            print("Erreur lors du chargement des favoris: \(error)")
+            
+            // En cas d'erreur, utiliser les données mockées en fallback
+            favoritePartners = dataService.getPartners().filter { $0.isFavorite }
+        }
+    }
+    
+    func togglePartnerFavorite(for partner: Partner) {
+        guard let apiId = partner.apiId else {
+            print("⚠️ Erreur: Pas d'ID API pour le partenaire \(partner.name)")
+            favoritesError = "Impossible de modifier ce favori (ID manquant)"
+            return
+        }
+        
         isLoadingFavorites = true
         favoritesError = nil
         
         Task {
             do {
-                // Charger les favoris depuis l'API
-                let favoritesResponse = try await favoritesAPIService.getFavorites()
-                
-                // Convertir en modèles Partner et marquer comme favoris
-                favoritePartners = favoritesResponse.map { response in
-                    let basePartner = response.toPartner()
-                    // Créer une nouvelle instance avec isFavorite = true
-                    return Partner(
-                        id: basePartner.id,
-                        name: basePartner.name,
-                        category: basePartner.category,
-                        address: basePartner.address,
-                        city: basePartner.city,
-                        postalCode: basePartner.postalCode,
-                        phone: basePartner.phone,
-                        email: basePartner.email,
-                        website: basePartner.website,
-                        instagram: basePartner.instagram,
-                        description: basePartner.description,
-                        rating: basePartner.rating,
-                        reviewCount: basePartner.reviewCount,
-                        discount: basePartner.discount,
-                        imageName: basePartner.imageName,
-                        headerImageName: basePartner.headerImageName,
-                        isFavorite: true, // Les favoris récupérés depuis l'API sont forcément favoris
-                        apiId: basePartner.apiId
-                    )
+                if partner.isFavorite {
+                    // Retirer des favoris
+                    print("🗑️ Retrait du favori avec ID: \(apiId)")
+                    try await favoritesAPIService.removeFavorite(professionalId: apiId)
+                } else {
+                    // Ajouter aux favoris
+                    print("➕ Ajout du favori avec ID: \(apiId)")
+                    try await favoritesAPIService.addFavorite(professionalId: apiId)
                 }
                 
-                isLoadingFavorites = false
+                // Recharger les favoris depuis l'API après un court délai
+                print("✅ Favori modifié avec succès, rechargement...")
+                // Attendre un peu pour que le backend traite la requête
+                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconde
+                await loadFavorites()
             } catch {
                 isLoadingFavorites = false
+                print("❌ Erreur lors de la modification du favori: \(error)")
+                
                 // Afficher un message d'erreur user-friendly
                 if let apiError = error as? APIError {
                     switch apiError {
                     case .networkError:
                         favoritesError = "Problème de connexion. Vérifiez votre connexion internet."
                     case .unauthorized:
-                        favoritesError = "Vous devez être connecté pour voir vos favoris"
-                    case .decodingError:
-                        // Erreur de décodage - probablement un problème côté backend
-                        favoritesError = "Impossible de charger les favoris. Veuillez réessayer plus tard."
+                        favoritesError = "Vous devez être connecté pour modifier vos favoris"
                     default:
-                        favoritesError = "Erreur lors du chargement des favoris"
+                        favoritesError = "Erreur lors de la modification du favori"
                     }
                 } else {
-                    favoritesError = "Erreur lors du chargement des favoris"
+                    favoritesError = "Erreur lors de la modification du favori: \(error.localizedDescription)"
                 }
-                print("Erreur lors du chargement des favoris: \(error)")
-                
-                // En cas d'erreur, utiliser les données mockées en fallback
-                favoritePartners = dataService.getPartners().filter { $0.isFavorite }
-            }
-        }
-    }
-    
-    func togglePartnerFavorite(for partner: Partner) {
-        guard let apiId = partner.apiId else {
-            // Si pas d'ID API, utiliser le fallback local
-            dataService.togglePartnerFavorite(partnerId: partner.id)
-            loadFavorites()
-            return
-        }
-        
-        Task {
-            do {
-                if partner.isFavorite {
-                    // Retirer des favoris
-                    try await favoritesAPIService.removeFavorite(professionalId: apiId)
-                } else {
-                    // Ajouter aux favoris
-                    try await favoritesAPIService.addFavorite(professionalId: apiId)
-                }
-                
-                // Recharger les favoris depuis l'API
-                loadFavorites()
-            } catch {
-                print("Erreur lors de la modification du favori: \(error)")
-                // En cas d'erreur, utiliser le fallback local
-                dataService.togglePartnerFavorite(partnerId: partner.id)
-                loadFavorites()
             }
         }
     }
@@ -246,7 +283,9 @@ class ProfileViewModel: ObservableObject {
         guard user.userType == .pro else { return }
         currentSpace = .client
         // Recharger les favoris quand on passe en espace client
-        loadFavorites()
+        Task {
+            await loadFavorites()
+        }
     }
     
     func switchToProSpace() {
@@ -257,71 +296,69 @@ class ProfileViewModel: ObservableObject {
         loadMyOffers()
     }
     
-    func loadSubscriptionData() {
-        Task {
-            do {
-                // Charger les données light depuis l'API
-                let userLight = try await profileAPIService.getUserLight()
+    func loadSubscriptionData() async {
+        do {
+            // Charger les données light depuis l'API
+            let userLight = try await profileAPIService.getUserLight()
+            
+            // Mettre à jour le prénom et nom depuis le backend
+            user = User(
+                firstName: userLight.firstName,
+                lastName: userLight.lastName,
+                username: userLight.firstName.lowercased(),
+                bio: (userLight.isMember ?? false) ? "Membre CLUB10" : "",
+                profileImageName: user.profileImageName,
+                publications: user.publications,
+                subscribers: user.subscribers,
+                subscriptions: user.subscriptions,
+                userType: user.userType
+            )
+            
+            // Mettre à jour les informations de la carte
+            cardType = userLight.card?.type
+            hasActiveClub10Subscription = userLight.isCardActive ?? false
+            
+            // Mettre à jour les dates d'abonnement
+            if let renewalDate = userLight.renewalDate {
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"
+                dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
                 
-                // Mettre à jour le prénom et nom depuis le backend
-                user = User(
-                    firstName: userLight.firstName,
-                    lastName: userLight.lastName,
-                    username: user.username,
-                    bio: user.bio,
-                    profileImageName: user.profileImageName,
-                    publications: user.publications,
-                    subscribers: user.subscribers,
-                    subscriptions: user.subscriptions,
-                    userType: user.userType
-                )
-                
-                // Mettre à jour les informations de la carte
-                cardType = userLight.card?.type
-                hasActiveClub10Subscription = userLight.isCardActive ?? false
-                
-                // Mettre à jour les dates d'abonnement
-                if let renewalDate = userLight.renewalDate {
-                    let dateFormatter = DateFormatter()
-                    dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"
-                    dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
-                    
+                if let date = dateFormatter.date(from: renewalDate) {
+                    let displayFormatter = DateFormatter()
+                    displayFormatter.dateFormat = "dd/MM/yyyy"
+                    club10NextPaymentDate = displayFormatter.string(from: date)
+                } else {
+                    // Essayer un autre format
+                    dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
                     if let date = dateFormatter.date(from: renewalDate) {
                         let displayFormatter = DateFormatter()
                         displayFormatter.dateFormat = "dd/MM/yyyy"
                         club10NextPaymentDate = displayFormatter.string(from: date)
                     } else {
-                        // Essayer un autre format
-                        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+                        // Essayer format simple
+                        dateFormatter.dateFormat = "yyyy-MM-dd"
                         if let date = dateFormatter.date(from: renewalDate) {
                             let displayFormatter = DateFormatter()
                             displayFormatter.dateFormat = "dd/MM/yyyy"
                             club10NextPaymentDate = displayFormatter.string(from: date)
-                        } else {
-                            // Essayer format simple
-                            dateFormatter.dateFormat = "yyyy-MM-dd"
-                            if let date = dateFormatter.date(from: renewalDate) {
-                                let displayFormatter = DateFormatter()
-                                displayFormatter.dateFormat = "dd/MM/yyyy"
-                                club10NextPaymentDate = displayFormatter.string(from: date)
-                            }
                         }
                     }
                 }
-                
-                if let subscriptionAmount = userLight.subscriptionAmount {
-                    club10Amount = String(format: "%.2f€", subscriptionAmount)
-                }
-                
-                // Si c'est une carte FAMILY ou CLIENT_FAMILY, charger les emails
-                if cardType == "FAMILY" || cardType == "CLIENT_FAMILY" {
-                    await loadFamilyCardEmails()
-                }
-            } catch {
-                print("Erreur lors du chargement des données d'abonnement: \(error)")
-                // En cas d'erreur, utiliser les données UserDefaults comme fallback
-                loadSubscriptionDataFromDefaults()
             }
+            
+            if let subscriptionAmount = userLight.subscriptionAmount {
+                club10Amount = String(format: "%.2f€", subscriptionAmount)
+            }
+            
+            // Si c'est une carte FAMILY ou CLIENT_FAMILY, charger les emails
+            if cardType == "FAMILY" || cardType == "CLIENT_FAMILY" {
+                await loadFamilyCardEmails()
+            }
+        } catch {
+            print("Erreur lors du chargement des données d'abonnement: \(error)")
+            // En cas d'erreur, utiliser les données UserDefaults comme fallback
+            loadSubscriptionDataFromDefaults()
         }
     }
     

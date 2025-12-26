@@ -255,7 +255,7 @@ class FamilyCardEmailsViewModel: ObservableObject {
             successMessage = newEmails.isEmpty ? "Aucun changement" : "\(newEmails.count) membre(s) invité(s) avec succès"
             
             // Recharger les données
-            await loadEmails()
+            loadEmails()
             
             // Effacer le message après 3 secondes
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) {

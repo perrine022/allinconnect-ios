@@ -22,51 +22,86 @@ struct ProfileView: View {
     @State private var familyCardEmailsNavigationId: UUID?
     
     var body: some View {
-        if isLoggedIn {
-            profileContent
-                .onAppear {
-                    // Recharger les données d'abonnement quand on arrive sur la vue
-                    viewModel.loadSubscriptionData()
-                    // Recharger les offres si on est en espace pro
-                    if viewModel.currentSpace == .pro {
-                        viewModel.loadMyOffers()
+        Group {
+            if isLoggedIn {
+                profileContent
+                    .onAppear {
+                        // Les données sont déjà chargées dans loadInitialData() lors de l'init
+                        // On peut recharger si nécessaire
+                        if !viewModel.isLoadingInitialData {
+                            Task {
+                                await viewModel.loadSubscriptionData()
+                                if viewModel.currentSpace == .pro {
+                                    viewModel.loadMyOffers()
+                                }
+                                if viewModel.currentSpace == .client {
+                                    await viewModel.loadFavorites()
+                                }
+                            }
+                        }
                     }
+                    .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserDidLogout"))) { _ in
+                        // Réinitialiser l'état lors de la déconnexion
+                        isLoggedIn = false
+                        // Réinitialiser le ViewModel pour nettoyer les données
+                        viewModel.reset()
+                    }
+            } else {
+                NavigationStack {
+                    LoginView(signUpNavigationId: $signUpNavigationId)
+                        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserDidLogin"))) { _ in
+                            isLoggedIn = true
+                        }
+                        .navigationDestination(item: $signUpNavigationId) { _ in
+                            SignUpView()
+                        }
                 }
-                .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserDidLogout"))) { _ in
-                    // Réinitialiser l'état lors de la déconnexion
-                    isLoggedIn = false
-                    // Réinitialiser le ViewModel pour nettoyer les données
-                    viewModel.reset()
-                }
-        } else {
-            NavigationStack {
-                LoginView(signUpNavigationId: $signUpNavigationId)
-                    .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserDidLogin"))) { _ in
-                        isLoggedIn = true
-                    }
-                    .navigationDestination(item: $signUpNavigationId) { _ in
-                        SignUpView()
-                    }
             }
+        }
+        .navigationDestination(item: $notificationPreferencesNavigationId) { _ in
+            NotificationPreferencesView()
+        }
+        .navigationDestination(item: $editProfileNavigationId) { _ in
+            EditProfileView()
+        }
+        .navigationDestination(item: $proOffersNavigationId) { _ in
+            ProOffersView()
+        }
+        .navigationDestination(item: $manageEstablishmentNavigationId) { _ in
+            ManageEstablishmentView()
+        }
+        .navigationDestination(item: $manageSubscriptionsNavigationId) { _ in
+            ManageSubscriptionsView()
+        }
+        .navigationDestination(item: $settingsNavigationId) { _ in
+            SettingsView()
+        }
+        .navigationDestination(item: $familyCardEmailsNavigationId) { _ in
+            FamilyCardEmailsView(viewModel: FamilyCardEmailsViewModel())
+        }
+        .navigationDestination(item: $selectedPartner) { partner in
+            PartnerDetailView(partner: partner)
         }
     }
     
     private var profileContent: some View {
-        ZStack {
-            // Background avec gradient
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color.appDarkRed2,
-                    Color.appDarkRed1,
-                    Color.black
-                ]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-            
-            ScrollView {
-                VStack(spacing: 24) {
+        GeometryReader { geometry in
+            ZStack(alignment: .bottom) {
+                ZStack {
+                    // Background avec gradient
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.appDarkRed2,
+                            Color.appDarkRed1,
+                            Color.black
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .ignoresSafeArea()
+                    
+                    ScrollView {
+                        VStack(spacing: 24) {
                     // Titre
                     HStack {
                         Text("Profil")
@@ -77,25 +112,48 @@ struct ProfileView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 20)
                     
-                    // Section utilisateur
-                    VStack(spacing: 16) {
-                        // Photo, prénom et badge CLUB10 sur la même ligne
-                        HStack(spacing: 12) {
-                            // Avatar (réduit de 5 fois : 100/5 = 20)
-                            ZStack {
-                                Circle()
-                                    .fill(Color.appGold)
-                                    .frame(width: 20, height: 20)
-                                
-                                Text(String(viewModel.user.firstName.prefix(1)).uppercased())
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(.black)
-                            }
+                    // Indicateur de chargement initial
+                    if viewModel.isLoadingInitialData {
+                        VStack(spacing: 16) {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .appGold))
+                                .scaleEffect(1.5)
                             
-                            // Prénom
-                            Text(viewModel.user.firstName)
-                                .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(.white)
+                            Text("Chargement de votre profil...")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.white.opacity(0.8))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 60)
+                    } else {
+                        // Section utilisateur
+                        VStack(spacing: 16) {
+                            // Photo, prénom et badge CLUB10 sur la même ligne
+                            HStack(spacing: 12) {
+                                // Avatar (réduit de 5 fois : 100/5 = 20)
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.appGold)
+                                        .frame(width: 20, height: 20)
+                                    
+                                    if !viewModel.user.firstName.isEmpty {
+                                        Text(String(viewModel.user.firstName.prefix(1)).uppercased())
+                                            .font(.system(size: 10, weight: .bold))
+                                            .foregroundColor(.black)
+                                    }
+                                }
+                                
+                                // Prénom
+                                if !viewModel.user.firstName.isEmpty {
+                                    Text(viewModel.user.firstName)
+                                        .font(.system(size: 24, weight: .bold))
+                                        .foregroundColor(.white)
+                                } else {
+                                    // Placeholder pendant le chargement
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(Color.white.opacity(0.3))
+                                        .frame(width: 100, height: 24)
+                                }
                             
                             Spacer()
                             
@@ -113,7 +171,7 @@ struct ProfileView: View {
                         .padding(.horizontal, 20)
                         
                         // Boutons Espace Client/Pro (uniquement pour les professionnels)
-                        if viewModel.user.userType == .pro {
+                        if !viewModel.user.firstName.isEmpty && viewModel.user.userType == .pro {
                             HStack(spacing: 12) {
                                 Button(action: {
                                     viewModel.switchToClientSpace()
@@ -146,7 +204,7 @@ struct ProfileView: View {
                     .padding(.bottom, 8)
                     
                     // Bloc Abonnement PRO (dans l'espace PRO - toujours affiché)
-                    if viewModel.currentSpace == .pro {
+                    if !viewModel.isLoadingInitialData && viewModel.currentSpace == .pro {
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
                                 Image(systemName: "creditcard.fill")
@@ -203,7 +261,7 @@ struct ProfileView: View {
                     }
                     
                     // Bloc "Mes offres" (dans l'espace PRO - toujours affiché)
-                    if viewModel.currentSpace == .pro {
+                    if !viewModel.isLoadingInitialData && viewModel.currentSpace == .pro {
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
                                 Image(systemName: "tag.fill")
@@ -283,7 +341,7 @@ struct ProfileView: View {
                     }
                     
                     // Section Abonnement et Carte (espace client)
-                    if viewModel.currentSpace == .client {
+                    if !viewModel.isLoadingInitialData && viewModel.currentSpace == .client {
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
                                 Image(systemName: "creditcard.fill")
@@ -395,7 +453,7 @@ struct ProfileView: View {
                     }
                     
                     // Bloc "Mes favoris" (espace client uniquement)
-                    if viewModel.currentSpace == .client {
+                    if !viewModel.isLoadingInitialData && viewModel.currentSpace == .client {
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
                                 Image(systemName: "heart.fill")
@@ -415,12 +473,20 @@ struct ProfileView: View {
                                 }
                             }
                             
+                            // Message d'erreur
+                            if let error = viewModel.favoritesError {
+                                Text(error)
+                                    .font(.system(size: 13, weight: .regular))
+                                    .foregroundColor(.red.opacity(0.9))
+                                    .padding(.vertical, 8)
+                            }
+                            
                             // Liste des favoris
-                            if viewModel.favoritePartners.isEmpty {
+                            if viewModel.favoritePartners.isEmpty && !viewModel.isLoadingFavorites {
                                 Text("Aucun favori pour le moment")
                                     .font(.system(size: 14, weight: .regular))
                                     .foregroundColor(.white.opacity(0.7))
-                            } else {
+                            } else if !viewModel.favoritePartners.isEmpty {
                                 VStack(spacing: 12) {
                                     ForEach(Array(viewModel.favoritePartners.prefix(5))) { partner in
                                         Button(action: {
@@ -474,13 +540,6 @@ struct ProfileView: View {
                                     }
                                 }
                             }
-                            
-                            // Message d'erreur
-                            if let error = viewModel.favoritesError {
-                                Text(error)
-                                    .font(.system(size: 13, weight: .regular))
-                                    .foregroundColor(.red.opacity(0.9))
-                            }
                         }
                         .padding(16)
                         .background(Color.appDarkRed1.opacity(0.8))
@@ -493,8 +552,9 @@ struct ProfileView: View {
                         .padding(.bottom, 8)
                     }
                     
-                    // Menu options
-                    VStack(spacing: 0) {
+                    // Menu options (affiché seulement après chargement)
+                    if !viewModel.isLoadingInitialData {
+                        VStack(spacing: 0) {
                         // Options PRO uniquement dans l'espace PRO (toujours affichées pour les tests)
                         if viewModel.currentSpace == .pro {
                             ProfileMenuRow(
@@ -576,23 +636,25 @@ struct ProfileView: View {
                             .stroke(Color.white.opacity(0.1), lineWidth: 1)
                     )
                     .padding(.horizontal, 20)
+                    }
                     
-                    // Bouton déconnexion
-                    Button(action: {
-                        // Afficher une confirmation avant de déconnecter
-                        withAnimation {
-                            // Déconnecter l'utilisateur
-                            LoginViewModel.logout()
-                            // Réinitialiser l'état local
-                            isLoggedIn = false
-                            // Réinitialiser le ViewModel
-                            viewModel.reset()
-                            // Naviguer vers l'onglet Accueil après déconnexion
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                appState.selectedTab = .home
+                    // Bouton déconnexion (affiché seulement après chargement)
+                    if !viewModel.isLoadingInitialData {
+                        Button(action: {
+                            // Afficher une confirmation avant de déconnecter
+                            withAnimation {
+                                // Déconnecter l'utilisateur
+                                LoginViewModel.logout()
+                                // Réinitialiser l'état local
+                                isLoggedIn = false
+                                // Réinitialiser le ViewModel
+                                viewModel.reset()
+                                // Naviguer vers l'onglet Accueil après déconnexion
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    appState.selectedTab = .home
+                                }
                             }
-                        }
-                    }) {
+                        }) {
                         HStack(spacing: 10) {
                             Image(systemName: "rectangle.portrait.and.arrow.right")
                                 .font(.system(size: 16))
@@ -609,48 +671,41 @@ struct ProfileView: View {
                                 .stroke(Color.appRed, lineWidth: 1.5)
                         )
                         .cornerRadius(12)
+                        }
+                        .padding(.horizontal, 20)
                     }
-                    .padding(.horizontal, 20)
                     
-                    // Version de l'app
-                    Text("All In Connect v1.0.0")
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundColor(.gray.opacity(0.7))
-                        .padding(.top, 8)
+                    // Version de l'app (affichée seulement après chargement)
+                    if !viewModel.isLoadingInitialData {
+                        Text("All In Connect v1.0.0")
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundColor(.gray.opacity(0.7))
+                            .padding(.top, 8)
+                    }
                     
                     Spacer()
                         .frame(height: 100)
+                        }
+                    }
                 }
+            
+            // Footer Bar - toujours visible
+            VStack {
+                Spacer()
+                FooterBar(selectedTab: $appState.selectedTab) { tab in
+                    appState.navigateToTab(tab, dismiss: {
+                        // Pas de dismiss ici car on est déjà dans la vue principale
+                    })
+                }
+                .frame(width: geometry.size.width)
             }
+            .ignoresSafeArea(edges: .bottom)
+        }
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
-        .navigationDestination(item: $notificationPreferencesNavigationId) { _ in
-            NotificationPreferencesView()
-        }
-        .navigationDestination(item: $editProfileNavigationId) { _ in
-            EditProfileView()
-        }
-        .navigationDestination(item: $proOffersNavigationId) { _ in
-            ProOffersView()
-        }
-        .navigationDestination(item: $manageEstablishmentNavigationId) { _ in
-            ManageEstablishmentView()
-        }
-        .navigationDestination(item: $manageSubscriptionsNavigationId) { _ in
-            ManageSubscriptionsView()
-        }
-        .navigationDestination(item: $settingsNavigationId) { _ in
-            SettingsView()
-        }
-        .navigationDestination(item: $familyCardEmailsNavigationId) { _ in
-            FamilyCardEmailsView(viewModel: FamilyCardEmailsViewModel())
-        }
-        .navigationDestination(item: $selectedPartner) { partner in
-PartnerDetailView(partner: partner)
-        }
     }
 }
 
@@ -982,6 +1037,7 @@ struct EditProfileView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
+    }
     }
 }
 

@@ -28,7 +28,8 @@ class CardViewModel: ObservableObject {
     @Published var isCardActive: Bool = false
     @Published var cardExpirationDate: Date? = nil
     
-    @Published var isLoading: Bool = false
+    @Published var isLoading: Bool = true // Commencer en état de chargement
+    @Published var hasLoadedOnce: Bool = false // Pour savoir si on a déjà chargé une fois
     @Published var errorMessage: String?
     
     private let profileAPIService: ProfileAPIService
@@ -176,8 +177,10 @@ class CardViewModel: ObservableObject {
                 // Charger les partenaires favoris depuis l'API
                 await loadFavoritePartners()
                 
+                hasLoadedOnce = true
                 isLoading = false
             } catch {
+                hasLoadedOnce = true
                 isLoading = false
                 errorMessage = error.localizedDescription
                 print("Erreur lors du chargement des données de la carte: \(error)")

@@ -43,7 +43,8 @@ struct CardView: View {
                     .padding(.top, 16)
                     
                     // États de chargement et d'erreur
-                    if viewModel.isLoading {
+                    // Afficher le loader uniquement pendant le chargement initial
+                    if viewModel.isLoading && !viewModel.hasLoadedOnce {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: .appGold))
                             .scaleEffect(1.5)
@@ -76,7 +77,7 @@ struct CardView: View {
                             .padding(.top, 8)
                         }
                         .padding(.vertical, 50)
-                    } else if let cardNumber = viewModel.cardNumber, viewModel.isCardActive {
+                    } else if viewModel.cardNumber != nil, viewModel.isCardActive {
                         // Afficher la carte si elle existe et est active
                         // Carte utilisateur principale
                         let cardBackgroundColor = viewModel.isCardValid ? Color.white : Color.red
@@ -130,8 +131,8 @@ struct CardView: View {
                                 }
                             }
                             
-                            // Badge "Carte familiale" si type FAMILY
-                            if viewModel.cardType == "FAMILY" {
+                            // Badge "Carte familiale" si type FAMILY ou CLIENT_FAMILY
+                            if viewModel.cardType == "FAMILY" || viewModel.cardType == "CLIENT_FAMILY" {
                                 Text("Carte familiale")
                                     .font(.system(size: 14, weight: .semibold))
                                     .foregroundColor(viewModel.isCardValid ? .appRed : .white)
@@ -188,7 +189,7 @@ struct CardView: View {
                             }
                             
                             // Bouton "Gérer ma famille" si carte familiale
-                            if viewModel.cardType == "FAMILY" {
+                            if viewModel.cardType == "FAMILY" || viewModel.cardType == "CLIENT_FAMILY" {
                                 Button(action: {
                                     showFamilyManagement = true
                                 }) {

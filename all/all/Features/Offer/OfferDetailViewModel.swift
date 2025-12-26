@@ -89,7 +89,8 @@ class OfferDetailViewModel: ObservableObject {
                         category: professional.category,
                         hasConnectedBefore: nil,
                         referralCode: nil,
-                        subscriptionPlan: nil
+                        subscriptionPlan: nil,
+                        establishmentName: nil
                     )
                     
                     self.partner = partnerProfessional.toPartner()
