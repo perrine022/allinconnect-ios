@@ -16,7 +16,6 @@ struct ProfileView: View {
     @State private var proOffersNavigationId: UUID?
     @State private var manageEstablishmentNavigationId: UUID?
     @State private var manageSubscriptionsNavigationId: UUID?
-    @State private var paymentHistoryNavigationId: UUID?
     @State private var settingsNavigationId: UUID?
     @State private var selectedPartner: Partner?
     @State private var signUpNavigationId: UUID?
@@ -113,109 +112,38 @@ struct ProfileView: View {
                         }
                         .padding(.horizontal, 20)
                         
-                        // Boutons Espace Client/Pro (toujours affichés pour les tests)
-                        HStack(spacing: 12) {
-                            Button(action: {
-                                viewModel.switchToClientSpace()
-                            }) {
-                                Text("Espace Client")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(viewModel.currentSpace == .client ? .black : .white)
-                                    .padding(.horizontal, 20)
-                                    .padding(.vertical, 12)
-                                    .background(viewModel.currentSpace == .client ? Color.appGold : Color.appDarkRed1.opacity(0.6))
-                                    .cornerRadius(10)
+                        // Boutons Espace Client/Pro (uniquement pour les professionnels)
+                        if viewModel.user.userType == .pro {
+                            HStack(spacing: 12) {
+                                Button(action: {
+                                    viewModel.switchToClientSpace()
+                                }) {
+                                    Text("Espace Client")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(viewModel.currentSpace == .client ? .black : .white)
+                                        .padding(.horizontal, 20)
+                                        .padding(.vertical, 12)
+                                        .background(viewModel.currentSpace == .client ? Color.appGold : Color.appDarkRed1.opacity(0.6))
+                                        .cornerRadius(10)
+                                }
+                                
+                                Button(action: {
+                                    viewModel.switchToProSpace()
+                                }) {
+                                    Text("Espace Pro")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(viewModel.currentSpace == .pro ? .black : .white)
+                                        .padding(.horizontal, 20)
+                                        .padding(.vertical, 12)
+                                        .background(viewModel.currentSpace == .pro ? Color.appGold : Color.appDarkRed1.opacity(0.6))
+                                        .cornerRadius(10)
+                                }
                             }
-                            
-                            Button(action: {
-                                viewModel.switchToProSpace()
-                            }) {
-                                Text("Espace Pro")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(viewModel.currentSpace == .pro ? .black : .white)
-                                    .padding(.horizontal, 20)
-                                    .padding(.vertical, 12)
-                                    .background(viewModel.currentSpace == .pro ? Color.appGold : Color.appDarkRed1.opacity(0.6))
-                                    .cornerRadius(10)
-                            }
+                            .padding(.horizontal, 20)
                         }
-                        .padding(.horizontal, 20)
                     }
                     .padding(.top, 20)
                     .padding(.bottom, 8)
-                    
-                    // Bloc Abonnement CLUB10 (espace client) - uniquement si abonnement actif
-                    if viewModel.currentSpace == .client && viewModel.hasActiveClub10Subscription {
-                        VStack(alignment: .leading, spacing: 16) {
-                            HStack {
-                                Image(systemName: "star.fill")
-                                    .foregroundColor(.appGold)
-                                    .font(.system(size: 18))
-                                
-                                Text("Abonnement CLUB10")
-                                    .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(.white)
-                                
-                                Spacer()
-                            }
-                            
-                            VStack(spacing: 12) {
-                                // Montant
-                                HStack {
-                                    Text("Montant")
-                                        .font(.system(size: 14, weight: .regular))
-                                        .foregroundColor(.white.opacity(0.8))
-                                    
-                                    Spacer()
-                                    
-                                    Text("\(viewModel.club10Amount) / mois")
-                                        .font(.system(size: 14, weight: .semibold))
-                                        .foregroundColor(.appGold)
-                                }
-                                
-                                Divider()
-                                    .background(Color.white.opacity(0.1))
-                                
-                                // Prochain prélèvement
-                                HStack {
-                                    Text("Prochain prélèvement")
-                                        .font(.system(size: 14, weight: .regular))
-                                        .foregroundColor(.white.opacity(0.8))
-                                    
-                                    Spacer()
-                                    
-                                    Text(viewModel.club10NextPaymentDate)
-                                        .font(.system(size: 14, weight: .semibold))
-                                        .foregroundColor(.appGold)
-                                }
-                                
-                                Divider()
-                                    .background(Color.white.opacity(0.1))
-                                
-                                // Engagement
-                                HStack {
-                                    Text("Engagement jusqu'au")
-                                        .font(.system(size: 14, weight: .regular))
-                                        .foregroundColor(.white.opacity(0.8))
-                                    
-                                    Spacer()
-                                    
-                                    Text(viewModel.club10CommitmentUntil)
-                                        .font(.system(size: 14, weight: .semibold))
-                                        .foregroundColor(.white)
-                                }
-                            }
-                        }
-                        .padding(16)
-                        .background(Color.appDarkRed1.opacity(0.8))
-                        .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                        )
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 8)
-                    }
                     
                     // Bloc Abonnement PRO (dans l'espace PRO - toujours affiché)
                     if viewModel.currentSpace == .pro {
@@ -493,18 +421,6 @@ struct ProfileView: View {
                             Divider()
                                 .background(Color.white.opacity(0.1))
                                 .padding(.leading, 54)
-                            
-                            ProfileMenuRow(
-                                icon: "clock.fill",
-                                title: "Historique des paiements",
-                                action: {
-                                    paymentHistoryNavigationId = UUID()
-                                }
-                            )
-                            
-                            Divider()
-                                .background(Color.white.opacity(0.1))
-                                .padding(.leading, 54)
                         }
                         
                         // Options CLUB10 (espace client)
@@ -514,18 +430,6 @@ struct ProfileView: View {
                                 title: "Gérer mes abonnements",
                                 action: {
                                     manageSubscriptionsNavigationId = UUID()
-                                }
-                            )
-                            
-                            Divider()
-                                .background(Color.white.opacity(0.1))
-                                .padding(.leading, 54)
-                            
-                            ProfileMenuRow(
-                                icon: "clock.fill",
-                                title: "Historique des paiements",
-                                action: {
-                                    paymentHistoryNavigationId = UUID()
                                 }
                             )
                             
@@ -638,9 +542,6 @@ struct ProfileView: View {
         }
         .navigationDestination(item: $manageSubscriptionsNavigationId) { _ in
             ManageSubscriptionsView()
-        }
-        .navigationDestination(item: $paymentHistoryNavigationId) { _ in
-            PaymentHistoryView()
         }
         .navigationDestination(item: $settingsNavigationId) { _ in
             SettingsView()

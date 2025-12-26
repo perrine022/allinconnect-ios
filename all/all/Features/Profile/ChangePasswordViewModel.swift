@@ -53,8 +53,9 @@ class ChangePasswordViewModel: ObservableObject {
             do {
                 // Créer la requête de changement de mot de passe
                 let changePasswordRequest = ChangePasswordRequest(
-                    oldPassword: oldPassword,
-                    newPassword: newPassword
+                    currentPassword: oldPassword,
+                    newPassword: newPassword,
+                    confirmationPassword: confirmPassword
                 )
                 
                 // Appeler l'API

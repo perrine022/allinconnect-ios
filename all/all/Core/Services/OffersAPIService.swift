@@ -37,10 +37,10 @@ enum OfferCategory: String, Codable, CaseIterable {
 
 // MARK: - Professional Response Model
 struct ProfessionalResponse: Codable {
-    let id: Int
+    let id: Int?
     let firstName: String
     let lastName: String
-    let email: String
+    let email: String?
     let city: String?
     let profession: String?
     let category: OfferCategory?
@@ -251,9 +251,9 @@ class OffersAPIService: ObservableObject {
         let baseURL = "http://127.0.0.1:8000/api/v1"
         let fullURL = "\(baseURL)\(endpoint)"
         
-        print("🚀 [OffersAPIService] Création d'offre:")
-        print("   📍 Endpoint: POST \(fullURL)")
-        print("   📦 Payload JSON:")
+        print("[OffersAPIService] Création d'offre:")
+        print("   Endpoint: POST \(fullURL)")
+        print("   Payload JSON:")
         
         // Convertir les paramètres en JSON pour l'affichage
         if let jsonData = try? JSONSerialization.data(withJSONObject: parameters, options: .prettyPrinted),
@@ -270,7 +270,7 @@ class OffersAPIService: ObservableObject {
             headers: nil
         )
         
-        print("✅ [OffersAPIService] Réponse reçue: ID=\(offer.id), Title=\(offer.title)")
+        print("[OffersAPIService] Réponse reçue: ID=\(offer.id), Title=\(offer.title)")
         return offer
     }
     
@@ -440,8 +440,9 @@ extension OfferResponse {
         let isClub10 = featured ?? false
         
         // Convertir l'ID du professionnel en UUID si disponible
-        let partnerId: UUID? = professional.map { prof in
-            UUID(uuidString: String(format: "%08x-0000-0000-0000-%012x", prof.id, prof.id)) ?? UUID()
+        let partnerId: UUID? = professional.flatMap { prof in
+            guard let profId = prof.id else { return nil }
+            return UUID(uuidString: String(format: "%08x-0000-0000-0000-%012x", profId, profId))
         }
         
         // Déterminer l'image par défaut selon la catégorie du professionnel

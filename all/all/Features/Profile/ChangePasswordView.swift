@@ -67,11 +67,11 @@ struct ChangePasswordView: View {
                                         if viewModel.showOldPassword {
                                             TextField("", text: $viewModel.oldPassword)
                                                 .font(.system(size: 16))
-                                                .foregroundColor(.white)
+                                                .foregroundColor(.black)
                                         } else {
                                             SecureField("", text: $viewModel.oldPassword)
                                                 .font(.system(size: 16))
-                                                .foregroundColor(.white)
+                                                .foregroundColor(.black)
                                         }
                                         
                                         Button(action: {
@@ -83,7 +83,7 @@ struct ChangePasswordView: View {
                                         }
                                     }
                                     .padding(12)
-                                    .background(Color.appDarkRed1.opacity(0.6))
+                                    .background(Color.white)
                                     .cornerRadius(10)
                                 }
                                 
@@ -97,11 +97,11 @@ struct ChangePasswordView: View {
                                         if viewModel.showNewPassword {
                                             TextField("", text: $viewModel.newPassword)
                                                 .font(.system(size: 16))
-                                                .foregroundColor(.white)
+                                                .foregroundColor(.black)
                                         } else {
                                             SecureField("", text: $viewModel.newPassword)
                                                 .font(.system(size: 16))
-                                                .foregroundColor(.white)
+                                                .foregroundColor(.black)
                                         }
                                         
                                         Button(action: {
@@ -113,7 +113,7 @@ struct ChangePasswordView: View {
                                         }
                                     }
                                     .padding(12)
-                                    .background(Color.appDarkRed1.opacity(0.6))
+                                    .background(Color.white)
                                     .cornerRadius(10)
                                     
                                     if !viewModel.newPassword.isEmpty && viewModel.newPassword.count < 6 {
@@ -133,11 +133,11 @@ struct ChangePasswordView: View {
                                         if viewModel.showConfirmPassword {
                                             TextField("", text: $viewModel.confirmPassword)
                                                 .font(.system(size: 16))
-                                                .foregroundColor(.white)
+                                                .foregroundColor(.black)
                                         } else {
                                             SecureField("", text: $viewModel.confirmPassword)
                                                 .font(.system(size: 16))
-                                                .foregroundColor(.white)
+                                                .foregroundColor(.black)
                                         }
                                         
                                         Button(action: {
@@ -149,7 +149,7 @@ struct ChangePasswordView: View {
                                         }
                                     }
                                     .padding(12)
-                                    .background(Color.appDarkRed1.opacity(0.6))
+                                    .background(Color.white)
                                     .cornerRadius(10)
                                     
                                     if !viewModel.confirmPassword.isEmpty && viewModel.newPassword != viewModel.confirmPassword {

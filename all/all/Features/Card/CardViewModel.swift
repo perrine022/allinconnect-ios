@@ -128,6 +128,9 @@ class CardViewModel: ObservableObject {
                 cardNumber = userMe.card?.cardNumber ?? userLight.card?.cardNumber
                 cardType = userMe.card?.type ?? userLight.card?.type
                 
+                // Log pour debug
+                print("[CardViewModel] Carte chargée - cardNumber: \(cardNumber ?? "nil"), isCardActive: \(isCardActive), cardType: \(cardType ?? "nil")")
+                
                 // Récupérer la date de validité (renewalDate)
                 if let renewalDateString = userLight.renewalDate {
                     let dateFormatter = DateFormatter()

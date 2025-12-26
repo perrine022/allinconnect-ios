@@ -166,7 +166,6 @@ struct ManageSubscriptionsView: View {
                                                             // Calculer l'économie
                                                             if let monthlyPlan = viewModel.availablePlans.first(where: { $0.isMonthly }) {
                                                                 let monthlyPrice = monthlyPlan.price
-                                                                let annualMonthlyEquivalent = plan.price / 12.0
                                                                 let savings = ((monthlyPrice * 12) - plan.price) / (monthlyPrice * 12) * 100
                                                                 
                                                                 Text("Économisez \(Int(savings))%")

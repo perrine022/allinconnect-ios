@@ -52,13 +52,23 @@ struct UpdateProfileRequest: Codable {
 
 // MARK: - Change Password Request
 struct ChangePasswordRequest: Codable {
-    let oldPassword: String
+    let currentPassword: String
     let newPassword: String
+    let confirmationPassword: String
     
     enum CodingKeys: String, CodingKey {
-        case oldPassword = "oldPassword"
+        case currentPassword = "currentPassword"
         case newPassword = "newPassword"
+        case confirmationPassword = "confirmationPassword"
     }
+}
+
+// MARK: - Card Member Model
+struct CardMember: Codable {
+    let id: Int
+    let email: String
+    let firstName: String?
+    let lastName: String?
 }
 
 // MARK: - Card Response Model
@@ -66,11 +76,15 @@ struct CardResponse: Codable {
     let id: Int
     let cardNumber: String
     let type: String
+    let members: [CardMember]?
+    let invitedEmails: [String]?
     
     enum CodingKeys: String, CodingKey {
         case id
         case cardNumber = "cardNumber"
         case type
+        case members
+        case invitedEmails
     }
 }
 
@@ -136,9 +150,9 @@ struct UserLightResponse: Codable {
     enum CodingKeys: String, CodingKey {
         case firstName = "firstName"
         case lastName = "lastName"
-        case isMember = "isMember"
+        case isMember = "member" // Backend retourne "member" au lieu de "isMember"
         case card
-        case isCardActive = "isCardActive"
+        case isCardActive = "cardActive" // Backend retourne "cardActive" au lieu de "isCardActive"
         case referralCount = "referralCount"
         case favoriteCount = "favoriteCount"
         case subscriptionDate = "subscriptionDate"
@@ -164,18 +178,75 @@ struct UserLightResponse: Codable {
     }
 }
 
+// MARK: - Payment Status Enum
+enum PaymentStatus: String {
+    case success = "Payé"
+    case pending = "En attente"
+    case failed = "Échoué"
+}
+
 // MARK: - Payment Response Model
 struct PaymentResponse: Codable {
     let id: Int
     let amount: Double
-    let date: String
+    let paymentDate: String // Backend retourne "paymentDate"
     let status: String?
     
     enum CodingKeys: String, CodingKey {
         case id
         case amount
-        case date
+        case paymentDate = "paymentDate"
         case status
+    }
+    
+    // Helper pour obtenir la date formatée
+    var formattedDate: String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        
+        if let date = dateFormatter.date(from: paymentDate) {
+            let displayFormatter = DateFormatter()
+            displayFormatter.dateFormat = "dd/MM/yyyy"
+            return displayFormatter.string(from: date)
+        }
+        
+        // Essayer avec les millisecondes
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"
+        if let date = dateFormatter.date(from: paymentDate) {
+            let displayFormatter = DateFormatter()
+            displayFormatter.dateFormat = "dd/MM/yyyy"
+            return displayFormatter.string(from: date)
+        }
+        
+        // Essayer avec Z
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+        if let date = dateFormatter.date(from: paymentDate) {
+            let displayFormatter = DateFormatter()
+            displayFormatter.dateFormat = "dd/MM/yyyy"
+            return displayFormatter.string(from: date)
+        }
+        
+        // Si aucun format ne fonctionne, retourner la date telle quelle
+        return paymentDate
+    }
+    
+    // Helper pour obtenir le statut local
+    var paymentStatus: PaymentStatus {
+        guard let status = status else { return .pending }
+        switch status.uppercased() {
+        case "SUCCESS", "COMPLETED", "PAID":
+            return .success
+        case "FAILED", "CANCELLED", "REFUNDED":
+            return .failed
+        default:
+            return .pending
+        }
+    }
+    
+    // Helper pour formater le montant
+    var formattedAmount: String {
+        String(format: "%.2f€", amount)
     }
 }
 

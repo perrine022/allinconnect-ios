@@ -203,7 +203,7 @@ class CreateOfferViewModel: ObservableObject {
             type: apiType
         )
         
-        print("✅ [CreateOffer] Offre créée avec succès: ID=\(offerResponse.id)")
+        print("[CreateOffer] Offre créée avec succès: ID=\(offerResponse.id)")
         
         // Convertir la réponse en modèle Offer
         return offerResponse.toOffer()

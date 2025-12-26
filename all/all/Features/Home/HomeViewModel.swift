@@ -106,14 +106,14 @@ class HomeViewModel: ObservableObject {
                 let userProfile = try await profileAPIService.getUserMe()
                 
                 guard let userCity = userProfile.city, !userCity.isEmpty else {
-                    print("⚠️ Aucune ville trouvée pour l'utilisateur, chargement des offres sans filtre")
+                    print("[HomeViewModel] Aucune ville trouvée pour l'utilisateur, chargement des offres sans filtre")
                     // Si pas de ville, charger toutes les offres actives (limitées à 5)
                     let allOffers = try await offersAPIService.getAllOffers()
                     offers = Array(allOffers.prefix(5)).map { $0.toOffer() }
                     return
                 }
                 
-                print("📍 Chargement des offres pour la ville: \(userCity)")
+                print("[HomeViewModel] Chargement des offres pour la ville: \(userCity)")
                 
                 // Charger les offres filtrées par ville depuis l'API
                 let offersResponse = try await offersAPIService.getAllOffers(city: userCity)
@@ -121,12 +121,12 @@ class HomeViewModel: ObservableObject {
                 // Limiter à 5 offres maximum
                 let limitedOffers = Array(offersResponse.prefix(5))
                 
-                print("✅ \(limitedOffers.count) offres chargées pour \(userCity)")
+                print("[HomeViewModel] \(limitedOffers.count) offres chargées pour \(userCity)")
                 
                 // Convertir les réponses API en modèles Offer
                 offers = limitedOffers.map { $0.toOffer() }
             } catch {
-                print("❌ Erreur lors du chargement des offres par ville: \(error)")
+                print("[HomeViewModel] Erreur lors du chargement des offres par ville: \(error)")
                 // En cas d'erreur, utiliser les données mockées en fallback
                 offers = Array(dataService.getOffers().prefix(5))
             }

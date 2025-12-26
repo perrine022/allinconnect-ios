@@ -212,12 +212,16 @@ class ProfileViewModel: ObservableObject {
     }
     
     func switchToClientSpace() {
+        // Ne permettre le changement d'espace que pour les professionnels
+        guard user.userType == .pro else { return }
         currentSpace = .client
         // Recharger les favoris quand on passe en espace client
         loadFavorites()
     }
     
     func switchToProSpace() {
+        // Ne permettre le changement d'espace que pour les professionnels
+        guard user.userType == .pro else { return }
         currentSpace = .pro
         // Recharger les offres quand on passe en espace pro
         loadMyOffers()

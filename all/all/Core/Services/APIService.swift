@@ -152,9 +152,9 @@ class APIService: APIServiceProtocol, ObservableObject {
         
         // Log pour debug : vérifier que le token est bien envoyé
         if let authHeader = request.value(forHTTPHeaderField: "Authorization") {
-            print("🔐 [APIService] Authorization header: \(authHeader.prefix(20))...")
+            print("[APIService] Authorization header: \(authHeader.prefix(20))...")
         } else {
-            print("⚠️ [APIService] Aucun token d'authentification trouvé")
+            print("[APIService] Aucun token d'authentification trouvé")
         }
         
         if method != .get, let parameters = parameters {

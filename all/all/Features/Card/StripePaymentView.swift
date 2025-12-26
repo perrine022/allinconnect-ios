@@ -268,7 +268,7 @@ class StripePaymentViewModel: ObservableObject {
         Task {
             do {
                 let allPlans = try await subscriptionsAPIService.getPlans()
-                print("📦 Plans récupérés depuis l'API: \(allPlans.count) plans")
+                print("[StripePaymentViewModel] Plans récupérés depuis l'API: \(allPlans.count) plans")
                 for plan in allPlans {
                     print("  - \(plan.title): \(plan.formattedPrice) (\(plan.category ?? "N/A") - \(plan.duration ?? "N/A"))")
                 }
@@ -276,7 +276,7 @@ class StripePaymentViewModel: ObservableObject {
                 // Filtrer les plans si une catégorie est spécifiée
                 if let filterCategory = filterCategory {
                     plans = allPlans.filter { $0.category == filterCategory }
-                    print("📦 Plans filtrés pour '\(filterCategory)': \(plans.count) plans")
+                    print("[StripePaymentViewModel] Plans filtrés pour '\(filterCategory)': \(plans.count) plans")
                 } else {
                     plans = allPlans
                 }
@@ -284,13 +284,13 @@ class StripePaymentViewModel: ObservableObject {
                 // Sélectionner le premier plan par défaut
                 if self.selectedPlan == nil && !plans.isEmpty {
                     self.selectedPlan = plans.first
-                    print("📦 Plan sélectionné par défaut: \(plans.first?.title ?? "N/A")")
+                    print("[StripePaymentViewModel] Plan sélectionné par défaut: \(plans.first?.title ?? "N/A")")
                 }
                 isLoading = false
             } catch {
                 isLoading = false
                 errorMessage = "Erreur lors du chargement des plans"
-                print("❌ Erreur lors du chargement des plans: \(error)")
+                print("[StripePaymentViewModel] Erreur lors du chargement des plans: \(error)")
             }
         }
     }

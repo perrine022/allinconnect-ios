@@ -15,7 +15,7 @@ struct OfferCard: View {
         Button(action: onTap) {
             VStack(spacing: 0) {
                 // Image
-                ZStack {
+                ZStack(alignment: .topTrailing) {
                     Image(systemName: offer.imageName)
                         .resizable()
                         .scaledToFill()
@@ -32,6 +32,18 @@ struct OfferCard: View {
                         startPoint: .top,
                         endPoint: .bottom
                     )
+                    
+                    // Badge CLUB10 en haut à droite
+                    if offer.isClub10 {
+                        Text("CLUB10")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.green)
+                            .cornerRadius(6)
+                            .padding(8)
+                    }
                 }
                 
                 // Content

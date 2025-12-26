@@ -139,33 +139,64 @@ struct FamilyCardEmailsView: View {
 @MainActor
 class FamilyCardEmailsViewModel: ObservableObject {
     @Published var emails: [String] = []
+    @Published var members: [CardMember] = []
+    @Published var invitedEmails: [String] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
     @Published var successMessage: String?
     
     private let subscriptionsAPIService: SubscriptionsAPIService
+    private let profileAPIService: ProfileAPIService
     
-    init(subscriptionsAPIService: SubscriptionsAPIService? = nil) {
+    init(subscriptionsAPIService: SubscriptionsAPIService? = nil, profileAPIService: ProfileAPIService? = nil) {
         if let subscriptionsAPIService = subscriptionsAPIService {
             self.subscriptionsAPIService = subscriptionsAPIService
         } else {
             self.subscriptionsAPIService = SubscriptionsAPIService()
         }
+        
+        if let profileAPIService = profileAPIService {
+            self.profileAPIService = profileAPIService
+        } else {
+            self.profileAPIService = ProfileAPIService()
+        }
+        
         loadEmails()
     }
     
     func loadEmails() {
         Task {
+            isLoading = true
+            errorMessage = nil
+            
             do {
-                let familyEmails = try await subscriptionsAPIService.getFamilyCardEmails()
-                // S'assurer qu'on a toujours 4 emplacements (peut être vide)
-                emails = Array(familyEmails.emails.prefix(4))
-                while emails.count < 4 {
-                    emails.append("")
+                // Charger depuis /users/me/light
+                let userLight = try await profileAPIService.getUserLight()
+                
+                // Récupérer les membres et invitations depuis card
+                if let card = userLight.card {
+                    members = card.members ?? []
+                    invitedEmails = card.invitedEmails ?? []
+                    
+                    // Combiner les emails des membres et les invitations en attente
+                    let memberEmails = members.map { $0.email }
+                    let allEmails = memberEmails + invitedEmails
+                    
+                    // S'assurer qu'on a toujours 4 emplacements (peut être vide)
+                    emails = Array(allEmails.prefix(4))
+                    while emails.count < 4 {
+                        emails.append("")
+                    }
+                } else {
+                    // Pas de carte famille, initialiser avec des champs vides
+                    emails = ["", "", "", ""]
                 }
+                
+                isLoading = false
             } catch {
-                errorMessage = "Erreur lors du chargement des emails"
-                print("Erreur lors du chargement des emails: \(error)")
+                isLoading = false
+                errorMessage = "Erreur lors du chargement des membres"
+                print("Erreur lors du chargement des membres: \(error)")
             }
         }
     }
@@ -187,11 +218,19 @@ class FamilyCardEmailsViewModel: ObservableObject {
         errorMessage = nil
         successMessage = nil
         
-        // Filtrer les emails vides
-        let validEmails = emails.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+        // Récupérer les emails actuels (membres + invitations)
+        let currentMemberEmails = Set(members.map { $0.email })
+        let currentInvitedEmails = Set(invitedEmails)
+        let currentAllEmails = currentMemberEmails.union(currentInvitedEmails)
         
-        // Valider les emails
-        for email in validEmails {
+        // Filtrer les nouveaux emails (ceux qui ne sont pas déjà membres ou invités)
+        let newEmails = emails.filter { email in
+            let trimmedEmail = email.trimmingCharacters(in: .whitespaces)
+            return !trimmedEmail.isEmpty && !currentAllEmails.contains(trimmedEmail)
+        }
+        
+        // Valider les nouveaux emails
+        for email in newEmails {
             if !isValidEmail(email) {
                 errorMessage = "L'email \(email) n'est pas valide"
                 isLoading = false
@@ -199,17 +238,45 @@ class FamilyCardEmailsViewModel: ObservableObject {
             }
         }
         
+        // Vérifier la limite de 4 membres (membres existants + invitations + nouveaux)
+        let totalCount = currentAllEmails.count + newEmails.count
+        if totalCount > 4 {
+            errorMessage = "Une carte famille est limitée à 4 membres au total"
+            isLoading = false
+            return
+        }
+        
+        // Inviter chaque nouvel email
         do {
-            try await subscriptionsAPIService.updateFamilyCardEmails(UpdateFamilyCardEmailsRequest(emails: validEmails))
-            successMessage = "Emails mis à jour avec succès"
+            for email in newEmails {
+                try await subscriptionsAPIService.inviteFamilyMember(email: email.trimmingCharacters(in: .whitespaces))
+            }
+            
+            successMessage = newEmails.isEmpty ? "Aucun changement" : "\(newEmails.count) membre(s) invité(s) avec succès"
+            
+            // Recharger les données
+            await loadEmails()
             
             // Effacer le message après 3 secondes
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                 self.successMessage = nil
             }
         } catch {
-            errorMessage = "Erreur lors de la mise à jour des emails"
-            print("Erreur lors de la mise à jour des emails: \(error)")
+            if let apiError = error as? APIError {
+                switch apiError {
+                case .httpError(let statusCode, let message):
+                    if statusCode == 400 {
+                        errorMessage = message ?? "Erreur lors de l'invitation. Vérifiez que vous êtes le propriétaire de la carte et que la limite de 4 membres n'est pas atteinte."
+                    } else {
+                        errorMessage = message ?? "Erreur lors de l'invitation"
+                    }
+                default:
+                    errorMessage = "Erreur lors de l'invitation"
+                }
+            } else {
+                errorMessage = "Erreur lors de l'invitation"
+            }
+            print("Erreur lors de l'invitation: \(error)")
         }
         
         isLoading = false

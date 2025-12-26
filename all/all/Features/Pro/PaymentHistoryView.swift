@@ -40,8 +40,48 @@ struct PaymentHistoryView: View {
                             .padding(.horizontal, 20)
                             .padding(.top, 20)
                             
+                            // Indicateur de chargement
+                            if viewModel.isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .appGold))
+                                    .scaleEffect(1.5)
+                                    .padding(.vertical, 50)
+                            }
+                            // Message d'erreur
+                            else if let errorMessage = viewModel.errorMessage {
+                                VStack(spacing: 16) {
+                                    Image(systemName: "exclamationmark.triangle")
+                                        .font(.system(size: 50))
+                                        .foregroundColor(.red)
+                                    
+                                    Text("Erreur")
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundColor(.white)
+                                    
+                                    Text(errorMessage)
+                                        .font(.system(size: 14, weight: .regular))
+                                        .foregroundColor(.white.opacity(0.7))
+                                        .multilineTextAlignment(.center)
+                                    
+                                    Button(action: {
+                                        viewModel.loadPayments()
+                                    }) {
+                                        Text("Réessayer")
+                                            .font(.system(size: 14, weight: .semibold))
+                                            .foregroundColor(.black)
+                                            .padding(.horizontal, 20)
+                                            .padding(.vertical, 10)
+                                            .background(Color.appGold)
+                                            .cornerRadius(8)
+                                    }
+                                    .padding(.top, 8)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 60)
+                                .padding(.horizontal, 20)
+                            }
                             // Liste des paiements
-                            if viewModel.payments.isEmpty {
+                            else if viewModel.payments.isEmpty {
                                 VStack(spacing: 16) {
                                     Image(systemName: "creditcard.fill")
                                         .font(.system(size: 50))
@@ -181,45 +221,56 @@ struct Payment: Identifiable {
     }
 }
 
-enum PaymentStatus: String {
-    case success = "Payé"
-    case pending = "En attente"
-    case failed = "Échoué"
-}
-
 @MainActor
 class PaymentHistoryViewModel: ObservableObject {
     @Published var payments: [Payment] = []
+    @Published var isLoading: Bool = false
+    @Published var errorMessage: String?
     
-    init() {
+    private let subscriptionsAPIService: SubscriptionsAPIService
+    
+    init(subscriptionsAPIService: SubscriptionsAPIService? = nil) {
+        if let subscriptionsAPIService = subscriptionsAPIService {
+            self.subscriptionsAPIService = subscriptionsAPIService
+        } else {
+            self.subscriptionsAPIService = SubscriptionsAPIService()
+        }
         loadPayments()
     }
     
     func loadPayments() {
-        // Données de test
-        payments = [
-            Payment(
-                date: "15/01/2026",
-                amount: "49,90€",
-                description: "Abonnement Mensuel",
-                status: .success,
-                reference: "PAY-2026-001"
-            ),
-            Payment(
-                date: "15/12/2025",
-                amount: "49,90€",
-                description: "Abonnement Mensuel",
-                status: .success,
-                reference: "PAY-2025-012"
-            ),
-            Payment(
-                date: "15/11/2025",
-                amount: "49,90€",
-                description: "Abonnement Mensuel",
-                status: .success,
-                reference: "PAY-2025-011"
-            )
-        ]
+        isLoading = true
+        errorMessage = nil
+        
+        Task {
+            do {
+                // Charger les paiements depuis l'API
+                let paymentsResponse = try await subscriptionsAPIService.getMyPayments()
+                
+                print("[PaymentHistoryViewModel] \(paymentsResponse.count) paiements récupérés depuis l'API")
+                
+                // Convertir les réponses API en modèles Payment
+                payments = paymentsResponse.map { paymentResponse in
+                    Payment(
+                        id: UUID(uuidString: String(format: "%08x-0000-0000-0000-%012x", paymentResponse.id, paymentResponse.id)) ?? UUID(),
+                        date: paymentResponse.formattedDate,
+                        amount: paymentResponse.formattedAmount,
+                        description: "Abonnement Mensuel", // Par défaut, peut être amélioré avec le plan
+                        status: paymentResponse.paymentStatus,
+                        reference: "PAY-\(paymentResponse.id)"
+                    )
+                }
+                
+                isLoading = false
+            } catch {
+                isLoading = false
+                errorMessage = "Erreur lors du chargement des paiements"
+                print("[PaymentHistoryViewModel] Erreur: \(error)")
+                
+                // En cas d'erreur, garder une liste vide
+                payments = []
+            }
+        }
     }
 }
 

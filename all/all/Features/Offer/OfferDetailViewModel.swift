@@ -61,10 +61,19 @@ class OfferDetailViewModel: ObservableObject {
                 
                 // Si l'offre a un professionnel, convertir en Partner
                 if let professional = offerResponse.professional {
+                    // Vérifier que les champs requis sont présents
+                    guard let professionalId = professional.id,
+                          let professionalEmail = professional.email else {
+                        // Si les champs requis ne sont pas disponibles, on ne peut pas créer le Partner
+                        print("Warning: Professional data incomplete, cannot create Partner")
+                        isLoading = false
+                        return
+                    }
+                    
                     // Créer un PartnerProfessionalResponse temporaire pour le mapping
                     let partnerProfessional = PartnerProfessionalResponse(
-                        id: professional.id,
-                        email: professional.email,
+                        id: professionalId,
+                        email: professionalEmail,
                         firstName: professional.firstName,
                         lastName: professional.lastName,
                         address: nil,

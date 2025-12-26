@@ -62,7 +62,7 @@ struct OfferListCard: View {
                         Spacer()
                         
                         if offer.isClub10 {
-                            Text("-10%")
+                            Text("CLUB10")
                                 .font(.system(size: 10, weight: .bold))
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 6)

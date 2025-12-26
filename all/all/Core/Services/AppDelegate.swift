@@ -53,7 +53,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
             let sessionId = components?.queryItems?.first(where: { $0.name == "session_id" })?.value
             
-            print("✅ Paiement réussi - Session ID: \(sessionId ?? "N/A")")
+            print("[AppDelegate] Paiement réussi - Session ID: \(sessionId ?? "N/A")")
             
             // Notifier que le paiement est terminé
             Task { @MainActor in
@@ -71,7 +71,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             
             return true
         } else if url.absoluteString.contains("payment-failed") || url.absoluteString.contains("payment_failed") {
-            print("❌ Paiement échoué")
+            print("[AppDelegate] Paiement échoué")
             
             NotificationCenter.default.post(
                 name: NSNotification.Name("StripePaymentReturned"),

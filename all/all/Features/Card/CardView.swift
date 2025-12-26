@@ -76,11 +76,8 @@ struct CardView: View {
                             .padding(.top, 8)
                         }
                         .padding(.vertical, 50)
-                    } else if viewModel.cardNumber == nil || !viewModel.isCardActive {
-                        // Vue d'abonnement si pas de carte ou carte inactive
-                        CardSubscriptionView()
-                            .padding(.top, 20)
-                    } else {
+                    } else if let cardNumber = viewModel.cardNumber, viewModel.isCardActive {
+                        // Afficher la carte si elle existe et est active
                         // Carte utilisateur principale
                         let cardBackgroundColor = viewModel.isCardValid ? Color.white : Color.red
                         let textColor = viewModel.isCardValid ? Color.black : Color.white
@@ -137,10 +134,10 @@ struct CardView: View {
                             if viewModel.cardType == "FAMILY" {
                                 Text("Carte familiale")
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(viewModel.isCardValid ? .appGold : .white)
+                                    .foregroundColor(viewModel.isCardValid ? .appRed : .white)
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 6)
-                                    .background(viewModel.isCardValid ? Color.appGold.opacity(0.2) : Color.white.opacity(0.2))
+                                    .background(viewModel.isCardValid ? Color.appRed.opacity(0.2) : Color.white.opacity(0.2))
                                     .cornerRadius(8)
                                     .padding(.top, 4)
                             }
@@ -180,12 +177,12 @@ struct CardView: View {
                             if viewModel.isMember {
                                 HStack(spacing: 6) {
                                     Image(systemName: "star.fill")
-                                        .foregroundColor(viewModel.isCardValid ? .appGold : .white)
+                                        .foregroundColor(viewModel.isCardValid ? .appRed : .white)
                                         .font(.system(size: 14))
                                     
                                     Text("Membre CLUB10")
                                         .font(.system(size: 15, weight: .semibold))
-                                        .foregroundColor(viewModel.isCardValid ? .appGold : .white)
+                                        .foregroundColor(viewModel.isCardValid ? .appRed : .white)
                                 }
                                 .padding(.top, 4)
                             }
@@ -197,16 +194,16 @@ struct CardView: View {
                                 }) {
                                     HStack {
                                         Image(systemName: "person.2.fill")
-                                            .foregroundColor(viewModel.isCardValid ? .appGold : .white)
+                                            .foregroundColor(viewModel.isCardValid ? .appRed : .white)
                                             .font(.system(size: 16))
                                         
                                         Text("Gérer ma famille")
                                             .font(.system(size: 15, weight: .semibold))
-                                            .foregroundColor(viewModel.isCardValid ? .appGold : .white)
+                                            .foregroundColor(viewModel.isCardValid ? .appRed : .white)
                                     }
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 12)
-                                    .background(viewModel.isCardValid ? Color.appGold.opacity(0.2) : Color.white.opacity(0.2))
+                                    .background(viewModel.isCardValid ? Color.appRed.opacity(0.2) : Color.white.opacity(0.2))
                                     .cornerRadius(10)
                                 }
                                 .padding(.top, 12)
@@ -355,6 +352,10 @@ struct CardView: View {
                         // Espace pour le footer
                         Spacer()
                             .frame(height: 100)
+                    } else {
+                        // Vue d'abonnement si pas de carte ou carte inactive
+                        CardSubscriptionView()
+                            .padding(.top, 20)
                     }
                 }
             }

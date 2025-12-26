@@ -130,7 +130,22 @@ class SubscriptionsAPIService: ObservableObject {
         return payments
     }
     
-    // MARK: - Get Family Card Emails
+    // MARK: - Invite Family Member
+    func inviteFamilyMember(email: String) async throws {
+        // Construire l'endpoint avec le paramètre de requête email
+        let endpoint = "/subscriptions/invite?email=\(email.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? email)"
+        
+        // La réponse peut être vide (200 OK)
+        struct EmptyResponse: Codable {}
+        let _: EmptyResponse = try await apiService.request(
+            endpoint: endpoint,
+            method: .post,
+            parameters: nil,
+            headers: nil
+        )
+    }
+    
+    // MARK: - Get Family Card Emails (deprecated - utiliser getUserLight à la place)
     func getFamilyCardEmails() async throws -> FamilyCardEmailsResponse {
         return try await apiService.request(
             endpoint: "/cards/family/emails",
@@ -140,7 +155,7 @@ class SubscriptionsAPIService: ObservableObject {
         )
     }
     
-    // MARK: - Update Family Card Emails
+    // MARK: - Update Family Card Emails (deprecated - utiliser inviteFamilyMember à la place)
     func updateFamilyCardEmails(_ request: UpdateFamilyCardEmailsRequest) async throws {
         // Encoder la requête en JSON
         let encoder = JSONEncoder()

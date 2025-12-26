@@ -42,10 +42,84 @@ struct FamilyCardManagementView: View {
                             .padding(.top, 20)
                             
                             // Description
-                            Text("Vous pouvez ajouter jusqu'à 4 adresses email pour votre carte famille. Seul le propriétaire de la carte peut modifier ces informations.")
+                            Text("Vous pouvez ajouter jusqu'à 4 membres pour votre carte famille. Les membres existants et les invitations en attente sont affichés ci-dessous.")
                                 .font(.system(size: 14, weight: .regular))
                                 .foregroundColor(.white.opacity(0.8))
                                 .padding(.horizontal, 20)
+                            
+                            // Afficher les membres existants
+                            if !viewModel.members.isEmpty {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text("Membres actifs")
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 20)
+                                    
+                                    ForEach(viewModel.members, id: \.id) { member in
+                                        HStack {
+                                            Image(systemName: "person.circle.fill")
+                                                .foregroundColor(.green)
+                                                .font(.system(size: 20))
+                                            
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                if let firstName = member.firstName, let lastName = member.lastName {
+                                                    Text("\(firstName) \(lastName)")
+                                                        .font(.system(size: 14, weight: .semibold))
+                                                        .foregroundColor(.white)
+                                                }
+                                                Text(member.email)
+                                                    .font(.system(size: 12, weight: .regular))
+                                                    .foregroundColor(.gray)
+                                            }
+                                            
+                                            Spacer()
+                                        }
+                                        .padding(.horizontal, 20)
+                                    }
+                                }
+                                .padding(.vertical, 8)
+                            }
+                            
+                            // Afficher les invitations en attente
+                            if !viewModel.invitedEmails.isEmpty {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text("Invitations en attente")
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 20)
+                                    
+                                    ForEach(viewModel.invitedEmails, id: \.self) { email in
+                                        HStack {
+                                            Image(systemName: "clock.fill")
+                                                .foregroundColor(.orange)
+                                                .font(.system(size: 20))
+                                            
+                                            Text(email)
+                                                .font(.system(size: 14, weight: .regular))
+                                                .foregroundColor(.white)
+                                            
+                                            Spacer()
+                                        }
+                                        .padding(.horizontal, 20)
+                                    }
+                                }
+                                .padding(.vertical, 8)
+                            }
+                            
+                            // Séparateur
+                            if !viewModel.members.isEmpty || !viewModel.invitedEmails.isEmpty {
+                                Divider()
+                                    .background(Color.white.opacity(0.2))
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 8)
+                            }
+                            
+                            // Titre pour ajouter de nouveaux membres
+                            Text("Ajouter un nouveau membre")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 20)
+                                .padding(.top, 8)
                             
                             // Champs email
                             VStack(spacing: 16) {
