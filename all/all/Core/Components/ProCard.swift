@@ -38,16 +38,12 @@ struct ProCard: View {
             
             Spacer()
             
-            // Icône Pro
-            ZStack {
-                Circle()
-                    .fill(Color.appRed.opacity(0.2))
-                    .frame(width: 80, height: 80)
-                
-                Image(systemName: "building.2.fill")
-                    .foregroundColor(.appRed)
-                    .font(.system(size: 40))
-            }
+            // Photo Pro (high-five)
+            Image("ProCardImage")
+                .resizable()
+                .scaledToFill()
+                .frame(width: 80, height: 80)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         .padding(20)
         .background(Color(red: 0.95, green: 0.95, blue: 0.95))

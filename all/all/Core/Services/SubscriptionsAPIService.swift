@@ -130,19 +130,86 @@ class SubscriptionsAPIService: ObservableObject {
         return payments
     }
     
-    // MARK: - Invite Family Member
+    // MARK: - Invite Family Member (nouveau endpoint)
     func inviteFamilyMember(email: String) async throws {
-        // Construire l'endpoint avec le paramètre de requête email
-        let endpoint = "/subscriptions/invite?email=\(email.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? email)"
+        print("[SubscriptionsAPIService] Inviting family member with email: \(email)")
+        
+        // Utiliser le nouvel endpoint POST /api/v1/cards/invite avec JSON body
+        struct InviteRequest: Codable {
+            let email: String
+        }
+        
+        let request = InviteRequest(email: email)
+        let encoder = JSONEncoder()
+        let jsonData = try encoder.encode(request)
+        
+        guard let parameters = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
+            print("[SubscriptionsAPIService] ERROR: Failed to encode invite request")
+            throw APIError.invalidResponse
+        }
+        
+        print("[SubscriptionsAPIService] Request payload: \(parameters)")
         
         // La réponse peut être vide (200 OK)
         struct EmptyResponse: Codable {}
         let _: EmptyResponse = try await apiService.request(
-            endpoint: endpoint,
+            endpoint: "/cards/invite",
             method: .post,
-            parameters: nil,
+            parameters: parameters,
             headers: nil
         )
+        
+        print("[SubscriptionsAPIService] Successfully invited family member: \(email)")
+    }
+    
+    // MARK: - Remove Family Member (nouveau endpoint)
+    func removeFamilyMember(memberId: Int? = nil, email: String? = nil) async throws {
+        print("[SubscriptionsAPIService] Removing family member - memberId: \(memberId?.description ?? "nil"), email: \(email ?? "nil")")
+        
+        guard memberId != nil || email != nil else {
+            print("[SubscriptionsAPIService] ERROR: Either memberId or email must be provided")
+            throw APIError.invalidResponse
+        }
+        
+        struct RemoveMemberRequest: Codable {
+            let memberId: Int?
+            let email: String?
+            
+            enum CodingKeys: String, CodingKey {
+                case memberId
+                case email
+            }
+        }
+        
+        let request = RemoveMemberRequest(memberId: memberId, email: email)
+        let encoder = JSONEncoder()
+        let jsonData = try encoder.encode(request)
+        
+        guard let parameters = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
+            print("[SubscriptionsAPIService] ERROR: Failed to encode remove member request")
+            throw APIError.invalidResponse
+        }
+        
+        // Nettoyer les valeurs nil
+        let cleanedParameters = parameters.compactMapValues { value -> Any? in
+            if value is NSNull {
+                return nil
+            }
+            return value
+        }
+        
+        print("[SubscriptionsAPIService] Request payload: \(cleanedParameters)")
+        
+        // La réponse peut être vide (200 OK)
+        struct EmptyResponse: Codable {}
+        let _: EmptyResponse = try await apiService.request(
+            endpoint: "/cards/remove-member",
+            method: .post,
+            parameters: cleanedParameters,
+            headers: nil
+        )
+        
+        print("[SubscriptionsAPIService] Successfully removed family member")
     }
     
     // MARK: - Get Family Card Emails (deprecated - utiliser getUserLight à la place)

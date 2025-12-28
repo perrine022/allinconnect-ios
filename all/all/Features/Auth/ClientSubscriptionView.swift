@@ -92,9 +92,17 @@ struct ClientSubscriptionView: View {
                                                             .font(.system(size: 32, weight: .bold))
                                                             .foregroundColor(.white)
                                                         
-                                                        Text(plan.isMonthly ? "par mois" : "par an")
-                                                            .font(.system(size: 16, weight: .regular))
-                                                            .foregroundColor(.white.opacity(0.8))
+                                                        VStack(alignment: .leading, spacing: 2) {
+                                                            Text(plan.isMonthly ? "par mois" : "par an")
+                                                                .font(.system(size: 16, weight: .regular))
+                                                                .foregroundColor(.white.opacity(0.8))
+                                                            
+                                                            if plan.isMonthly {
+                                                                Text("(engagement 6 mois)")
+                                                                    .font(.system(size: 12, weight: .regular))
+                                                                    .foregroundColor(.white.opacity(0.6))
+                                                            }
+                                                        }
                                                     }
                                                     
                                                     Spacer()

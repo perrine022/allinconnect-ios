@@ -29,30 +29,19 @@ struct HomeView: View {
     @State private var proInfoNavigationId: UUID?
     var body: some View {
         ZStack {
-            // Background avec gradient : rouge moins intense
-            LinearGradient(
-                gradient: Gradient(stops: [
-                    .init(color: Color.appDarkBlue, location: 0.0),      // Bleu très foncé en haut (0%)
-                    .init(color: Color.appDark, location: 0.12),          // Noir (12%)
-                    .init(color: Color.appDarkRed1, location: 0.25),      // Rouge très foncé (25% - 1/4 de l'écran)
-                    .init(color: Color.appDarkRed2, location: 0.55),       // Rouge foncé (55%)
-                    .init(color: Color.appDarkRed2, location: 0.75),       // Rouge foncé moins intense (75%)
-                    .init(color: Color.appDark, location: 1.0)           // Sombre en bas (100%)
-                ]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea(edges: .top)
+            // Background avec gradient : identique partout dans l'app
+            AppGradient.main
+                .ignoresSafeArea(edges: .top)
             
             ScrollView {
-                VStack(spacing: 24) {
-                    // Logo
+                VStack(spacing: 0) {
+                    // Logo en premier
                     VStack(spacing: 0) {
                         Image("AppLogo")
                             .resizable()
                             .scaledToFit()
-                            .frame(maxWidth: 75, maxHeight: 30)
-                            .padding(.top, 16)
+                            .frame(maxWidth: 225, maxHeight: 90)
+                            .padding(.top, 12)
                             .padding(.bottom, 4)
                     }
                     
@@ -75,7 +64,9 @@ struct HomeView: View {
                         )
                     }
                     .padding(.horizontal, 20)
-                    
+                    .padding(.top, 12)
+                    .padding(.bottom, 20)
+
                     // Titre principal
                     VStack(spacing: 8) {
                         (Text("Trouve ton partenaire ")
@@ -94,6 +85,8 @@ struct HomeView: View {
                             .multilineTextAlignment(.center)
                     }
                     .padding(.horizontal, 20)
+                    .padding(.top, 20)
+                    .padding(.bottom, 24)
                     
                     // Champs de recherche - Design compact et épuré
                     VStack(spacing: 6) {
@@ -221,6 +214,8 @@ struct HomeView: View {
                         }
                     }
                     .padding(.horizontal, 20)
+                    .padding(.top, 16)
+                    .padding(.bottom, 24)
                     
                     // Section "Nos partenaires" - affichée seulement après recherche
                     if viewModel.hasSearched {
@@ -288,7 +283,7 @@ struct HomeView: View {
                                 .padding(.horizontal, 20)
                             }
                         }
-                        .padding(.top, 8)
+                        .padding(.top, 2)
                     }
                     
                     // Section "À ne pas louper" - juste après le bouton rechercher par défaut, ou après les partenaires si recherche effectuée
@@ -341,21 +336,21 @@ struct HomeView: View {
                             }
                         }
                     }
-                    .padding(.top, viewModel.hasSearched ? 24 : 8)
+                    .padding(.top, viewModel.hasSearched ? 24 : 16)
                     
                     // Carte Pro - pour les professionnels
                     ProCard(onLearnMore: {
                         proInfoNavigationId = UUID()
                     })
                     .padding(.horizontal, 20)
-                    .padding(.top, 8)
+                    .padding(.top, 16)
                     
                     // Carte CLUB10 - à la fin
                     Club10Card(onLearnMore: {
                         digitalCardInfoNavigationId = UUID()
                     })
                     .padding(.horizontal, 20)
-                    .padding(.top, 8)
+                    .padding(.top, 16)
                     .padding(.bottom, 100) // Espace pour le footer
                 }
             }

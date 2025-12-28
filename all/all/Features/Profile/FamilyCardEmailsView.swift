@@ -221,6 +221,7 @@ class FamilyCardEmailsViewModel: ObservableObject {
     }
     
     func saveEmails() async {
+        print("[FamilyCardEmailsViewModel] ===== DEBUT saveEmails =====")
         isLoading = true
         errorMessage = nil
         successMessage = nil
@@ -228,45 +229,105 @@ class FamilyCardEmailsViewModel: ObservableObject {
         // Récupérer l'email du propriétaire
         let userMe = try? await profileAPIService.getUserMe()
         let ownerEmail = userMe?.email ?? ""
+        print("[FamilyCardEmailsViewModel] Owner email: \(ownerEmail)")
         
         // Récupérer les emails actuels (membres + invitations), en excluant le propriétaire
         let currentMemberEmails = Set(members.filter { $0.email != ownerEmail }.map { $0.email })
         let currentInvitedEmails = Set(invitedEmails)
         let currentAllEmails = currentMemberEmails.union(currentInvitedEmails)
         
-        // Filtrer les nouveaux emails (ceux qui ne sont pas déjà membres ou invités, et qui ne sont pas le propriétaire)
-        let newEmails = emails.filter { email in
-            let trimmedEmail = email.trimmingCharacters(in: .whitespaces)
-            return !trimmedEmail.isEmpty 
-                && !currentAllEmails.contains(trimmedEmail)
-                && trimmedEmail != ownerEmail // Ne pas permettre d'inviter le propriétaire
-        }
+        print("[FamilyCardEmailsViewModel] Current member emails: \(currentMemberEmails)")
+        print("[FamilyCardEmailsViewModel] Current invited emails: \(currentInvitedEmails)")
+        print("[FamilyCardEmailsViewModel] Current all emails: \(currentAllEmails)")
+        print("[FamilyCardEmailsViewModel] New emails from form: \(emails)")
+        
+        // Filtrer les emails saisis (non vides)
+        let trimmedEmails = emails.map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        let newEmailsSet = Set(trimmedEmails)
+        
+        print("[FamilyCardEmailsViewModel] Trimmed emails from form: \(trimmedEmails)")
+        print("[FamilyCardEmailsViewModel] New emails set: \(newEmailsSet)")
+        
+        // Trouver les emails à ajouter (nouveaux)
+        let emailsToAdd = newEmailsSet.subtracting(currentAllEmails)
+        print("[FamilyCardEmailsViewModel] Emails to ADD: \(emailsToAdd)")
+        
+        // Trouver les emails à supprimer (étaient là avant mais plus maintenant)
+        let emailsToRemove = currentAllEmails.subtracting(newEmailsSet)
+        print("[FamilyCardEmailsViewModel] Emails to REMOVE: \(emailsToRemove)")
         
         // Valider les nouveaux emails
-        for email in newEmails {
+        for email in emailsToAdd {
             if !isValidEmail(email) {
                 errorMessage = "L'email \(email) n'est pas valide"
                 isLoading = false
+                print("[FamilyCardEmailsViewModel] ERROR: Invalid email format: \(email)")
+                return
+            }
+            if email == ownerEmail {
+                errorMessage = "Vous ne pouvez pas vous inviter vous-même"
+                isLoading = false
+                print("[FamilyCardEmailsViewModel] ERROR: Cannot invite owner email")
                 return
             }
         }
         
         // Vérifier la limite de 4 membres (en plus du propriétaire)
         // Total = 1 propriétaire + 4 membres maximum = 5 personnes au total
-        let totalCount = currentAllEmails.count + newEmails.count
+        let totalCount = newEmailsSet.count
         if totalCount > 4 {
             errorMessage = "Une carte famille est limitée à 4 membres (en plus du propriétaire). Total maximum : 5 personnes."
             isLoading = false
+            print("[FamilyCardEmailsViewModel] ERROR: Too many members (\(totalCount) > 4)")
             return
         }
         
-        // Inviter chaque nouvel email
+        // Traiter les suppressions et ajouts
         do {
-            for email in newEmails {
-                try await subscriptionsAPIService.inviteFamilyMember(email: email.trimmingCharacters(in: .whitespaces))
+            var addedCount = 0
+            var removedCount = 0
+            
+            // 1. Supprimer les membres/invitations qui ne sont plus dans la liste
+            for emailToRemove in emailsToRemove {
+                print("[FamilyCardEmailsViewModel] Removing email: \(emailToRemove)")
+                
+                // Vérifier si c'est un membre inscrit (par ID) ou une invitation (par email)
+                if let member = members.first(where: { $0.email == emailToRemove && $0.email != ownerEmail }) {
+                    // C'est un membre inscrit, utiliser memberId
+                    print("[FamilyCardEmailsViewModel] Removing member with ID: \(member.id)")
+                    try await subscriptionsAPIService.removeFamilyMember(memberId: member.id, email: nil)
+                    removedCount += 1
+                } else {
+                    // C'est une invitation en attente, utiliser email
+                    print("[FamilyCardEmailsViewModel] Removing invitation with email: \(emailToRemove)")
+                    try await subscriptionsAPIService.removeFamilyMember(memberId: nil, email: emailToRemove)
+                    removedCount += 1
+                }
             }
             
-            successMessage = newEmails.isEmpty ? "Aucun changement" : "\(newEmails.count) membre(s) invité(s) avec succès"
+            // 2. Ajouter les nouveaux emails
+            for emailToAdd in emailsToAdd {
+                print("[FamilyCardEmailsViewModel] Adding email: \(emailToAdd)")
+                try await subscriptionsAPIService.inviteFamilyMember(email: emailToAdd)
+                addedCount += 1
+            }
+            
+            print("[FamilyCardEmailsViewModel] Success - Added: \(addedCount), Removed: \(removedCount)")
+            
+            // Message de succès
+            var messages: [String] = []
+            if addedCount > 0 {
+                messages.append("\(addedCount) membre(s) invité(s)")
+            }
+            if removedCount > 0 {
+                messages.append("\(removedCount) membre(s) retiré(s)")
+            }
+            
+            if messages.isEmpty {
+                successMessage = "Aucun changement"
+            } else {
+                successMessage = messages.joined(separator: ", ") + " avec succès"
+            }
             
             // Recharger les données
             loadEmails()
@@ -276,23 +337,25 @@ class FamilyCardEmailsViewModel: ObservableObject {
                 self.successMessage = nil
             }
         } catch {
+            print("[FamilyCardEmailsViewModel] ERROR: \(error)")
             if let apiError = error as? APIError {
                 switch apiError {
                 case .httpError(let statusCode, let message):
+                    print("[FamilyCardEmailsViewModel] HTTP Error - Status: \(statusCode), Message: \(message ?? "nil")")
                     if statusCode == 400 {
-                        errorMessage = message ?? "Erreur lors de l'invitation. Vérifiez que vous êtes le propriétaire de la carte et que la limite de 4 membres (5 personnes au total avec le propriétaire) n'est pas atteinte."
+                        errorMessage = message ?? "Erreur lors de l'opération. Vérifiez que vous êtes le propriétaire de la carte et que la limite de 4 membres (5 personnes au total avec le propriétaire) n'est pas atteinte."
                     } else {
-                        errorMessage = message ?? "Erreur lors de l'invitation"
+                        errorMessage = message ?? "Erreur lors de l'opération (code: \(statusCode))"
                     }
                 default:
-                    errorMessage = "Erreur lors de l'invitation"
+                    errorMessage = "Erreur lors de l'opération: \(apiError.localizedDescription)"
                 }
             } else {
-                errorMessage = "Erreur lors de l'invitation"
+                errorMessage = "Erreur lors de l'opération: \(error.localizedDescription)"
             }
-            print("Erreur lors de l'invitation: \(error)")
         }
         
+        print("[FamilyCardEmailsViewModel] ===== FIN saveEmails =====")
         isLoading = false
     }
     

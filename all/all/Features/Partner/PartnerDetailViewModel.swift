@@ -400,8 +400,24 @@ class PartnerDetailViewModel: ObservableObject {
     }
     
     func openInstagram() {
-        guard let instagram = partner.instagram,
-              let url = URL(string: instagram) else {
+        guard let instagram = partner.instagram else {
+            return
+        }
+        
+        // Formater l'URL Instagram : si c'est déjà une URL complète, l'utiliser, sinon construire l'URL
+        let instagramURL: String
+        if instagram.hasPrefix("http://") || instagram.hasPrefix("https://") {
+            instagramURL = instagram
+        } else if instagram.hasPrefix("@") {
+            // Format @username -> https://instagram.com/username
+            let username = String(instagram.dropFirst())
+            instagramURL = "https://instagram.com/\(username)"
+        } else {
+            // Format username -> https://instagram.com/username
+            instagramURL = "https://instagram.com/\(instagram)"
+        }
+        
+        guard let url = URL(string: instagramURL) else {
             return
         }
         UIApplication.shared.open(url)

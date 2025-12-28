@@ -96,17 +96,17 @@ struct ManageSubscriptionView: View {
                         HStack {
                             if viewModel.isLoading {
                                 ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .black))
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                     .scaleEffect(0.8)
                             } else {
                                 Text("Gérer la facturation")
                                     .font(.system(size: 17, weight: .semibold))
                             }
                         }
-                        .foregroundColor(.black)
+                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(viewModel.isLoading ? Color.gray.opacity(0.5) : Color.appGold)
+                        .background(viewModel.isLoading ? Color.gray.opacity(0.5) : Color.appDarkRedButton)
                         .cornerRadius(12)
                     }
                     .disabled(viewModel.isLoading)

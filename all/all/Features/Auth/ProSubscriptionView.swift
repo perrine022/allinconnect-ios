@@ -92,9 +92,17 @@ struct ProSubscriptionView: View {
                                                     .font(.system(size: 13, weight: .medium))
                                                     .foregroundColor(.black.opacity(0.7))
                                                 
-                                                Text(plan.priceLabel)
-                                                    .font(.system(size: 22, weight: .bold))
-                                                    .foregroundColor(.black)
+                                                VStack(alignment: .leading, spacing: 2) {
+                                                    Text(plan.priceLabel)
+                                                        .font(.system(size: 22, weight: .bold))
+                                                        .foregroundColor(.black)
+                                                    
+                                                    if plan.isMonthly {
+                                                        Text("(engagement 6 mois)")
+                                                            .font(.system(size: 11, weight: .regular))
+                                                            .foregroundColor(.black.opacity(0.6))
+                                                    }
+                                                }
                                                 
                                                 if plan.isAnnual {
                                                     Text("Économisez avec l'abonnement annuel 🎉")

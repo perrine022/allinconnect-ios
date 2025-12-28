@@ -354,7 +354,7 @@ struct ProfileView: View {
                             }
                             
                             // Type de carte
-                            if let cardType = viewModel.cardType {
+                            if viewModel.cardType != nil {
                                 HStack {
                                     Text("Type de carte:")
                                         .font(.system(size: 14, weight: .medium))

@@ -185,16 +185,16 @@ struct FamilyCardManagementView: View {
                                 HStack {
                                     if viewModel.isLoading {
                                         ProgressView()
-                                            .progressViewStyle(CircularProgressViewStyle(tint: .black))
+                                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                             .scaleEffect(0.8)
                                     }
                                     Text(viewModel.isLoading ? "Enregistrement..." : "Valider")
                                         .font(.system(size: 18, weight: .bold))
-                                        .foregroundColor(.black)
+                                        .foregroundColor(.white)
                                 }
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 16)
-                                .background(viewModel.isLoading ? Color.gray.opacity(0.5) : Color.appGold)
+                                .background(viewModel.isLoading ? Color.gray.opacity(0.5) : Color.appDarkRedButton)
                                 .cornerRadius(12)
                             }
                             .disabled(viewModel.isLoading)

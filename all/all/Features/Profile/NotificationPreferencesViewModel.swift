@@ -14,7 +14,10 @@ class NotificationPreferencesViewModel: ObservableObject {
     @Published var newOffers: Bool = true
     @Published var newIndependent: Bool = true
     @Published var localEvents: Bool = true
-    @Published var localizedOffers: Bool = true // Nouvelles offres selon la localisation
+    
+    // Distance pour les offres et événements locaux (en km)
+    @Published var notificationRadius: Double = 10.0 // Par défaut 10km
+    let radiusOptions: [Double] = [5, 10, 15, 20, 25, 30, 50]
     
     // Catégories (mêmes que sur la homepage)
     @Published var santeBienEtre: Bool = true

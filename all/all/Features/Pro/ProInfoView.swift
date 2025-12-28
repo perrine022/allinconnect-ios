@@ -61,9 +61,17 @@ struct ProInfoView: View {
                                                     .font(.system(size: 14, weight: .medium))
                                                     .foregroundColor(.white.opacity(0.9))
                                                 
-                                                Text(plan.priceLabel)
-                                                    .font(.system(size: 24, weight: .bold))
-                                                    .foregroundColor(.white)
+                                                VStack(alignment: .leading, spacing: 2) {
+                                                    Text(plan.priceLabel)
+                                                        .font(.system(size: 24, weight: .bold))
+                                                        .foregroundColor(.white)
+                                                    
+                                                    if plan.isMonthly {
+                                                        Text("(engagement 6 mois)")
+                                                            .font(.system(size: 12, weight: .regular))
+                                                            .foregroundColor(.white.opacity(0.7))
+                                                    }
+                                                }
                                                 
                                                 if plan.isAnnual {
                                                     Text("Économisez avec l'abonnement annuel 🎉")
@@ -131,7 +139,7 @@ struct ProInfoView: View {
                                         .foregroundColor(.white)
                                     
                                     // WebView Stripe embedded
-                                    StripePaymentView()
+                                    StripePaymentView(filterCategory: "PROFESSIONAL")
                                         .frame(height: 600)
                                         .cornerRadius(12)
                                 }

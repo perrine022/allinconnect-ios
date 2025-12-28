@@ -104,7 +104,7 @@ struct CardSubscriptionView: View {
         }
         .sheet(isPresented: $showPayment) {
             NavigationStack {
-                StripePaymentView()
+                StripePaymentView(filterCategory: "CLIENT")
             }
         }
         .sheet(isPresented: $showWhyCard) {

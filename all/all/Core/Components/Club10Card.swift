@@ -38,7 +38,7 @@ struct Club10Card: View {
             
             Spacer()
             
-            // QR Code pattern
+            // QR Code pattern avec badge -10%
             ZStack {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color(red: 0.6, green: 0.4, blue: 0.3))
@@ -60,6 +60,23 @@ struct Club10Card: View {
                         Rectangle().fill(Color.black).frame(width: 8, height: 8)
                         Rectangle().fill(Color.white).frame(width: 8, height: 8)
                         Rectangle().fill(Color.black).frame(width: 8, height: 8)
+                    }
+                }
+                
+                // Badge -10% en vert
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Text("-10%")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(Color.green)
+                            .cornerRadius(6)
+                            .padding(.trailing, 4)
+                            .padding(.bottom, 4)
                     }
                 }
             }

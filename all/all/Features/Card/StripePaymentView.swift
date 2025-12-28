@@ -16,7 +16,7 @@ struct StripePaymentView: View {
     @State private var showSafari = false
     
     // Paramètre optionnel pour filtrer les plans par catégorie
-    var filterCategory: String? = nil // "PROFESSIONAL", "INDIVIDUAL", ou "FAMILY"
+    var filterCategory: String? = nil // "PROFESSIONAL", "INDIVIDUAL", "FAMILY", ou "CLIENT" (INDIVIDUAL + FAMILY)
     
     var body: some View {
         ZStack {
@@ -39,10 +39,68 @@ struct StripePaymentView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 20)
                     
+                    // Message incitatif pour les pros (carte digitale incluse)
+                    if filterCategory == "PROFESSIONAL" {
+                        HStack(spacing: 12) {
+                            Image(systemName: "gift.fill")
+                                .foregroundColor(.appDarkRedButton)
+                                .font(.system(size: 20))
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Carte digitale incluse !")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.white)
+                                
+                                Text("Avec votre abonnement Pro, vous bénéficiez aussi de tous les avantages de la carte digitale")
+                                    .font(.system(size: 13, weight: .regular))
+                                    .foregroundColor(.white.opacity(0.9))
+                            }
+                        }
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.appDarkRed1.opacity(0.6))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.appDarkRedButton.opacity(0.3), lineWidth: 1)
+                                )
+                        )
+                        .padding(.horizontal, 20)
+                    }
+                    
+                    // Message incitatif pour la carte famille (quand on est sur CLIENT)
+                    if filterCategory == "CLIENT" {
+                        HStack(spacing: 12) {
+                            Image(systemName: "person.2.fill")
+                                .foregroundColor(.appDarkRedButton)
+                                .font(.system(size: 20))
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Pensez à la carte famille !")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.white)
+                                
+                                Text("Partagez les avantages avec jusqu'à 4 membres de votre famille")
+                                    .font(.system(size: 13, weight: .regular))
+                                    .foregroundColor(.white.opacity(0.9))
+                            }
+                        }
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.appDarkRed1.opacity(0.6))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.appDarkRedButton.opacity(0.3), lineWidth: 1)
+                                )
+                        )
+                        .padding(.horizontal, 20)
+                    }
+                    
                     // Indicateur de chargement
                     if viewModel.isLoading {
                         ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .appGold))
+                            .progressViewStyle(CircularProgressViewStyle(tint: .appDarkRedButton))
                             .scaleEffect(1.5)
                             .padding(.vertical, 40)
                     }
@@ -82,10 +140,10 @@ struct StripePaymentView: View {
                                 Text("Payer \(selectedPlan.formattedPrice)")
                                     .font(.system(size: 18, weight: .bold))
                             }
-                            .foregroundColor(.black)
+                            .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(Color.appGold)
+                            .background(Color.appDarkRedButton)
                             .cornerRadius(12)
                         }
                         .padding(.horizontal, 20)
@@ -151,18 +209,18 @@ struct PlanCard: View {
                         
                         Text(plan.formattedPrice)
                             .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(.appGold)
+                            .foregroundColor(.appDarkRedButton)
                     }
                     
                     Spacer()
                     
                     // Badge type
-                    Text(plan.category == "FAMILY" ? "Famille" : "Individuel")
+                    Text(plan.category == "FAMILY" ? "Famille" : plan.category == "PROFESSIONAL" ? "Pro" : "Individuel")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(.black)
+                        .foregroundColor(.white)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(Color.appGold)
+                        .background(Color.appDarkRedButton)
                         .cornerRadius(8)
                 }
                 
@@ -178,6 +236,22 @@ struct PlanCard: View {
                         Text("• Partagez les avantages en famille")
                             .font(.system(size: 14, weight: .regular))
                             .foregroundColor(.white.opacity(0.9))
+                        Text("• Carte digitale pour chaque membre")
+                            .font(.system(size: 14, weight: .regular))
+                            .foregroundColor(.white.opacity(0.9))
+                    }
+                } else if plan.category == "PROFESSIONAL" {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("• Visibilité locale")
+                            .font(.system(size: 14, weight: .regular))
+                            .foregroundColor(.white.opacity(0.9))
+                        Text("• Diffusion de tes offres")
+                            .font(.system(size: 14, weight: .regular))
+                            .foregroundColor(.white.opacity(0.9))
+                        Text("• Carte digitale incluse")
+                            .font(.system(size: 14, weight: .regular))
+                            .foregroundColor(.appDarkRedButton)
+                            .fontWeight(.semibold)
                     }
                 } else {
                     VStack(alignment: .leading, spacing: 8) {
@@ -187,6 +261,10 @@ struct PlanCard: View {
                         Text("• Carte digitale personnelle")
                             .font(.system(size: 14, weight: .regular))
                             .foregroundColor(.white.opacity(0.9))
+                        Text("• Pensez à la carte famille !")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.appDarkRedButton.opacity(0.9))
+                            .italic()
                     }
                 }
             }
@@ -194,7 +272,7 @@ struct PlanCard: View {
             .background(isSelected ? Color.appDarkRed1.opacity(0.9) : Color.appDarkRed1.opacity(0.6))
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? Color.appGold : Color.clear, lineWidth: 2)
+                    .stroke(isSelected ? Color.appDarkRedButton : Color.clear, lineWidth: 2)
             )
             .cornerRadius(12)
         }
@@ -267,8 +345,14 @@ class StripePaymentViewModel: ObservableObject {
                 
                 // Filtrer les plans si une catégorie est spécifiée
                 if let filterCategory = filterCategory {
-                    plans = allPlans.filter { $0.category == filterCategory }
-                    print("[StripePaymentViewModel] Plans filtrés pour '\(filterCategory)': \(plans.count) plans")
+                    if filterCategory == "CLIENT" {
+                        // Pour les clients, afficher INDIVIDUAL et FAMILY
+                        plans = allPlans.filter { $0.category == "INDIVIDUAL" || $0.category == "FAMILY" }
+                        print("[StripePaymentViewModel] Plans filtrés pour 'CLIENT' (INDIVIDUAL + FAMILY): \(plans.count) plans")
+                    } else {
+                        plans = allPlans.filter { $0.category == filterCategory }
+                        print("[StripePaymentViewModel] Plans filtrés pour '\(filterCategory)': \(plans.count) plans")
+                    }
                 } else {
                     plans = allPlans
                 }

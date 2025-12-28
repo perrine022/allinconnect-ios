@@ -138,8 +138,8 @@ class ProfileViewModel: ObservableObject {
         
         Task {
             // Charger les données en parallèle
-            async let subscriptionTask = loadSubscriptionData()
-            async let favoritesTask = loadFavorites()
+            async let subscriptionTask: Void = loadSubscriptionData()
+            async let favoritesTask: Void = loadFavorites()
             
             // Attendre que les données soient chargées
             await subscriptionTask

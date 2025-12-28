@@ -38,14 +38,16 @@ extension Color {
 
 // MARK: - App Gradient Helper
 struct AppGradient {
-    /// Gradient principal de l'app : sombre en haut vers rouge en bas
+    /// Gradient principal de l'app : identique à HomeView
     static var main: LinearGradient {
         LinearGradient(
-            gradient: Gradient(colors: [
-                Color.appDarkBlue,      // Bleu très foncé en haut
-                Color.appDark,          // Noir
-                Color.appDarkRed1,      // Rouge très foncé
-                Color.appDarkRed2       // Rouge foncé en bas
+            gradient: Gradient(stops: [
+                .init(color: Color.appDarkBlue, location: 0.0),      // Bleu très foncé en haut (0%)
+                .init(color: Color.appDark, location: 0.12),          // Noir (12%)
+                .init(color: Color.appDarkRed1, location: 0.25),      // Rouge très foncé (25% - 1/4 de l'écran)
+                .init(color: Color.appDarkRed2, location: 0.55),       // Rouge foncé (55%)
+                .init(color: Color.appDarkRed2, location: 0.75),       // Rouge foncé moins intense (75%)
+                .init(color: Color.appDark, location: 1.0)           // Sombre en bas (100%)
             ]),
             startPoint: .top,
             endPoint: .bottom

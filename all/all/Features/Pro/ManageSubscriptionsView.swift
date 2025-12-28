@@ -45,7 +45,7 @@ struct ManageSubscriptionsView: View {
                                 VStack(alignment: .leading, spacing: 16) {
                                     HStack {
                                         Image(systemName: "creditcard.fill")
-                                            .foregroundColor(.appGold)
+                                            .foregroundColor(.appDarkRedButton)
                                             .font(.system(size: 18))
                                         
                                         Text("Abonnement actuel")
@@ -65,7 +65,7 @@ struct ManageSubscriptionsView: View {
                                             
                                             Text(viewModel.currentFormula)
                                                 .font(.system(size: 14, weight: .semibold))
-                                                .foregroundColor(.appGold)
+                                                .foregroundColor(.appDarkRedButton)
                                         }
                                         
                                         Divider()
@@ -121,9 +121,17 @@ struct ManageSubscriptionsView: View {
                                                             .font(.system(size: 16, weight: .bold))
                                                             .foregroundColor(.white)
                                                         
-                                                        Text(plan.priceLabel)
-                                                            .font(.system(size: 13, weight: .regular))
-                                                            .foregroundColor(.white.opacity(0.8))
+                                                        VStack(alignment: .leading, spacing: 2) {
+                                                            Text(plan.priceLabel)
+                                                                .font(.system(size: 13, weight: .regular))
+                                                                .foregroundColor(.white.opacity(0.8))
+                                                            
+                                                            if plan.isMonthly {
+                                                                Text("(engagement 6 mois)")
+                                                                    .font(.system(size: 11, weight: .regular))
+                                                                    .foregroundColor(.white.opacity(0.6))
+                                                            }
+                                                        }
                                                         
                                                         if plan.isAnnual {
                                                             // Calculer l'économie
@@ -133,7 +141,7 @@ struct ManageSubscriptionsView: View {
                                                                 
                                                                 Text("Économisez \(Int(savings))%")
                                                                     .font(.system(size: 12, weight: .semibold))
-                                                                    .foregroundColor(.appGold)
+                                                                    .foregroundColor(.appDarkRedButton)
                                                             }
                                                         }
                                                     }
@@ -142,12 +150,12 @@ struct ManageSubscriptionsView: View {
                                                     
                                                     ZStack {
                                                         Circle()
-                                                            .fill(viewModel.selectedPlan?.id == plan.id ? Color.appGold : Color.clear)
+                                                            .fill(viewModel.selectedPlan?.id == plan.id ? Color.appDarkRedButton : Color.clear)
                                                             .frame(width: 24, height: 24)
                                                         
                                                         if viewModel.selectedPlan?.id == plan.id {
                                                             Image(systemName: "checkmark")
-                                                                .foregroundColor(.black)
+                                                                .foregroundColor(.white)
                                                                 .font(.system(size: 12, weight: .bold))
                                                         } else {
                                                             Circle()
@@ -160,7 +168,7 @@ struct ManageSubscriptionsView: View {
                                                 .background(viewModel.selectedPlan?.id == plan.id ? Color.appDarkRed1.opacity(0.8) : Color.appDarkRed1.opacity(0.4))
                                                 .overlay(
                                                     RoundedRectangle(cornerRadius: 12)
-                                                        .stroke(viewModel.selectedPlan?.id == plan.id ? Color.appGold : Color.clear, lineWidth: 2)
+                                                        .stroke(viewModel.selectedPlan?.id == plan.id ? Color.appDarkRedButton : Color.clear, lineWidth: 2)
                                                 )
                                                 .cornerRadius(12)
                                             }
@@ -175,16 +183,16 @@ struct ManageSubscriptionsView: View {
                                         HStack {
                                             if viewModel.isLoading {
                                                 ProgressView()
-                                                    .progressViewStyle(CircularProgressViewStyle(tint: .black))
+                                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                             } else {
                                                 Text("Modifier mon abonnement")
                                                     .font(.system(size: 16, weight: .bold))
                                             }
                                         }
-                                        .foregroundColor(.black)
+                                        .foregroundColor(.white)
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 14)
-                                        .background((viewModel.selectedPlan != nil && !viewModel.isLoading) ? Color.appGold : Color.gray.opacity(0.5))
+                                        .background((viewModel.selectedPlan != nil && !viewModel.isLoading) ? Color.appDarkRedButton : Color.gray.opacity(0.5))
                                         .cornerRadius(12)
                                     }
                                     .disabled(viewModel.selectedPlan == nil || viewModel.isLoading)

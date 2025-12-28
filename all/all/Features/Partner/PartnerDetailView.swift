@@ -160,7 +160,7 @@ struct PartnerDetailView: View {
                                         .padding(.top, 8)
                                 }
                                 
-                                // Informations de contact avec icônes circulaires jaunes
+                                // Informations de contact avec icônes circulaires rouges
                                 VStack(alignment: .leading, spacing: 12) {
                                     Button(action: {
                                         viewModel.openMaps()
@@ -168,7 +168,7 @@ struct PartnerDetailView: View {
                                         HStack(spacing: 12) {
                                             ZStack {
                                                 Circle()
-                                                    .fill(Color.appGold)
+                                                    .fill(Color.appDarkRedButton)
                                                     .frame(width: 40, height: 40)
                                                 
                                                 Image(systemName: "info.circle.fill")
@@ -195,7 +195,7 @@ struct PartnerDetailView: View {
                                             HStack(spacing: 12) {
                                                 ZStack {
                                                     Circle()
-                                                        .fill(Color.appGold)
+                                                        .fill(Color.appDarkRedButton)
                                                         .frame(width: 40, height: 40)
                                                     
                                                     Image(systemName: "phone.fill")
@@ -204,6 +204,34 @@ struct PartnerDetailView: View {
                                                 }
                                                 
                                                 Text(viewModel.partner.phone ?? "")
+                                                    .font(.system(size: 15, weight: .regular))
+                                                    .foregroundColor(.white)
+                                                
+                                                Spacer()
+                                                
+                                                Image(systemName: "chevron.right")
+                                                    .foregroundColor(.gray)
+                                                    .font(.system(size: 14))
+                                            }
+                                        }
+                                    }
+                                    
+                                    if viewModel.partner.email != nil {
+                                        Button(action: {
+                                            viewModel.openEmail()
+                                        }) {
+                                            HStack(spacing: 12) {
+                                                ZStack {
+                                                    Circle()
+                                                        .fill(Color.appDarkRedButton)
+                                                        .frame(width: 40, height: 40)
+                                                    
+                                                    Image(systemName: "envelope.fill")
+                                                        .foregroundColor(.white)
+                                                        .font(.system(size: 18))
+                                                }
+                                                
+                                                Text(viewModel.partner.email ?? "")
                                                     .font(.system(size: 15, weight: .regular))
                                                     .foregroundColor(.white)
                                                 
@@ -254,12 +282,12 @@ struct PartnerDetailView: View {
                                         }) {
                                             ZStack {
                                                 RoundedRectangle(cornerRadius: 10)
-                                                    .fill(Color.appGold)
+                                                    .fill(Color.appDarkRedButton)
                                                     .frame(width: 50, height: 50)
                                                 
                                                 Image(systemName: "envelope.fill")
                                                     .font(.system(size: 18, weight: .bold))
-                                                    .foregroundColor(.black)
+                                                    .foregroundColor(.white)
                                             }
                                         }
                                     }
@@ -271,12 +299,12 @@ struct PartnerDetailView: View {
                                         }) {
                                             ZStack {
                                                 RoundedRectangle(cornerRadius: 10)
-                                                    .fill(Color.appGold)
+                                                    .fill(Color.appDarkRedButton)
                                                     .frame(width: 50, height: 50)
                                                 
                                                 Image(systemName: "globe")
                                                     .font(.system(size: 18, weight: .bold))
-                                                    .foregroundColor(.black)
+                                                    .foregroundColor(.white)
                                             }
                                         }
                                     }
@@ -295,10 +323,10 @@ struct PartnerDetailView: View {
                                                 Text("Appeler")
                                                     .font(.system(size: 15, weight: .semibold))
                                             }
-                                            .foregroundColor(.black)
+                                            .foregroundColor(.white)
                                             .frame(maxWidth: .infinity)
                                             .padding(.vertical, 12)
-                                            .background(Color.appGold)
+                                            .background(Color.appDarkRedButton)
                                             .cornerRadius(10)
                                         }
                                     }
@@ -342,10 +370,10 @@ struct PartnerDetailView: View {
                                             }) {
                                                 Text("Laisser un avis")
                                                     .font(.system(size: 14, weight: .semibold))
-                                                    .foregroundColor(.black)
+                                                    .foregroundColor(.white)
                                                     .padding(.horizontal, 16)
                                                     .padding(.vertical, 8)
-                                                    .background(Color.appGold)
+                                                    .background(Color.appDarkRedButton)
                                                     .cornerRadius(8)
                                             }
                                         }

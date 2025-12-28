@@ -227,10 +227,10 @@ struct OfferDetailView: View {
                                             Text("Voir le partenaire")
                                                 .font(.system(size: 16, weight: .semibold))
                                         }
-                                        .foregroundColor(.black)
+                                        .foregroundColor(.white)
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 14)
-                                        .background(Color.appGold)
+                                        .background(Color.appDarkRedButton)
                                         .cornerRadius(12)
                                     }
                                     .padding(.horizontal, 20)
@@ -247,10 +247,10 @@ struct OfferDetailView: View {
                                             Text("Voir le partenaire")
                                                 .font(.system(size: 16, weight: .semibold))
                                         }
-                                        .foregroundColor(.black)
+                                        .foregroundColor(.white)
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 14)
-                                        .background(Color.appGold)
+                                        .background(Color.appDarkRedButton)
                                         .cornerRadius(12)
                                     }
                                     .padding(.horizontal, 20)

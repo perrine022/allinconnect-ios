@@ -67,10 +67,41 @@ struct NotificationPreferencesView: View {
                                         .background(Color.white.opacity(0.1))
                                         .padding(.leading, 60)
                                     
-                                    NotificationToggleRow(
-                                        title: "Nouvelles offres selon ma localisation",
-                                        isOn: $viewModel.localizedOffers
-                                    )
+                                    // Curseur de distance pour les offres et événements locaux
+                                    VStack(alignment: .leading, spacing: 12) {
+                                        HStack {
+                                            Text("Rayon de notification")
+                                                .font(.system(size: 15, weight: .regular))
+                                                .foregroundColor(.white)
+                                            
+                                            Spacer()
+                                            
+                                            Text("\(Int(viewModel.notificationRadius)) km")
+                                                .font(.system(size: 15, weight: .semibold))
+                                                .foregroundColor(.appRed)
+                                        }
+                                        
+                                        Slider(
+                                            value: $viewModel.notificationRadius,
+                                            in: 5...50,
+                                            step: 5
+                                        )
+                                        .tint(.appRed)
+                                        
+                                        HStack {
+                                            Text("5 km")
+                                                .font(.system(size: 11, weight: .regular))
+                                                .foregroundColor(.gray)
+                                            
+                                            Spacer()
+                                            
+                                            Text("50 km")
+                                                .font(.system(size: 11, weight: .regular))
+                                                .foregroundColor(.gray)
+                                        }
+                                    }
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 14)
                                 }
                                 .background(Color.appDarkRed1.opacity(0.8))
                                 .cornerRadius(16)

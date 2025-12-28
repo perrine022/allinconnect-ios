@@ -446,7 +446,7 @@ class WalletViewModel: ObservableObject {
             let professionalsString = selected.map { "\($0.partner.name): \($0.amount)€" }.joined(separator: ", ")
             
             // Créer la demande
-            let response = try await walletAPIService.createWalletRequest(
+            let _ = try await walletAPIService.createWalletRequest(
                 amount: totalAmount,
                 professionals: professionalsString
             )
@@ -594,7 +594,7 @@ class WalletViewModel: ObservableObject {
         
         do {
             let professionalsString = "\(partner.name): \(amount)€"
-            let response = try await walletAPIService.createWalletRequest(
+            let _ = try await walletAPIService.createWalletRequest(
                 amount: amount,
                 professionals: professionalsString
             )

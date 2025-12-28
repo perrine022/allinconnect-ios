@@ -1,11 +1,12 @@
 {
   "images" : [
     {
-      "filename" : "vip-card-image.png",
+      "filename" : "WhatsApp Image 2025-12-28 at 11.59.36.jpeg",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
+      "filename" : "WhatsApp Image 2025-12-28 at 11.59.36 1.jpeg",
       "idiom" : "universal",
       "scale" : "2x"
     },
@@ -19,4 +20,3 @@
     "version" : 1
   }
 }
-

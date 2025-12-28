@@ -27,6 +27,11 @@ struct PartnerProfessionalResponse: Codable, Identifiable {
     let referralCode: String?
     let subscriptionPlan: SubscriptionPlanResponse?
     let establishmentName: String? // Ajouté pour les favoris
+    let establishmentDescription: String?
+    let phoneNumber: String?
+    let website: String?
+    let instagram: String?
+    let openingHours: String?
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -46,6 +51,11 @@ struct PartnerProfessionalResponse: Codable, Identifiable {
         case referralCode = "referralCode"
         case subscriptionPlan = "subscriptionPlan"
         case establishmentName = "establishmentName"
+        case establishmentDescription = "establishmentDescription"
+        case phoneNumber = "phoneNumber"
+        case website
+        case instagram
+        case openingHours = "openingHours"
     }
 }
 
@@ -228,11 +238,11 @@ extension PartnerProfessionalResponse {
             address: fullAddress,
             city: partnerCity,
             postalCode: postalCode,
-            phone: nil, // Pas disponible dans l'API
+            phone: phoneNumber, // Utiliser phoneNumber depuis l'API
             email: email,
-            website: nil, // Pas disponible dans l'API
-            instagram: nil, // Pas disponible dans l'API
-            description: profession, // Utiliser la profession comme description
+            website: website, // Utiliser website depuis l'API
+            instagram: instagram, // Utiliser instagram depuis l'API
+            description: establishmentDescription ?? profession, // Utiliser establishmentDescription si disponible, sinon profession
             rating: 4.5, // Par défaut, peut être récupéré depuis un autre endpoint
             reviewCount: 0, // Par défaut, peut être récupéré depuis un autre endpoint
             discount: isClub10 ? 10 : nil, // Réduction si CLUB10

@@ -144,16 +144,16 @@ struct LoginView: View {
                         HStack {
                             if viewModel.isLoading {
                                 ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .black))
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
                             } else {
                                 Text("Se connecter")
                                     .font(.system(size: 18, weight: .bold))
                             }
                         }
-                        .foregroundColor(.black)
+                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(viewModel.isValid && !viewModel.isLoading ? Color.appGold : Color.gray.opacity(0.5))
+                        .background(viewModel.isValid && !viewModel.isLoading ? Color.appDarkRedButton : Color.gray.opacity(0.5))
                         .cornerRadius(12)
                     }
                     .disabled(!viewModel.isValid || viewModel.isLoading)
@@ -168,7 +168,7 @@ struct LoginView: View {
                         }) {
                             Text("Mot de passe oublié ?")
                                 .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.appGold)
+                                .foregroundColor(.appDarkRedButton)
                         }
                         Spacer()
                     }
@@ -189,10 +189,10 @@ struct LoginView: View {
                     }) {
                         Text("Inscrivez-vous")
                             .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.black)
+                            .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(Color.appGold)
+                            .background(Color.appDarkRedButton)
                             .cornerRadius(12)
                     }
                     .padding(.horizontal, 20)
