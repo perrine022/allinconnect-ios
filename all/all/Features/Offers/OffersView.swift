@@ -167,11 +167,11 @@ struct OffersView: View {
                             HStack(spacing: 10) {
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 3)
-                                        .fill(viewModel.onlyClub10 ? Color.appRed : Color.clear)
+                                        .fill(viewModel.onlyClub10 ? Color.green : Color.clear)
                                         .frame(width: 16, height: 16)
                                         .overlay(
                                             RoundedRectangle(cornerRadius: 3)
-                                                .stroke(Color.white, lineWidth: 1.5)
+                                                .stroke(Color.green, lineWidth: 1.5)
                                         )
                                     
                                     if viewModel.onlyClub10 {
@@ -187,13 +187,13 @@ struct OffersView: View {
                                 
                                 Text("Uniquement les membres CLUB10")
                                     .font(.system(size: 13, weight: .medium))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.green)
                                 
                                 Spacer()
                             }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 9)
-                            .background(Color.appDarkGray.opacity(0.4))
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .background(Color(red: 0.85, green: 0.95, blue: 0.85)) // Vert clair/pastel
                             .cornerRadius(8)
                         }
                         .buttonStyle(PlainButtonStyle())

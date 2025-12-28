@@ -89,23 +89,17 @@ struct CardView: View {
                         let secondaryTextColor = viewModel.isCardValid ? Color.gray : Color.white.opacity(0.8)
                         
                         VStack(alignment: .leading, spacing: 8) {
-                            // Badge -10% sur fond vert en haut de la carte
-                            HStack {
-                                Spacer()
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(Color.green)
-                                        .frame(width: 80, height: 80)
-                                    
-                                    Text("-10%")
-                                        .font(.system(size: 24, weight: .bold))
-                                        .foregroundColor(.white)
-                                }
-                                Spacer()
-                            }
-                            .padding(.horizontal, -16)
-                            .padding(.top, -16)
-                            .padding(.bottom, 8)
+                            // Image VIP en haut de la carte - plus visible
+                            Image("VIPCardImage")
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(height: 80)
+                                .frame(maxWidth: .infinity)
+                                .clipped()
+                                .cornerRadius(20, corners: [.topLeft, .topRight])
+                                .padding(.horizontal, -16)
+                                .padding(.top, -16)
+                                .padding(.bottom, 8)
                             
                             HStack(alignment: .top, spacing: 8) {
                                 // Logo ALL IN - plus compact

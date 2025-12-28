@@ -248,91 +248,88 @@ struct PartnerDetailView: View {
                                 .padding(.top, 8)
                                 
                                 // Boutons d'action - tous affichés si les données existent
-                                VStack(spacing: 12) {
-                                    // Première ligne : Instagram, Email, Website
-                                    HStack(spacing: 12) {
-                                        // Instagram
-                                        if let instagram = viewModel.partner.instagram, !instagram.isEmpty {
-                                            Button(action: {
-                                                viewModel.openInstagram()
-                                            }) {
-                                                ZStack {
-                                                    RoundedRectangle(cornerRadius: 10)
-                                                        .fill(
-                                                            LinearGradient(
-                                                                gradient: Gradient(colors: [
-                                                                    Color(red: 0.9, green: 0.4, blue: 0.5),
-                                                                    Color(red: 0.95, green: 0.6, blue: 0.3)
-                                                                ]),
-                                                                startPoint: .topLeading,
-                                                                endPoint: .bottomTrailing
-                                                            )
+                                HStack(spacing: 12) {
+                                    // Instagram
+                                    if let instagram = viewModel.partner.instagram, !instagram.isEmpty {
+                                        Button(action: {
+                                            viewModel.openInstagram()
+                                        }) {
+                                            ZStack {
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .fill(
+                                                        LinearGradient(
+                                                            gradient: Gradient(colors: [
+                                                                Color(red: 0.9, green: 0.4, blue: 0.5),
+                                                                Color(red: 0.95, green: 0.6, blue: 0.3)
+                                                            ]),
+                                                            startPoint: .topLeading,
+                                                            endPoint: .bottomTrailing
                                                         )
-                                                        .frame(width: 50, height: 50)
-                                                    
-                                                    Image(systemName: "camera.fill")
-                                                        .font(.system(size: 18, weight: .bold))
-                                                        .foregroundColor(.white)
-                                                }
+                                                    )
+                                                    .frame(width: 50, height: 50)
+                                                
+                                                Image(systemName: "camera.fill")
+                                                    .font(.system(size: 18, weight: .bold))
+                                                    .foregroundColor(.white)
                                             }
                                         }
-                                        
-                                        // Email
-                                        if let email = viewModel.partner.email, !email.isEmpty {
-                                            Button(action: {
-                                                viewModel.openEmail()
-                                            }) {
-                                                ZStack {
-                                                    RoundedRectangle(cornerRadius: 10)
-                                                        .fill(Color.appDarkRedButton)
-                                                        .frame(width: 50, height: 50)
-                                                    
-                                                    Image(systemName: "envelope.fill")
-                                                        .font(.system(size: 18, weight: .bold))
-                                                        .foregroundColor(.white)
-                                                }
-                                            }
-                                        }
-                                        
-                                        // Website
-                                        if let website = viewModel.partner.website, !website.isEmpty {
-                                            Button(action: {
-                                                viewModel.openWebsite()
-                                            }) {
-                                                ZStack {
-                                                    RoundedRectangle(cornerRadius: 10)
-                                                        .fill(Color.appDarkRedButton)
-                                                        .frame(width: 50, height: 50)
-                                                    
-                                                    Image(systemName: "globe")
-                                                        .font(.system(size: 18, weight: .bold))
-                                                        .foregroundColor(.white)
-                                                }
-                                            }
-                                        }
-                                        
-                                        Spacer()
                                     }
                                     
-                                    // Deuxième ligne : Bouton Appeler (large)
+                                    // Email
+                                    if let email = viewModel.partner.email, !email.isEmpty {
+                                        Button(action: {
+                                            viewModel.openEmail()
+                                        }) {
+                                            ZStack {
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .fill(Color.appDarkRedButton)
+                                                    .frame(width: 50, height: 50)
+                                                
+                                                Image(systemName: "envelope.fill")
+                                                    .font(.system(size: 18, weight: .bold))
+                                                    .foregroundColor(.white)
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Website
+                                    if let website = viewModel.partner.website, !website.isEmpty {
+                                        Button(action: {
+                                            viewModel.openWebsite()
+                                        }) {
+                                            ZStack {
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .fill(Color.appDarkRedButton)
+                                                    .frame(width: 50, height: 50)
+                                                
+                                                Image(systemName: "globe")
+                                                    .font(.system(size: 18, weight: .bold))
+                                                    .foregroundColor(.white)
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Appeler
                                     if let phone = viewModel.partner.phone, !phone.isEmpty {
                                         Button(action: {
                                             viewModel.callPartner()
                                         }) {
-                                            HStack(spacing: 8) {
+                                            HStack(spacing: 6) {
                                                 Image(systemName: "phone.fill")
-                                                    .font(.system(size: 16, weight: .semibold))
+                                                    .font(.system(size: 14, weight: .semibold))
                                                 
                                                 Text("Appeler")
-                                                    .font(.system(size: 15, weight: .semibold))
+                                                    .font(.system(size: 13, weight: .semibold))
                                             }
                                             .foregroundColor(.white)
-                                            .frame(maxWidth: .infinity)
+                                            .padding(.horizontal, 12)
                                             .padding(.vertical, 12)
                                             .background(Color.appDarkRedButton)
                                             .cornerRadius(10)
                                         }
                                     }
+                                    
+                                    Spacer()
                                 }
                                 .padding(.horizontal, 20)
                                 .padding(.top, 8)

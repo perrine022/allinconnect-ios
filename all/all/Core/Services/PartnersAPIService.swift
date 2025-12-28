@@ -181,7 +181,7 @@ class PartnersAPIService: ObservableObject {
     // MARK: - Get Professional By ID
     func getProfessionalById(id: Int) async throws -> PartnerProfessionalResponse {
         let professional: PartnerProfessionalResponse = try await apiService.request(
-            endpoint: "/users/professionals/\(id)",
+            endpoint: "/users/\(id)",
             method: .get,
             parameters: nil,
             headers: nil
