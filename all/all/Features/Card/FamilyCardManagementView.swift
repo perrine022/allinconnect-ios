@@ -17,17 +17,9 @@ struct FamilyCardManagementView: View {
         GeometryReader { geometry in
             ZStack(alignment: .bottom) {
                 ZStack {
-                    // Background avec gradient
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color.appDarkRed2,
-                            Color.appDarkRed1,
-                            Color.black
-                        ]),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .ignoresSafeArea()
+                    // Background avec gradient : sombre en haut vers rouge en bas
+                    AppGradient.main
+                        .ignoresSafeArea()
                     
                     ScrollView {
                         VStack(spacing: 24) {
@@ -42,20 +34,20 @@ struct FamilyCardManagementView: View {
                             .padding(.top, 20)
                             
                             // Description
-                            Text("Vous pouvez ajouter jusqu'à 4 membres pour votre carte famille. Les membres existants et les invitations en attente sont affichés ci-dessous.")
+                            Text("Vous pouvez ajouter jusqu'à 4 membres pour votre carte famille (5 personnes au total avec le propriétaire). Les membres existants et les invitations en attente sont affichés ci-dessous.")
                                 .font(.system(size: 14, weight: .regular))
                                 .foregroundColor(.white.opacity(0.8))
                                 .padding(.horizontal, 20)
                             
-                            // Afficher les membres existants
-                            if !viewModel.members.isEmpty {
+                            // Afficher les membres existants (sans le propriétaire)
+                            if !viewModel.nonOwnerMembers.isEmpty {
                                 VStack(alignment: .leading, spacing: 12) {
                                     Text("Membres actifs")
                                         .font(.system(size: 16, weight: .bold))
                                         .foregroundColor(.white)
                                         .padding(.horizontal, 20)
                                     
-                                    ForEach(viewModel.members, id: \.id) { member in
+                                    ForEach(viewModel.nonOwnerMembers, id: \.id) { member in
                                         HStack {
                                             Image(systemName: "person.circle.fill")
                                                 .foregroundColor(.green)

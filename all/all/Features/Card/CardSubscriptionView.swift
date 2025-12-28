@@ -164,16 +164,8 @@ struct WhyCardDigitalView: View {
     
     var body: some View {
         ZStack {
-            // Background avec gradient
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color.appDarkRed2,
-                    Color.appDarkRed1,
-                    Color.black
-                ]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
+            // Background avec gradient : sombre en haut vers rouge en bas
+            AppGradient.main
             .ignoresSafeArea()
             
             ScrollView {

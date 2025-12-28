@@ -34,17 +34,9 @@ struct OfferDetailView: View {
         GeometryReader { geometry in
             ZStack(alignment: .bottom) {
                 ZStack {
-                    // Background avec gradient
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color.appDarkRed2,
-                            Color.appDarkRed1,
-                            Color.black
-                        ]),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .ignoresSafeArea()
+                    // Background avec gradient : sombre en haut vers rouge en bas
+                    AppGradient.main
+                        .ignoresSafeArea()
                     
                     ScrollView {
                         // États de chargement et d'erreur

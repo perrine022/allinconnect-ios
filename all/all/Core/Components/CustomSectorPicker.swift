@@ -53,7 +53,12 @@ struct CustomSectorPicker: View {
                 VStack(spacing: 0) {
                     ForEach(Array(filteredSectors.enumerated()), id: \.element) { index, sector in
                         Button(action: {
-                            selectedSector = sector
+                            // Si on clique sur le secteur déjà sélectionné, le décocher
+                            if selectedSector == sector {
+                                selectedSector = ""
+                            } else {
+                                selectedSector = sector
+                            }
                             onSelectionChange()
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                 isExpanded = false

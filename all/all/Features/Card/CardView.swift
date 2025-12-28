@@ -19,17 +19,9 @@ struct CardView: View {
     
     var body: some View {
         ZStack {
-            // Background avec gradient
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color.appDarkRed2,
-                    Color.appDarkRed1,
-                    Color.black
-                ]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            // Background avec gradient : sombre en haut vers rouge en bas
+            AppGradient.main
+                .ignoresSafeArea()
             
             ScrollView {
                 VStack(spacing: 20) {

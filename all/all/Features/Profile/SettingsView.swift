@@ -33,15 +33,8 @@ struct SettingsView: View {
         GeometryReader { geometry in
             ZStack(alignment: .bottom) {
                 ZStack {
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color.appDarkRed2,
-                            Color.appDarkRed1,
-                            Color.black
-                        ]),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
+                    // Background avec gradient : sombre en haut vers rouge en bas
+                    AppGradient.main
                     .ignoresSafeArea()
                     
                     ScrollView {

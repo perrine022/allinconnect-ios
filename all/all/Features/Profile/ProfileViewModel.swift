@@ -159,9 +159,9 @@ class ProfileViewModel: ObservableObject {
         
         do {
             // Charger les favoris depuis l'API
-            print("📥 Chargement des favoris depuis l'API...")
+            print("Chargement des favoris depuis l'API...")
             let favoritesResponse = try await favoritesAPIService.getFavorites()
-            print("✅ \(favoritesResponse.count) favoris récupérés")
+            print("\(favoritesResponse.count) favoris récupérés")
             
             // Convertir en modèles Partner et marquer comme favoris
             favoritePartners = favoritesResponse.map { response in
@@ -192,26 +192,39 @@ class ProfileViewModel: ObservableObject {
             isLoadingFavorites = false
         } catch {
             isLoadingFavorites = false
-            // Afficher un message d'erreur user-friendly
-            if let apiError = error as? APIError {
-                switch apiError {
-                case .networkError:
-                    favoritesError = "Problème de connexion. Vérifiez votre connexion internet."
-                case .unauthorized:
-                    favoritesError = "Vous devez être connecté pour voir vos favoris"
-                case .decodingError:
-                    // Erreur de décodage - probablement un problème côté backend
-                    favoritesError = "Impossible de charger les favoris. Veuillez réessayer plus tard."
-                default:
+            
+            // Vérifier si c'est une erreur de décodage JSON corrompu
+            if let apiError = error as? APIError,
+               case .decodingError(let underlyingError) = apiError,
+               let nsError = underlyingError as NSError?,
+               nsError.domain == NSCocoaErrorDomain,
+               nsError.code == 3840 {
+                // Erreur de décodage JSON corrompu - utiliser données mockées sans afficher d'erreur
+                print("Erreur de décodage JSON lors du chargement des favoris, utilisation des données mockées")
+                favoritePartners = dataService.getPartners().filter { $0.isFavorite }
+                favoritesError = nil // Ne pas afficher d'erreur pour les réponses corrompues
+            } else {
+                // Autre type d'erreur - afficher le message
+                if let apiError = error as? APIError {
+                    switch apiError {
+                    case .networkError:
+                        favoritesError = "Problème de connexion. Vérifiez votre connexion internet."
+                    case .unauthorized:
+                        favoritesError = "Vous devez être connecté pour voir vos favoris"
+                    case .decodingError:
+                        // Erreur de décodage - probablement un problème côté backend
+                        favoritesError = "Impossible de charger les favoris. Veuillez réessayer plus tard."
+                    default:
+                        favoritesError = "Erreur lors du chargement des favoris"
+                    }
+                } else {
                     favoritesError = "Erreur lors du chargement des favoris"
                 }
-            } else {
-                favoritesError = "Erreur lors du chargement des favoris"
+                print("Erreur lors du chargement des favoris: \(error)")
+                
+                // En cas d'erreur, utiliser les données mockées en fallback
+                favoritePartners = dataService.getPartners().filter { $0.isFavorite }
             }
-            print("Erreur lors du chargement des favoris: \(error)")
-            
-            // En cas d'erreur, utiliser les données mockées en fallback
-            favoritePartners = dataService.getPartners().filter { $0.isFavorite }
         }
     }
     
@@ -391,7 +404,20 @@ class ProfileViewModel: ObservableObject {
             isCardOwner = familyEmails.isOwner
             familyCardEmails = familyEmails.emails
         } catch {
-            print("Erreur lors du chargement des emails de la carte famille: \(error)")
+            // Si c'est une erreur unauthorized, c'est probablement que l'utilisateur n'a pas de carte famille
+            // ou n'a pas les permissions. On ignore silencieusement.
+            if let apiError = error as? APIError,
+               case .unauthorized = apiError {
+                print("Utilisateur non autorisé pour charger les emails de la carte famille (probablement pas de carte famille)")
+                // Réinitialiser les valeurs par défaut
+                isCardOwner = false
+                familyCardEmails = []
+            } else {
+                print("Erreur lors du chargement des emails de la carte famille: \(error)")
+                // Réinitialiser les valeurs par défaut en cas d'erreur
+                isCardOwner = false
+                familyCardEmails = []
+            }
         }
     }
     

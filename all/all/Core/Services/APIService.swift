@@ -11,7 +11,7 @@ import Combine
 // MARK: - API Configuration
 struct APIConfig {
     // static let baseURL = "https://allinconnect-back-1.onrender.com/api/v1" // Production
-    static let baseURL = "http://127.0.0.1:8000/api/v1" // Local
+    static let baseURL = "http://127.0.0.1:8080/api/v1" // Local
     
     static var defaultHeaders: [String: String] {
         var headers = [

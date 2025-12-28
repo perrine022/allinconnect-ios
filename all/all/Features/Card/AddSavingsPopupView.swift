@@ -27,17 +27,9 @@ struct AddSavingsPopupView: View {
     
     var body: some View {
         ZStack {
-            // Fond plein écran avec gradient
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color.appDarkRed2,
-                    Color.appDarkRed1,
-                    Color.black
-                ]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            // Fond plein écran avec gradient : sombre en haut vers rouge en bas
+            AppGradient.main
+                .ignoresSafeArea()
             
             VStack(spacing: 0) {
                 // Header avec drag indicator

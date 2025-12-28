@@ -17,17 +17,9 @@ struct WalletView: View {
         GeometryReader { geometry in
             ZStack(alignment: .bottom) {
                 ZStack {
-                    // Background avec gradient
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color.appDarkRed2,
-                            Color.appDarkRed1,
-                            Color.black
-                        ]),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .ignoresSafeArea()
+                    // Background avec gradient : sombre en haut vers rouge en bas
+                    AppGradient.main
+                        .ignoresSafeArea()
                     
                     ScrollView {
                         VStack(spacing: 20) {
@@ -79,39 +71,184 @@ struct WalletView: View {
                                 )
                                 .padding(.horizontal, 20)
                                 
-                                // Champs de recherche
-                                VStack(spacing: 6) {
-                                    // Champ Ville, nom, activité
-                                    HStack(spacing: 10) {
-                                        Image(systemName: "magnifyingglass")
-                                            .foregroundColor(.gray.opacity(0.6))
-                                            .font(.system(size: 13))
-                                        
-                                        TextField("", text: $viewModel.cityText, prompt: Text("Ville, nom, activité...").foregroundColor(.gray.opacity(0.6)))
-                                            .foregroundColor(.black)
-                                            .font(.system(size: 14))
-                                            .autocorrectionDisabled()
-                                            .textInputAutocapitalization(.never)
-                                            .onChange(of: viewModel.cityText) { _, _ in
-                                                viewModel.searchPartners()
-                                            }
-                                    }
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 9)
-                                    .background(Color.white)
-                                    .cornerRadius(8)
-                                    
-                                    // Menu déroulant Secteur
-                                    CustomSectorPicker(
-                                        sectors: viewModel.sectors,
-                                        selectedSector: $viewModel.selectedSector,
-                                        onSelectionChange: {
-                                            viewModel.searchPartners()
+                                // Formulaire de décagnottage
+                                if !viewModel.showProfessionalSelection {
+                                    VStack(alignment: .leading, spacing: 16) {
+                                        HStack {
+                                            Text("Décagnotter")
+                                                .font(.system(size: 18, weight: .bold))
+                                                .foregroundColor(.white)
+                                            Spacer()
                                         }
+                                        
+                                        VStack(alignment: .leading, spacing: 8) {
+                                            Text("Montant total à décagnotter (€):")
+                                                .font(.system(size: 14, weight: .medium))
+                                                .foregroundColor(.white.opacity(0.9))
+                                            
+                                            TextField("", text: $viewModel.totalAmountToWithdraw, prompt: Text("0.00").foregroundColor(.gray.opacity(0.6)))
+                                                .foregroundColor(.black)
+                                                .font(.system(size: 16))
+                                                .keyboardType(.decimalPad)
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 10)
+                                                .background(Color.white)
+                                                .cornerRadius(8)
+                                            
+                                            if !viewModel.totalAmountToWithdraw.isEmpty {
+                                                if let amount = Double(viewModel.totalAmountToWithdraw), amount > viewModel.walletBalance {
+                                                    Text("Le montant ne peut pas dépasser \(String(format: "%.2f", viewModel.walletBalance))€")
+                                                        .font(.system(size: 12))
+                                                        .foregroundColor(.red)
+                                                } else if let amount = Double(viewModel.totalAmountToWithdraw), amount <= 0 {
+                                                    Text("Le montant doit être supérieur à 0")
+                                                        .font(.system(size: 12))
+                                                        .foregroundColor(.red)
+                                                }
+                                            }
+                                        }
+                                        
+                                        Button(action: {
+                                            viewModel.startWithdrawal()
+                                        }) {
+                                            HStack {
+                                                Spacer()
+                                                Text("Décagnotter")
+                                                    .font(.system(size: 16, weight: .semibold))
+                                                    .foregroundColor(.black)
+                                                Spacer()
+                                            }
+                                            .padding(.vertical, 14)
+                                            .background(viewModel.isValidWithdrawalAmount ? Color.appGold : Color.gray.opacity(0.5))
+                                            .cornerRadius(10)
+                                        }
+                                        .disabled(!viewModel.isValidWithdrawalAmount || viewModel.isLoading)
+                                    }
+                                    .padding(16)
+                                    .background(Color.appDarkRed1.opacity(0.8))
+                                    .cornerRadius(12)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
                                     )
-                                    .zIndex(1000)
+                                    .padding(.horizontal, 20)
                                 }
-                                .padding(.horizontal, 20)
+                                
+                                // Liste des professionnels pour sélection (si on est en mode décagnottage)
+                                if viewModel.showProfessionalSelection {
+                                    VStack(alignment: .leading, spacing: 16) {
+                                        HStack {
+                                            Text("Sélectionner les professionnels")
+                                                .font(.system(size: 18, weight: .bold))
+                                                .foregroundColor(.white)
+                                            Spacer()
+                                            Button(action: {
+                                                viewModel.showProfessionalSelection = false
+                                                viewModel.totalAmountToWithdraw = ""
+                                                viewModel.selectedProfessionals = []
+                                            }) {
+                                                Text("Annuler")
+                                                    .font(.system(size: 14, weight: .medium))
+                                                    .foregroundColor(.white.opacity(0.8))
+                                            }
+                                        }
+                                        
+                                        // Champs de recherche (ville et secteur) - en haut pour filtrer
+                                        VStack(spacing: 6) {
+                                            // Champ Ville, nom, activité
+                                            HStack(spacing: 10) {
+                                                Image(systemName: "magnifyingglass")
+                                                    .foregroundColor(.gray.opacity(0.6))
+                                                    .font(.system(size: 13))
+                                                
+                                                TextField("", text: $viewModel.cityText, prompt: Text("Ville, nom, activité...").foregroundColor(.gray.opacity(0.6)))
+                                                    .foregroundColor(.black)
+                                                    .font(.system(size: 14))
+                                                    .autocorrectionDisabled()
+                                                    .textInputAutocapitalization(.never)
+                                                    .onChange(of: viewModel.cityText) { _, _ in
+                                                        viewModel.searchPartners()
+                                                    }
+                                            }
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 9)
+                                            .background(Color.white)
+                                            .cornerRadius(8)
+                                            
+                                            // Menu déroulant Secteur
+                                            CustomSectorPicker(
+                                                sectors: viewModel.sectors,
+                                                selectedSector: $viewModel.selectedSector,
+                                                onSelectionChange: {
+                                                    viewModel.searchPartners()
+                                                }
+                                            )
+                                            .zIndex(1000)
+                                        }
+                                        
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Montant total: \(viewModel.totalAmountToWithdraw)€")
+                                                .font(.system(size: 14, weight: .medium))
+                                                .foregroundColor(.white.opacity(0.9))
+                                            
+                                            if viewModel.remainingAmount > 0 {
+                                                Text("Montant restant: \(String(format: "%.2f", viewModel.remainingAmount))€")
+                                                    .font(.system(size: 12, weight: .regular))
+                                                    .foregroundColor(.appGold)
+                                            } else if viewModel.remainingAmount < 0 {
+                                                Text("Dépassement: \(String(format: "%.2f", abs(viewModel.remainingAmount)))€")
+                                                    .font(.system(size: 12, weight: .regular))
+                                                    .foregroundColor(.red)
+                                            } else {
+                                                Text("Montant total réparti ✓")
+                                                    .font(.system(size: 12, weight: .semibold))
+                                                    .foregroundColor(.green)
+                                            }
+                                        }
+                                        
+                                        VStack(spacing: 12) {
+                                            ForEach(viewModel.selectedProfessionals) { selectedPro in
+                                                WalletProfessionalSelectionRow(
+                                                    selectedProfessional: selectedPro,
+                                                    maxAmount: viewModel.maxAmountForProfessional(selectedPro),
+                                                    remainingAmount: viewModel.remainingAmount,
+                                                    onToggle: {
+                                                        viewModel.toggleProfessionalSelection(selectedPro)
+                                                    },
+                                                    onAmountChange: { amount in
+                                                        viewModel.updateProfessionalAmount(selectedPro, amount: amount)
+                                                    }
+                                                )
+                                            }
+                                        }
+                                        
+                                        Button(action: {
+                                            Task {
+                                                await viewModel.submitWithdrawalRequest()
+                                            }
+                                        }) {
+                                            HStack {
+                                                Spacer()
+                                                Text("Envoyer")
+                                                    .font(.system(size: 16, weight: .semibold))
+                                                    .foregroundColor(.black)
+                                                Spacer()
+                                            }
+                                            .padding(.vertical, 14)
+                                            .background(viewModel.canSubmitRequest && !viewModel.isLoading ? Color.appGold : Color.gray.opacity(0.5))
+                                            .cornerRadius(10)
+                                        }
+                                        .disabled(!viewModel.canSubmitRequest || viewModel.isLoading)
+                                    }
+                                    .padding(16)
+                                    .background(Color.appDarkRed1.opacity(0.8))
+                                    .cornerRadius(12)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                    )
+                                    .padding(.horizontal, 20)
+                                }
                                 
                                 // Message d'erreur
                                 if let errorMessage = viewModel.errorMessage {
@@ -156,101 +293,47 @@ struct WalletView: View {
                                     }
                                 }
                                 
-                                // Liste des professionnels
-                                if viewModel.errorMessage == nil {
-                                    if viewModel.filteredPartners.isEmpty {
-                                        VStack(spacing: 12) {
-                                            Image(systemName: "person.3.fill")
-                                                .foregroundColor(.gray.opacity(0.6))
-                                                .font(.system(size: 48))
-                                            Text("Aucun professionnel trouvé")
-                                                .font(.system(size: 16, weight: .medium))
-                                                .foregroundColor(.white.opacity(0.8))
-                                        }
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 40)
-                                    } else {
-                                        VStack(spacing: 12) {
-                                            ForEach(viewModel.filteredPartners) { partner in
-                                                WalletPartnerCard(
-                                                    partner: partner,
-                                                    isSelected: viewModel.selectedPartner?.id == partner.id,
-                                                    onSelect: {
-                                                        viewModel.selectedPartner = partner
-                                                        showAmountInput = true
-                                                    }
-                                                )
-                                            }
-                                        }
-                                        .padding(.horizontal, 20)
-                                    }
-                                }
                                 
-                                // Formulaire de demande (si un professionnel est sélectionné)
-                                if let selectedPartner = viewModel.selectedPartner {
-                                    VStack(alignment: .leading, spacing: 16) {
+                                // Section Historique
+                                if !viewModel.walletHistory.isEmpty {
+                                    VStack(alignment: .leading, spacing: 12) {
                                         HStack {
-                                            Text("Demande d'utilisation")
+                                            Text("Historique")
                                                 .font(.system(size: 18, weight: .bold))
                                                 .foregroundColor(.white)
                                             Spacer()
                                         }
                                         
-                                        VStack(alignment: .leading, spacing: 8) {
-                                            Text("Professionnel sélectionné:")
-                                                .font(.system(size: 14, weight: .medium))
-                                                .foregroundColor(.white.opacity(0.9))
-                                            
-                                            Text(selectedPartner.name)
-                                                .font(.system(size: 16, weight: .semibold))
-                                                .foregroundColor(.appGold)
+                                        VStack(spacing: 8) {
+                                            ForEach(viewModel.walletHistory.prefix(5)) { entry in
+                                                WalletHistoryRow(entry: entry)
+                                            }
+                                        }
+                                    }
+                                    .padding(16)
+                                    .background(Color.appDarkRed1.opacity(0.8))
+                                    .cornerRadius(12)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                    )
+                                    .padding(.horizontal, 20)
+                                }
+                                
+                                // Section Mes Demandes
+                                if !viewModel.walletRequests.isEmpty {
+                                    VStack(alignment: .leading, spacing: 12) {
+                                        HStack {
+                                            Text("Mes Demandes")
+                                                .font(.system(size: 18, weight: .bold))
+                                                .foregroundColor(.white)
+                                            Spacer()
                                         }
                                         
-                                        VStack(alignment: .leading, spacing: 8) {
-                                            Text("Montant (€):")
-                                                .font(.system(size: 14, weight: .medium))
-                                                .foregroundColor(.white.opacity(0.9))
-                                            
-                                            TextField("", text: $viewModel.selectedAmount, prompt: Text("0.00").foregroundColor(.gray.opacity(0.6)))
-                                                .foregroundColor(.black)
-                                                .font(.system(size: 16))
-                                                .keyboardType(.decimalPad)
-                                                .padding(.horizontal, 12)
-                                                .padding(.vertical, 10)
-                                                .background(Color.white)
-                                                .cornerRadius(8)
-                                        }
-                                        
-                                        Button(action: {
-                                            Task {
-                                                await viewModel.createWalletRequest()
+                                        VStack(spacing: 8) {
+                                            ForEach(viewModel.walletRequests.prefix(5)) { request in
+                                                WalletRequestRow(request: request)
                                             }
-                                        }) {
-                                            HStack {
-                                                Spacer()
-                                                Text("Créer la demande")
-                                                    .font(.system(size: 16, weight: .semibold))
-                                                    .foregroundColor(.black)
-                                                Spacer()
-                                            }
-                                            .padding(.vertical, 14)
-                                            .background(viewModel.isValidRequest ? Color.appGold : Color.gray.opacity(0.5))
-                                            .cornerRadius(10)
-                                        }
-                                        .disabled(!viewModel.isValidRequest || viewModel.isLoading)
-                                        
-                                        Button(action: {
-                                            viewModel.selectedPartner = nil
-                                            viewModel.selectedAmount = ""
-                                        }) {
-                                            HStack {
-                                                Spacer()
-                                                Text("Annuler")
-                                                    .font(.system(size: 14, weight: .medium))
-                                                    .foregroundColor(.white.opacity(0.8))
-                                                Spacer()
-                                            }
-                                            .padding(.vertical, 10)
                                         }
                                     }
                                     .padding(16)
@@ -288,6 +371,183 @@ struct WalletView: View {
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .scrollDismissesKeyboard(.interactively)
+    }
+}
+
+// MARK: - Wallet Professional Selection Row
+struct WalletProfessionalSelectionRow: View {
+    let selectedProfessional: SelectedProfessional
+    let maxAmount: Double
+    let remainingAmount: Double
+    let onToggle: () -> Void
+    let onAmountChange: (String) -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                // Case à cocher
+                Button(action: onToggle) {
+                    Image(systemName: selectedProfessional.isSelected ? "checkmark.square.fill" : "square")
+                        .foregroundColor(selectedProfessional.isSelected ? .appGold : .white.opacity(0.6))
+                        .font(.system(size: 24))
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                // Informations du professionnel
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(selectedProfessional.partner.name)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+                    
+                    Text(selectedProfessional.partner.category)
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundColor(.white.opacity(0.7))
+                    
+                    if !selectedProfessional.partner.city.isEmpty {
+                        Text(selectedProfessional.partner.city)
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                }
+                
+                Spacer()
+            }
+            
+            // Champ de montant (visible seulement si sélectionné)
+            if selectedProfessional.isSelected {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Montant (€):")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white.opacity(0.9))
+                        
+                        Spacer()
+                        
+                        if maxAmount > 0 {
+                            Text("Max: \(String(format: "%.2f", maxAmount))€")
+                                .font(.system(size: 11, weight: .regular))
+                                .foregroundColor(.white.opacity(0.6))
+                        }
+                    }
+                    
+                    TextField("", text: Binding(
+                        get: { selectedProfessional.amount },
+                        set: { newValue in
+                            // Limiter automatiquement au montant maximum disponible
+                            if let amount = Double(newValue), amount > maxAmount {
+                                onAmountChange(String(format: "%.2f", maxAmount))
+                            } else {
+                                onAmountChange(newValue)
+                            }
+                        }
+                    ), prompt: Text("0.00").foregroundColor(.gray.opacity(0.6)))
+                        .foregroundColor(.black)
+                        .font(.system(size: 16))
+                        .keyboardType(.decimalPad)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .background(Color.white)
+                        .cornerRadius(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(
+                                    (Double(selectedProfessional.amount) ?? 0) > maxAmount ? Color.red : Color.clear,
+                                    lineWidth: 2
+                                )
+                        )
+                    
+                    if let amount = Double(selectedProfessional.amount), amount > maxAmount {
+                        Text("Le montant dépasse le montant maximum disponible (\(String(format: "%.2f", maxAmount))€)")
+                            .font(.system(size: 11))
+                            .foregroundColor(.red)
+                    }
+                }
+                .padding(.leading, 36) // Aligner avec le texte du professionnel
+            }
+        }
+        .padding(12)
+        .background(selectedProfessional.isSelected ? Color.appGold.opacity(0.2) : Color.white.opacity(0.1))
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(selectedProfessional.isSelected ? Color.appGold.opacity(0.5) : Color.white.opacity(0.1), lineWidth: 1)
+        )
+    }
+}
+
+// MARK: - Wallet History Row
+struct WalletHistoryRow: View {
+    let entry: WalletHistoryEntry
+    
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(entry.description)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white)
+                
+                if let userName = entry.userName {
+                    Text("Par \(userName)")
+                        .font(.system(size: 12))
+                        .foregroundColor(.white.opacity(0.7))
+                }
+                
+                Text(entry.formattedDate)
+                    .font(.system(size: 11))
+                    .foregroundColor(.white.opacity(0.6))
+            }
+            
+            Spacer()
+            
+            Text("\(entry.isPositive ? "+" : "")\(entry.formattedAmount)€")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(entry.isPositive ? .green : .red)
+        }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .background(Color.white.opacity(0.1))
+        .cornerRadius(8)
+    }
+}
+
+// MARK: - Wallet Request Row
+struct WalletRequestRow: View {
+    let request: WalletRequestEntry
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(request.professionals)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.white)
+                    
+                    Text(request.formattedDate)
+                        .font(.system(size: 11))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+                
+                Spacer()
+                
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("\(request.formattedAmount)€")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.appGold)
+                    
+                    Text(request.statusLabel)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(request.statusColor)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(request.statusColor.opacity(0.2))
+                        .cornerRadius(6)
+                }
+            }
+        }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .background(Color.white.opacity(0.1))
+        .cornerRadius(8)
     }
 }
 

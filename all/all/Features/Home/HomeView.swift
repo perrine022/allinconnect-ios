@@ -8,6 +8,14 @@
 import SwiftUI
 import CoreLocation
 
+// MARK: - Scroll Offset Preference Key
+struct ScrollOffsetPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
     @EnvironmentObject private var locationService: LocationService
@@ -19,15 +27,17 @@ struct HomeView: View {
     @State private var digitalCardInfoNavigationId: UUID?
     @State private var partnersListNavigationId: UUID?
     @State private var proInfoNavigationId: UUID?
-    
     var body: some View {
         ZStack {
-            // Background avec gradient utilisant les couleurs hex
+            // Background avec gradient : rouge commence à 1/4 de l'écran
             LinearGradient(
-                gradient: Gradient(colors: [
-                    Color.appDarkRed2, // #421515
-                    Color.appDarkRed1, // #1D0809
-                    Color.black
+                gradient: Gradient(stops: [
+                    .init(color: Color.appDarkBlue, location: 0.0),      // Bleu très foncé en haut (0%)
+                    .init(color: Color.appDark, location: 0.12),          // Noir (12%)
+                    .init(color: Color.appDarkRed1, location: 0.25),      // Rouge très foncé (25% - 1/4 de l'écran)
+                    .init(color: Color.appDarkRed2, location: 0.55),       // Rouge foncé (55%)
+                    .init(color: Color.appRed, location: 0.75),           // Rouge intense (75%)
+                    .init(color: Color.appDark, location: 1.0)           // Sombre en bas (100%)
                 ]),
                 startPoint: .top,
                 endPoint: .bottom

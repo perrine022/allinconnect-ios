@@ -19,17 +19,9 @@ struct FamilyCardEmailsView: View {
     
     var body: some View {
         ZStack {
-            // Background avec gradient
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color.appDarkRed2,
-                    Color.appDarkRed1,
-                    Color.black
-                ]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            // Background avec gradient : sombre en haut vers rouge en bas
+            AppGradient.main
+                .ignoresSafeArea()
             
             ScrollView {
                 VStack(spacing: 24) {
@@ -44,7 +36,7 @@ struct FamilyCardEmailsView: View {
                     .padding(.top, 20)
                     
                     // Description
-                    Text("Vous pouvez ajouter jusqu'à 4 adresses email pour votre carte famille. Seul le propriétaire de la carte peut modifier ces informations.")
+                    Text("Vous pouvez ajouter jusqu'à 4 membres pour votre carte famille (5 personnes au total avec le propriétaire). Seul le propriétaire de la carte peut modifier ces informations.")
                         .font(.system(size: 14, weight: .regular))
                         .foregroundColor(.white.opacity(0.8))
                         .padding(.horizontal, 20)
@@ -141,12 +133,18 @@ class FamilyCardEmailsViewModel: ObservableObject {
     @Published var emails: [String] = []
     @Published var members: [CardMember] = []
     @Published var invitedEmails: [String] = []
+    @Published var ownerEmail: String = ""
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
     @Published var successMessage: String?
     
     private let subscriptionsAPIService: SubscriptionsAPIService
     private let profileAPIService: ProfileAPIService
+    
+    // Membres non-propriétaires (pour l'affichage)
+    var nonOwnerMembers: [CardMember] {
+        members.filter { $0.email != ownerEmail }
+    }
     
     init(subscriptionsAPIService: SubscriptionsAPIService? = nil, profileAPIService: ProfileAPIService? = nil) {
         if let subscriptionsAPIService = subscriptionsAPIService {
@@ -170,19 +168,28 @@ class FamilyCardEmailsViewModel: ObservableObject {
             errorMessage = nil
             
             do {
-                // Charger depuis /users/me/light
+                // Charger depuis /users/me/light pour avoir l'email de l'utilisateur connecté
                 let userLight = try await profileAPIService.getUserLight()
+                
+                // Récupérer l'email de l'utilisateur connecté (propriétaire)
+                // On doit aussi charger /users/me pour avoir l'email complet
+                let userMe = try await profileAPIService.getUserMe()
+                ownerEmail = userMe.email ?? ""
                 
                 // Récupérer les membres et invitations depuis card
                 if let card = userLight.card {
                     members = card.members ?? []
                     invitedEmails = card.invitedEmails ?? []
                     
-                    // Combiner les emails des membres et les invitations en attente
-                    let memberEmails = members.map { $0.email }
-                    let allEmails = memberEmails + invitedEmails
+                    // Exclure le propriétaire de la liste des membres (il n'est pas dans la limite de 4)
+                    // Filtrer les membres qui ne sont pas le propriétaire
+                    let nonOwnerMembers = members.filter { $0.email != ownerEmail }
+                    let nonOwnerMemberEmails = nonOwnerMembers.map { $0.email }
                     
-                    // S'assurer qu'on a toujours 4 emplacements (peut être vide)
+                    // Combiner les emails des membres (sans propriétaire) et les invitations en attente
+                    let allEmails = nonOwnerMemberEmails + invitedEmails
+                    
+                    // S'assurer qu'on a toujours 4 emplacements maximum (peut être vide)
                     emails = Array(allEmails.prefix(4))
                     while emails.count < 4 {
                         emails.append("")
@@ -218,15 +225,21 @@ class FamilyCardEmailsViewModel: ObservableObject {
         errorMessage = nil
         successMessage = nil
         
-        // Récupérer les emails actuels (membres + invitations)
-        let currentMemberEmails = Set(members.map { $0.email })
+        // Récupérer l'email du propriétaire
+        let userMe = try? await profileAPIService.getUserMe()
+        let ownerEmail = userMe?.email ?? ""
+        
+        // Récupérer les emails actuels (membres + invitations), en excluant le propriétaire
+        let currentMemberEmails = Set(members.filter { $0.email != ownerEmail }.map { $0.email })
         let currentInvitedEmails = Set(invitedEmails)
         let currentAllEmails = currentMemberEmails.union(currentInvitedEmails)
         
-        // Filtrer les nouveaux emails (ceux qui ne sont pas déjà membres ou invités)
+        // Filtrer les nouveaux emails (ceux qui ne sont pas déjà membres ou invités, et qui ne sont pas le propriétaire)
         let newEmails = emails.filter { email in
             let trimmedEmail = email.trimmingCharacters(in: .whitespaces)
-            return !trimmedEmail.isEmpty && !currentAllEmails.contains(trimmedEmail)
+            return !trimmedEmail.isEmpty 
+                && !currentAllEmails.contains(trimmedEmail)
+                && trimmedEmail != ownerEmail // Ne pas permettre d'inviter le propriétaire
         }
         
         // Valider les nouveaux emails
@@ -238,10 +251,11 @@ class FamilyCardEmailsViewModel: ObservableObject {
             }
         }
         
-        // Vérifier la limite de 4 membres (membres existants + invitations + nouveaux)
+        // Vérifier la limite de 4 membres (en plus du propriétaire)
+        // Total = 1 propriétaire + 4 membres maximum = 5 personnes au total
         let totalCount = currentAllEmails.count + newEmails.count
         if totalCount > 4 {
-            errorMessage = "Une carte famille est limitée à 4 membres au total"
+            errorMessage = "Une carte famille est limitée à 4 membres (en plus du propriétaire). Total maximum : 5 personnes."
             isLoading = false
             return
         }
@@ -266,7 +280,7 @@ class FamilyCardEmailsViewModel: ObservableObject {
                 switch apiError {
                 case .httpError(let statusCode, let message):
                     if statusCode == 400 {
-                        errorMessage = message ?? "Erreur lors de l'invitation. Vérifiez que vous êtes le propriétaire de la carte et que la limite de 4 membres n'est pas atteinte."
+                        errorMessage = message ?? "Erreur lors de l'invitation. Vérifiez que vous êtes le propriétaire de la carte et que la limite de 4 membres (5 personnes au total avec le propriétaire) n'est pas atteinte."
                     } else {
                         errorMessage = message ?? "Erreur lors de l'invitation"
                     }

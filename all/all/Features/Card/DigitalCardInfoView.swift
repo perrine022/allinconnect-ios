@@ -68,7 +68,7 @@ struct DigitalCardInfoView: View {
                                     icon: "dollarsign.circle.fill",
                                     iconColor: .appGold,
                                     title: "Économies maximales",
-                                    description: "Jusqu'à 500€ par an garantis"
+                                    description: "Plus de 500€ par an garantis"
                                 )
                                 
                                 // Carte 4: Newsletter exclusive
