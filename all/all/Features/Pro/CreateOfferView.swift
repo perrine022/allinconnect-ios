@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import PhotosUI
 
 struct CreateOfferView: View {
     @StateObject private var viewModel = CreateOfferViewModel()
@@ -68,6 +69,124 @@ struct CreateOfferView: View {
                                 .background(Color.white)
                                 .cornerRadius(10)
                                 .scrollContentBackground(.hidden)
+                        }
+                        
+                        // Sélection d'image
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Image de l'offre (optionnel)")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.white.opacity(0.9))
+                            
+                            if let image = viewModel.selectedImage {
+                                // Aperçu de l'image sélectionnée avec options
+                                VStack(spacing: 12) {
+                                    // Aperçu de l'image
+                                    Image(uiImage: image)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(height: 200)
+                                        .frame(maxWidth: .infinity)
+                                        .cornerRadius(12)
+                                        .clipped()
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                                        )
+                                    
+                                    // Boutons d'action
+                                    HStack(spacing: 12) {
+                                        // Bouton Modifier
+                                        PhotosPicker(
+                                            selection: $viewModel.selectedImageItem,
+                                            matching: .images
+                                        ) {
+                                            HStack(spacing: 8) {
+                                                Image(systemName: "photo.badge.plus")
+                                                    .font(.system(size: 14))
+                                                Text("Modifier")
+                                                    .font(.system(size: 14, weight: .semibold))
+                                            }
+                                            .foregroundColor(.black)
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 12)
+                                            .background(Color.appGold)
+                                            .cornerRadius(10)
+                                        }
+                                        
+                                        // Bouton Supprimer
+                                        Button(action: {
+                                            viewModel.selectedImage = nil
+                                            viewModel.selectedImageItem = nil
+                                        }) {
+                                            HStack(spacing: 8) {
+                                                Image(systemName: "trash")
+                                                    .font(.system(size: 14))
+                                                Text("Supprimer")
+                                                    .font(.system(size: 14, weight: .semibold))
+                                            }
+                                            .foregroundColor(.white)
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 12)
+                                            .background(Color.red.opacity(0.8))
+                                            .cornerRadius(10)
+                                        }
+                                    }
+                                }
+                                .padding(16)
+                                .background(Color.white)
+                                .cornerRadius(12)
+                            } else {
+                                // Bouton pour ajouter une image
+                                PhotosPicker(
+                                    selection: $viewModel.selectedImageItem,
+                                    matching: .images
+                                ) {
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "photo.badge.plus")
+                                            .foregroundColor(.gray.opacity(0.6))
+                                            .font(.system(size: 24))
+                                            .frame(width: 60, height: 60)
+                                            .background(Color.gray.opacity(0.1))
+                                            .cornerRadius(8)
+                                        
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Ajouter une image")
+                                                .font(.system(size: 15, weight: .medium))
+                                                .foregroundColor(.black)
+                                            
+                                            Text("Appuyez pour choisir une photo")
+                                                .font(.system(size: 12))
+                                                .foregroundColor(.gray.opacity(0.7))
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        Image(systemName: "chevron.right")
+                                            .foregroundColor(.gray.opacity(0.5))
+                                            .font(.system(size: 14))
+                                    }
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 14)
+                                    .background(Color.white)
+                                    .cornerRadius(10)
+                                }
+                            }
+                        }
+                        .onChange(of: viewModel.selectedImageItem) { oldValue, newValue in
+                            Task {
+                                if let newValue = newValue {
+                                    if let data = try? await newValue.loadTransferable(type: Data.self),
+                                       let uiImage = UIImage(data: data) {
+                                        await MainActor.run {
+                                            viewModel.selectedImage = uiImage
+                                        }
+                                    }
+                                } else {
+                                    await MainActor.run {
+                                        viewModel.selectedImage = nil
+                                    }
+                                }
+                            }
                         }
                         
                         // Date de début

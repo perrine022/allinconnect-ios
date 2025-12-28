@@ -82,7 +82,7 @@ struct WalletView: View {
                                         }
                                         
                                         VStack(alignment: .leading, spacing: 8) {
-                                            Text("Montant total à décagnotter (€):")
+                                            Text("Montant à dépenser de ma cagnotte (€):")
                                                 .font(.system(size: 14, weight: .medium))
                                                 .foregroundColor(.white.opacity(0.9))
                                             

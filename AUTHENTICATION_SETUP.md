@@ -85,3 +85,4 @@ Des logs ont été ajoutés pour vérifier que le token est bien envoyé :
 - Les endpoints publics (authentification, inscription) n'ont pas besoin du token
 - Les endpoints protégés nécessitent le token dans le header Authorization
 
+

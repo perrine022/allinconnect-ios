@@ -19,6 +19,7 @@ class SignUpViewModel: ObservableObject {
     @Published var birthDay: String = ""
     @Published var birthMonth: String = ""
     @Published var birthYear: String = ""
+    @Published var referralCode: String = ""
     @Published var userType: UserType = .client
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
@@ -220,7 +221,7 @@ class SignUpViewModel: ObservableObject {
                     subscriptionType: .free, // Par défaut FREE
                     profession: userType == .pro ? nil : nil, // Peut être ajouté plus tard
                     category: nil, // Peut être sélectionné plus tard pour les PRO
-                    referralCode: nil // Peut être ajouté plus tard
+                    referralCode: referralCode.trimmingCharacters(in: .whitespaces).isEmpty ? nil : referralCode.trimmingCharacters(in: .whitespaces)
                 )
                 
                 // Appeler l'API

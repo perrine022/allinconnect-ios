@@ -86,3 +86,4 @@ Votre endpoint `/subscriptions/payment-link/{planId}` doit retourner l'URL compl
 
 Le code est déjà préparé pour utiliser Payment Sheet en priorité, avec fallback sur Payment Links si nécessaire.
 
+

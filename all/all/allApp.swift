@@ -18,7 +18,7 @@ struct allApp: App {
     var body: some Scene {
         WindowGroup {
             AppContentView(
-                hasCompletedOnboarding: $hasCompletedOnboarding,
+                hasCompletedOnboarding: .constant(true), // Toujours considérer l'onboarding comme complété
                 isLoggedIn: $isLoggedIn,
                 locationService: locationService
             )

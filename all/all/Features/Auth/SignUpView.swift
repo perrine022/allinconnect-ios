@@ -19,7 +19,7 @@ struct SignUpView: View {
     @FocusState private var focusedField: Field?
     
     enum Field: Hashable {
-        case firstName, lastName, email, password, confirmPassword, postalCode, birthDay, birthMonth, birthYear
+        case firstName, lastName, email, password, confirmPassword, postalCode, birthDay, birthMonth, birthYear, referralCode
     }
     
     var body: some View {
@@ -396,6 +396,16 @@ struct SignUpView: View {
                                     }
                                 }
                                 .padding(.horizontal, 20)
+                                
+                                // Code de parrainage (optionnel)
+                                SignUpInputField(
+                                    title: "Parrainage",
+                                    text: $viewModel.referralCode,
+                                    placeholder: "Code de parrainage (optionnel)",
+                                    isFocused: focusedField == .referralCode
+                                )
+                                .focused($focusedField, equals: .referralCode)
+                                .autocapitalization(.allCharacters)
                                 
                                 // Choix Client/Pro
                                 VStack(alignment: .leading, spacing: 12) {

@@ -10,8 +10,8 @@ import Combine
 
 // MARK: - API Configuration
 struct APIConfig {
-    static let baseURL = "https://allinconnect-back-1.onrender.com/api/v1" // Production
-    // static let baseURL = "http://127.0.0.1:8080/api/v1" // Local
+    // static let baseURL = "https://allinconnect-back-1.onrender.com/api/v1" // Production
+    static let baseURL = "http://localhost:8080/api/v1" // Local
     
     static var defaultHeaders: [String: String] {
         var headers = [
@@ -210,6 +210,126 @@ class APIService: APIServiceProtocol, ObservableObject {
             }
             
             // Si les données ne sont pas vides, décoder normalement
+            do {
+                let decoded = try decoder.decode(T.self, from: data)
+                return decoded
+            } catch {
+                throw APIError.decodingError(error)
+            }
+        } catch let error as APIError {
+            throw error
+        } catch {
+            throw APIError.networkError(error)
+        }
+    }
+    
+    // MARK: - Multipart Form Data Request
+    func multipartRequest<T: Decodable>(
+        endpoint: String,
+        method: HTTPMethod = .post,
+        jsonData: [String: Any],
+        imageData: Data? = nil,
+        imageFieldName: String = "image",
+        jsonFieldName: String = "offer",
+        headers: [String: String]? = nil
+    ) async throws -> T {
+        guard let url = URL(string: "\(APIConfig.baseURL)\(endpoint)") else {
+            throw APIError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = method.rawValue
+        
+        // Créer le boundary pour multipart/form-data
+        let boundary = UUID().uuidString
+        let contentType = "multipart/form-data; boundary=\(boundary)"
+        request.setValue(contentType, forHTTPHeaderField: "Content-Type")
+        
+        // Ajouter l'Authorization header si disponible
+        if let token = AuthTokenManager.shared.getToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        // Ajouter les headers personnalisés
+        headers?.forEach { key, value in
+            request.setValue(value, forHTTPHeaderField: key)
+        }
+        
+        // Construire le body multipart
+        var body = Data()
+        
+        // 1. Ajouter les données JSON sous forme de Blob (comme en JavaScript)
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"\(jsonFieldName)\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: application/json\r\n\r\n".data(using: .utf8)!)
+        
+        // Convertir les données JSON en Data
+        do {
+            let jsonDataEncoded = try JSONSerialization.data(withJSONObject: jsonData, options: [])
+            body.append(jsonDataEncoded)
+        } catch {
+            throw APIError.networkError(error)
+        }
+        
+        body.append("\r\n".data(using: .utf8)!)
+        
+        // 2. Ajouter l'image si fournie
+        if let imageData = imageData {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"\(imageFieldName)\"; filename=\"image.jpg\"\r\n".data(using: .utf8)!)
+            body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
+            body.append(imageData)
+            body.append("\r\n".data(using: .utf8)!)
+        }
+        
+        // Fermer le multipart
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        
+        request.httpBody = body
+        
+        // Log pour debug
+        print("[APIService] Multipart request:")
+        print("   Endpoint: \(method.rawValue) \(url)")
+        print("   JSON field: \(jsonFieldName)")
+        if imageData != nil {
+            print("   Image field: \(imageFieldName) (size: \(imageData!.count) bytes)")
+        } else {
+            print("   Image field: none")
+        }
+        
+        do {
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw APIError.invalidResponse
+            }
+            
+            switch httpResponse.statusCode {
+            case 200...299:
+                break
+            case 401:
+                throw APIError.unauthorized
+            case 404:
+                throw APIError.notFound
+            default:
+                let errorMessage = try? JSONDecoder().decode([String: String].self, from: data)["message"]
+                throw APIError.httpError(statusCode: httpResponse.statusCode, message: errorMessage)
+            }
+            
+            // Gérer les réponses vides
+            if httpResponse.statusCode == 204 || data.isEmpty {
+                if let emptyJSON = "{}".data(using: .utf8) {
+                    do {
+                        let decoded = try decoder.decode(T.self, from: emptyJSON)
+                        return decoded
+                    } catch {
+                        throw APIError.decodingError(error)
+                    }
+                }
+                throw APIError.invalidResponse
+            }
+            
+            // Décoder la réponse
             do {
                 let decoded = try decoder.decode(T.self, from: data)
                 return decoded

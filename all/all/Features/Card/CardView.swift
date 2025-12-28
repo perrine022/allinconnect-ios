@@ -87,6 +87,15 @@ struct CardView: View {
                         let secondaryTextColor = viewModel.isCardValid ? Color.gray : Color.white.opacity(0.8)
                         
                         VStack(alignment: .leading, spacing: 14) {
+                            // Image VIP en haut de la carte
+                            Image("VIPCardImage")
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(height: 120)
+                                .clipped()
+                                .cornerRadius(12)
+                                .padding(.bottom, 8)
+                            
                             HStack(alignment: .top) {
                                 // Logo ALL IN
                                 VStack(alignment: .leading, spacing: 4) {
@@ -169,12 +178,6 @@ struct CardView: View {
                                     .foregroundColor(secondaryTextColor)
                             }
                             .padding(.top, 2)
-                            
-                            // Code utilisateur
-                            Text("Code: \(viewModel.referralCode)")
-                                .font(.system(size: 13, weight: .regular))
-                                .foregroundColor(secondaryTextColor)
-                                .padding(.top, 2)
                             
                             // Membre CLUB10 (seulement si membre)
                             if viewModel.isMember {

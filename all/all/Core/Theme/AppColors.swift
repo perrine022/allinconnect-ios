@@ -10,8 +10,11 @@ import SwiftUI
 extension Color {
     // Couleurs principales
     static let appCoral = Color(red: 1.0, green: 0.4, blue: 0.4)
-    static let appRed = Color(red: 0.9, green: 0.1, blue: 0.1)
+    // Rouge moins intense pour éviter le côté "Darty"
+    static let appRed = Color(red: 0.75, green: 0.15, blue: 0.15) // Rouge moins intense
     static let appDarkRed = Color(red: 0.7, green: 0.05, blue: 0.05)
+    // Rouge foncé pour les boutons sur l'accueil
+    static let appDarkRedButton = Color(red: 0.5, green: 0.1, blue: 0.1) // Rouge foncé pour boutons
     
     // Couleurs hex personnalisées
     static let appDarkRed1 = Color(red: 0.114, green: 0.031, blue: 0.035) // #1D0809

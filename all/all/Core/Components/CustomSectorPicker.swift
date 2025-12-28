@@ -40,10 +40,11 @@ struct CustomSectorPicker: View {
                         .foregroundColor(.gray.opacity(0.6))
                         .font(.system(size: 12, weight: .semibold))
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 9)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
                 .background(Color.white)
-                .cornerRadius(8)
+                .cornerRadius(14)
+                .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(PlainButtonStyle())
@@ -96,8 +97,8 @@ struct CustomSectorPicker: View {
                     }
                 }
                 .background(Color.white)
-                .cornerRadius(8)
-                .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 5)
+                .cornerRadius(14)
+                .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }

@@ -7,6 +7,8 @@
 
 import Foundation
 import Combine
+import SwiftUI
+import PhotosUI
 
 @MainActor
 class CreateOfferViewModel: ObservableObject {
@@ -21,6 +23,8 @@ class CreateOfferViewModel: ObservableObject {
     
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
+    @Published var selectedImage: UIImage? = nil
+    @Published var selectedImageItem: PhotosPickerItem? = nil
     
     private let offersAPIService: OffersAPIService
     
@@ -192,6 +196,14 @@ class CreateOfferViewModel: ObservableObject {
         print("   - Featured (CLUB10): \(isClub10)")
         print("   - Type: \(apiType)")
         
+        // Convertir l'image en Data si disponible
+        var imageData: Data? = nil
+        if let selectedImage = selectedImage {
+            // Compresser l'image en JPEG
+            imageData = selectedImage.jpegData(compressionQuality: 0.8)
+            print("[CreateOffer] Image fournie: \(imageData?.count ?? 0) bytes")
+        }
+        
         // Appeler l'API pour créer l'offre
         let offerResponse = try await offersAPIService.createOffer(
             title: title.trimmingCharacters(in: .whitespaces),
@@ -200,7 +212,9 @@ class CreateOfferViewModel: ObservableObject {
             startDate: startDateISO,
             endDate: endDate,
             featured: isClub10, // featured = isClub10
-            type: apiType
+            type: apiType,
+            imageUrl: nil,
+            imageData: imageData
         )
         
         print("[CreateOffer] Offre créée avec succès: ID=\(offerResponse.id)")

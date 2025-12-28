@@ -47,3 +47,4 @@ Si vous préférez garder Payment Links, vérifiez :
 2. Il n'y a pas de restrictions activées
 3. Vous utilisez la bonne clé (test vs production)
 
+

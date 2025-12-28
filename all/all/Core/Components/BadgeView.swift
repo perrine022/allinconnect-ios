@@ -48,3 +48,4 @@ struct BadgeView: View {
     .background(Color.appBackground)
 }
 
+

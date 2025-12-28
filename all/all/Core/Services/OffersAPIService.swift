@@ -218,38 +218,40 @@ class OffersAPIService: ObservableObject {
         endDate: String?,
         featured: Bool?,
         type: String, // "OFFRE" ou "EVENEMENT"
-        imageUrl: String? = nil
+        imageUrl: String? = nil,
+        imageData: Data? = nil
     ) async throws -> OfferResponse {
-        var parameters: [String: Any] = [
+        var jsonData: [String: Any] = [
             "title": title,
             "description": description,
             "type": type
         ]
         
         if let price = price {
-            parameters["price"] = price
+            jsonData["price"] = price
         }
         
         if let startDate = startDate {
-            parameters["startDate"] = startDate
+            jsonData["startDate"] = startDate
         }
         
         if let endDate = endDate {
-            parameters["endDate"] = endDate
+            jsonData["endDate"] = endDate
         }
         
         if let featured = featured {
-            parameters["featured"] = featured
+            jsonData["featured"] = featured
         }
         
-        if let imageUrl = imageUrl {
-            parameters["imageUrl"] = imageUrl
+        // Si imageUrl est fourni (sans imageData), on l'inclut dans le JSON
+        if let imageUrl = imageUrl, imageData == nil {
+            jsonData["imageUrl"] = imageUrl
         }
         
         // Log du payload et de l'endpoint
         let endpoint = "/offers"
         // let baseURL = "https://allinconnect-back-1.onrender.com/api/v1" // Production
-        let baseURL = "http://127.0.0.1:8000/api/v1" // Local
+        let baseURL = "http://127.0.0.1:8080/api/v1" // Local
         let fullURL = "\(baseURL)\(endpoint)"
         
         print("[OffersAPIService] Création d'offre:")
@@ -257,22 +259,44 @@ class OffersAPIService: ObservableObject {
         print("   Payload JSON:")
         
         // Convertir les paramètres en JSON pour l'affichage
-        if let jsonData = try? JSONSerialization.data(withJSONObject: parameters, options: .prettyPrinted),
-           let jsonString = String(data: jsonData, encoding: .utf8) {
+        if let jsonDataPretty = try? JSONSerialization.data(withJSONObject: jsonData, options: .prettyPrinted),
+           let jsonString = String(data: jsonDataPretty, encoding: .utf8) {
             print(jsonString)
         } else {
-            print("   \(parameters)")
+            print("   \(jsonData)")
         }
         
-        let offer: OfferResponse = try await apiService.request(
-            endpoint: endpoint,
-            method: .post,
-            parameters: parameters,
-            headers: nil
-        )
-        
-        print("[OffersAPIService] Réponse reçue: ID=\(offer.id), Title=\(offer.title)")
-        return offer
+        // Utiliser multipart si une image est fournie, sinon utiliser JSON classique
+        if let imageData = imageData {
+            // Utiliser multipart/form-data
+            guard let apiServiceInstance = apiService as? APIService else {
+                throw APIError.invalidResponse
+            }
+            
+            let offer: OfferResponse = try await apiServiceInstance.multipartRequest(
+                endpoint: endpoint,
+                method: .post,
+                jsonData: jsonData,
+                imageData: imageData,
+                imageFieldName: "image",
+                jsonFieldName: "offer",
+                headers: nil
+            )
+            
+            print("[OffersAPIService] Réponse reçue (multipart): ID=\(offer.id), Title=\(offer.title)")
+            return offer
+        } else {
+            // Utiliser JSON classique (pour compatibilité avec l'ancien code)
+            let offer: OfferResponse = try await apiService.request(
+                endpoint: endpoint,
+                method: .post,
+                parameters: jsonData,
+                headers: nil
+            )
+            
+            print("[OffersAPIService] Réponse reçue: ID=\(offer.id), Title=\(offer.title)")
+            return offer
+        }
     }
     
     // MARK: - Update Offer
@@ -285,49 +309,72 @@ class OffersAPIService: ObservableObject {
         endDate: String? = nil,
         featured: Bool? = nil,
         type: String? = nil, // "OFFRE" ou "EVENEMENT"
-        imageUrl: String? = nil
+        imageUrl: String? = nil,
+        imageData: Data? = nil
     ) async throws -> OfferResponse {
-        var parameters: [String: Any] = [:]
+        var jsonData: [String: Any] = [:]
         
         if let title = title {
-            parameters["title"] = title
+            jsonData["title"] = title
         }
         
         if let description = description {
-            parameters["description"] = description
+            jsonData["description"] = description
         }
         
         if let price = price {
-            parameters["price"] = price
+            jsonData["price"] = price
         }
         
         if let startDate = startDate {
-            parameters["startDate"] = startDate
+            jsonData["startDate"] = startDate
         }
         
         if let endDate = endDate {
-            parameters["endDate"] = endDate
+            jsonData["endDate"] = endDate
         }
         
         if let featured = featured {
-            parameters["featured"] = featured
+            jsonData["featured"] = featured
         }
         
         if let type = type {
-            parameters["type"] = type
+            jsonData["type"] = type
         }
         
-        if let imageUrl = imageUrl {
-            parameters["imageUrl"] = imageUrl
+        // Si imageUrl est fourni (sans imageData), on l'inclut dans le JSON
+        if let imageUrl = imageUrl, imageData == nil {
+            jsonData["imageUrl"] = imageUrl
         }
         
-        let offer: OfferResponse = try await apiService.request(
-            endpoint: "/offers/\(id)",
-            method: .put,
-            parameters: parameters.isEmpty ? nil : parameters,
-            headers: nil
-        )
-        return offer
+        // Utiliser multipart si une image est fournie, sinon utiliser JSON classique
+        if let imageData = imageData {
+            // Utiliser multipart/form-data
+            guard let apiServiceInstance = apiService as? APIService else {
+                throw APIError.invalidResponse
+            }
+            
+            let offer: OfferResponse = try await apiServiceInstance.multipartRequest(
+                endpoint: "/offers/\(id)",
+                method: .put,
+                jsonData: jsonData.isEmpty ? [:] : jsonData,
+                imageData: imageData,
+                imageFieldName: "image",
+                jsonFieldName: "offer",
+                headers: nil
+            )
+            
+            return offer
+        } else {
+            // Utiliser JSON classique
+            let offer: OfferResponse = try await apiService.request(
+                endpoint: "/offers/\(id)",
+                method: .put,
+                parameters: jsonData.isEmpty ? nil : jsonData,
+                headers: nil
+            )
+            return offer
+        }
     }
     
     // MARK: - Archive Offer

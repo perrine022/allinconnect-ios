@@ -29,14 +29,14 @@ struct HomeView: View {
     @State private var proInfoNavigationId: UUID?
     var body: some View {
         ZStack {
-            // Background avec gradient : rouge commence à 1/4 de l'écran
+            // Background avec gradient : rouge moins intense
             LinearGradient(
                 gradient: Gradient(stops: [
                     .init(color: Color.appDarkBlue, location: 0.0),      // Bleu très foncé en haut (0%)
                     .init(color: Color.appDark, location: 0.12),          // Noir (12%)
                     .init(color: Color.appDarkRed1, location: 0.25),      // Rouge très foncé (25% - 1/4 de l'écran)
                     .init(color: Color.appDarkRed2, location: 0.55),       // Rouge foncé (55%)
-                    .init(color: Color.appRed, location: 0.75),           // Rouge intense (75%)
+                    .init(color: Color.appDarkRed2, location: 0.75),       // Rouge foncé moins intense (75%)
                     .init(color: Color.appDark, location: 1.0)           // Sombre en bas (100%)
                 ]),
                 startPoint: .top,
@@ -46,37 +46,15 @@ struct HomeView: View {
             
             ScrollView {
                 VStack(spacing: 24) {
-                    // Logo et tagline
-                    VStack(spacing: 6) {
-                        HStack(spacing: 3) {
-                            Text("ALL")
-                                .font(.system(size: 24, weight: .bold, design: .rounded))
-                                .foregroundColor(.white)
-                            
-                            ZStack {
-                                Circle()
-                                    .fill(Color.appRed)
-                                    .frame(width: 18, height: 18)
-                                
-                                Circle()
-                                    .fill(Color.appRed.opacity(0.6))
-                                    .frame(width: 15, height: 15)
-                                
-                                Circle()
-                                    .fill(Color.appRed.opacity(0.3))
-                                    .frame(width: 12, height: 12)
-                            }
-                            
-                            Text("IN")
-                                .font(.system(size: 24, weight: .bold, design: .rounded))
-                                .foregroundColor(.white)
-                        }
-                        
-                        Text("Connect")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(Color.appRed.opacity(0.9))
+                    // Logo
+                    VStack(spacing: 0) {
+                        Image("AppLogo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxWidth: 150, maxHeight: 60)
+                            .padding(.top, 20)
+                            .padding(.bottom, 8)
                     }
-                    .padding(.top, 16)
                     
                     // Bouton "L'app qui pense à toi"
                     Button(action: {}) {
@@ -89,25 +67,26 @@ struct HomeView: View {
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(.white)
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .background(
-                            LinearGradient(
-                                gradient: Gradient(colors: [Color.appRed, Color.appDarkRed]),
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.appDarkRedButton, lineWidth: 1.5)
                         )
-                        .cornerRadius(12)
                     }
                     .padding(.horizontal, 20)
                     
                     // Titre principal
                     VStack(spacing: 8) {
-                        Text("Trouve ton partenaire ALL IN près de chez toi")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.white)
+                        (Text("Trouve ton partenaire ")
+                            .foregroundColor(.white) +
+                         Text("ALL IN")
+                            .foregroundColor(.appDarkRedButton) +
+                         Text(" près de\nchez toi")
+                            .foregroundColor(.white))
+                            .font(.system(size: 20, weight: .bold))
                             .multilineTextAlignment(.center)
+                            .lineSpacing(4)
                         
                         Text("Et profite de 10% chez tous les membres du CLUB10")
                             .font(.system(size: 16, weight: .regular))
@@ -135,14 +114,15 @@ struct HomeView: View {
                             
                             Button(action: {}) {
                                 Image(systemName: "mappin.circle.fill")
-                                    .foregroundColor(.appRed)
+                                    .foregroundColor(.appDarkRedButton)
                                     .font(.system(size: 16))
                             }
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 9)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
                         .background(Color.white)
-                        .cornerRadius(8)
+                        .cornerRadius(14)
+                        .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
                         
                         // Menu déroulant Secteur
                         CustomSectorPicker(
@@ -161,7 +141,7 @@ struct HomeView: View {
                                 .frame(width: 20)
                             
                             Slider(value: $viewModel.searchRadius, in: 0...50, step: 5)
-                                .tint(.appRed)
+                                .tint(.appDarkRedButton)
                                 .onChange(of: viewModel.searchRadius) { _, _ in
                                     viewModel.searchProfessionals()
                                 }
@@ -173,13 +153,14 @@ struct HomeView: View {
                             
                             Text(viewModel.searchRadius == 0 ? "Désactivé" : "\(Int(viewModel.searchRadius)) km")
                                 .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(viewModel.searchRadius == 0 ? .gray.opacity(0.7) : .appRed)
+                                .foregroundColor(viewModel.searchRadius == 0 ? .gray.opacity(0.7) : .appDarkRedButton)
                                 .frame(minWidth: 60, alignment: .trailing)
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
                         .background(Color.white)
-                        .cornerRadius(8)
+                        .cornerRadius(14)
+                        .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
                         
                         // Checkbox CLUB10
                         Button(action: {
@@ -191,11 +172,11 @@ struct HomeView: View {
                             HStack(spacing: 10) {
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 3)
-                                        .fill(viewModel.onlyClub10 ? Color.appRed : Color.clear)
+                                        .fill(viewModel.onlyClub10 ? Color.green : Color.clear)
                                         .frame(width: 16, height: 16)
                                         .overlay(
                                             RoundedRectangle(cornerRadius: 3)
-                                                .stroke(Color.white, lineWidth: 1.5)
+                                                .stroke(Color.green, lineWidth: 1.5)
                                         )
                                     
                                     if viewModel.onlyClub10 {
@@ -211,14 +192,15 @@ struct HomeView: View {
                                 
                                 Text("Uniquement les membres CLUB10")
                                     .font(.system(size: 13, weight: .medium))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.green)
                                 
                                 Spacer()
                             }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 9)
-                            .background(Color.appDarkGray.opacity(0.4))
-                            .cornerRadius(8)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .background(Color(red: 0.85, green: 0.95, blue: 0.85)) // Vert clair/pastel
+                            .cornerRadius(14)
+                            .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
                         }
                         .buttonStyle(PlainButtonStyle())
                         
@@ -230,11 +212,11 @@ struct HomeView: View {
                                 Spacer()
                                 Text("Rechercher")
                                     .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.black)
+                                    .foregroundColor(.white)
                                 Spacer()
                             }
                             .padding(.vertical, 14)
-                            .background(Color.appGold)
+                            .background(Color.appDarkRedButton)
                             .cornerRadius(10)
                         }
                     }
@@ -331,7 +313,7 @@ struct HomeView: View {
                                     Image(systemName: "chevron.right")
                                         .font(.system(size: 12, weight: .semibold))
                                 }
-                                .foregroundColor(Color.appRed.opacity(0.9))
+                                .foregroundColor(Color.appDarkRedButton.opacity(0.9))
                             }
                         }
                         .padding(.horizontal, 20)
