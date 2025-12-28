@@ -33,12 +33,12 @@ struct DigitalCardInfoView: View {
                             // Titre et sous-titre
                             VStack(spacing: 8) {
                                 Text("Pourquoi ta carte digitale ?")
-                                    .font(.system(size: 24, weight: .bold))
+                                    .font(.system(size: 20, weight: .bold))
                                     .foregroundColor(.white)
                                     .multilineTextAlignment(.center)
                                 
                                 Text("Des bénéfices qui changent tout")
-                                    .font(.system(size: 16, weight: .regular))
+                                    .font(.system(size: 14, weight: .regular))
                                     .foregroundColor(.white.opacity(0.8))
                                     .multilineTextAlignment(.center)
                             }
@@ -91,7 +91,7 @@ struct DigitalCardInfoView: View {
                                         .font(.system(size: 16))
                                     
                                     Text("OBTENIR MA CARTE")
-                                        .font(.system(size: 16, weight: .bold))
+                                        .font(.system(size: 14, weight: .bold))
                                         .foregroundColor(.black)
                                 }
                                 .frame(maxWidth: .infinity)
@@ -142,17 +142,17 @@ struct BenefitCard: View {
             // Icône
             Image(systemName: icon)
                 .foregroundColor(iconColor)
-                .font(.system(size: 24))
-                .frame(width: 50, height: 50)
+                .font(.system(size: 20))
+                .frame(width: 40, height: 40)
             
             // Texte
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: 14, weight: .bold))
                     .foregroundColor(.white)
                 
                 Text(description)
-                    .font(.system(size: 14, weight: .regular))
+                    .font(.system(size: 12, weight: .regular))
                     .foregroundColor(.white.opacity(0.9))
                     .fixedSize(horizontal: false, vertical: true)
             }

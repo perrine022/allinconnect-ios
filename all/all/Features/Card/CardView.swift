@@ -25,6 +25,16 @@ struct CardView: View {
             
             ScrollView {
                 VStack(spacing: 20) {
+                    // Bannière VIP en haut
+                    Image("VIPMemberBanner")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(height: 180)
+                        .frame(maxWidth: .infinity)
+                        .clipped()
+                        .padding(.horizontal, 20)
+                        .padding(.top, 16)
+                    
                     // Titre
                     HStack {
                         Text("Ma Carte")
@@ -33,14 +43,13 @@ struct CardView: View {
                         Spacer()
                     }
                     .padding(.horizontal, 20)
-                    .padding(.top, 16)
                     
                     // États de chargement et d'erreur - selon guidelines Apple
                     // Afficher le loader uniquement pendant le chargement initial
                     if viewModel.isLoading && !viewModel.hasLoadedOnce {
                         VStack(spacing: 20) {
                             ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .appGold))
+                                .progressViewStyle(CircularProgressViewStyle(tint: .appDarkRedButton))
                                 .scaleEffect(1.5)
                             
                             Text("Chargement de votre carte...")
@@ -55,7 +64,7 @@ struct CardView: View {
                         VStack(spacing: 12) {
                             Image(systemName: "exclamationmark.triangle")
                                 .font(.system(size: 40))
-                                .foregroundColor(.appGold)
+                                .foregroundColor(.appDarkRedButton)
                             Text("Erreur")
                                 .font(.system(size: 18, weight: .bold))
                                 .foregroundColor(.white)
@@ -73,7 +82,7 @@ struct CardView: View {
                                     .foregroundColor(.black)
                                     .padding(.horizontal, 24)
                                     .padding(.vertical, 12)
-                                    .background(Color.appGold)
+                                    .background(Color.appDarkRedButton)
                                     .cornerRadius(10)
                             }
                             .padding(.top, 8)
@@ -240,7 +249,7 @@ struct CardView: View {
                                     VStack(spacing: 8) {
                                         HStack {
                                             Image(systemName: "banknote.fill")
-                                                .foregroundColor(.appGold)
+                                                .foregroundColor(.appDarkRedButton)
                                                 .font(.system(size: 24))
                                             
                                             Spacer()
@@ -249,7 +258,7 @@ struct CardView: View {
                                                 showAddSavingsPopup = true
                                             }) {
                                                 Image(systemName: "plus.circle.fill")
-                                                    .foregroundColor(.appGold)
+                                                    .foregroundColor(.appDarkRedButton)
                                                     .font(.system(size: 20))
                                             }
                                         }
@@ -274,7 +283,7 @@ struct CardView: View {
                                     )
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 16)
-                                            .stroke(Color.appGold.opacity(0.3), lineWidth: 1)
+                                            .stroke(Color.appDarkRedButton.opacity(0.3), lineWidth: 1)
                                     )
                                 }
                                 .buttonStyle(PlainButtonStyle())
@@ -283,7 +292,7 @@ struct CardView: View {
                                     icon: "person.2.fill",
                                     value: "\(viewModel.referrals)",
                                     label: "Parrainages",
-                                    iconColor: .appGold
+                                    iconColor: .appDarkRedButton
                                 )
                             }
                             
@@ -295,7 +304,7 @@ struct CardView: View {
                                         icon: "wallet.pass.fill",
                                         value: "\(Int(viewModel.wallet))€",
                                         label: "Cagnotte",
-                                        iconColor: .appGold
+                                        iconColor: .appDarkRedButton
                                     )
                                 }
                                 .buttonStyle(PlainButtonStyle())
@@ -304,7 +313,7 @@ struct CardView: View {
                                     icon: "heart.fill",
                                     value: "\(viewModel.favoritesCount)",
                                     label: "Favoris",
-                                    iconColor: .appGold
+                                    iconColor: .appDarkRedButton
                                 )
                             }
                         }
@@ -314,7 +323,7 @@ struct CardView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             HStack(spacing: 8) {
                                 Image(systemName: "square.and.arrow.up")
-                                    .foregroundColor(.appGold)
+                                    .foregroundColor(.appDarkRedButton)
                                     .font(.system(size: 16))
                                 
                                 Text("Lien de parrainage")
@@ -335,7 +344,7 @@ struct CardView: View {
                                     }
                                 }) {
                                     Image(systemName: "doc.on.doc")
-                                        .foregroundColor(.appGold)
+                                        .foregroundColor(.appDarkRedButton)
                                         .font(.system(size: 16))
                                 }
                             }
