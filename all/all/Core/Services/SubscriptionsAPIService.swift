@@ -57,6 +57,17 @@ struct SubscriptionPlanResponse: Codable, Identifiable {
     }
 }
 
+// MARK: - Card Members Response (nouvel endpoint)
+struct CardMembersResponse: Codable {
+    let activeMembers: [CardMember]
+    let pendingInvitations: [String]
+    
+    enum CodingKeys: String, CodingKey {
+        case activeMembers = "activeMembers"
+        case pendingInvitations = "pendingInvitations"
+    }
+}
+
 // MARK: - Family Card Emails Response
 struct FamilyCardEmailsResponse: Codable {
     let cardId: Int
@@ -181,24 +192,17 @@ class SubscriptionsAPIService: ObservableObject {
             }
         }
         
-        let request = RemoveMemberRequest(memberId: memberId, email: email)
-        let encoder = JSONEncoder()
-        let jsonData = try encoder.encode(request)
+        // Construire le payload selon les spécifications du backend
+        // Le backend attend soit {"memberId": 12} soit {"email": "email@example.com"}
+        var parameters: [String: Any] = [:]
         
-        guard let parameters = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
-            print("[SubscriptionsAPIService] ERROR: Failed to encode remove member request")
-            throw APIError.invalidResponse
+        if let memberId = memberId {
+            parameters["memberId"] = memberId
+        } else if let email = email {
+            parameters["email"] = email
         }
         
-        // Nettoyer les valeurs nil
-        let cleanedParameters = parameters.compactMapValues { value -> Any? in
-            if value is NSNull {
-                return nil
-            }
-            return value
-        }
-        
-        print("[SubscriptionsAPIService] Request payload: \(cleanedParameters)")
+        print("[SubscriptionsAPIService] Request payload: \(parameters)")
         
         // La réponse peut être vide (200 OK)
         struct EmptyResponse: Codable {}
@@ -210,6 +214,16 @@ class SubscriptionsAPIService: ObservableObject {
         )
         
         print("[SubscriptionsAPIService] Successfully removed family member")
+    }
+    
+    // MARK: - Get Card Members (nouvel endpoint avec noms complets)
+    func getCardMembers() async throws -> CardMembersResponse {
+        return try await apiService.request(
+            endpoint: "/cards/members",
+            method: .get,
+            parameters: nil,
+            headers: nil
+        )
     }
     
     // MARK: - Get Family Card Emails (deprecated - utiliser getUserLight à la place)

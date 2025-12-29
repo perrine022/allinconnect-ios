@@ -447,46 +447,57 @@ extension OfferResponse {
             fullBusinessName = businessName
         }
         
-        // Convertir endDate en format français pour validUntil (DD/MM/YYYY)
-        let validUntil: String
-        if let endDate = endDate {
-            // Essayer différents formats de date
+        // Fonction helper pour formater une date ISO en format français
+        func formatDateToFrench(_ dateString: String?) -> String? {
+            guard let dateString = dateString else { return nil }
+            
             let dateFormatter = DateFormatter()
             dateFormatter.locale = Locale(identifier: "fr_FR")
             
             // Format ISO 8601 avec heures (ex: 2026-01-24T00:00:00 ou 2026-01-24T00:00:00.000Z)
             dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
-            var date = dateFormatter.date(from: endDate)
+            var date = dateFormatter.date(from: dateString)
             
             // Si ça n'a pas fonctionné, essayer avec les millisecondes
             if date == nil {
                 dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
-                date = dateFormatter.date(from: endDate)
+                date = dateFormatter.date(from: dateString)
             }
             
             // Si ça n'a pas fonctionné, essayer avec le Z à la fin
             if date == nil {
                 dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
-                date = dateFormatter.date(from: endDate)
+                date = dateFormatter.date(from: dateString)
             }
             
             // Si ça n'a pas fonctionné, essayer le format simple YYYY-MM-DD
             if date == nil {
                 dateFormatter.dateFormat = "yyyy-MM-dd"
-                date = dateFormatter.date(from: endDate)
+                date = dateFormatter.date(from: dateString)
             }
             
             // Si on a réussi à parser la date, formater en DD/MM/YYYY
             if let date = date {
                 dateFormatter.dateFormat = "dd/MM/yyyy"
-                validUntil = dateFormatter.string(from: date)
+                return dateFormatter.string(from: date)
             } else {
-                // Si le parsing a échoué, utiliser la date telle quelle
-                validUntil = endDate
+                // Si le parsing a échoué, retourner nil
+                return nil
             }
+        }
+        
+        // Convertir endDate en format français pour validUntil (DD/MM/YYYY)
+        let validUntil: String
+        if let endDate = endDate, let formatted = formatDateToFrench(endDate) {
+            validUntil = formatted
+        } else if let endDate = endDate {
+            validUntil = endDate
         } else {
             validUntil = "N/A"
         }
+        
+        // Convertir startDate en format français
+        let startDateFormatted: String? = formatDateToFrench(startDate)
         
         // Créer un discount depuis le price
         let discount: String
@@ -546,6 +557,7 @@ extension OfferResponse {
             description: description,
             businessName: fullBusinessName,
             validUntil: validUntil,
+            startDate: startDateFormatted,
             discount: discount,
             imageName: defaultImage,
             offerType: offerTypeEnum,

@@ -43,7 +43,7 @@ struct SavingsListView: View {
                                 
                                 Text("\(String(format: "%.2f", viewModel.savings))€")
                                     .font(.system(size: 36, weight: .bold))
-                                    .foregroundColor(.appGold)
+                                    .foregroundColor(.appRed)
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 20)
@@ -52,7 +52,7 @@ struct SavingsListView: View {
                                     .fill(Color.appDarkRed1.opacity(0.6))
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 16)
-                                            .stroke(Color.appGold.opacity(0.3), lineWidth: 1)
+                                            .stroke(Color.appRed.opacity(0.3), lineWidth: 1)
                                     )
                             )
                             .padding(.horizontal, 20)
@@ -97,10 +97,10 @@ struct SavingsListView: View {
                                     Text("Ajouter une économie")
                                         .font(.system(size: 16, weight: .semibold))
                                 }
-                                .foregroundColor(.black)
+                                .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
-                                .background(Color.appGold)
+                                .background(Color.appRed)
                                 .cornerRadius(12)
                             }
                             .padding(.horizontal, 20)
@@ -197,11 +197,11 @@ struct SavingsRow: View {
             // Icône
             ZStack {
                 Circle()
-                    .fill(Color.appGold.opacity(0.2))
+                    .fill(Color.appRed.opacity(0.2))
                     .frame(width: 50, height: 50)
                 
                 Image(systemName: "banknote.fill")
-                    .foregroundColor(.appGold)
+                    .foregroundColor(.appRed)
                     .font(.system(size: 20))
             }
             
@@ -235,7 +235,7 @@ struct SavingsRow: View {
             // Montant
             Text("\(String(format: "%.2f", entry.amount))€")
                 .font(.system(size: 18, weight: .bold))
-                .foregroundColor(.appGold)
+                .foregroundColor(.appRed)
             
             // Boutons d'action
             Menu {
@@ -261,7 +261,7 @@ struct SavingsRow: View {
                 .fill(Color.appDarkRed1.opacity(0.6))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.appGold.opacity(0.2), lineWidth: 1)
+                        .stroke(Color.appRed.opacity(0.2), lineWidth: 1)
                 )
         )
         .alert("Supprimer l'économie", isPresented: $showDeleteConfirmation) {

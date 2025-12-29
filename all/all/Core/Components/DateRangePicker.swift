@@ -156,11 +156,11 @@ struct DateRangePicker: View {
                             Spacer()
                             Text("Valider")
                                 .font(.system(size: 15, weight: .semibold))
-                                .foregroundColor(.black)
+                                .foregroundColor(.white)
                             Spacer()
                         }
                         .padding(.vertical, 12)
-                        .background(Color.appGold)
+                        .background(Color.appRed)
                         .cornerRadius(8)
                     }
                     .buttonStyle(PlainButtonStyle())
@@ -178,78 +178,6 @@ struct DateRangePicker: View {
                         .stroke(Color.appRed.opacity(0.3), lineWidth: 1)
                 )
         )
-            
-            // Sélection de la date de début
-            Button(action: {
-                if let start = startDate {
-                    tempStartDate = start
-                }
-                showStartDatePicker = true
-            }) {
-                HStack {
-                    Image(systemName: "calendar.badge.clock")
-                        .foregroundColor(.appRed)
-                        .font(.system(size: 14))
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Date de début")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(.gray.opacity(0.8))
-                        
-                        Text(startDate != nil ? formatDate(startDate!) : "Sélectionner")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(startDate != nil ? .white : .gray.opacity(0.6))
-                    }
-                    
-                    Spacer()
-                    
-                    Image(systemName: "chevron.right")
-                        .foregroundColor(.gray.opacity(0.6))
-                        .font(.system(size: 12))
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-                .background(Color.white.opacity(0.1))
-                .cornerRadius(8)
-            }
-            
-            // Sélection de la date de fin
-            Button(action: {
-                if let end = endDate {
-                    tempEndDate = end
-                } else if let start = startDate {
-                    // Si on a une date de début, initialiser la date de fin à la même date
-                    tempEndDate = start
-                }
-                showEndDatePicker = true
-            }) {
-                HStack {
-                    Image(systemName: "calendar.badge.exclamationmark")
-                        .foregroundColor(.appRed)
-                        .font(.system(size: 14))
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Date de fin")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(.gray.opacity(0.8))
-                        
-                        Text(endDate != nil ? formatDate(endDate!) : "Sélectionner")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(endDate != nil ? .white : .gray.opacity(0.6))
-                    }
-                    
-                    Spacer()
-                    
-                    Image(systemName: "chevron.right")
-                        .foregroundColor(.gray.opacity(0.6))
-                        .font(.system(size: 12))
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-                .background(Color.white.opacity(0.1))
-                .cornerRadius(8)
-            }
-            
         .sheet(isPresented: $showStartDatePicker) {
             NavigationView {
                 VStack {

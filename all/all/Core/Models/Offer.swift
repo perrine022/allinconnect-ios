@@ -18,6 +18,7 @@ struct Offer: Identifiable, Hashable, Codable {
     let description: String
     let businessName: String
     let validUntil: String
+    let startDate: String? // Date de début au format DD/MM/YYYY
     let discount: String
     let imageName: String
     let offerType: OfferType
@@ -31,6 +32,7 @@ struct Offer: Identifiable, Hashable, Codable {
         description: String,
         businessName: String,
         validUntil: String,
+        startDate: String? = nil,
         discount: String,
         imageName: String,
         offerType: OfferType = .offer,
@@ -43,6 +45,7 @@ struct Offer: Identifiable, Hashable, Codable {
         self.description = description
         self.businessName = businessName
         self.validUntil = validUntil
+        self.startDate = startDate
         self.discount = discount
         self.imageName = imageName
         self.offerType = offerType

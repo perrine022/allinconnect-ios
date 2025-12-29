@@ -235,19 +235,22 @@ class OffersViewModel: ObservableObject {
     
     // MARK: - Date Formatting
     private func formatDateToISO8601(_ date: Date, isStartOfDay: Bool) -> String {
-        // Format ISO 8601: YYYY-MM-DDTHH:mm:ss
-        let calendar = Calendar.current
+        // Format ISO 8601: YYYY-MM-DDTHH:mm:ssZ (avec Z pour UTC)
+        // Utiliser un calendrier UTC pour éviter les problèmes de timezone
+        var calendar = Calendar.current
+        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? TimeZone.current // UTC
+        
         let components = calendar.dateComponents([.year, .month, .day], from: date)
         
         guard let dateOnly = calendar.date(from: components) else {
             // Fallback si la création de la date échoue
             let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
-            formatter.timeZone = TimeZone.current
+            formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+            formatter.timeZone = TimeZone(secondsFromGMT: 0) // UTC
             return formatter.string(from: date)
         }
         
-        // Ajouter l'heure selon le type (début ou fin de journée)
+        // Ajouter l'heure selon le type (début ou fin de journée) en UTC
         let finalDate: Date
         if isStartOfDay {
             finalDate = calendar.date(bySettingHour: 0, minute: 0, second: 0, of: dateOnly) ?? dateOnly
@@ -255,9 +258,10 @@ class OffersViewModel: ObservableObject {
             finalDate = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: dateOnly) ?? dateOnly
         }
         
+        // Formater en UTC avec le Z à la fin
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
-        formatter.timeZone = TimeZone.current
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+        formatter.timeZone = TimeZone(secondsFromGMT: 0) // UTC
         return formatter.string(from: finalDate)
     }
     

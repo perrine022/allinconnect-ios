@@ -157,9 +157,29 @@ struct OfferDetailView: View {
                                 
                                 // Informations
                                 VStack(alignment: .leading, spacing: 12) {
+                                    // Date de début (si disponible)
+                                    if let startDate = offer.startDate, !startDate.isEmpty {
+                                        HStack(spacing: 12) {
+                                            Image(systemName: "calendar.badge.clock")
+                                                .foregroundColor(.appRed)
+                                                .font(.system(size: 16))
+                                            
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text("Date de début")
+                                                    .font(.system(size: 13, weight: .regular))
+                                                    .foregroundColor(.gray)
+                                                
+                                                Text(startDate)
+                                                    .font(.system(size: 16, weight: .semibold))
+                                                    .foregroundColor(.white)
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Date de fin
                                     HStack(spacing: 12) {
                                         Image(systemName: "calendar")
-                                            .foregroundColor(.appGold)
+                                            .foregroundColor(.appRed)
                                             .font(.system(size: 16))
                                         
                                         VStack(alignment: .leading, spacing: 2) {

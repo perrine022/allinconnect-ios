@@ -168,41 +168,55 @@ class FamilyCardEmailsViewModel: ObservableObject {
             errorMessage = nil
             
             do {
-                // Charger depuis /users/me/light pour avoir l'email de l'utilisateur connecté
-                let userLight = try await profileAPIService.getUserLight()
-                
                 // Récupérer l'email de l'utilisateur connecté (propriétaire)
-                // On doit aussi charger /users/me pour avoir l'email complet
                 let userMe = try await profileAPIService.getUserMe()
                 ownerEmail = userMe.email ?? ""
                 
-                // Récupérer les membres et invitations depuis card
-                if let card = userLight.card {
-                    members = card.members ?? []
-                    invitedEmails = card.invitedEmails ?? []
-                    
-                    // Exclure le propriétaire de la liste des membres (il n'est pas dans la limite de 4)
-                    // Filtrer les membres qui ne sont pas le propriétaire
-                    let nonOwnerMembers = members.filter { $0.email != ownerEmail }
-                    let nonOwnerMemberEmails = nonOwnerMembers.map { $0.email }
-                    
-                    // Combiner les emails des membres (sans propriétaire) et les invitations en attente
-                    let allEmails = nonOwnerMemberEmails + invitedEmails
-                    
-                    // S'assurer qu'on a toujours 4 emplacements maximum (peut être vide)
-                    emails = Array(allEmails.prefix(4))
-                    while emails.count < 4 {
-                        emails.append("")
-                    }
-                } else {
-                    // Pas de carte famille, initialiser avec des champs vides
-                    emails = ["", "", "", ""]
+                // Utiliser le nouvel endpoint /cards/members pour récupérer les membres avec leurs noms
+                let cardMembersResponse = try await subscriptionsAPIService.getCardMembers()
+                
+                // Les membres actifs contiennent les noms complets (firstName, lastName)
+                members = cardMembersResponse.activeMembers
+                
+                // Les invitations en attente sont juste des emails
+                invitedEmails = cardMembersResponse.pendingInvitations
+                
+                // Exclure le propriétaire de la liste des membres (il n'est pas dans la limite de 4)
+                // Filtrer les membres qui ne sont pas le propriétaire
+                let nonOwnerMembers = members.filter { $0.email != ownerEmail }
+                let nonOwnerMemberEmails = nonOwnerMembers.map { $0.email }
+                
+                // Combiner les emails des membres (sans propriétaire) et les invitations en attente
+                let allEmails = nonOwnerMemberEmails + invitedEmails
+                
+                // S'assurer qu'on a toujours 4 emplacements maximum (peut être vide)
+                emails = Array(allEmails.prefix(4))
+                while emails.count < 4 {
+                    emails.append("")
                 }
                 
                 isLoading = false
             } catch {
                 isLoading = false
-                errorMessage = "Erreur lors du chargement des membres"
+                // Si c'est une erreur 404 ou 403, c'est probablement que l'utilisateur n'a pas de carte famille
+                if let apiError = error as? APIError {
+                    switch apiError {
+                    case .httpError(let statusCode, let message):
+                        if statusCode == 404 || statusCode == 403 {
+                            // Pas de carte famille, initialiser avec des champs vides
+                            members = []
+                            invitedEmails = []
+                            emails = ["", "", "", ""]
+                            errorMessage = nil // Pas d'erreur, juste pas de carte famille
+                        } else {
+                            errorMessage = message ?? "Erreur lors du chargement des membres"
+                        }
+                    default:
+                        errorMessage = "Erreur lors du chargement des membres"
+                    }
+                } else {
+                    errorMessage = "Erreur lors du chargement des membres"
+                }
                 print("Erreur lors du chargement des membres: \(error)")
             }
         }
@@ -356,6 +370,77 @@ class FamilyCardEmailsViewModel: ObservableObject {
         }
         
         print("[FamilyCardEmailsViewModel] ===== FIN saveEmails =====")
+        isLoading = false
+    }
+    
+    // MARK: - Remove Member or Invitation Individually
+    func removeMember(memberId: Int) async {
+        print("[FamilyCardEmailsViewModel] Removing member with ID: \(memberId)")
+        isLoading = true
+        errorMessage = nil
+        successMessage = nil
+        
+        do {
+            try await subscriptionsAPIService.removeFamilyMember(memberId: memberId, email: nil)
+            print("[FamilyCardEmailsViewModel] Successfully removed member with ID: \(memberId)")
+            successMessage = "Membre retiré avec succès"
+            
+            // Recharger les données
+            loadEmails()
+            
+            // Effacer le message après 3 secondes
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                self.successMessage = nil
+            }
+        } catch {
+            print("[FamilyCardEmailsViewModel] ERROR removing member: \(error)")
+            if let apiError = error as? APIError {
+                switch apiError {
+                case .httpError(let statusCode, let message):
+                    errorMessage = message ?? "Erreur lors de la suppression (code: \(statusCode))"
+                default:
+                    errorMessage = "Erreur lors de la suppression: \(apiError.localizedDescription)"
+                }
+            } else {
+                errorMessage = "Erreur lors de la suppression: \(error.localizedDescription)"
+            }
+        }
+        
+        isLoading = false
+    }
+    
+    func removeInvitation(email: String) async {
+        print("[FamilyCardEmailsViewModel] Removing invitation with email: \(email)")
+        isLoading = true
+        errorMessage = nil
+        successMessage = nil
+        
+        do {
+            try await subscriptionsAPIService.removeFamilyMember(memberId: nil, email: email)
+            print("[FamilyCardEmailsViewModel] Successfully removed invitation: \(email)")
+            successMessage = "Invitation annulée avec succès"
+            
+            // Recharger les données
+            loadEmails()
+            
+            // Effacer le message après 3 secondes
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                self.successMessage = nil
+            }
+        } catch {
+            print("[FamilyCardEmailsViewModel] ERROR removing invitation: \(error)")
+            if let apiError = error as? APIError {
+                switch apiError {
+                case .httpError(let statusCode, let message):
+                    errorMessage = message ?? "Erreur lors de l'annulation (code: \(statusCode))"
+                default:
+                    errorMessage = "Erreur lors de l'annulation: \(apiError.localizedDescription)"
+                }
+            } else {
+                errorMessage = "Erreur lors de l'annulation: \(error.localizedDescription)"
+            }
+        }
+        
         isLoading = false
     }
     

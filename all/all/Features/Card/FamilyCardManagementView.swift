@@ -65,6 +65,21 @@ struct FamilyCardManagementView: View {
                                             }
                                             
                                             Spacer()
+                                            
+                                            // Bouton supprimer
+                                            Button(action: {
+                                                Task {
+                                                    await viewModel.removeMember(memberId: member.id)
+                                                }
+                                            }) {
+                                                Image(systemName: "trash")
+                                                    .foregroundColor(.red)
+                                                    .font(.system(size: 16))
+                                                    .frame(width: 36, height: 36)
+                                                    .background(Color.red.opacity(0.2))
+                                                    .cornerRadius(8)
+                                            }
+                                            .disabled(viewModel.isLoading)
                                         }
                                         .padding(.horizontal, 20)
                                     }
@@ -91,6 +106,21 @@ struct FamilyCardManagementView: View {
                                                 .foregroundColor(.white)
                                             
                                             Spacer()
+                                            
+                                            // Bouton supprimer
+                                            Button(action: {
+                                                Task {
+                                                    await viewModel.removeInvitation(email: email)
+                                                }
+                                            }) {
+                                                Image(systemName: "trash")
+                                                    .foregroundColor(.red)
+                                                    .font(.system(size: 16))
+                                                    .frame(width: 36, height: 36)
+                                                    .background(Color.red.opacity(0.2))
+                                                    .cornerRadius(8)
+                                            }
+                                            .disabled(viewModel.isLoading)
                                         }
                                         .padding(.horizontal, 20)
                                     }
