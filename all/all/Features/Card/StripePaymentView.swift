@@ -132,20 +132,27 @@ struct StripePaymentView: View {
                     // Bouton Payer
                     if let selectedPlan = viewModel.selectedPlan {
                         Button(action: {
-                            // Ouvrir le Payment Link Stripe dans Safari
-                            viewModel.openPaymentLink(plan: selectedPlan)
-                            showSafari = true
+                            // Utiliser le Payment Sheet Stripe (Étape A + B)
+                            Task { @MainActor in
+                                await viewModel.processPaymentWithStripeSheet(plan: selectedPlan)
+                            }
                         }) {
                             HStack {
-                                Text("Payer \(selectedPlan.formattedPrice)")
-                                    .font(.system(size: 18, weight: .bold))
+                                if viewModel.isProcessingPayment {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                } else {
+                                    Text("Payer \(selectedPlan.formattedPrice)")
+                                        .font(.system(size: 18, weight: .bold))
+                                }
                             }
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(Color.red)
+                            .background(viewModel.isProcessingPayment ? Color.gray : Color.red)
                             .cornerRadius(12)
                         }
+                        .disabled(viewModel.isProcessingPayment)
                         .padding(.horizontal, 20)
                         .padding(.top, 8)
                     }
@@ -189,6 +196,28 @@ struct StripePaymentView: View {
                     }
                 )
             }
+        }
+        .sheet(isPresented: $viewModel.showPaymentSheet) {
+            // Payment Sheet Stripe (Étape B)
+            if let clientSecret = viewModel.paymentIntentClientSecret {
+                // Note: Le SDK Stripe doit être installé pour que ce composant fonctionne
+                // Pour l'instant, on utilise un placeholder qui affichera un message
+                StripePaymentSheetPlaceholderView(
+                    clientSecret: clientSecret,
+                    onPaymentResult: { success, error in
+                        Task { @MainActor in
+                            await viewModel.handlePaymentSheetResult(success: success, error: error)
+                        }
+                    }
+                )
+            }
+        }
+        .alert("🎉 Félicitations !", isPresented: $viewModel.showSuccessMessage) {
+            Button("OK", role: .cancel) {
+                viewModel.showSuccessMessage = false
+            }
+        } message: {
+            Text("Votre abonnement a été activé avec succès. Vous êtes maintenant Premium !")
         }
     }
 }
@@ -317,10 +346,15 @@ class StripePaymentViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
     @Published var paymentURL: URL? = nil
+    @Published var isProcessingPayment: Bool = false
+    @Published var showPaymentSheet: Bool = false
+    @Published var paymentIntentClientSecret: String? = nil
+    @Published var showSuccessMessage: Bool = false
     
     private let subscriptionsAPIService: SubscriptionsAPIService
+    private let profileAPIService = ProfileAPIService()
     
-    // Payment Link Stripe fourni
+    // Payment Link Stripe fourni (fallback si Payment Sheet non disponible)
     private let stripePaymentLinkURL = "https://buy.stripe.com/test_9B614mbv4cH93KZ0cP87K01"
     
     init(subscriptionsAPIService: SubscriptionsAPIService? = nil) {
@@ -414,6 +448,135 @@ class StripePaymentViewModel: ObservableObject {
         
         NotificationCenter.default.post(name: NSNotification.Name("SubscriptionUpdated"), object: nil)
         print("Retour du paiement Stripe - Vérification de l'abonnement en cours...")
+    }
+    
+    // MARK: - Stripe Payment Sheet Integration (Étapes A, B, C)
+    
+    /// Étape A : Récupérer le clientSecret depuis le backend
+    /// Étape B : Configurer et présenter le Payment Sheet
+    /// Étape C : Vérifier le statut après paiement réussi
+    func processPaymentWithStripeSheet(plan: SubscriptionPlanResponse) async {
+        isProcessingPayment = true
+        errorMessage = nil
+        
+        do {
+            // ÉTAPE A : Appeler POST /api/v1/subscriptions/create-payment-intent
+            print("[StripePaymentViewModel] Étape A : Création du Payment Intent pour planId=\(plan.id)")
+            let paymentIntentResponse = try await subscriptionsAPIService.createPaymentIntent(planId: plan.id)
+            
+            print("[StripePaymentViewModel] ✅ Payment Intent créé avec succès")
+            print("[StripePaymentViewModel]   - clientSecret: \(paymentIntentResponse.clientSecret.prefix(20))...")
+            print("[StripePaymentViewModel]   - amount: \(paymentIntentResponse.amount)")
+            print("[StripePaymentViewModel]   - currency: \(paymentIntentResponse.currency)")
+            
+            // Stocker le clientSecret pour le Payment Sheet
+            paymentIntentClientSecret = paymentIntentResponse.clientSecret
+            
+            // ÉTAPE B : Présenter le Payment Sheet
+            // Note: Le SDK Stripe doit être installé et le code décommenté dans StripeSubscriptionPaymentSheetView
+            print("[StripePaymentViewModel] Étape B : Présentation du Payment Sheet")
+            showPaymentSheet = true
+            
+        } catch {
+            print("[StripePaymentViewModel] ❌ Erreur lors de la création du Payment Intent: \(error)")
+            errorMessage = "Erreur lors de l'initialisation du paiement. Veuillez réessayer."
+            isProcessingPayment = false
+        }
+    }
+    
+    /// Étape C : Appelée après que le Payment Sheet renvoie .completed
+    func handlePaymentSheetResult(success: Bool, error: String?) async {
+        isProcessingPayment = false
+        showPaymentSheet = false
+        
+        if success {
+            print("[StripePaymentViewModel] ✅ Paiement réussi dans le Payment Sheet")
+            print("[StripePaymentViewModel] Étape C : Vérification du statut premium...")
+            
+            // Attendre quelques millisecondes pour que le webhook soit traité
+            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconde
+            
+            // Vérifier le statut avec retry (jusqu'à 2 retries)
+            let isPremiumConfirmed = await PaymentStatusManager.shared.checkPaymentStatus(maxRetries: 2)
+            
+            if isPremiumConfirmed {
+                // Afficher le message de succès
+                showSuccessMessage = true
+                print("[StripePaymentViewModel] 🎉 Statut premium confirmé !")
+                
+                // Notifier les autres parties de l'app
+                NotificationCenter.default.post(name: NSNotification.Name("SubscriptionUpdated"), object: nil)
+                
+                // Masquer le message après 3 secondes
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 3_000_000_000)
+                    showSuccessMessage = false
+                }
+            } else {
+                // Le statut n'est pas encore à jour après les retries
+                errorMessage = "Paiement réussi, mais la vérification du statut prend plus de temps que prévu. Veuillez rafraîchir votre profil."
+                print("[StripePaymentViewModel] ⚠️ Statut premium non confirmé après retries")
+            }
+        } else {
+            // Le paiement a échoué ou a été annulé
+            if let error = error {
+                errorMessage = error
+                print("[StripePaymentViewModel] ❌ Paiement échoué: \(error)")
+            } else {
+                errorMessage = "Paiement annulé"
+                print("[StripePaymentViewModel] ⚠️ Paiement annulé par l'utilisateur")
+            }
+        }
+    }
+}
+
+// MARK: - Stripe Payment Sheet Placeholder View
+/// Wrapper pour le Payment Sheet Stripe
+/// Une fois le SDK Stripe installé, ce composant utilisera le vrai Payment Sheet
+struct StripePaymentSheetPlaceholderView: View {
+    let clientSecret: String
+    let onPaymentResult: (Bool, String?) -> Void
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("Payment Sheet Stripe")
+                .font(.system(size: 24, weight: .bold))
+                .padding(.top, 40)
+            
+            Text("Pour activer le Payment Sheet Stripe :")
+                .font(.system(size: 16))
+                .padding(.horizontal)
+            
+            VStack(alignment: .leading, spacing: 12) {
+                Text("1. Installer le SDK Stripe iOS")
+                Text("2. Décommenter le code dans StripeSubscriptionPaymentSheetView.swift")
+                Text("3. Configurer votre clé publique Stripe")
+            }
+            .font(.system(size: 14))
+            .padding()
+            
+            Button("Fermer") {
+                onPaymentResult(false, "SDK Stripe non installé")
+                dismiss()
+            }
+            .padding()
+            .background(Color.red)
+            .foregroundColor(.white)
+            .cornerRadius(10)
+            
+            Spacer()
+        }
+        .padding()
+        .onAppear {
+            // TODO: Une fois le SDK Stripe installé, remplacer ce placeholder par :
+            // StripeSubscriptionPaymentSheetView(
+            //     paymentIntentClientSecret: clientSecret,
+            //     onPaymentResult: onPaymentResult
+            // )
+            // Note: customerId et ephemeralKeySecret sont optionnels pour un paiement unique
+            print("[StripePaymentSheetPlaceholderView] Payment Intent créé avec clientSecret: \(clientSecret.prefix(20))...")
+        }
     }
 }
 

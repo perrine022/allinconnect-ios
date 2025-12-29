@@ -157,40 +157,45 @@ struct OfferDetailView: View {
                                 
                                 // Informations
                                 VStack(alignment: .leading, spacing: 12) {
-                                    // Date de début (si disponible)
-                                    if let startDate = offer.startDate, !startDate.isEmpty {
-                                        HStack(spacing: 12) {
-                                            Image(systemName: "calendar.badge.clock")
-                                                .foregroundColor(.appRed)
-                                                .font(.system(size: 16))
+                                    // Dates sur la même ligne
+                                    HStack(spacing: 20) {
+                                        // Date de début (si disponible)
+                                        if let startDate = offer.startDate, !startDate.isEmpty {
+                                            HStack(spacing: 8) {
+                                                Image(systemName: "calendar.badge.clock")
+                                                    .foregroundColor(.red)
+                                                    .font(.system(size: 14))
+                                                
+                                                VStack(alignment: .leading, spacing: 2) {
+                                                    Text("Date de début")
+                                                        .font(.system(size: 12, weight: .regular))
+                                                        .foregroundColor(.gray)
+                                                    
+                                                    Text(startDate)
+                                                        .font(.system(size: 14, weight: .semibold))
+                                                        .foregroundColor(.white)
+                                                }
+                                            }
+                                        }
+                                        
+                                        // Date de fin
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "calendar")
+                                                .foregroundColor(.red)
+                                                .font(.system(size: 14))
                                             
                                             VStack(alignment: .leading, spacing: 2) {
-                                                Text("Date de début")
-                                                    .font(.system(size: 13, weight: .regular))
+                                                Text("Valable jusqu'au")
+                                                    .font(.system(size: 12, weight: .regular))
                                                     .foregroundColor(.gray)
                                                 
-                                                Text(startDate)
-                                                    .font(.system(size: 16, weight: .semibold))
+                                                Text(offer.validUntil)
+                                                    .font(.system(size: 14, weight: .semibold))
                                                     .foregroundColor(.white)
                                             }
                                         }
-                                    }
-                                    
-                                    // Date de fin
-                                    HStack(spacing: 12) {
-                                        Image(systemName: "calendar")
-                                            .foregroundColor(.appRed)
-                                            .font(.system(size: 16))
                                         
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text("Valable jusqu'au")
-                                                .font(.system(size: 13, weight: .regular))
-                                                .foregroundColor(.gray)
-                                            
-                                            Text(offer.validUntil)
-                                                .font(.system(size: 16, weight: .semibold))
-                                                .foregroundColor(.white)
-                                        }
+                                        Spacer()
                                     }
                                     
                                     if offer.isClub10 {

@@ -270,8 +270,8 @@ class OffersAPIService: ObservableObject {
         
         // Log du payload et de l'endpoint
         let endpoint = "/offers"
-        let baseURL = "https://allinconnect-back-1.onrender.com/api/v1" // Production
-        // let baseURL = "http://127.0.0.1:8080/api/v1" // Local
+        // let baseURL = "https://allinconnect-back-1.onrender.com/api/v1" // Production
+        let baseURL = "http://127.0.0.1:8080/api/v1" // Local
         let fullURL = "\(baseURL)\(endpoint)"
         
         print("[OffersAPIService] Création d'offre:")

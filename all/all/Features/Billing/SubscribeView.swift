@@ -175,8 +175,6 @@ struct SubscribeView: View {
         .sheet(isPresented: $showPaymentSheet) {
             if let data = paymentSheetData {
                 StripeSubscriptionPaymentSheetView(
-                    customerId: data.customerId,
-                    ephemeralKeySecret: data.ephemeralKey,
                     paymentIntentClientSecret: data.clientSecret,
                     onPaymentResult: { success, error in
                         showPaymentSheet = false
@@ -187,7 +185,9 @@ struct SubscribeView: View {
                         } else {
                             viewModel.errorMessage = error ?? "Paiement échoué ou annulé"
                         }
-                    }
+                    },
+                    customerId: data.customerId,
+                    ephemeralKeySecret: data.ephemeralKey
                 )
                 .ignoresSafeArea()
             }

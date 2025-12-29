@@ -138,7 +138,7 @@ class CardViewModel: ObservableObject {
             
             // Charger les savings depuis l'API et rafraîchir en arrière-plan
             Task {
-                await loadSavings()
+                loadSavings()
                 await refreshCardData()
             }
             return

@@ -59,7 +59,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             Task { @MainActor in
                 // Attendre un peu pour que le backend traite le webhook
                 try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 secondes
-                await PaymentStatusManager.shared.checkPaymentStatus()
+                _ = await PaymentStatusManager.shared.checkPaymentStatus()
             }
             
             // Poster une notification pour afficher le résultat
