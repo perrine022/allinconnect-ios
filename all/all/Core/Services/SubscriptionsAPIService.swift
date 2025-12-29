@@ -209,7 +209,7 @@ class SubscriptionsAPIService: ObservableObject {
         let _: EmptyResponse = try await apiService.request(
             endpoint: "/cards/remove-member",
             method: .post,
-            parameters: cleanedParameters,
+            parameters: parameters,
             headers: nil
         )
         
