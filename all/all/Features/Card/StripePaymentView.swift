@@ -43,7 +43,7 @@ struct StripePaymentView: View {
                     if filterCategory == "PROFESSIONAL" {
                         HStack(spacing: 12) {
                             Image(systemName: "gift.fill")
-                                .foregroundColor(.appDarkRedButton)
+                                .foregroundColor(.red)
                                 .font(.system(size: 20))
                             
                             VStack(alignment: .leading, spacing: 4) {
@@ -62,7 +62,7 @@ struct StripePaymentView: View {
                                 .fill(Color.appDarkRed1.opacity(0.6))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.appDarkRedButton.opacity(0.3), lineWidth: 1)
+                                        .stroke(Color.red.opacity(0.3), lineWidth: 1)
                                 )
                         )
                         .padding(.horizontal, 20)
@@ -72,7 +72,7 @@ struct StripePaymentView: View {
                     if filterCategory == "CLIENT" {
                         HStack(spacing: 12) {
                             Image(systemName: "person.2.fill")
-                                .foregroundColor(.appDarkRedButton)
+                                .foregroundColor(.red)
                                 .font(.system(size: 20))
                             
                             VStack(alignment: .leading, spacing: 4) {
@@ -91,7 +91,7 @@ struct StripePaymentView: View {
                                 .fill(Color.appDarkRed1.opacity(0.6))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.appDarkRedButton.opacity(0.3), lineWidth: 1)
+                                        .stroke(Color.red.opacity(0.3), lineWidth: 1)
                                 )
                         )
                         .padding(.horizontal, 20)
@@ -100,7 +100,7 @@ struct StripePaymentView: View {
                     // Indicateur de chargement
                     if viewModel.isLoading {
                         ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .appDarkRedButton))
+                            .progressViewStyle(CircularProgressViewStyle(tint: .red))
                             .scaleEffect(1.5)
                             .padding(.vertical, 40)
                     }
@@ -143,7 +143,7 @@ struct StripePaymentView: View {
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(Color.appDarkRedButton)
+                            .background(Color.red)
                             .cornerRadius(12)
                         }
                         .padding(.horizontal, 20)
@@ -209,7 +209,7 @@ struct PlanCard: View {
                         
                         Text(plan.formattedPrice)
                             .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(.appDarkRedButton)
+                            .foregroundColor(.red)
                     }
                     
                     Spacer()
@@ -220,7 +220,7 @@ struct PlanCard: View {
                         .foregroundColor(.white)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(Color.appDarkRedButton)
+                        .background(Color.red)
                         .cornerRadius(8)
                 }
                 
@@ -250,7 +250,7 @@ struct PlanCard: View {
                             .foregroundColor(.white.opacity(0.9))
                         Text("• Carte digitale incluse")
                             .font(.system(size: 14, weight: .regular))
-                            .foregroundColor(.appDarkRedButton)
+                            .foregroundColor(.red)
                             .fontWeight(.semibold)
                     }
                 } else {
@@ -263,7 +263,7 @@ struct PlanCard: View {
                             .foregroundColor(.white.opacity(0.9))
                         Text("• Pensez à la carte famille !")
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(.appDarkRedButton.opacity(0.9))
+                            .foregroundColor(.red.opacity(0.9))
                             .italic()
                     }
                 }
@@ -272,7 +272,7 @@ struct PlanCard: View {
             .background(isSelected ? Color.appDarkRed1.opacity(0.9) : Color.appDarkRed1.opacity(0.6))
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? Color.appDarkRedButton : Color.clear, lineWidth: 2)
+                    .stroke(isSelected ? Color.red : Color.clear, lineWidth: 2)
             )
             .cornerRadius(12)
         }

@@ -42,7 +42,7 @@ struct CardView: View {
                     if viewModel.isLoading && !viewModel.hasLoadedOnce {
                         VStack(spacing: 20) {
                             ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .appDarkRedButton))
+                                .progressViewStyle(CircularProgressViewStyle(tint: .red))
                                 .scaleEffect(1.5)
                             
                             Text("Chargement de votre carte...")
@@ -57,7 +57,7 @@ struct CardView: View {
                         VStack(spacing: 12) {
                             Image(systemName: "exclamationmark.triangle")
                                 .font(.system(size: 40))
-                                .foregroundColor(.appDarkRedButton)
+                                .foregroundColor(.red)
                             Text("Erreur")
                                 .font(.system(size: 18, weight: .bold))
                                 .foregroundColor(.white)
@@ -75,7 +75,7 @@ struct CardView: View {
                                     .foregroundColor(.black)
                                     .padding(.horizontal, 24)
                                     .padding(.vertical, 12)
-                                    .background(Color.appDarkRedButton)
+                                    .background(Color.red)
                                     .cornerRadius(10)
                             }
                             .padding(.top, 8)
@@ -111,15 +111,15 @@ struct CardView: View {
                                         
                                         ZStack {
                                             Circle()
-                                                .fill(Color.appRed)
+                                                .fill(Color.red)
                                                 .frame(width: 16, height: 16)
                                             
                                             Circle()
-                                                .fill(Color.appRed.opacity(0.6))
+                                                .fill(Color.red.opacity(0.6))
                                                 .frame(width: 13, height: 13)
                                             
                                             Circle()
-                                                .fill(Color.appRed.opacity(0.3))
+                                                .fill(Color.red.opacity(0.3))
                                                 .frame(width: 10, height: 10)
                                         }
                                         
@@ -130,7 +130,7 @@ struct CardView: View {
                                     
                                     Text("Connect")
                                         .font(.system(size: 11, weight: .medium))
-                                        .foregroundColor(viewModel.isCardValid ? Color.appRed : Color.white.opacity(0.9))
+                                        .foregroundColor(viewModel.isCardValid ? Color.red : Color.white.opacity(0.9))
                                 }
                                 
                                 Spacer()
@@ -152,10 +152,10 @@ struct CardView: View {
                             if viewModel.cardType == "FAMILY" || viewModel.cardType == "CLIENT_FAMILY" {
                                 Text("Carte familiale")
                                     .font(.system(size: 11, weight: .semibold))
-                                    .foregroundColor(viewModel.isCardValid ? .appRed : .white)
+                                    .foregroundColor(viewModel.isCardValid ? .red : .white)
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 4)
-                                    .background(viewModel.isCardValid ? Color.appRed.opacity(0.2) : Color.white.opacity(0.2))
+                                    .background(viewModel.isCardValid ? Color.red.opacity(0.2) : Color.white.opacity(0.2))
                                     .cornerRadius(6)
                                     .padding(.top, 2)
                             }
@@ -189,12 +189,12 @@ struct CardView: View {
                             if viewModel.isMember {
                                 HStack(spacing: 4) {
                                     Image(systemName: "star.fill")
-                                        .foregroundColor(viewModel.isCardValid ? .appRed : .white)
+                                        .foregroundColor(viewModel.isCardValid ? .red : .white)
                                         .font(.system(size: 11))
                                     
                                     Text("Membre CLUB10")
                                         .font(.system(size: 12, weight: .semibold))
-                                        .foregroundColor(viewModel.isCardValid ? .appRed : .white)
+                                        .foregroundColor(viewModel.isCardValid ? .red : .white)
                                 }
                                 .padding(.top, 2)
                             }
@@ -206,16 +206,16 @@ struct CardView: View {
                                 }) {
                                     HStack(spacing: 6) {
                                         Image(systemName: "person.2.fill")
-                                            .foregroundColor(viewModel.isCardValid ? .appRed : .white)
+                                            .foregroundColor(viewModel.isCardValid ? .red : .white)
                                             .font(.system(size: 13))
                                         
                                         Text("Gérer ma famille")
                                             .font(.system(size: 12, weight: .semibold))
-                                            .foregroundColor(viewModel.isCardValid ? .appRed : .white)
+                                            .foregroundColor(viewModel.isCardValid ? .red : .white)
                                     }
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 8)
-                                    .background(viewModel.isCardValid ? Color.appRed.opacity(0.2) : Color.white.opacity(0.2))
+                                    .background(viewModel.isCardValid ? Color.red.opacity(0.2) : Color.white.opacity(0.2))
                                     .cornerRadius(8)
                                 }
                                 .padding(.top, 6)
@@ -247,7 +247,7 @@ struct CardView: View {
                                     VStack(spacing: 8) {
                                         HStack {
                                             Image(systemName: "banknote.fill")
-                                                .foregroundColor(.appDarkRedButton)
+                                                .foregroundColor(.red)
                                                 .font(.system(size: 24))
                                             
                                             Spacer()
@@ -256,7 +256,7 @@ struct CardView: View {
                                                 showAddSavingsPopup = true
                                             }) {
                                                 Image(systemName: "plus.circle.fill")
-                                                    .foregroundColor(.appDarkRedButton)
+                                                    .foregroundColor(.red)
                                                     .font(.system(size: 20))
                                             }
                                         }
@@ -281,7 +281,7 @@ struct CardView: View {
                                     )
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 16)
-                                            .stroke(Color.appDarkRedButton.opacity(0.3), lineWidth: 1)
+                                            .stroke(Color.red.opacity(0.3), lineWidth: 1)
                                     )
                                 }
                                 .buttonStyle(PlainButtonStyle())
@@ -290,7 +290,7 @@ struct CardView: View {
                                     icon: "person.2.fill",
                                     value: "\(viewModel.referrals)",
                                     label: "Parrainages",
-                                    iconColor: .appDarkRedButton
+                                    iconColor: .red
                                 )
                             }
                             
@@ -302,7 +302,7 @@ struct CardView: View {
                                         icon: "wallet.pass.fill",
                                         value: "\(Int(viewModel.wallet))€",
                                         label: "Cagnotte",
-                                        iconColor: .appDarkRedButton
+                                        iconColor: .red
                                     )
                                 }
                                 .buttonStyle(PlainButtonStyle())
@@ -311,7 +311,7 @@ struct CardView: View {
                                     icon: "heart.fill",
                                     value: "\(viewModel.favoritesCount)",
                                     label: "Favoris",
-                                    iconColor: .appDarkRedButton
+                                    iconColor: .red
                                 )
                             }
                         }
@@ -322,7 +322,7 @@ struct CardView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             HStack(spacing: 8) {
                                 Image(systemName: "square.and.arrow.up")
-                                    .foregroundColor(.appDarkRedButton)
+                                    .foregroundColor(.red)
                                     .font(.system(size: 16))
                                 
                                 Text("Lien de parrainage")
@@ -343,7 +343,7 @@ struct CardView: View {
                                     }
                                 }) {
                                     Image(systemName: "doc.on.doc")
-                                        .foregroundColor(.appDarkRedButton)
+                                        .foregroundColor(.red)
                                         .font(.system(size: 16))
                                 }
                             }

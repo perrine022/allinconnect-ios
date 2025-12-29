@@ -40,9 +40,9 @@ struct HomeView: View {
                         Image("AppLogo")
                             .resizable()
                             .scaledToFit()
-                            .frame(maxWidth: 225, maxHeight: 90)
+                            .frame(maxWidth: 337.5, maxHeight: 135)
                             .padding(.top, 12)
-                            .padding(.bottom, 4)
+                            .padding(.bottom, 2)
                     }
                     
                     // Bouton "L'app qui pense à toi"
@@ -60,11 +60,11 @@ struct HomeView: View {
                         .padding(.vertical, 6)
                         .overlay(
                             RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.appDarkRedButton, lineWidth: 1.5)
+                                .stroke(Color.red, lineWidth: 1.5)
                         )
                     }
                     .padding(.horizontal, 20)
-                    .padding(.top, 12)
+                    .padding(.top, 6)
                     .padding(.bottom, 20)
 
                     // Titre principal
@@ -72,7 +72,7 @@ struct HomeView: View {
                         (Text("Trouve ton partenaire ")
                             .foregroundColor(.white) +
                          Text("ALL IN")
-                            .foregroundColor(.appDarkRedButton) +
+                            .foregroundColor(.red) +
                          Text(" près de\nchez toi")
                             .foregroundColor(.white))
                             .font(.system(size: 20, weight: .bold))
@@ -107,7 +107,7 @@ struct HomeView: View {
                             
                             Button(action: {}) {
                                 Image(systemName: "mappin.circle.fill")
-                                    .foregroundColor(.appDarkRedButton)
+                                    .foregroundColor(.red)
                                     .font(.system(size: 16))
                             }
                         }
@@ -134,7 +134,7 @@ struct HomeView: View {
                                 .frame(width: 20)
                             
                             Slider(value: $viewModel.searchRadius, in: 0...50, step: 5)
-                                .tint(.appDarkRedButton)
+                                .tint(.red)
                                 .onChange(of: viewModel.searchRadius) { _, _ in
                                     viewModel.searchProfessionals()
                                 }
@@ -146,7 +146,7 @@ struct HomeView: View {
                             
                             Text(viewModel.searchRadius == 0 ? "Désactivé" : "\(Int(viewModel.searchRadius)) km")
                                 .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(viewModel.searchRadius == 0 ? .gray.opacity(0.7) : .appDarkRedButton)
+                                .foregroundColor(viewModel.searchRadius == 0 ? .gray.opacity(0.7) : .red)
                                 .frame(minWidth: 60, alignment: .trailing)
                         }
                         .padding(.horizontal, 16)
@@ -209,7 +209,7 @@ struct HomeView: View {
                                 Spacer()
                             }
                             .padding(.vertical, 14)
-                            .background(Color.appDarkRedButton)
+                            .background(Color.red)
                             .cornerRadius(10)
                         }
                     }
@@ -308,7 +308,7 @@ struct HomeView: View {
                                     Image(systemName: "chevron.right")
                                         .font(.system(size: 12, weight: .semibold))
                                 }
-                                .foregroundColor(Color.appDarkRedButton.opacity(0.9))
+                                .foregroundColor(Color.red.opacity(0.9))
                             }
                         }
                         .padding(.horizontal, 20)

@@ -131,7 +131,7 @@ struct ProfileView: View {
                                 // Avatar (réduit de 5 fois : 100/5 = 20)
                                 ZStack {
                                     Circle()
-                                        .fill(Color.appDarkRedButton)
+                                        .fill(Color.red)
                                         .frame(width: 20, height: 20)
                                     
                                     if !viewModel.user.firstName.isEmpty {
@@ -179,7 +179,7 @@ struct ProfileView: View {
                                         .foregroundColor(viewModel.currentSpace == .client ? .black : .white)
                                         .padding(.horizontal, 20)
                                         .padding(.vertical, 12)
-                                        .background(viewModel.currentSpace == .client ? Color.appDarkRedButton : Color.appDarkRed1.opacity(0.6))
+                                        .background(viewModel.currentSpace == .client ? Color.red : Color.appDarkRed1.opacity(0.6))
                                         .cornerRadius(10)
                                 }
                                 
@@ -191,7 +191,7 @@ struct ProfileView: View {
                                         .foregroundColor(viewModel.currentSpace == .pro ? .black : .white)
                                         .padding(.horizontal, 20)
                                         .padding(.vertical, 12)
-                                        .background(viewModel.currentSpace == .pro ? Color.appDarkRedButton : Color.appDarkRed1.opacity(0.6))
+                                        .background(viewModel.currentSpace == .pro ? Color.red : Color.appDarkRed1.opacity(0.6))
                                         .cornerRadius(10)
                                 }
                             }
@@ -206,7 +206,7 @@ struct ProfileView: View {
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
                                 Image(systemName: "creditcard.fill")
-                                    .foregroundColor(.appDarkRedButton)
+                                    .foregroundColor(.red)
                                     .font(.system(size: 18))
                                 
                                 Text("Abonnement Pro")
@@ -227,7 +227,7 @@ struct ProfileView: View {
                                     
                                     Text(viewModel.nextPaymentDate)
                                         .font(.system(size: 14, weight: .semibold))
-                                        .foregroundColor(.appDarkRedButton)
+                                        .foregroundColor(.red)
                                 }
                                 
                                 Divider()
@@ -263,7 +263,7 @@ struct ProfileView: View {
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
                                 Image(systemName: "tag.fill")
-                                    .foregroundColor(.appDarkRedButton)
+                                    .foregroundColor(.red)
                                     .font(.system(size: 18))
                                 
                                 Text("Mes offres")
@@ -343,7 +343,7 @@ struct ProfileView: View {
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
                                 Image(systemName: "creditcard.fill")
-                                    .foregroundColor(.appDarkRedButton)
+                                    .foregroundColor(.red)
                                     .font(.system(size: 18))
                                 
                                 Text("Mon abonnement")
@@ -364,7 +364,7 @@ struct ProfileView: View {
                                     
                                     Text(viewModel.formattedCardType)
                                         .font(.system(size: 14, weight: .semibold))
-                                        .foregroundColor(.appDarkRedButton)
+                                        .foregroundColor(.red)
                                 }
                             }
                             
@@ -434,7 +434,7 @@ struct ProfileView: View {
                                         Spacer()
                                     }
                                     .padding(.vertical, 12)
-                                    .background(Color.appDarkRedButton)
+                                    .background(Color.red)
                                     .cornerRadius(10)
                                 }
                             }
@@ -454,7 +454,7 @@ struct ProfileView: View {
                             VStack(alignment: .leading, spacing: 16) {
                                 HStack {
                                     Image(systemName: "tag.fill")
-                                        .foregroundColor(.appDarkRedButton)
+                                        .foregroundColor(.red)
                                         .font(.system(size: 18))
                                     
                                     Text("Mes offres")
@@ -514,7 +514,7 @@ struct ProfileView: View {
                                         Spacer()
                                     }
                                     .padding(.vertical, 12)
-                                    .background(Color.appDarkRedButton)
+                                    .background(Color.red)
                                     .cornerRadius(10)
                                 }
                             }
@@ -535,7 +535,7 @@ struct ProfileView: View {
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
                                 Image(systemName: "heart.fill")
-                                    .foregroundColor(.appDarkRedButton)
+                                    .foregroundColor(.red)
                                     .font(.system(size: 18))
                                 
                                 Text("Mes favoris")
@@ -546,7 +546,7 @@ struct ProfileView: View {
                                 
                                 if viewModel.isLoadingFavorites {
                                     ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .appDarkRedButton))
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .red))
                                         .scaleEffect(0.8)
                                 }
                             }
@@ -574,11 +574,11 @@ struct ProfileView: View {
                                                 // Icône ou image
                                                 ZStack {
                                                     RoundedRectangle(cornerRadius: 8)
-                                                        .fill(Color.appDarkRedButton.opacity(0.2))
+                                                        .fill(Color.red.opacity(0.2))
                                                         .frame(width: 50, height: 50)
                                                     
                                                     Image(systemName: partner.imageName)
-                                                        .foregroundColor(.appDarkRedButton)
+                                                        .foregroundColor(.red)
                                                         .font(.system(size: 20))
                                                 }
                                                 

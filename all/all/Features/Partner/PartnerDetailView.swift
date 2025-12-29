@@ -168,7 +168,7 @@ struct PartnerDetailView: View {
                                         HStack(spacing: 12) {
                                             ZStack {
                                                 Circle()
-                                                    .fill(Color.appDarkRedButton)
+                                                    .fill(Color.red)
                                                     .frame(width: 40, height: 40)
                                                 
                                                 Image(systemName: "info.circle.fill")
@@ -195,7 +195,7 @@ struct PartnerDetailView: View {
                                             HStack(spacing: 12) {
                                                 ZStack {
                                                     Circle()
-                                                        .fill(Color.appDarkRedButton)
+                                                        .fill(Color.red)
                                                         .frame(width: 40, height: 40)
                                                     
                                                     Image(systemName: "phone.fill")
@@ -223,7 +223,7 @@ struct PartnerDetailView: View {
                                             HStack(spacing: 12) {
                                                 ZStack {
                                                     Circle()
-                                                        .fill(Color.appDarkRedButton)
+                                                        .fill(Color.red)
                                                         .frame(width: 40, height: 40)
                                                     
                                                     Image(systemName: "envelope.fill")
@@ -282,7 +282,7 @@ struct PartnerDetailView: View {
                                         }) {
                                             ZStack {
                                                 RoundedRectangle(cornerRadius: 10)
-                                                    .fill(Color.appDarkRedButton)
+                                                    .fill(Color.red)
                                                     .frame(width: 50, height: 50)
                                                 
                                                 Image(systemName: "envelope.fill")
@@ -299,7 +299,7 @@ struct PartnerDetailView: View {
                                         }) {
                                             ZStack {
                                                 RoundedRectangle(cornerRadius: 10)
-                                                    .fill(Color.appDarkRedButton)
+                                                    .fill(Color.red)
                                                     .frame(width: 50, height: 50)
                                                 
                                                 Image(systemName: "globe")
@@ -324,7 +324,7 @@ struct PartnerDetailView: View {
                                             .foregroundColor(.white)
                                             .padding(.horizontal, 12)
                                             .padding(.vertical, 12)
-                                            .background(Color.appDarkRedButton)
+                                            .background(Color.red)
                                             .cornerRadius(10)
                                         }
                                     }
@@ -373,7 +373,7 @@ struct PartnerDetailView: View {
                                                     .foregroundColor(.white)
                                                     .padding(.horizontal, 16)
                                                     .padding(.vertical, 8)
-                                                    .background(Color.appDarkRedButton)
+                                                    .background(Color.red)
                                                     .cornerRadius(8)
                                             }
                                         }

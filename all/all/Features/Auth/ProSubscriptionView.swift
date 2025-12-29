@@ -146,7 +146,7 @@ struct ProSubscriptionView: View {
                                     // Tes offres diffusées
                                     ProBenefitCard(
                                         icon: "megaphone.fill",
-                                        iconColor: .appRed,
+                                        iconColor: .red,
                                         title: "Tes offres diffusées",
                                         description: "À toute la communauté ALL IN Connect"
                                     )

@@ -104,7 +104,9 @@ class OffersAPIService: ObservableObject {
     func getActiveOffers(
         city: String? = nil,
         category: OfferCategory? = nil,
-        type: String? = nil // "OFFRE" ou "EVENEMENT" pour filtrer
+        type: String? = nil, // "OFFRE" ou "EVENEMENT" pour filtrer
+        startDate: String? = nil, // Format ISO 8601: YYYY-MM-DDTHH:mm:ss
+        endDate: String? = nil // Format ISO 8601: YYYY-MM-DDTHH:mm:ss
     ) async throws -> [OfferResponse] {
         var parameters: [String: Any] = [:]
         
@@ -118,6 +120,14 @@ class OffersAPIService: ObservableObject {
         
         if let type = type {
             parameters["type"] = type
+        }
+        
+        if let startDate = startDate {
+            parameters["startDate"] = startDate
+        }
+        
+        if let endDate = endDate {
+            parameters["endDate"] = endDate
         }
         
         // L'API retourne directement un tableau d'offres actives (statut ACTIVE et dates valides)
@@ -135,7 +145,9 @@ class OffersAPIService: ObservableObject {
         city: String? = nil,
         category: OfferCategory? = nil,
         professionalId: Int? = nil,
-        type: String? = nil // "OFFRE" ou "EVENEMENT" pour filtrer
+        type: String? = nil, // "OFFRE" ou "EVENEMENT" pour filtrer
+        startDate: String? = nil, // Format ISO 8601: YYYY-MM-DDTHH:mm:ss
+        endDate: String? = nil // Format ISO 8601: YYYY-MM-DDTHH:mm:ss
     ) async throws -> [OfferResponse] {
         var parameters: [String: Any] = [:]
         
@@ -153,6 +165,14 @@ class OffersAPIService: ObservableObject {
         
         if let type = type {
             parameters["type"] = type
+        }
+        
+        if let startDate = startDate {
+            parameters["startDate"] = startDate
+        }
+        
+        if let endDate = endDate {
+            parameters["endDate"] = endDate
         }
         
         // L'API retourne directement un tableau d'offres, pas un objet avec une clé "offers"
@@ -250,8 +270,8 @@ class OffersAPIService: ObservableObject {
         
         // Log du payload et de l'endpoint
         let endpoint = "/offers"
-        // let baseURL = "https://allinconnect-back-1.onrender.com/api/v1" // Production
-        let baseURL = "http://127.0.0.1:8080/api/v1" // Local
+        let baseURL = "https://allinconnect-back-1.onrender.com/api/v1" // Production
+        // let baseURL = "http://127.0.0.1:8080/api/v1" // Local
         let fullURL = "\(baseURL)\(endpoint)"
         
         print("[OffersAPIService] Création d'offre:")

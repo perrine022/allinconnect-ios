@@ -110,7 +110,7 @@ struct OffersView: View {
                             
                             Button(action: {}) {
                                 Image(systemName: "mappin.circle.fill")
-                                    .foregroundColor(.appRed)
+                                    .foregroundColor(.red)
                                     .font(.system(size: 16))
                             }
                         }
@@ -137,7 +137,7 @@ struct OffersView: View {
                                 .frame(width: 20)
                             
                             Slider(value: $viewModel.searchRadius, in: 0...50, step: 5)
-                                .tint(.appRed)
+                                .tint(.red)
                                 .onChange(of: viewModel.searchRadius) { _, _ in
                                     viewModel.searchOffers()
                                 }
@@ -149,7 +149,7 @@ struct OffersView: View {
                             
                             Text(viewModel.searchRadius == 0 ? "Désactivé" : "\(Int(viewModel.searchRadius)) km")
                                 .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(viewModel.searchRadius == 0 ? .gray.opacity(0.7) : .appRed)
+                                .foregroundColor(viewModel.searchRadius == 0 ? .gray.opacity(0.7) : .red)
                                 .frame(minWidth: 60, alignment: .trailing)
                         }
                         .padding(.horizontal, 12)
@@ -197,6 +197,18 @@ struct OffersView: View {
                             .cornerRadius(8)
                         }
                         .buttonStyle(PlainButtonStyle())
+                        
+                        // Filtre par dates
+                        DateRangePicker(
+                            startDate: $viewModel.startDate,
+                            endDate: $viewModel.endDate
+                        )
+                        .onChange(of: viewModel.startDate) { _, _ in
+                            viewModel.searchOffers()
+                        }
+                        .onChange(of: viewModel.endDate) { _, _ in
+                            viewModel.searchOffers()
+                        }
                     }
                     .padding(.horizontal, 20)
                     .zIndex(1000) // zIndex élevé pour le VStack des champs de recherche

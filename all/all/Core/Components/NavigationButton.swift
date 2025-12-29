@@ -57,7 +57,7 @@ struct FavoriteButton: View {
                     .frame(width: 36, height: 36)
                 
                 Image(systemName: isFavorite ? "heart.fill" : "heart")
-                    .foregroundColor(isFavorite ? .appRed : .white)
+                    .foregroundColor(isFavorite ? .red : .white)
                     .font(.system(size: 16, weight: .semibold))
                     .scaleEffect(isFavorite ? 1.2 : 1.0)
             }
@@ -74,5 +74,6 @@ struct FavoriteButton: View {
     .padding()
     .background(Color.appBackground)
 }
+
 
 

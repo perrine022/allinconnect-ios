@@ -14,7 +14,7 @@ struct BadgeView: View {
     
     init(
         text: String,
-        gradientColors: [Color] = [Color.appRed, Color.appDarkRed],
+        gradientColors: [Color] = [Color.red, Color.red],
         fontSize: CGFloat = 11
     ) {
         self.text = text
@@ -47,5 +47,6 @@ struct BadgeView: View {
     .padding()
     .background(Color.appBackground)
 }
+
 
 

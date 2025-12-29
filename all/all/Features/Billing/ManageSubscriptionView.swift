@@ -106,7 +106,7 @@ struct ManageSubscriptionView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(viewModel.isLoading ? Color.gray.opacity(0.5) : Color.appDarkRedButton)
+                        .background(viewModel.isLoading ? Color.gray.opacity(0.5) : Color.red)
                         .cornerRadius(12)
                     }
                     .disabled(viewModel.isLoading)

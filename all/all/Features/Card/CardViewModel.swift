@@ -36,6 +36,7 @@ class CardViewModel: ObservableObject {
     private let favoritesAPIService: FavoritesAPIService
     private let savingsAPIService: SavingsAPIService
     private let dataService: MockDataService // Gardé pour les favoris en fallback
+    private let cacheService = CacheService.shared
     private var cancellables = Set<AnyCancellable>()
     
     init(
@@ -99,9 +100,49 @@ class CardViewModel: ObservableObject {
             .store(in: &cancellables)
     }
     
-    func loadData() {
+    func loadData(forceRefresh: Bool = false) {
         isLoading = true
         errorMessage = nil
+        
+        // Charger depuis le cache d'abord si disponible et pas de rafraîchissement forcé
+        if !forceRefresh, let cachedCardData = cacheService.getCardData() {
+            print("[CardViewModel] Chargement depuis le cache")
+            cardNumber = cachedCardData.cardNumber
+            cardType = cachedCardData.cardType
+            isCardActive = cachedCardData.isCardActive
+            cardExpirationDate = cachedCardData.cardExpirationDate
+            isMember = cachedCardData.isMember
+            referralCode = cachedCardData.referralCode
+            referralLink = cachedCardData.referralLink
+            savings = cachedCardData.savings
+            referrals = cachedCardData.referrals
+            wallet = cachedCardData.wallet
+            favoritesCount = cachedCardData.favoritesCount
+            
+            // Charger les données utilisateur depuis le cache profil
+            if let cachedProfile = cacheService.getProfile() {
+                user = User(
+                    firstName: cachedProfile.firstName,
+                    lastName: cachedProfile.lastName,
+                    username: cachedProfile.firstName.lowercased(),
+                    bio: (cachedProfile.isMember ?? false) ? "Membre CLUB10" : "",
+                    profileImageName: "person.circle.fill",
+                    publications: 0,
+                    subscribers: 0,
+                    subscriptions: 0
+                )
+            }
+            
+            hasLoadedOnce = true
+            isLoading = false
+            
+            // Charger les savings depuis l'API et rafraîchir en arrière-plan
+            Task {
+                await loadSavings()
+                await refreshCardData()
+            }
+            return
+        }
         
         Task {
             do {
@@ -110,6 +151,9 @@ class CardViewModel: ObservableObject {
                 
                 // Charger aussi les données light pour les autres infos
                 let userLight = try await profileAPIService.getUserLight()
+                
+                // Sauvegarder le profil en cache
+                cacheService.saveProfile(userLight)
                 
                 // Mettre à jour les données utilisateur
                 let firstName = userLight.firstName.isEmpty ? (userMe.firstName.isEmpty ? "Utilisateur" : userMe.firstName) : userLight.firstName
@@ -174,11 +218,34 @@ class CardViewModel: ObservableObject {
                 favoritesCount = userLight.favoriteCount ?? 0
                 wallet = userLight.walletBalance ?? 0.0
                 
-                // Générer le code de parrainage
-                let firstNameForCode = userLight.firstName.isEmpty ? (userMe.firstName.isEmpty ? "User" : userMe.firstName) : userLight.firstName
-                let lastNameForCode = userLight.lastName.isEmpty ? (userMe.lastName.isEmpty ? "Name" : userMe.lastName) : userLight.lastName
-                referralCode = generateReferralCode(from: firstNameForCode, lastName: lastNameForCode)
+                // Utiliser le referralCode du backend s'il existe, sinon générer un code localement
+                if let backendReferralCode = userLight.referralCode, !backendReferralCode.isEmpty {
+                    referralCode = backendReferralCode
+                } else if let backendReferralCode = userMe.referralCode, !backendReferralCode.isEmpty {
+                    referralCode = backendReferralCode
+                } else {
+                    // Fallback : générer le code de parrainage localement
+                    let firstNameForCode = userLight.firstName.isEmpty ? (userMe.firstName.isEmpty ? "User" : userMe.firstName) : userLight.firstName
+                    let lastNameForCode = userLight.lastName.isEmpty ? (userMe.lastName.isEmpty ? "Name" : userMe.lastName) : userLight.lastName
+                    referralCode = generateReferralCode(from: firstNameForCode, lastName: lastNameForCode)
+                }
                 referralLink = "allin.fr/r/\(referralCode)"
+                
+                // Sauvegarder les données de carte en cache
+                let cardCacheData = CardCacheData(
+                    cardNumber: cardNumber,
+                    cardType: cardType,
+                    isCardActive: isCardActive,
+                    cardExpirationDate: cardExpirationDate,
+                    isMember: isMember,
+                    referralCode: referralCode,
+                    referralLink: referralLink,
+                    savings: savings,
+                    referrals: referrals,
+                    wallet: wallet,
+                    favoritesCount: favoritesCount
+                )
+                cacheService.saveCardData(cardCacheData)
                 
                 // Charger les partenaires favoris depuis l'API
                 await loadFavoritePartners()
@@ -195,6 +262,96 @@ class CardViewModel: ObservableObject {
                 favoritePartners = dataService.getPartners().filter { $0.isFavorite }
                 favoritesCount = favoritePartners.count
             }
+        }
+    }
+    
+    private func refreshCardData() async {
+        do {
+            let userMe = try await profileAPIService.getUserMe()
+            let userLight = try await profileAPIService.getUserLight()
+            
+            // Sauvegarder le profil en cache
+            cacheService.saveProfile(userLight)
+            
+            let firstName = userLight.firstName.isEmpty ? (userMe.firstName.isEmpty ? "Utilisateur" : userMe.firstName) : userLight.firstName
+            let lastName = userLight.lastName.isEmpty ? (userMe.lastName.isEmpty ? "" : userMe.lastName) : userLight.lastName
+            
+            let isCardActiveValue: Bool
+            if let cardActive = userMe.isCardActive {
+                isCardActiveValue = cardActive
+            } else if let card = userMe.card, !card.cardNumber.isEmpty {
+                isCardActiveValue = true
+            } else {
+                isCardActiveValue = userLight.isCardActive ?? false
+            }
+            
+            let cardNumberValue = userMe.card?.cardNumber ?? userLight.card?.cardNumber
+            let cardTypeValue = userMe.card?.type ?? userLight.card?.type
+            
+            // Utiliser le referralCode du backend s'il existe, sinon générer un code localement
+            let referralCodeValue: String
+            if let backendReferralCode = userLight.referralCode, !backendReferralCode.isEmpty {
+                referralCodeValue = backendReferralCode
+            } else if let backendReferralCode = userMe.referralCode, !backendReferralCode.isEmpty {
+                referralCodeValue = backendReferralCode
+            } else {
+                // Fallback : générer le code de parrainage localement
+                let firstNameForCode = userLight.firstName.isEmpty ? (userMe.firstName.isEmpty ? "User" : userMe.firstName) : userLight.firstName
+                let lastNameForCode = userLight.lastName.isEmpty ? (userMe.lastName.isEmpty ? "Name" : userMe.lastName) : userLight.lastName
+                referralCodeValue = generateReferralCode(from: firstNameForCode, lastName: lastNameForCode)
+            }
+            let referralLinkValue = "allin.fr/r/\(referralCodeValue)"
+            
+            // Charger les savings pour avoir la valeur à jour
+            var currentSavings = savings
+            do {
+                let savingsResponse = try await savingsAPIService.getSavings()
+                let savingsEntries = savingsResponse.map { $0.toSavingsEntry() }
+                currentSavings = savingsEntries.reduce(0) { $0 + $1.amount }
+            } catch {
+                print("[CardViewModel] Erreur lors du chargement des savings en rafraîchissement: \(error)")
+            }
+            
+            let cardCacheData = CardCacheData(
+                cardNumber: cardNumberValue,
+                cardType: cardTypeValue,
+                isCardActive: isCardActiveValue,
+                cardExpirationDate: nil, // Peut être ajouté si nécessaire
+                isMember: userLight.isMember ?? false,
+                referralCode: referralCodeValue,
+                referralLink: referralLinkValue,
+                savings: currentSavings,
+                referrals: userLight.referralCount ?? 0,
+                wallet: userLight.walletBalance ?? 0.0,
+                favoritesCount: userLight.favoriteCount ?? 0
+            )
+            cacheService.saveCardData(cardCacheData)
+            
+            // Mettre à jour les données en arrière-plan
+            await MainActor.run {
+                user = User(
+                    firstName: firstName,
+                    lastName: lastName,
+                    username: firstName.lowercased(),
+                    bio: (userLight.isMember ?? false) ? "Membre CLUB10" : "",
+                    profileImageName: "person.circle.fill",
+                    publications: 0,
+                    subscribers: 0,
+                    subscriptions: 0
+                )
+                cardNumber = cardNumberValue
+                cardType = cardTypeValue
+                isCardActive = isCardActiveValue
+                isMember = userLight.isMember ?? false
+                referralCode = referralCodeValue
+                referralLink = referralLinkValue
+                referrals = userLight.referralCount ?? 0
+                wallet = userLight.walletBalance ?? 0.0
+                favoritesCount = userLight.favoriteCount ?? 0
+                savings = currentSavings
+            }
+        } catch {
+            print("[CardViewModel] Erreur lors du rafraîchissement en arrière-plan: \(error)")
         }
     }
     

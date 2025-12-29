@@ -66,6 +66,7 @@ class ProfileViewModel: ObservableObject {
     private let subscriptionsAPIService: SubscriptionsAPIService
     private let offersAPIService: OffersAPIService
     private let dataService: MockDataService
+    private let cacheService = CacheService.shared
     
     init(
         favoritesAPIService: FavoritesAPIService? = nil,
@@ -311,10 +312,64 @@ class ProfileViewModel: ObservableObject {
         loadMyOffers()
     }
     
-    func loadSubscriptionData() async {
+    func loadSubscriptionData(forceRefresh: Bool = false) async {
+        // Charger depuis le cache d'abord si disponible et pas de rafraîchissement forcé
+        if !forceRefresh, let cachedProfile = cacheService.getProfile() {
+            print("[ProfileViewModel] Chargement depuis le cache")
+            user = User(
+                firstName: cachedProfile.firstName,
+                lastName: cachedProfile.lastName,
+                username: cachedProfile.firstName.lowercased(),
+                bio: (cachedProfile.isMember ?? false) ? "Membre CLUB10" : "",
+                profileImageName: user.profileImageName,
+                publications: user.publications,
+                subscribers: user.subscribers,
+                subscriptions: user.subscriptions,
+                userType: user.userType
+            )
+            cardType = cachedProfile.card?.type
+            hasActiveClub10Subscription = cachedProfile.isCardActive ?? false
+            
+            // Mettre à jour les dates d'abonnement depuis le cache
+            if let renewalDate = cachedProfile.renewalDate {
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"
+                dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+                
+                if let date = dateFormatter.date(from: renewalDate) {
+                    let displayFormatter = DateFormatter()
+                    displayFormatter.dateFormat = "dd/MM/yyyy"
+                    club10NextPaymentDate = displayFormatter.string(from: date)
+                } else {
+                    dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+                    if let date = dateFormatter.date(from: renewalDate) {
+                        let displayFormatter = DateFormatter()
+                        displayFormatter.dateFormat = "dd/MM/yyyy"
+                        club10NextPaymentDate = displayFormatter.string(from: date)
+                    } else {
+                        dateFormatter.dateFormat = "yyyy-MM-dd"
+                        if let date = dateFormatter.date(from: renewalDate) {
+                            let displayFormatter = DateFormatter()
+                            displayFormatter.dateFormat = "dd/MM/yyyy"
+                            club10NextPaymentDate = displayFormatter.string(from: date)
+                        }
+                    }
+                }
+            }
+            
+            // Rafraîchir en arrière-plan
+            Task {
+                await refreshProfileData()
+            }
+            return
+        }
+        
         do {
             // Charger les données light depuis l'API
             let userLight = try await profileAPIService.getUserLight()
+            
+            // Sauvegarder en cache
+            cacheService.saveProfile(userLight)
             
             // Mettre à jour le prénom et nom depuis le backend
             user = User(
@@ -395,6 +450,65 @@ class ProfileViewModel: ObservableObject {
                     }
                 }
             }
+        }
+    }
+    
+    private func refreshProfileData() async {
+        do {
+            let userLight = try await profileAPIService.getUserLight()
+            
+            // Sauvegarder en cache
+            cacheService.saveProfile(userLight)
+            
+            // Mettre à jour les données en arrière-plan
+            await MainActor.run {
+                user = User(
+                    firstName: userLight.firstName,
+                    lastName: userLight.lastName,
+                    username: userLight.firstName.lowercased(),
+                    bio: (userLight.isMember ?? false) ? "Membre CLUB10" : "",
+                    profileImageName: user.profileImageName,
+                    publications: user.publications,
+                    subscribers: user.subscribers,
+                    subscriptions: user.subscriptions,
+                    userType: user.userType
+                )
+                cardType = userLight.card?.type
+                hasActiveClub10Subscription = userLight.isCardActive ?? false
+                
+                // Mettre à jour les dates d'abonnement
+                if let renewalDate = userLight.renewalDate {
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"
+                    dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+                    
+                    if let date = dateFormatter.date(from: renewalDate) {
+                        let displayFormatter = DateFormatter()
+                        displayFormatter.dateFormat = "dd/MM/yyyy"
+                        club10NextPaymentDate = displayFormatter.string(from: date)
+                    } else {
+                        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+                        if let date = dateFormatter.date(from: renewalDate) {
+                            let displayFormatter = DateFormatter()
+                            displayFormatter.dateFormat = "dd/MM/yyyy"
+                            club10NextPaymentDate = displayFormatter.string(from: date)
+                        } else {
+                            dateFormatter.dateFormat = "yyyy-MM-dd"
+                            if let date = dateFormatter.date(from: renewalDate) {
+                                let displayFormatter = DateFormatter()
+                                displayFormatter.dateFormat = "dd/MM/yyyy"
+                                club10NextPaymentDate = displayFormatter.string(from: date)
+                            }
+                        }
+                    }
+                }
+                
+                if let subscriptionAmount = userLight.subscriptionAmount {
+                    club10Amount = String(format: "%.2f€", subscriptionAmount)
+                }
+            }
+        } catch {
+            print("[ProfileViewModel] Erreur lors du rafraîchissement en arrière-plan: \(error)")
         }
     }
     

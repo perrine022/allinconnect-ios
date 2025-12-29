@@ -75,7 +75,7 @@ struct OfferListCard: View {
                     // Nom du studio
                     Text(offer.businessName)
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.appRed)
+                        .foregroundColor(.red)
                         .lineLimit(1)
                     
                     // Description

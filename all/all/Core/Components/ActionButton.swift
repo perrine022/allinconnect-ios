@@ -59,7 +59,7 @@ struct ActionButton: View {
             ActionButton(
                 title: "VISITER LE SITE WEB",
                 icon: "globe",
-                gradientColors: [Color.appRed, Color.appDarkRed],
+                gradientColors: [Color.red, Color.red],
                 action: {}
             )
             
@@ -73,5 +73,6 @@ struct ActionButton: View {
         .padding()
     }
 }
+
 
 

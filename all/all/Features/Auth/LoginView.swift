@@ -35,26 +35,14 @@ struct LoginView: View {
             ScrollView {
                 VStack(spacing: 30) {
                     // Logo
-                    VStack(spacing: 12) {
-                        HStack(spacing: 4) {
-                            Text("ALL")
-                                .font(.system(size: 50, weight: .bold, design: .rounded))
-                                .foregroundColor(.white)
-                            ZStack {
-                                Circle().fill(Color.appRed).frame(width: 32, height: 32)
-                                Circle().fill(Color.appRed.opacity(0.6)).frame(width: 28, height: 28)
-                                Circle().fill(Color.appRed.opacity(0.3)).frame(width: 24, height: 24)
-                            }
-                            Text("IN")
-                                .font(.system(size: 50, weight: .bold, design: .rounded))
-                                .foregroundColor(.white)
-                        }
-                        
-                        Text("Connect")
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundColor(.appRed.opacity(0.9))
+                    VStack(spacing: 0) {
+                        Image("AppLogo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxWidth: 337.5, maxHeight: 135)
+                            .padding(.top, 40)
+                            .padding(.bottom, 2)
                     }
-                    .padding(.top, 40)
                     
                     // Titre
                     Text("Connexion")
@@ -153,7 +141,7 @@ struct LoginView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(viewModel.isValid && !viewModel.isLoading ? Color.appDarkRedButton : Color.gray.opacity(0.5))
+                        .background(viewModel.isValid && !viewModel.isLoading ? Color.red : Color.gray.opacity(0.5))
                         .cornerRadius(12)
                     }
                     .disabled(!viewModel.isValid || viewModel.isLoading)
@@ -168,7 +156,7 @@ struct LoginView: View {
                         }) {
                             Text("Mot de passe oublié ?")
                                 .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.appDarkRedButton)
+                                .foregroundColor(.red)
                         }
                         Spacer()
                     }
@@ -192,7 +180,7 @@ struct LoginView: View {
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(Color.appDarkRedButton)
+                            .background(Color.red)
                             .cornerRadius(12)
                     }
                     .padding(.horizontal, 20)

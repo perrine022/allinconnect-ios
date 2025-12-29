@@ -7,12 +7,12 @@
 
 import Foundation
 
-enum OfferType: String {
+enum OfferType: String, Codable {
     case offer = "Offre"
     case event = "Event"
 }
 
-struct Offer: Identifiable, Hashable {
+struct Offer: Identifiable, Hashable, Codable {
     let id: UUID
     let title: String
     let description: String

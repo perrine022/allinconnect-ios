@@ -45,7 +45,7 @@ struct ManageSubscriptionsView: View {
                                 VStack(alignment: .leading, spacing: 16) {
                                     HStack {
                                         Image(systemName: "creditcard.fill")
-                                            .foregroundColor(.appDarkRedButton)
+                                            .foregroundColor(.red)
                                             .font(.system(size: 18))
                                         
                                         Text("Abonnement actuel")
@@ -65,7 +65,7 @@ struct ManageSubscriptionsView: View {
                                             
                                             Text(viewModel.currentFormula)
                                                 .font(.system(size: 14, weight: .semibold))
-                                                .foregroundColor(.appDarkRedButton)
+                                                .foregroundColor(.red)
                                         }
                                         
                                         Divider()
@@ -141,7 +141,7 @@ struct ManageSubscriptionsView: View {
                                                                 
                                                                 Text("Économisez \(Int(savings))%")
                                                                     .font(.system(size: 12, weight: .semibold))
-                                                                    .foregroundColor(.appDarkRedButton)
+                                                                    .foregroundColor(.red)
                                                             }
                                                         }
                                                     }
@@ -150,7 +150,7 @@ struct ManageSubscriptionsView: View {
                                                     
                                                     ZStack {
                                                         Circle()
-                                                            .fill(viewModel.selectedPlan?.id == plan.id ? Color.appDarkRedButton : Color.clear)
+                                                            .fill(viewModel.selectedPlan?.id == plan.id ? Color.red : Color.clear)
                                                             .frame(width: 24, height: 24)
                                                         
                                                         if viewModel.selectedPlan?.id == plan.id {
@@ -168,7 +168,7 @@ struct ManageSubscriptionsView: View {
                                                 .background(viewModel.selectedPlan?.id == plan.id ? Color.appDarkRed1.opacity(0.8) : Color.appDarkRed1.opacity(0.4))
                                                 .overlay(
                                                     RoundedRectangle(cornerRadius: 12)
-                                                        .stroke(viewModel.selectedPlan?.id == plan.id ? Color.appDarkRedButton : Color.clear, lineWidth: 2)
+                                                        .stroke(viewModel.selectedPlan?.id == plan.id ? Color.red : Color.clear, lineWidth: 2)
                                                 )
                                                 .cornerRadius(12)
                                             }
@@ -192,7 +192,7 @@ struct ManageSubscriptionsView: View {
                                         .foregroundColor(.white)
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 14)
-                                        .background((viewModel.selectedPlan != nil && !viewModel.isLoading) ? Color.appDarkRedButton : Color.gray.opacity(0.5))
+                                        .background((viewModel.selectedPlan != nil && !viewModel.isLoading) ? Color.red : Color.gray.opacity(0.5))
                                         .cornerRadius(12)
                                     }
                                     .disabled(viewModel.selectedPlan == nil || viewModel.isLoading)
@@ -207,13 +207,13 @@ struct ManageSubscriptionsView: View {
                             }) {
                                 Text("Résilier mon abonnement")
                                     .font(.system(size: 15, weight: .semibold))
-                                    .foregroundColor(.appRed)
+                                    .foregroundColor(.red)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 14)
                                     .background(Color.clear)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 12)
-                                            .stroke(Color.appRed, lineWidth: 1.5)
+                                            .stroke(Color.red, lineWidth: 1.5)
                                     )
                                     .cornerRadius(12)
                             }

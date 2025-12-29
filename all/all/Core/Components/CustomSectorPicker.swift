@@ -79,7 +79,7 @@ struct CustomSectorPicker: View {
                                 
                                 if selectedSector == sector {
                                     Image(systemName: "checkmark")
-                                        .foregroundColor(.appRed)
+                                        .foregroundColor(.red)
                                         .font(.system(size: 12, weight: .semibold))
                                 }
                             }

@@ -145,10 +145,10 @@ struct FamilyCardManagementView: View {
                                                 viewModel.updateEmail(at: index, value: "")
                                             }) {
                                                 Image(systemName: "trash")
-                                                    .foregroundColor(.appRed)
+                                                    .foregroundColor(.red)
                                                     .font(.system(size: 18))
                                                     .frame(width: 44, height: 44)
-                                                    .background(Color.appRed.opacity(0.2))
+                                                    .background(Color.red.opacity(0.2))
                                                     .cornerRadius(10)
                                             }
                                         }
@@ -194,7 +194,7 @@ struct FamilyCardManagementView: View {
                                 }
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 16)
-                                .background(viewModel.isLoading ? Color.gray.opacity(0.5) : Color.appDarkRedButton)
+                                .background(viewModel.isLoading ? Color.gray.opacity(0.5) : Color.red)
                                 .cornerRadius(12)
                             }
                             .disabled(viewModel.isLoading)

@@ -128,7 +128,7 @@ struct OfferDetailView: View {
                                 VStack(alignment: .leading, spacing: 12) {
                                     BadgeView(
                                         text: offer.offerType.rawValue,
-                                        gradientColors: offer.offerType == .event ? [Color.appRed, Color.appDarkRed] : [Color.appGold, Color.appGold.opacity(0.8)]
+                                        gradientColors: offer.offerType == .event ? [Color.red, Color.red] : [Color.appGold, Color.appGold.opacity(0.8)]
                                     )
                                     
                                     Text(offer.title)
@@ -230,7 +230,7 @@ struct OfferDetailView: View {
                                         .foregroundColor(.white)
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 14)
-                                        .background(Color.appDarkRedButton)
+                                        .background(Color.red)
                                         .cornerRadius(12)
                                     }
                                     .padding(.horizontal, 20)
@@ -250,7 +250,7 @@ struct OfferDetailView: View {
                                         .foregroundColor(.white)
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 14)
-                                        .background(Color.appDarkRedButton)
+                                        .background(Color.red)
                                         .cornerRadius(12)
                                     }
                                     .padding(.horizontal, 20)

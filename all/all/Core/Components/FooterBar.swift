@@ -29,11 +29,11 @@ struct FooterBar: View {
                     VStack(spacing: 4) {
                         Image(systemName: tab.icon)
                             .font(.system(size: 20, weight: .medium))
-                            .foregroundColor(selectedTab == tab ? .appRed : Color(red: 0.7, green: 0.7, blue: 0.7))
+                            .foregroundColor(selectedTab == tab ? .red : Color(red: 0.7, green: 0.7, blue: 0.7))
                         
                         Text(tab.rawValue)
                             .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(selectedTab == tab ? .appRed : Color(red: 0.7, green: 0.7, blue: 0.7))
+                            .foregroundColor(selectedTab == tab ? .red : Color(red: 0.7, green: 0.7, blue: 0.7))
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 6)

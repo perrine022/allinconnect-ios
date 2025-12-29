@@ -16,7 +16,7 @@ struct ContactRow: View {
     init(
         icon: String,
         text: String,
-        iconColor: Color = .appRed,
+        iconColor: Color = .red,
         action: @escaping () -> Void
     ) {
         self.icon = icon

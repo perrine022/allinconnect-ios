@@ -33,7 +33,7 @@ struct ReviewCard: View {
                 .fill(Color.appDarkRed2.opacity(0.5))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.appRed.opacity(0.2), lineWidth: 1)
+                        .stroke(Color.red.opacity(0.2), lineWidth: 1)
                 )
         )
     }

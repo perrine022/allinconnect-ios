@@ -101,6 +101,7 @@ struct UserMeResponse: Codable {
     let longitude: Double?
     let card: CardResponse?
     let isCardActive: Bool?
+    let referralCode: String?
     
     // Champs professionnel (établissement)
     let establishmentName: String?
@@ -124,6 +125,7 @@ struct UserMeResponse: Codable {
         case longitude
         case card
         case isCardActive = "cardActive" // Backend retourne "cardActive" au lieu de "isCardActive"
+        case referralCode = "referralCode"
         case establishmentName = "establishmentName"
         case establishmentDescription = "establishmentDescription"
         case phoneNumber = "phoneNumber"
@@ -149,6 +151,7 @@ struct UserMeResponse: Codable {
         longitude = try container.decodeIfPresent(Double.self, forKey: .longitude)
         card = try container.decodeIfPresent(CardResponse.self, forKey: .card)
         isCardActive = try container.decodeIfPresent(Bool.self, forKey: .isCardActive)
+        referralCode = try container.decodeIfPresent(String.self, forKey: .referralCode)
         establishmentName = try container.decodeIfPresent(String.self, forKey: .establishmentName)
         establishmentDescription = try container.decodeIfPresent(String.self, forKey: .establishmentDescription)
         phoneNumber = try container.decodeIfPresent(String.self, forKey: .phoneNumber)
@@ -174,6 +177,7 @@ struct UserLightResponse: Codable {
     let subscriptionAmount: Double?
     let payments: [PaymentResponse]?
     let walletBalance: Double?
+    let referralCode: String?
     
     enum CodingKeys: String, CodingKey {
         case firstName = "firstName"
@@ -188,6 +192,7 @@ struct UserLightResponse: Codable {
         case subscriptionAmount = "subscriptionAmount"
         case payments
         case walletBalance = "walletBalance"
+        case referralCode = "referralCode"
     }
     
     // Initializer personnalisé pour gérer les valeurs optionnelles avec valeurs par défaut
@@ -206,6 +211,7 @@ struct UserLightResponse: Codable {
         subscriptionAmount = try container.decodeIfPresent(Double.self, forKey: .subscriptionAmount)
         payments = try container.decodeIfPresent([PaymentResponse].self, forKey: .payments)
         walletBalance = try container.decodeIfPresent(Double.self, forKey: .walletBalance) ?? 0.0
+        referralCode = try container.decodeIfPresent(String.self, forKey: .referralCode)
     }
 }
 

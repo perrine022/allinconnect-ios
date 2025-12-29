@@ -36,7 +36,7 @@ struct ProfileHeaderView: View {
             // Gradient rouge en haut
             LinearGradient(
                 gradient: Gradient(colors: [
-                    Color.appRed.opacity(0.3),
+                    Color.red.opacity(0.3),
                     Color.clear
                 ]),
                 startPoint: .top,
@@ -53,8 +53,8 @@ struct ProfileHeaderView: View {
                         .fill(
                             LinearGradient(
                                 gradient: Gradient(colors: [
-                                    Color.appRed.opacity(0.8),
-                                    Color.appDarkRed.opacity(0.6)
+                                    Color.red.opacity(0.8),
+                                    Color.red.opacity(0.6)
                                 ]),
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -69,7 +69,7 @@ struct ProfileHeaderView: View {
                         .clipShape(Circle())
                         .foregroundColor(.white.opacity(0.9))
                 }
-                .shadow(color: Color.appRed.opacity(0.5), radius: 20, x: 0, y: 10)
+                .shadow(color: Color.red.opacity(0.5), radius: 20, x: 0, y: 10)
                 .padding(.bottom, 20)
             }
         }
@@ -90,5 +90,6 @@ struct ProfileHeaderView: View {
         )
     }
 }
+
 
 

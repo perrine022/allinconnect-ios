@@ -78,7 +78,7 @@ struct NotificationPreferencesView: View {
                                             
                                             Text("\(Int(viewModel.notificationRadius)) km")
                                                 .font(.system(size: 15, weight: .semibold))
-                                                .foregroundColor(.appRed)
+                                                .foregroundColor(.red)
                                         }
                                         
                                         Slider(
@@ -86,7 +86,7 @@ struct NotificationPreferencesView: View {
                                             in: 5...50,
                                             step: 5
                                         )
-                                        .tint(.appRed)
+                                        .tint(.red)
                                         
                                         HStack {
                                             Text("5 km")
@@ -201,7 +201,7 @@ struct NotificationToggleRow: View {
             Spacer()
             
             Toggle("", isOn: $isOn)
-                .toggleStyle(SwitchToggleStyle(tint: .appRed))
+                .toggleStyle(SwitchToggleStyle(tint: .red))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
@@ -222,7 +222,7 @@ struct CategoryToggleRow: View {
             Spacer()
             
             Toggle("", isOn: $isOn)
-                .toggleStyle(SwitchToggleStyle(tint: .appRed))
+                .toggleStyle(SwitchToggleStyle(tint: .red))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)

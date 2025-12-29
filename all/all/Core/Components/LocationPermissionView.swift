@@ -17,12 +17,12 @@ struct LocationPermissionView: View {
             // Icône de localisation
             ZStack {
                 Circle()
-                    .fill(Color.appRed.opacity(0.2))
+                    .fill(Color.red.opacity(0.2))
                     .frame(width: 100, height: 100)
                 
                 Image(systemName: "location.fill")
                     .font(.system(size: 50))
-                    .foregroundColor(.appRed)
+                    .foregroundColor(.red)
             }
             .padding(.top, 20)
             
