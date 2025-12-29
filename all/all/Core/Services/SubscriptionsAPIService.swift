@@ -141,11 +141,21 @@ class SubscriptionsAPIService: ObservableObject {
         return payments
     }
     
-    // MARK: - Invite Family Member (nouveau endpoint)
+    // MARK: - Invite Family Member
+    // Note: Le backend accepte cet endpoint même avec un token invalide/expiré (fallback utilisateur test)
     func inviteFamilyMember(email: String) async throws {
         print("[SubscriptionsAPIService] Inviting family member with email: \(email)")
         
-        // Utiliser le nouvel endpoint POST /api/v1/cards/invite avec JSON body
+        // Vérifier si le token est présent (pour les logs uniquement)
+        // Le backend gère maintenant le fallback si le token est invalide/expiré
+        if let token = AuthTokenManager.shared.getToken(), !token.isEmpty {
+            print("[SubscriptionsAPIService] ✅ Token présent: \(token.prefix(20))...")
+        } else {
+            print("[SubscriptionsAPIService] ⚠️ Token manquant ou vide - Le backend utilisera un utilisateur de test")
+        }
+        
+        // Endpoint correct : POST /api/v1/subscriptions/invite
+        // Format du body requis : {"email": "test@gmail.com"}
         struct InviteRequest: Codable {
             let email: String
         }
@@ -159,18 +169,23 @@ class SubscriptionsAPIService: ObservableObject {
             throw APIError.invalidResponse
         }
         
+        print("[SubscriptionsAPIService] Endpoint: POST /api/v1/subscriptions/invite")
         print("[SubscriptionsAPIService] Request payload: \(parameters)")
+        print("[SubscriptionsAPIService] Content-Type: application/json (géré automatiquement)")
+        
+        // Le header Authorization sera envoyé automatiquement si le token existe
+        // Sinon, le backend utilisera un utilisateur de test en fallback
         
         // La réponse peut être vide (200 OK)
         struct EmptyResponse: Codable {}
         let _: EmptyResponse = try await apiService.request(
-            endpoint: "/cards/invite",
+            endpoint: "/subscriptions/invite",
             method: .post,
             parameters: parameters,
-            headers: nil
+            headers: nil // Les headers par défaut (incluant Authorization si disponible) sont ajoutés automatiquement
         )
         
-        print("[SubscriptionsAPIService] Successfully invited family member: \(email)")
+        print("[SubscriptionsAPIService] ✅ Successfully invited family member: \(email)")
     }
     
     // MARK: - Remove Family Member (nouveau endpoint)
@@ -277,7 +292,23 @@ class SubscriptionsAPIService: ObservableObject {
     }
     
     // MARK: - Create Payment Intent for Stripe Payment Sheet
+    // Note: Le backend accepte cet endpoint même avec un token invalide/expiré (fallback utilisateur test)
     func createPaymentIntent(planId: Int) async throws -> PaymentIntentResponse {
+        print("[SubscriptionsAPIService] 🔄 Création du Payment Intent pour planId=\(planId)")
+        
+        // Vérifier si le token est présent (pour les logs uniquement)
+        // Le backend gère maintenant le fallback si le token est invalide/expiré
+        if let token = AuthTokenManager.shared.getToken(), !token.isEmpty {
+            print("[SubscriptionsAPIService] ✅ Token présent: \(token.prefix(20))...")
+        } else {
+            print("[SubscriptionsAPIService] ⚠️ Token manquant ou vide - Le backend utilisera un utilisateur de test")
+        }
+        
+        // Vérifier l'URL complète
+        let fullURL = "\(APIConfig.baseURL)/subscriptions/create-payment-intent"
+        print("[SubscriptionsAPIService] 📍 URL complète: POST \(fullURL)")
+        
+        // Préparer le body JSON avec planId (format requis: {"planId": 3})
         struct PaymentIntentRequest: Codable {
             let planId: Int
             
@@ -291,17 +322,37 @@ class SubscriptionsAPIService: ObservableObject {
         let jsonData = try encoder.encode(request)
         
         guard let parameters = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
+            print("[SubscriptionsAPIService] ❌ ERREUR: Échec de l'encodage du body JSON")
             throw APIError.invalidResponse
         }
         
-        let response: PaymentIntentResponse = try await apiService.request(
-            endpoint: "/subscriptions/create-payment-intent",
-            method: .post,
-            parameters: parameters,
-            headers: nil
-        )
+        // Vérifier le format du body
+        print("[SubscriptionsAPIService] 📦 Body JSON: \(parameters)")
+        print("[SubscriptionsAPIService] 📋 Content-Type: application/json (géré automatiquement)")
         
-        return response
+        // Le header Authorization sera envoyé automatiquement si le token existe
+        // Sinon, le backend utilisera un utilisateur de test en fallback
+        
+        // Faire l'appel API
+        do {
+            let response: PaymentIntentResponse = try await apiService.request(
+                endpoint: "/subscriptions/create-payment-intent",
+                method: .post,
+                parameters: parameters,
+                headers: nil // Les headers par défaut (incluant Authorization si disponible) sont ajoutés automatiquement
+            )
+            
+            print("[SubscriptionsAPIService] ✅ Payment Intent créé avec succès")
+            print("[SubscriptionsAPIService]   - clientSecret: \(response.clientSecret.prefix(20))...")
+            print("[SubscriptionsAPIService]   - amount: \(response.amount)")
+            print("[SubscriptionsAPIService]   - currency: \(response.currency)")
+            
+            return response
+        } catch {
+            print("[SubscriptionsAPIService] ❌ ERREUR lors de la création du Payment Intent: \(error)")
+            // Le backend ne devrait plus retourner 401 pour cet endpoint, mais on gère toutes les erreurs
+            throw error
+        }
     }
 }
 

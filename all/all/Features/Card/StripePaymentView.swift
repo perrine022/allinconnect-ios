@@ -479,7 +479,25 @@ class StripePaymentViewModel: ObservableObject {
             
         } catch {
             print("[StripePaymentViewModel] ❌ Erreur lors de la création du Payment Intent: \(error)")
-            errorMessage = "Erreur lors de l'initialisation du paiement. Veuillez réessayer."
+            
+            // Note: Le backend gère maintenant le fallback pour cet endpoint même avec un token invalide
+            // Donc une erreur 401 ne devrait plus se produire, mais on gère toutes les erreurs
+            if let apiError = error as? APIError {
+                switch apiError {
+                case .unauthorized:
+                    // Normalement ne devrait plus arriver grâce au fallback backend
+                    // Mais on affiche un message générique au cas où
+                    errorMessage = "Erreur d'authentification. Veuillez réessayer."
+                case .networkError:
+                    errorMessage = "Erreur de connexion. Vérifiez votre connexion internet."
+                case .invalidResponse:
+                    errorMessage = "Réponse invalide du serveur. Veuillez réessayer."
+                default:
+                    errorMessage = "Erreur lors de l'initialisation du paiement. Veuillez réessayer."
+                }
+            } else {
+                errorMessage = "Erreur lors de l'initialisation du paiement. Veuillez réessayer."
+            }
             isProcessingPayment = false
         }
     }
