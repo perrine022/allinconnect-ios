@@ -139,10 +139,10 @@ struct BenefitCard: View {
     
     var body: some View {
         HStack(spacing: 16) {
-            // Icône
-            Image(systemName: icon)
-                .foregroundColor(iconColor)
-                .font(.system(size: 20))
+            // Image -10%
+            Image("Discount10Percent")
+                .resizable()
+                .scaledToFit()
                 .frame(width: 40, height: 40)
             
             // Texte

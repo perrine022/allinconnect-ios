@@ -38,48 +38,12 @@ struct Club10Card: View {
             
             Spacer()
             
-            // QR Code pattern avec badge -10%
-            ZStack {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(red: 0.6, green: 0.4, blue: 0.3))
-                    .frame(width: 80, height: 80)
-                
-                // Pattern similaire à un QR code
-                VStack(spacing: 2) {
-                    HStack(spacing: 2) {
-                        Rectangle().fill(Color.black).frame(width: 8, height: 8)
-                        Rectangle().fill(Color.white).frame(width: 8, height: 8)
-                        Rectangle().fill(Color.black).frame(width: 8, height: 8)
-                    }
-                    HStack(spacing: 2) {
-                        Rectangle().fill(Color.white).frame(width: 8, height: 8)
-                        Rectangle().fill(Color.black).frame(width: 8, height: 8)
-                        Rectangle().fill(Color.white).frame(width: 8, height: 8)
-                    }
-                    HStack(spacing: 2) {
-                        Rectangle().fill(Color.black).frame(width: 8, height: 8)
-                        Rectangle().fill(Color.white).frame(width: 8, height: 8)
-                        Rectangle().fill(Color.black).frame(width: 8, height: 8)
-                    }
-                }
-                
-                // Badge -10% en vert
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        Text("-10%")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 3)
-                            .background(Color.green)
-                            .cornerRadius(6)
-                            .padding(.trailing, 4)
-                            .padding(.bottom, 4)
-                    }
-                }
-            }
+            // Image -10% sur fond vert
+            Image("Discount10Percent")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 60, height: 60)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         .padding(20)
         .background(Color(red: 0.95, green: 0.95, blue: 0.95))

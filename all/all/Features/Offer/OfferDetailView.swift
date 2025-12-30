@@ -86,12 +86,9 @@ struct OfferDetailView: View {
                             VStack(spacing: 0) {
                                 // Image header
                                 ZStack(alignment: .topLeading) {
-                                    Image(systemName: offer.imageName)
-                                        .resizable()
-                                        .scaledToFill()
+                                    OfferImage(offer: offer, contentMode: .fill)
                                         .frame(height: 200)
                                         .clipped()
-                                        .foregroundColor(.gray.opacity(0.3))
                                 
                                 // Overlay gradient
                                 LinearGradient(

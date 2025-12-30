@@ -91,6 +91,72 @@ struct OffersView: View {
                     }
                     .padding(.horizontal, 20)
                     
+                    // Boutons "Offres actuelles" et "À venir"
+                    HStack(spacing: 12) {
+                        // Bouton "Offres actuelles"
+                        Button(action: {
+                            withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+                                viewModel.offerTimeMode = .current
+                                // Réinitialiser les dates quand on passe en mode actuelles
+                                viewModel.startDate = nil
+                                viewModel.endDate = nil
+                                viewModel.searchOffers()
+                            }
+                        }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "mappin.circle.fill")
+                                    .foregroundColor(viewModel.offerTimeMode == .current ? .white : .appRed)
+                                    .font(.system(size: 14))
+                                
+                                Text("Offres actuelles")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(viewModel.offerTimeMode == .current ? .white : .appRed)
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(viewModel.offerTimeMode == .current ? Color.appRed : Color.white)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .stroke(Color.appRed, lineWidth: 1.5)
+                                    )
+                            )
+                        }
+                        
+                        // Bouton "À venir"
+                        Button(action: {
+                            withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+                                viewModel.offerTimeMode = .upcoming
+                                viewModel.searchOffers()
+                            }
+                        }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "arrow.right.circle.fill")
+                                    .foregroundColor(viewModel.offerTimeMode == .upcoming ? .white : .appRed)
+                                    .font(.system(size: 14))
+                                
+                                Text("À venir")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(viewModel.offerTimeMode == .upcoming ? .white : .appRed)
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(viewModel.offerTimeMode == .upcoming ? Color.appRed : Color.white)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .stroke(Color.appRed, lineWidth: 1.5)
+                                    )
+                            )
+                        }
+                        
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                    
                     // Champs de recherche - Design compact et épuré (comme HomeView)
                     VStack(spacing: 6) {
                         // Champ Ville, nom, activité
@@ -198,16 +264,18 @@ struct OffersView: View {
                         }
                         .buttonStyle(PlainButtonStyle())
                         
-                        // Filtre par dates
-                        DateRangePicker(
-                            startDate: $viewModel.startDate,
-                            endDate: $viewModel.endDate
-                        )
-                        .onChange(of: viewModel.startDate) { _, _ in
-                            viewModel.searchOffers()
-                        }
-                        .onChange(of: viewModel.endDate) { _, _ in
-                            viewModel.searchOffers()
+                        // Filtre par dates (seulement pour "À venir")
+                        if viewModel.offerTimeMode == .upcoming {
+                            DateRangePicker(
+                                startDate: $viewModel.startDate,
+                                endDate: $viewModel.endDate
+                            )
+                            .onChange(of: viewModel.startDate) { _, _ in
+                                viewModel.searchOffers()
+                            }
+                            .onChange(of: viewModel.endDate) { _, _ in
+                                viewModel.searchOffers()
+                            }
                         }
                     }
                     .padding(.horizontal, 20)

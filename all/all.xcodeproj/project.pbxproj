@@ -208,6 +208,9 @@
 			);
 			mainGroup = BF76DDCC2EFAFD3F0045AF92;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				BF76E7612F03B4180045AF92 /* XCRemoteSwiftPackageReference "stripe-ios" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = BF76DDD62EFAFD3F0045AF92 /* Products */;
 			projectDirPath = "";
@@ -605,6 +608,17 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		BF76E7612F03B4180045AF92 /* XCRemoteSwiftPackageReference "stripe-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/stripe/stripe-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 25.3.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
 	};
 	rootObject = BF76DDCD2EFAFD3F0045AF92 /* Project object */;
 }

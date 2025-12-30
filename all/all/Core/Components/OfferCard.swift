@@ -16,12 +16,9 @@ struct OfferCard: View {
             VStack(spacing: 0) {
                 // Image
                 ZStack(alignment: .topTrailing) {
-                    Image(systemName: offer.imageName)
-                        .resizable()
-                        .scaledToFill()
+                    OfferImage(offer: offer, contentMode: .fill)
                         .frame(height: 150)
                         .clipped()
-                        .foregroundColor(.gray.opacity(0.3))
                     
                     // Overlay gradient
                     LinearGradient(

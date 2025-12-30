@@ -17,7 +17,7 @@ struct CardSubscriptionView: View {
                 // Icône de la carte
                 Image(systemName: "creditcard.fill")
                     .font(.system(size: 45))
-                    .foregroundColor(.appGold)
+                    .foregroundColor(.appRed)
                     .padding(.top, 10)
                 
                 // Titre
@@ -78,10 +78,10 @@ struct CardSubscriptionView: View {
                 }) {
                     Text("S'abonner")
                         .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.black)
+                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(Color.appGold)
+                        .background(Color.appRed)
                         .cornerRadius(12)
                 }
                 .padding(.horizontal, 20)

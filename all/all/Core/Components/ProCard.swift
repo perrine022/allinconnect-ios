@@ -39,10 +39,10 @@ struct ProCard: View {
             Spacer()
             
             // Photo Pro (high-five)
-            Image("ProCardImage")
+            Image("ProHighFiveImage")
                 .resizable()
-                .scaledToFill()
-                .frame(width: 80, height: 80)
+                .scaledToFit()
+                .frame(width: 60, height: 60)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         .padding(20)

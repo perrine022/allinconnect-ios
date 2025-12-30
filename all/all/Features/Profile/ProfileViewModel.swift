@@ -421,8 +421,9 @@ class ProfileViewModel: ObservableObject {
                 club10Amount = String(format: "%.2f€", subscriptionAmount)
             }
             
-            // Si c'est une carte FAMILY ou CLIENT_FAMILY, charger les emails
+            // Si c'est une carte FAMILY ou CLIENT_FAMILY, vérifier si l'utilisateur est propriétaire
             if cardType == "FAMILY" || cardType == "CLIENT_FAMILY" {
+                await loadCardOwner()
                 await loadFamilyCardEmails()
             }
         } catch {
@@ -512,10 +513,29 @@ class ProfileViewModel: ObservableObject {
         }
     }
     
+    private func loadCardOwner() async {
+        do {
+            let cardOwnerResponse = try await subscriptionsAPIService.getCardOwner()
+            isCardOwner = cardOwnerResponse.isOwner
+            print("[ProfileViewModel] User is card owner: \(isCardOwner)")
+        } catch {
+            // Si c'est une erreur unauthorized, c'est probablement que l'utilisateur n'a pas de carte famille
+            // ou n'a pas les permissions. On ignore silencieusement.
+            if let apiError = error as? APIError,
+               case .unauthorized = apiError {
+                print("Utilisateur non autorisé pour vérifier le propriétaire de la carte (probablement pas de carte famille)")
+                isCardOwner = false
+            } else {
+                print("Erreur lors de la vérification du propriétaire de la carte: \(error)")
+                isCardOwner = false
+            }
+        }
+    }
+    
     private func loadFamilyCardEmails() async {
         do {
             let familyEmails = try await subscriptionsAPIService.getFamilyCardEmails()
-            isCardOwner = familyEmails.isOwner
+            // Ne pas écraser isCardOwner ici, on l'a déjà défini avec getCardOwner()
             familyCardEmails = familyEmails.emails
         } catch {
             // Si c'est une erreur unauthorized, c'est probablement que l'utilisateur n'a pas de carte famille
@@ -524,12 +544,10 @@ class ProfileViewModel: ObservableObject {
                case .unauthorized = apiError {
                 print("Utilisateur non autorisé pour charger les emails de la carte famille (probablement pas de carte famille)")
                 // Réinitialiser les valeurs par défaut
-                isCardOwner = false
                 familyCardEmails = []
             } else {
                 print("Erreur lors du chargement des emails de la carte famille: \(error)")
                 // Réinitialiser les valeurs par défaut en cas d'erreur
-                isCardOwner = false
                 familyCardEmails = []
             }
         }

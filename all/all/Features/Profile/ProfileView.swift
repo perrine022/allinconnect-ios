@@ -211,7 +211,7 @@ struct ProfileView: View {
                                 
                                 Text("Abonnement Pro")
                                     .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.black)
                                 
                                 Spacer()
                             }
@@ -221,7 +221,7 @@ struct ProfileView: View {
                                 HStack {
                                     Text("Prochain prélèvement")
                                         .font(.system(size: 14, weight: .regular))
-                                        .foregroundColor(.white.opacity(0.8))
+                                        .foregroundColor(.gray.opacity(0.7))
                                     
                                     Spacer()
                                     
@@ -231,28 +231,28 @@ struct ProfileView: View {
                                 }
                                 
                                 Divider()
-                                    .background(Color.white.opacity(0.1))
+                                    .background(Color.gray.opacity(0.2))
                                 
                                 // Engagement
                                 HStack {
                                     Text("Engagement jusqu'au")
                                         .font(.system(size: 14, weight: .regular))
-                                        .foregroundColor(.white.opacity(0.8))
+                                        .foregroundColor(.gray.opacity(0.7))
                                     
                                     Spacer()
                                     
                                     Text(viewModel.commitmentUntil)
                                         .font(.system(size: 14, weight: .semibold))
-                                        .foregroundColor(.white)
+                                        .foregroundColor(.black)
                                 }
                             }
                         }
                         .padding(16)
-                        .background(Color.appDarkRed1.opacity(0.8))
+                        .background(Color.white)
                         .cornerRadius(12)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                         )
                         .padding(.horizontal, 20)
                         .padding(.bottom, 8)
@@ -268,7 +268,7 @@ struct ProfileView: View {
                                 
                                 Text("Mes offres")
                                     .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.black)
                                 
                                 Spacer()
                             }
@@ -277,22 +277,19 @@ struct ProfileView: View {
                             if viewModel.myOffers.isEmpty {
                                 Text("Aucune offre pour le moment")
                                     .font(.system(size: 14, weight: .regular))
-                                    .foregroundColor(.white.opacity(0.7))
+                                    .foregroundColor(.gray.opacity(0.7))
                             } else {
                                 VStack(spacing: 8) {
                                     ForEach(Array(viewModel.myOffers.prefix(3))) { offer in
                                         HStack(spacing: 10) {
-                                            Image(systemName: offer.imageName)
-                                                .resizable()
-                                                .scaledToFill()
+                                            OfferImage(offer: offer, contentMode: .fill)
                                                 .frame(width: 50, height: 50)
                                                 .clipShape(RoundedRectangle(cornerRadius: 8))
-                                                .foregroundColor(.gray.opacity(0.3))
                                             
                                             VStack(alignment: .leading, spacing: 4) {
                                                 Text(offer.title)
                                                     .font(.system(size: 14, weight: .semibold))
-                                                    .foregroundColor(.white)
+                                                    .foregroundColor(.black)
                                                     .lineLimit(1)
                                                 
                                                 Text("Jusqu'au \(offer.validUntil)")
@@ -305,7 +302,7 @@ struct ProfileView: View {
                                         
                                         if offer.id != viewModel.myOffers.prefix(3).last?.id {
                                             Divider()
-                                                .background(Color.white.opacity(0.1))
+                                                .background(Color.gray.opacity(0.2))
                                         }
                                     }
                                 }
@@ -319,20 +316,20 @@ struct ProfileView: View {
                                     Spacer()
                                     Text("Gérer mes offres")
                                         .font(.system(size: 15, weight: .semibold))
-                                        .foregroundColor(.black)
+                                        .foregroundColor(.white)
                                     Spacer()
                                 }
                                 .padding(.vertical, 12)
-                                .background(Color.appDarkRedButton)
+                                .background(Color.red)
                                 .cornerRadius(10)
                             }
                         }
                         .padding(16)
-                        .background(Color.appDarkRed1.opacity(0.8))
+                        .background(Color.white)
                         .cornerRadius(12)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                         )
                         .padding(.horizontal, 20)
                         .padding(.bottom, 8)
@@ -340,6 +337,9 @@ struct ProfileView: View {
                     
                     // Section Abonnement et Carte (espace client)
                     if viewModel.hasLoadedOnce && viewModel.currentSpace == .client {
+                        // Déterminer si l'utilisateur a une carte famille mais n'est pas propriétaire
+                        let isFamilyCardNonOwner = (viewModel.cardType == "FAMILY" || viewModel.cardType == "CLIENT_FAMILY") && !viewModel.isCardOwner
+                        
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
                                 Image(systemName: "creditcard.fill")
@@ -348,7 +348,7 @@ struct ProfileView: View {
                                 
                                 Text("Mon abonnement")
                                     .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(isFamilyCardNonOwner ? .black : .white)
                                 
                                 Spacer()
                             }
@@ -358,7 +358,7 @@ struct ProfileView: View {
                                 HStack {
                                     Text("Type de carte:")
                                         .font(.system(size: 14, weight: .medium))
-                                        .foregroundColor(.white.opacity(0.9))
+                                        .foregroundColor(isFamilyCardNonOwner ? .gray.opacity(0.9) : .white.opacity(0.9))
                                     
                                     Spacer()
                                     
@@ -374,7 +374,7 @@ struct ProfileView: View {
                                     HStack {
                                         Text("Abonnement actif")
                                             .font(.system(size: 14, weight: .medium))
-                                            .foregroundColor(.white.opacity(0.9))
+                                            .foregroundColor(isFamilyCardNonOwner ? .gray.opacity(0.9) : .white.opacity(0.9))
                                         
                                         Spacer()
                                         
@@ -397,7 +397,7 @@ struct ProfileView: View {
                                             
                                             Text(viewModel.club10NextPaymentDate)
                                                 .font(.system(size: 13, weight: .semibold))
-                                                .foregroundColor(.white)
+                                                .foregroundColor(isFamilyCardNonOwner ? .black : .white)
                                         }
                                     }
                                     
@@ -411,14 +411,14 @@ struct ProfileView: View {
                                             
                                             Text(viewModel.club10Amount)
                                                 .font(.system(size: 13, weight: .semibold))
-                                                .foregroundColor(.white)
+                                                .foregroundColor(isFamilyCardNonOwner ? .black : .white)
                                         }
                                     }
                                 }
                             } else {
                                 Text("Aucun abonnement actif")
                                     .font(.system(size: 14, weight: .regular))
-                                    .foregroundColor(.white.opacity(0.7))
+                                    .foregroundColor(isFamilyCardNonOwner ? .gray.opacity(0.7) : .white.opacity(0.7))
                             }
                             
                             // Bouton pour gérer les emails de la carte famille
@@ -440,11 +440,11 @@ struct ProfileView: View {
                             }
                         }
                         .padding(16)
-                        .background(Color.appDarkRed1.opacity(0.8))
+                        .background(isFamilyCardNonOwner ? Color.white : Color.appDarkRed1.opacity(0.8))
                         .cornerRadius(12)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                .stroke(isFamilyCardNonOwner ? Color.gray.opacity(0.2) : Color.white.opacity(0.1), lineWidth: 1)
                         )
                         .padding(.horizontal, 20)
                         .padding(.bottom, 8)
@@ -459,7 +459,7 @@ struct ProfileView: View {
                                     
                                     Text("Mes offres")
                                         .font(.system(size: 18, weight: .bold))
-                                        .foregroundColor(.white)
+                                        .foregroundColor(.black)
                                     
                                     Spacer()
                                 }
@@ -468,22 +468,19 @@ struct ProfileView: View {
                                 if viewModel.myOffers.isEmpty {
                                     Text("Aucune offre pour le moment")
                                         .font(.system(size: 14, weight: .regular))
-                                        .foregroundColor(.white.opacity(0.7))
+                                        .foregroundColor(.gray.opacity(0.7))
                                 } else {
                                     VStack(spacing: 8) {
                                         ForEach(Array(viewModel.myOffers.prefix(3))) { offer in
                                             HStack(spacing: 10) {
-                                                Image(systemName: offer.imageName)
-                                                    .resizable()
-                                                    .scaledToFill()
+                                                OfferImage(offer: offer, contentMode: .fill)
                                                     .frame(width: 50, height: 50)
                                                     .clipShape(RoundedRectangle(cornerRadius: 8))
-                                                    .foregroundColor(.gray.opacity(0.3))
                                                 
                                                 VStack(alignment: .leading, spacing: 4) {
                                                     Text(offer.title)
                                                         .font(.system(size: 14, weight: .semibold))
-                                                        .foregroundColor(.white)
+                                                        .foregroundColor(.black)
                                                         .lineLimit(1)
                                                     
                                                     Text("Jusqu'au \(offer.validUntil)")
@@ -496,7 +493,7 @@ struct ProfileView: View {
                                             
                                             if offer.id != viewModel.myOffers.prefix(3).last?.id {
                                                 Divider()
-                                                    .background(Color.white.opacity(0.1))
+                                                    .background(Color.gray.opacity(0.2))
                                             }
                                         }
                                     }
@@ -510,7 +507,7 @@ struct ProfileView: View {
                                         Spacer()
                                         Text("Gérer mes offres")
                                             .font(.system(size: 15, weight: .semibold))
-                                            .foregroundColor(.black)
+                                            .foregroundColor(.white)
                                         Spacer()
                                     }
                                     .padding(.vertical, 12)
@@ -519,11 +516,11 @@ struct ProfileView: View {
                                 }
                             }
                             .padding(16)
-                            .background(Color.appDarkRed1.opacity(0.8))
+                            .background(Color.white)
                             .cornerRadius(12)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                             )
                             .padding(.horizontal, 20)
                             .padding(.bottom, 8)
@@ -540,7 +537,7 @@ struct ProfileView: View {
                                 
                                 Text("Mes favoris")
                                     .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.black)
                                 
                                 Spacer()
                                 
@@ -563,7 +560,7 @@ struct ProfileView: View {
                             if viewModel.favoritePartners.isEmpty && !viewModel.isLoadingFavorites {
                                 Text("Aucun favori pour le moment")
                                     .font(.system(size: 14, weight: .regular))
-                                    .foregroundColor(.white.opacity(0.7))
+                                    .foregroundColor(.gray.opacity(0.7))
                             } else if !viewModel.favoritePartners.isEmpty {
                                 VStack(spacing: 12) {
                                     ForEach(Array(viewModel.favoritePartners.prefix(5))) { partner in
@@ -586,7 +583,7 @@ struct ProfileView: View {
                                                 VStack(alignment: .leading, spacing: 4) {
                                                     Text(partner.name)
                                                         .font(.system(size: 15, weight: .semibold))
-                                                        .foregroundColor(.white)
+                                                        .foregroundColor(.black)
                                                         .lineLimit(1)
                                                     
                                                     Text(partner.category)
@@ -613,18 +610,18 @@ struct ProfileView: View {
                                         
                                         if partner.id != viewModel.favoritePartners.prefix(5).last?.id {
                                             Divider()
-                                                .background(Color.white.opacity(0.1))
+                                                .background(Color.gray.opacity(0.2))
                                         }
                                     }
                                 }
                             }
                         }
                         .padding(16)
-                        .background(Color.appDarkRed1.opacity(0.8))
+                        .background(Color.white)
                         .cornerRadius(12)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                         )
                         .padding(.horizontal, 20)
                         .padding(.bottom, 8)
@@ -740,14 +737,10 @@ struct ProfileView: View {
                             Text("Déconnexion")
                                 .font(.system(size: 15, weight: .semibold))
                         }
-                        .foregroundColor(.appRed)
+                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
-                        .background(Color.clear)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.appRed, lineWidth: 1.5)
-                        )
+                        .background(Color.appRed)
                         .cornerRadius(12)
                         }
                         .padding(.horizontal, 20)

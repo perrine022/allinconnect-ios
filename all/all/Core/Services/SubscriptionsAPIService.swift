@@ -68,6 +68,15 @@ struct CardMembersResponse: Codable {
     }
 }
 
+// MARK: - Card Owner Response
+struct CardOwnerResponse: Codable {
+    let isOwner: Bool
+    
+    enum CodingKeys: String, CodingKey {
+        case isOwner = "isOwner"
+    }
+}
+
 // MARK: - Family Card Emails Response
 struct FamilyCardEmailsResponse: Codable {
     let cardId: Int
@@ -239,6 +248,19 @@ class SubscriptionsAPIService: ObservableObject {
             parameters: nil,
             headers: nil
         )
+    }
+    
+    // MARK: - Get Card Owner
+    func getCardOwner() async throws -> CardOwnerResponse {
+        print("[SubscriptionsAPIService] Fetching card owner information")
+        let response: CardOwnerResponse = try await apiService.request(
+            endpoint: "/cards/owner",
+            method: .get,
+            parameters: nil,
+            headers: nil
+        )
+        print("[SubscriptionsAPIService] Card owner: \(response.isOwner ? "User is owner" : "User is not owner")")
+        return response
     }
     
     // MARK: - Get Family Card Emails (deprecated - utiliser getUserLight à la place)

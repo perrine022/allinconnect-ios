@@ -82,3 +82,4 @@ struct OfferListCardSkeleton: View {
 
 
 
+

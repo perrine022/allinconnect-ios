@@ -560,6 +560,7 @@ extension OfferResponse {
             startDate: startDateFormatted,
             discount: discount,
             imageName: defaultImage,
+            imageUrl: imageUrl, // Passer l'URL de l'image depuis le backend
             offerType: offerTypeEnum,
             isClub10: isClub10,
             partnerId: partnerId,

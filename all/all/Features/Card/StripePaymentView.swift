@@ -200,15 +200,15 @@ struct StripePaymentView: View {
         .sheet(isPresented: $viewModel.showPaymentSheet) {
             // Payment Sheet Stripe (Étape B)
             if let clientSecret = viewModel.paymentIntentClientSecret {
-                // Note: Le SDK Stripe doit être installé pour que ce composant fonctionne
-                // Pour l'instant, on utilise un placeholder qui affichera un message
-                StripePaymentSheetPlaceholderView(
-                    clientSecret: clientSecret,
+                StripeSubscriptionPaymentSheetView(
+                    paymentIntentClientSecret: clientSecret,
                     onPaymentResult: { success, error in
                         Task { @MainActor in
                             await viewModel.handlePaymentSheetResult(success: success, error: error)
                         }
-                    }
+                    },
+                    customerId: viewModel.customerId,
+                    ephemeralKeySecret: viewModel.ephemeralKeySecret
                 )
             }
         }
@@ -349,9 +349,12 @@ class StripePaymentViewModel: ObservableObject {
     @Published var isProcessingPayment: Bool = false
     @Published var showPaymentSheet: Bool = false
     @Published var paymentIntentClientSecret: String? = nil
+    @Published var customerId: String? = nil
+    @Published var ephemeralKeySecret: String? = nil
     @Published var showSuccessMessage: Bool = false
     
     private let subscriptionsAPIService: SubscriptionsAPIService
+    private let billingAPIService = BillingAPIService()
     private let profileAPIService = ProfileAPIService()
     
     // Payment Link Stripe fourni (fallback si Payment Sheet non disponible)
@@ -452,7 +455,7 @@ class StripePaymentViewModel: ObservableObject {
     
     // MARK: - Stripe Payment Sheet Integration (Étapes A, B, C)
     
-    /// Étape A : Récupérer le clientSecret depuis le backend
+    /// Étape A : Récupérer les secrets depuis le backend
     /// Étape B : Configurer et présenter le Payment Sheet
     /// Étape C : Vérifier le statut après paiement réussi
     func processPaymentWithStripeSheet(plan: SubscriptionPlanResponse) async {
@@ -460,34 +463,32 @@ class StripePaymentViewModel: ObservableObject {
         errorMessage = nil
         
         do {
-            // ÉTAPE A : Appeler POST /api/v1/subscriptions/create-payment-intent
-            print("[StripePaymentViewModel] Étape A : Création du Payment Intent pour planId=\(plan.id)")
-            let paymentIntentResponse = try await subscriptionsAPIService.createPaymentIntent(planId: plan.id)
+            // ÉTAPE A : Appeler POST /api/billing/subscription/start
+            print("[StripePaymentViewModel] Étape A : Démarrage de l'abonnement pour planId=\(plan.id)")
+            let startSubscriptionResponse = try await billingAPIService.startSubscription()
             
-            print("[StripePaymentViewModel] ✅ Payment Intent créé avec succès")
-            print("[StripePaymentViewModel]   - clientSecret: \(paymentIntentResponse.clientSecret.prefix(20))...")
-            print("[StripePaymentViewModel]   - amount: \(paymentIntentResponse.amount)")
-            print("[StripePaymentViewModel]   - currency: \(paymentIntentResponse.currency)")
+            print("[StripePaymentViewModel] ✅ Secrets récupérés avec succès")
+            print("[StripePaymentViewModel]   - customerId: \(startSubscriptionResponse.customerId)")
+            print("[StripePaymentViewModel]   - subscriptionId: \(startSubscriptionResponse.subscriptionId)")
+            print("[StripePaymentViewModel]   - paymentIntentClientSecret: \(startSubscriptionResponse.paymentIntentClientSecret.prefix(20))...")
+            print("[StripePaymentViewModel]   - ephemeralKeySecret: \(startSubscriptionResponse.ephemeralKeySecret.prefix(20))...")
             
-            // Stocker le clientSecret pour le Payment Sheet
-            paymentIntentClientSecret = paymentIntentResponse.clientSecret
+            // Stocker les secrets pour le Payment Sheet
+            customerId = startSubscriptionResponse.customerId
+            ephemeralKeySecret = startSubscriptionResponse.ephemeralKeySecret
+            paymentIntentClientSecret = startSubscriptionResponse.paymentIntentClientSecret
             
             // ÉTAPE B : Présenter le Payment Sheet
-            // Note: Le SDK Stripe doit être installé et le code décommenté dans StripeSubscriptionPaymentSheetView
             print("[StripePaymentViewModel] Étape B : Présentation du Payment Sheet")
             showPaymentSheet = true
             
         } catch {
-            print("[StripePaymentViewModel] ❌ Erreur lors de la création du Payment Intent: \(error)")
+            print("[StripePaymentViewModel] ❌ Erreur lors du démarrage de l'abonnement: \(error)")
             
-            // Note: Le backend gère maintenant le fallback pour cet endpoint même avec un token invalide
-            // Donc une erreur 401 ne devrait plus se produire, mais on gère toutes les erreurs
             if let apiError = error as? APIError {
                 switch apiError {
                 case .unauthorized:
-                    // Normalement ne devrait plus arriver grâce au fallback backend
-                    // Mais on affiche un message générique au cas où
-                    errorMessage = "Erreur d'authentification. Veuillez réessayer."
+                    errorMessage = "Erreur d'authentification. Veuillez vous reconnecter."
                 case .networkError:
                     errorMessage = "Erreur de connexion. Vérifiez votre connexion internet."
                 case .invalidResponse:
@@ -514,26 +515,43 @@ class StripePaymentViewModel: ObservableObject {
             // Attendre quelques millisecondes pour que le webhook soit traité
             try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconde
             
-            // Vérifier le statut avec retry (jusqu'à 2 retries)
-            let isPremiumConfirmed = await PaymentStatusManager.shared.checkPaymentStatus(maxRetries: 2)
-            
-            if isPremiumConfirmed {
-                // Afficher le message de succès
-                showSuccessMessage = true
-                print("[StripePaymentViewModel] 🎉 Statut premium confirmé !")
+            // Vérifier le statut avec l'endpoint /api/billing/subscription/status
+            do {
+                let statusResponse = try await billingAPIService.getSubscriptionStatus()
+                print("[StripePaymentViewModel] Statut abonnement: premiumEnabled=\(statusResponse.premiumEnabled), status=\(statusResponse.subscriptionStatus ?? "N/A")")
                 
-                // Notifier les autres parties de l'app
-                NotificationCenter.default.post(name: NSNotification.Name("SubscriptionUpdated"), object: nil)
-                
-                // Masquer le message après 3 secondes
-                Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: 3_000_000_000)
-                    showSuccessMessage = false
+                if statusResponse.premiumEnabled {
+                    // Afficher le message de succès
+                    showSuccessMessage = true
+                    print("[StripePaymentViewModel] 🎉 Statut premium confirmé !")
+                    
+                    // Notifier les autres parties de l'app
+                    NotificationCenter.default.post(name: NSNotification.Name("SubscriptionUpdated"), object: nil)
+                    
+                    // Masquer le message après 3 secondes
+                    Task { @MainActor in
+                        try? await Task.sleep(nanoseconds: 3_000_000_000)
+                        showSuccessMessage = false
+                    }
+                } else {
+                    // Le statut n'est pas encore à jour, réessayer une fois
+                    try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 seconde
+                    let retryStatus = try await billingAPIService.getSubscriptionStatus()
+                    if retryStatus.premiumEnabled {
+                        showSuccessMessage = true
+                        NotificationCenter.default.post(name: NSNotification.Name("SubscriptionUpdated"), object: nil)
+                        Task { @MainActor in
+                            try? await Task.sleep(nanoseconds: 3_000_000_000)
+                            showSuccessMessage = false
+                        }
+                    } else {
+                        errorMessage = "Paiement réussi, mais la vérification du statut prend plus de temps que prévu. Veuillez rafraîchir votre profil."
+                        print("[StripePaymentViewModel] ⚠️ Statut premium non confirmé après retry")
+                    }
                 }
-            } else {
-                // Le statut n'est pas encore à jour après les retries
-                errorMessage = "Paiement réussi, mais la vérification du statut prend plus de temps que prévu. Veuillez rafraîchir votre profil."
-                print("[StripePaymentViewModel] ⚠️ Statut premium non confirmé après retries")
+            } catch {
+                print("[StripePaymentViewModel] ⚠️ Erreur lors de la vérification du statut: \(error)")
+                errorMessage = "Paiement réussi, mais la vérification du statut a échoué. Veuillez rafraîchir votre profil."
             }
         } else {
             // Le paiement a échoué ou a été annulé

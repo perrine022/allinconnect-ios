@@ -106,6 +106,7 @@ struct UserMeResponse: Codable {
     // Champs professionnel (établissement)
     let establishmentName: String?
     let establishmentDescription: String?
+    let establishmentImageUrl: String?
     let phoneNumber: String?
     let website: String?
     let instagram: String?
@@ -128,6 +129,7 @@ struct UserMeResponse: Codable {
         case referralCode = "referralCode"
         case establishmentName = "establishmentName"
         case establishmentDescription = "establishmentDescription"
+        case establishmentImageUrl = "establishmentImageUrl"
         case phoneNumber = "phoneNumber"
         case website
         case instagram
@@ -154,6 +156,7 @@ struct UserMeResponse: Codable {
         referralCode = try container.decodeIfPresent(String.self, forKey: .referralCode)
         establishmentName = try container.decodeIfPresent(String.self, forKey: .establishmentName)
         establishmentDescription = try container.decodeIfPresent(String.self, forKey: .establishmentDescription)
+        establishmentImageUrl = try container.decodeIfPresent(String.self, forKey: .establishmentImageUrl)
         phoneNumber = try container.decodeIfPresent(String.self, forKey: .phoneNumber)
         website = try container.decodeIfPresent(String.self, forKey: .website)
         instagram = try container.decodeIfPresent(String.self, forKey: .instagram)
@@ -328,6 +331,47 @@ class ProfileAPIService: ObservableObject {
             parameters: cleanedParameters,
             headers: nil
         )
+    }
+    
+    // MARK: - Update Profile with Image (Multipart)
+    func updateProfileWithImage(_ request: UpdateProfileRequest, imageData: Data?) async throws {
+        // Encoder la requête en JSON
+        let encoder = JSONEncoder()
+        let jsonData = try encoder.encode(request)
+        
+        guard let parameters = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
+            throw APIError.invalidResponse
+        }
+        
+        // Nettoyer les valeurs nil (NSNull dans JSON)
+        let cleanedParameters = parameters.compactMapValues { value -> Any? in
+            if value is NSNull {
+                return nil
+            }
+            return value
+        }
+        
+        // Utiliser multipart si une image est fournie, sinon utiliser JSON classique
+        if let imageData = imageData {
+            // Utiliser multipart/form-data
+            guard let apiServiceInstance = apiService as? APIService else {
+                throw APIError.invalidResponse
+            }
+            
+            struct EmptyResponse: Codable {}
+            let _: EmptyResponse = try await apiServiceInstance.multipartRequest(
+                endpoint: "/users/profile",
+                method: .put,
+                jsonData: cleanedParameters,
+                imageData: imageData,
+                imageFieldName: "image",
+                jsonFieldName: "profile",
+                headers: nil
+            )
+        } else {
+            // Pas d'image, utiliser la méthode JSON classique
+            try await updateProfile(request)
+        }
     }
     
     // MARK: - Change Password

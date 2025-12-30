@@ -8,6 +8,7 @@
 import SwiftUI
 import Combine
 import CoreLocation
+import PhotosUI
 
 struct ManageEstablishmentView: View {
     @Environment(\.dismiss) private var dismiss
@@ -53,23 +54,72 @@ struct ManageEstablishmentView: View {
                                     .foregroundColor(.white.opacity(0.9))
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 
-                                Button(action: {
-                                    // Action pour changer la photo
-                                }) {
+                                PhotosPicker(
+                                    selection: $viewModel.selectedImageItem,
+                                    matching: .images
+                                ) {
                                     ZStack {
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .fill(Color.appDarkRed1.opacity(0.6))
+                                        // Afficher l'image sélectionnée ou l'image existante
+                                        if let selectedImage = viewModel.selectedImage {
+                                            Image(uiImage: selectedImage)
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(height: 150)
+                                                .clipped()
+                                        } else if let imageUrl = viewModel.establishmentImageUrl, let url = URL(string: imageUrl) {
+                                            AsyncImage(url: url) { phase in
+                                                switch phase {
+                                                case .empty:
+                                                    ProgressView()
+                                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                                case .success(let image):
+                                                    image
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                case .failure:
+                                                    Image(systemName: "camera.fill")
+                                                        .font(.system(size: 32))
+                                                        .foregroundColor(.gray.opacity(0.6))
+                                                @unknown default:
+                                                    Image(systemName: "camera.fill")
+                                                        .font(.system(size: 32))
+                                                        .foregroundColor(.gray.opacity(0.6))
+                                                }
+                                            }
                                             .frame(height: 150)
-                                        
-                                        VStack(spacing: 8) {
-                                            Image(systemName: "camera.fill")
-                                                .font(.system(size: 32))
-                                                .foregroundColor(.gray.opacity(0.6))
+                                            .clipped()
+                                        } else {
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .fill(Color.appDarkRed1.opacity(0.6))
+                                                .frame(height: 150)
                                             
-                                            Text("Ajouter une photo")
-                                                .font(.system(size: 13, weight: .medium))
-                                                .foregroundColor(.gray.opacity(0.8))
+                                            VStack(spacing: 8) {
+                                                Image(systemName: "camera.fill")
+                                                    .font(.system(size: 32))
+                                                    .foregroundColor(.gray.opacity(0.6))
+                                                
+                                                Text("Ajouter une photo")
+                                                    .font(.system(size: 13, weight: .medium))
+                                                    .foregroundColor(.gray.opacity(0.8))
+                                            }
                                         }
+                                        
+                                        // Overlay pour indiquer que c'est cliquable
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(Color.black.opacity(0.3))
+                                            .frame(height: 150)
+                                            .overlay(
+                                                VStack {
+                                                    Spacer()
+                                                    HStack {
+                                                        Spacer()
+                                                        Image(systemName: "pencil.circle.fill")
+                                                            .font(.system(size: 24))
+                                                            .foregroundColor(.white)
+                                                            .padding(8)
+                                                    }
+                                                }
+                                            )
                                     }
                                 }
                             }
@@ -335,6 +385,9 @@ class ManageEstablishmentViewModel: ObservableObject {
     @Published var isLoadingData: Bool = false
     @Published var errorMessage: String?
     @Published var successMessage: String?
+    @Published var selectedImage: UIImage? = nil
+    @Published var selectedImageItem: PhotosPickerItem? = nil
+    @Published var establishmentImageUrl: String? = nil
     
     private let profileAPIService: ProfileAPIService
     private let locationService: LocationService
@@ -357,7 +410,22 @@ class ManageEstablishmentViewModel: ObservableObject {
             self.latitude = location.coordinate.latitude
             self.longitude = location.coordinate.longitude
         }
+        
+        // Observer les changements de selectedImageItem pour convertir en UIImage
+        $selectedImageItem
+            .compactMap { $0 }
+            .sink { [weak self] item in
+                Task { @MainActor in
+                    if let data = try? await item.loadTransferable(type: Data.self),
+                       let image = UIImage(data: data) {
+                        self?.selectedImage = image
+                    }
+                }
+            }
+            .store(in: &cancellables)
     }
+    
+    private var cancellables = Set<AnyCancellable>()
     
     // Charger les données depuis l'API
     func loadEstablishmentData() {
@@ -383,6 +451,15 @@ class ManageEstablishmentViewModel: ObservableObject {
                 longitude = userMe.longitude
                 profession = userMe.profession
                 category = userMe.category
+                
+                // Construire l'URL complète de l'image si elle existe
+                if let imageUrl = userMe.establishmentImageUrl, !imageUrl.isEmpty {
+                    let baseURL = APIConfig.baseURL.replacingOccurrences(of: "/api/v1", with: "")
+                    let path = imageUrl.hasPrefix("/") ? imageUrl : "/\(imageUrl)"
+                    establishmentImageUrl = "\(baseURL)\(path)"
+                } else {
+                    establishmentImageUrl = nil
+                }
                 
                 isLoadingData = false
             } catch {
@@ -435,8 +512,18 @@ class ManageEstablishmentViewModel: ObservableObject {
                     category: category
                 )
                 
-                // Appeler l'API
-                try await profileAPIService.updateProfile(updateRequest)
+                // Convertir l'image en Data si elle existe
+                var imageData: Data? = nil
+                if let selectedImage = selectedImage {
+                    imageData = selectedImage.jpegData(compressionQuality: 0.8)
+                }
+                
+                // Appeler l'API avec ou sans image
+                if imageData != nil {
+                    try await profileAPIService.updateProfileWithImage(updateRequest, imageData: imageData)
+                } else {
+                    try await profileAPIService.updateProfile(updateRequest)
+                }
                 
                 isLoading = false
                 successMessage = "Fiche établissement mise à jour avec succès"

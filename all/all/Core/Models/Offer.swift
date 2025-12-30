@@ -21,6 +21,7 @@ struct Offer: Identifiable, Hashable, Codable {
     let startDate: String? // Date de début au format DD/MM/YYYY
     let discount: String
     let imageName: String
+    let imageUrl: String? // URL de l'image depuis le backend (chemin relatif)
     let offerType: OfferType
     let isClub10: Bool
     let partnerId: UUID?
@@ -35,6 +36,7 @@ struct Offer: Identifiable, Hashable, Codable {
         startDate: String? = nil,
         discount: String,
         imageName: String,
+        imageUrl: String? = nil,
         offerType: OfferType = .offer,
         isClub10: Bool = false,
         partnerId: UUID? = nil,
@@ -48,10 +50,24 @@ struct Offer: Identifiable, Hashable, Codable {
         self.startDate = startDate
         self.discount = discount
         self.imageName = imageName
+        self.imageUrl = imageUrl
         self.offerType = offerType
         self.isClub10 = isClub10
         self.partnerId = partnerId
         self.apiId = apiId
+    }
+    
+    /// Construit l'URL complète de l'image en concaténant l'URL de base du serveur avec le chemin relatif
+    func fullImageUrl() -> String? {
+        guard let imageUrl = imageUrl, !imageUrl.isEmpty else {
+            return nil
+        }
+        
+        // Construire l'URL complète
+        let baseURL = APIConfig.baseURL.replacingOccurrences(of: "/api/v1", with: "")
+        // Si imageUrl commence déjà par /, on le garde, sinon on l'ajoute
+        let path = imageUrl.hasPrefix("/") ? imageUrl : "/\(imageUrl)"
+        return "\(baseURL)\(path)"
     }
     
     // Fonction utilitaire pour extraire l'ID API depuis l'UUID si possible

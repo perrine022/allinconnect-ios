@@ -25,12 +25,9 @@ struct OfferListCard: View {
             HStack(alignment: .top, spacing: 12) {
                 // Image à gauche
                 ZStack(alignment: .topLeading) {
-                    Image(systemName: offer.imageName)
-                        .resizable()
-                        .scaledToFill()
+                    OfferImage(offer: offer, contentMode: .fill)
                         .frame(width: 90, height: 90)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
-                        .foregroundColor(.gray.opacity(0.3))
                         .background(
                             LinearGradient(
                                 gradient: Gradient(colors: [Color.appDarkRed1.opacity(0.3), Color.appDarkRed2.opacity(0.3)]),

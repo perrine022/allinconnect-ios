@@ -27,6 +27,7 @@ class CardViewModel: ObservableObject {
     @Published var cardType: String? = nil
     @Published var isCardActive: Bool = false
     @Published var cardExpirationDate: Date? = nil
+    @Published var isCardOwner: Bool = false
     
     @Published var isLoading: Bool = true // Commencer en état de chargement
     @Published var hasLoadedOnce: Bool = false // Pour savoir si on a déjà chargé une fois
@@ -35,6 +36,7 @@ class CardViewModel: ObservableObject {
     private let profileAPIService: ProfileAPIService
     private let favoritesAPIService: FavoritesAPIService
     private let savingsAPIService: SavingsAPIService
+    private let subscriptionsAPIService: SubscriptionsAPIService
     private let dataService: MockDataService // Gardé pour les favoris en fallback
     private let cacheService = CacheService.shared
     private var cancellables = Set<AnyCancellable>()
@@ -43,6 +45,7 @@ class CardViewModel: ObservableObject {
         profileAPIService: ProfileAPIService? = nil,
         favoritesAPIService: FavoritesAPIService? = nil,
         savingsAPIService: SavingsAPIService? = nil,
+        subscriptionsAPIService: SubscriptionsAPIService? = nil,
         dataService: MockDataService = MockDataService.shared
     ) {
         // Créer les services dans un contexte MainActor
@@ -62,6 +65,12 @@ class CardViewModel: ObservableObject {
             self.savingsAPIService = savingsAPIService
         } else {
             self.savingsAPIService = SavingsAPIService()
+        }
+        
+        if let subscriptionsAPIService = subscriptionsAPIService {
+            self.subscriptionsAPIService = subscriptionsAPIService
+        } else {
+            self.subscriptionsAPIService = SubscriptionsAPIService()
         }
         
         self.dataService = dataService
@@ -231,6 +240,11 @@ class CardViewModel: ObservableObject {
                 }
                 referralLink = "allin.fr/r/\(referralCode)"
                 
+                // Si c'est une carte FAMILY ou CLIENT_FAMILY, vérifier si l'utilisateur est propriétaire
+                if cardType == "FAMILY" || cardType == "CLIENT_FAMILY" {
+                    await loadCardOwner()
+                }
+                
                 // Sauvegarder les données de carte en cache
                 let cardCacheData = CardCacheData(
                     cardNumber: cardNumber,
@@ -327,6 +341,11 @@ class CardViewModel: ObservableObject {
             )
             cacheService.saveCardData(cardCacheData)
             
+            // Si c'est une carte FAMILY ou CLIENT_FAMILY, vérifier si l'utilisateur est propriétaire
+            if cardTypeValue == "FAMILY" || cardTypeValue == "CLIENT_FAMILY" {
+                await loadCardOwner()
+            }
+            
             // Mettre à jour les données en arrière-plan
             await MainActor.run {
                 user = User(
@@ -352,6 +371,31 @@ class CardViewModel: ObservableObject {
             }
         } catch {
             print("[CardViewModel] Erreur lors du rafraîchissement en arrière-plan: \(error)")
+        }
+    }
+    
+    private func loadCardOwner() async {
+        do {
+            let cardOwnerResponse = try await subscriptionsAPIService.getCardOwner()
+            await MainActor.run {
+                isCardOwner = cardOwnerResponse.isOwner
+                print("[CardViewModel] User is card owner: \(isCardOwner)")
+            }
+        } catch {
+            // Si c'est une erreur unauthorized, c'est probablement que l'utilisateur n'a pas de carte famille
+            // ou n'a pas les permissions. On ignore silencieusement.
+            if let apiError = error as? APIError,
+               case .unauthorized = apiError {
+                print("[CardViewModel] Utilisateur non autorisé pour vérifier le propriétaire de la carte (probablement pas de carte famille)")
+                await MainActor.run {
+                    isCardOwner = false
+                }
+            } else {
+                print("[CardViewModel] Erreur lors de la vérification du propriétaire de la carte: \(error)")
+                await MainActor.run {
+                    isCardOwner = false
+                }
+            }
         }
     }
     

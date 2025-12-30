@@ -28,6 +28,14 @@ class OffersViewModel: ObservableObject {
     @Published var endDate: Date? = nil
     @Published var showDatePicker: Bool = false
     
+    // Mode d'affichage : actuelles ou à venir
+    @Published var offerTimeMode: OfferTimeMode = .current
+    
+    enum OfferTimeMode {
+        case current // Offres actuelles
+        case upcoming // Offres à venir
+    }
+    
     // Secteurs disponibles
     let sectors: [String] = [
         "",
@@ -95,13 +103,21 @@ class OffersViewModel: ObservableObject {
                 // Convertir le type sélectionné en type API
                 let apiType: String? = selectedOfferType == .event ? "EVENEMENT" : (selectedOfferType == .offer ? "OFFRE" : nil)
                 
-                // Formater les dates au format ISO 8601
-                // Pour startDate, utiliser le début de la journée (00:00:00)
-                // Pour endDate, utiliser la fin de la journée (23:59:59)
-                let startDateString: String? = startDate != nil ? formatDateToISO8601(startDate!, isStartOfDay: true) : nil
-                let endDateString: String? = endDate != nil ? formatDateToISO8601(endDate!, isStartOfDay: false) : nil
+                // Formater les dates au format ISO 8601 (seulement pour le mode "à venir")
+                let startDateString: String?
+                let endDateString: String?
                 
-                // Appeler l'API pour récupérer les offres avec filtres de date
+                if offerTimeMode == .upcoming {
+                    // Pour "à venir", utiliser les dates sélectionnées
+                    startDateString = startDate != nil ? formatDateToISO8601(startDate!, isStartOfDay: true) : nil
+                    endDateString = endDate != nil ? formatDateToISO8601(endDate!, isStartOfDay: false) : nil
+                } else {
+                    // Pour "actuelles", ne pas envoyer de dates (récupérer toutes les offres actives)
+                    startDateString = nil
+                    endDateString = nil
+                }
+                
+                // Appeler l'API pour récupérer les offres
                 let offersResponse = try await offersAPIService.getAllOffers(
                     city: city,
                     category: category,
@@ -156,11 +172,19 @@ class OffersViewModel: ObservableObject {
             
             let apiType: String? = selectedOfferType == .event ? "EVENEMENT" : (selectedOfferType == .offer ? "OFFRE" : nil)
             
-            // Formater les dates au format ISO 8601
-            // Pour startDate, utiliser le début de la journée (00:00:00)
-            // Pour endDate, utiliser la fin de la journée (23:59:59)
-            let startDateString: String? = startDate != nil ? formatDateToISO8601(startDate!, isStartOfDay: true) : nil
-            let endDateString: String? = endDate != nil ? formatDateToISO8601(endDate!, isStartOfDay: false) : nil
+            // Formater les dates au format ISO 8601 (seulement pour le mode "à venir")
+            let startDateString: String?
+            let endDateString: String?
+            
+            if offerTimeMode == .upcoming {
+                // Pour "à venir", utiliser les dates sélectionnées
+                startDateString = startDate != nil ? formatDateToISO8601(startDate!, isStartOfDay: true) : nil
+                endDateString = endDate != nil ? formatDateToISO8601(endDate!, isStartOfDay: false) : nil
+            } else {
+                // Pour "actuelles", ne pas envoyer de dates
+                startDateString = nil
+                endDateString = nil
+            }
             
             let offersResponse = try await offersAPIService.getAllOffers(
                 city: city,

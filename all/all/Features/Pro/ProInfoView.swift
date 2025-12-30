@@ -84,7 +84,7 @@ struct ProInfoView: View {
                                             .background(viewModel.selectedPlan?.id == plan.id ? Color.appDarkRed1.opacity(0.9) : Color.appDarkRed1.opacity(0.5))
                                             .overlay(
                                                 RoundedRectangle(cornerRadius: 12)
-                                                    .stroke(viewModel.selectedPlan?.id == plan.id ? Color.appGold : Color.clear, lineWidth: 2)
+                                                    .stroke(viewModel.selectedPlan?.id == plan.id ? Color.red : Color.clear, lineWidth: 2)
                                             )
                                             .cornerRadius(12)
                                         }
@@ -185,10 +185,10 @@ struct ProInfoView: View {
                                         }
                                     }
                                 }
-                                .foregroundColor(.black)
+                                .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 16)
-                                .background(Color.appGold)
+                                .background(Color.red)
                                 .cornerRadius(12)
                             }
                             .disabled(isProcessingPayment || viewModel.selectedPlan == nil)

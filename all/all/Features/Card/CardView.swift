@@ -199,8 +199,8 @@ struct CardView: View {
                                 .padding(.top, 2)
                             }
                             
-                            // Bouton "Gérer ma famille" si carte familiale - plus compact
-                            if viewModel.cardType == "FAMILY" || viewModel.cardType == "CLIENT_FAMILY" {
+                            // Bouton "Gérer ma famille" si carte familiale et si l'utilisateur est propriétaire - plus compact
+                            if (viewModel.cardType == "FAMILY" || viewModel.cardType == "CLIENT_FAMILY") && viewModel.isCardOwner {
                                 Button(action: {
                                     showFamilyManagement = true
                                 }) {

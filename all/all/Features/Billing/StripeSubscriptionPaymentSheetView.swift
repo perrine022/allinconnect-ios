@@ -14,8 +14,7 @@
 import SwiftUI
 import UIKit
 import SafariServices
-
-// Décommenter une fois le SDK Stripe installé :
+// Décommentez cette ligne après avoir installé le SDK Stripe :
 // import StripePaymentSheet
 
 struct StripeSubscriptionPaymentSheetView: UIViewControllerRepresentable {
@@ -41,29 +40,30 @@ struct StripeSubscriptionPaymentSheetView: UIViewControllerRepresentable {
         print("[StripeSubscriptionPaymentSheetView] makeUIViewController() - Début")
         let viewController = UIViewController()
         
-        // TODO: Une fois le SDK Stripe installé, décommenter ce code :
+        // ⚠️ IMPORTANT: Décommentez le code ci-dessous après avoir installé le SDK Stripe
+        // Pour installer : File → Add Package Dependencies → https://github.com/stripe/stripe-ios
+        // Sélectionner : StripePaymentSheet
+        
         /*
         // 1. Configurer la clé publique Stripe
-        // IMPORTANT: Remplacer par votre clé publique depuis Stripe Dashboard
-        // Test : https://dashboard.stripe.com/test/apikeys
-        // Live : https://dashboard.stripe.com/apikeys
-        StripeAPI.defaultPublishableKey = "pk_test_VOTRE_CLE_PUBLIQUE_ICI"
+        // Clé publique de test fournie par le backend
+        StripeAPI.defaultPublishableKey = "pk_test_51SiVbTC2niFYoaySD4zt1bKI5Z6m3bcmedZGBZIU3jGCaMTaI6D6sHcW7dnd0ywxTbfswQpV1njEkg2D69vxDCEc00c46UdWsb"
         
         // 2. Créer la configuration du Payment Sheet
         var configuration = PaymentSheet.Configuration()
-        configuration.merchantDisplayName = "All In Connect"
+        configuration.merchantDisplayName = "AllinConnect"
         
-        // 3. Configurer le Customer avec l'ephemeral key (si fourni)
-        // Note: Pour un paiement unique, le Customer n'est pas nécessaire
+        // 3. Configurer le Customer avec l'ephemeral key (pour les abonnements récurrents)
         if let customerId = customerId, let ephemeralKeySecret = ephemeralKeySecret {
             configuration.customer = .init(
                 id: customerId,
                 ephemeralKeySecret: ephemeralKeySecret
             )
+            print("[StripeSubscriptionPaymentSheetView] Customer configuré: \(customerId)")
         }
         
         // 4. Activer Apple Pay si disponible
-        // IMPORTANT: Configurer votre merchantId dans Info.plist
+        // IMPORTANT: Configurer votre merchantId dans Info.plist si vous voulez Apple Pay
         // Ajouter : <key>com.apple.developer.in-app-payments</key>
         //           <array><string>merchant.com.yourapp.merchantid</string></array>
         if let merchantId = Bundle.main.object(forInfoDictionaryKey: "ApplePayMerchantId") as? String,
@@ -72,11 +72,13 @@ struct StripeSubscriptionPaymentSheetView: UIViewControllerRepresentable {
                 merchantId: merchantId,
                 merchantCountryCode: "FR"
             )
+            print("[StripeSubscriptionPaymentSheetView] Apple Pay activé avec merchantId: \(merchantId)")
         }
         
         // 5. Préremplir l'email si disponible
         if let userEmail = UserDefaults.standard.string(forKey: "user_email"), !userEmail.isEmpty {
             configuration.defaultBillingDetails.email = userEmail
+            print("[StripeSubscriptionPaymentSheetView] Email prérempli: \(userEmail)")
         }
         
         // 6. Créer le Payment Sheet
@@ -107,17 +109,9 @@ struct StripeSubscriptionPaymentSheetView: UIViewControllerRepresentable {
         }
         */
         
-        // Fallback: Afficher un message si le SDK n'est pas installé
+        // Code temporaire : afficher un message d'erreur si le SDK n'est pas installé
         DispatchQueue.main.async {
-            let alert = UIAlertController(
-                title: "SDK Stripe requis",
-                message: "Veuillez installer le SDK Stripe PaymentSheet pour utiliser cette fonctionnalité.",
-                preferredStyle: .alert
-            )
-            alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in
-                onPaymentResult(false, "SDK Stripe non installé")
-            })
-            viewController.present(alert, animated: true)
+            onPaymentResult(false, "SDK Stripe non installé. Veuillez installer le package Stripe iOS.")
         }
         
         print("[StripeSubscriptionPaymentSheetView] makeUIViewController() - Fin")

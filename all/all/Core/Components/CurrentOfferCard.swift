@@ -24,12 +24,9 @@ struct CurrentOfferCard: View {
         Button(action: onTap) {
             HStack(spacing: 12) {
                 // Image
-                Image(systemName: offer.imageName)
-                    .resizable()
-                    .scaledToFill()
+                OfferImage(offer: offer, contentMode: .fill)
                     .frame(width: 60, height: 60)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .foregroundColor(.gray.opacity(0.3))
                 
                 VStack(alignment: .leading, spacing: 4) {
                     // Titre

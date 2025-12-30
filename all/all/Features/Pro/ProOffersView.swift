@@ -161,12 +161,9 @@ struct ProOfferCard: View {
     var body: some View {
         HStack(spacing: 12) {
             // Image
-            Image(systemName: offer.imageName)
-                .resizable()
-                .scaledToFill()
+            OfferImage(offer: offer, contentMode: .fill)
                 .frame(width: 80, height: 80)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
-                .foregroundColor(.white.opacity(0.8))
                 .background(
                     LinearGradient(
                         gradient: Gradient(colors: [Color.appDarkRed1, Color.appDarkRed2]),

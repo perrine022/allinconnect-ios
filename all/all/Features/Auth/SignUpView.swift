@@ -499,16 +499,16 @@ struct SignUpView: View {
                                     HStack {
                                         if viewModel.isLoading {
                                             ProgressView()
-                                                .progressViewStyle(CircularProgressViewStyle(tint: .black))
+                                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                         } else {
                                             Text("S'inscrire")
                                                 .font(.system(size: 18, weight: .bold))
                                         }
                                     }
-                                    .foregroundColor(.black)
+                                    .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 16)
-                                    .background(viewModel.isValid && !viewModel.isLoading ? Color.appGold : Color.gray.opacity(0.5))
+                                    .background(viewModel.isValid && !viewModel.isLoading ? Color.appRed : Color.gray.opacity(0.5))
                                     .cornerRadius(12)
                                 }
                                 .disabled(!viewModel.isValid || viewModel.isLoading)

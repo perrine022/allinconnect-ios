@@ -115,7 +115,7 @@ struct ProSubscriptionView: View {
                                             .background(Color.white)
                                             .overlay(
                                                 RoundedRectangle(cornerRadius: 12)
-                                                    .stroke(viewModel.selectedPlan?.id == plan.id ? Color.appGold : Color.gray.opacity(0.3), lineWidth: viewModel.selectedPlan?.id == plan.id ? 2 : 1)
+                                                    .stroke(viewModel.selectedPlan?.id == plan.id ? Color.red : Color.gray.opacity(0.3), lineWidth: viewModel.selectedPlan?.id == plan.id ? 2 : 1)
                                             )
                                             .cornerRadius(12)
                                         }
@@ -216,10 +216,10 @@ struct ProSubscriptionView: View {
                                         }
                                     }
                                 }
-                                .foregroundColor(.black)
+                                .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
-                                .background(Color.appGold)
+                                .background(Color.red)
                                 .cornerRadius(12)
                             }
                             .disabled(isProcessingPayment || viewModel.selectedPlan == nil)
