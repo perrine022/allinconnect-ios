@@ -212,6 +212,9 @@ struct StripePaymentView: View {
                 )
             }
         }
+        .sheet(isPresented: $viewModel.isActivating) {
+            ActivationInProgressView()
+        }
         .alert("🎉 Félicitations !", isPresented: $viewModel.showSuccessMessage) {
             Button("OK", role: .cancel) {
                 viewModel.showSuccessMessage = false
@@ -352,6 +355,7 @@ class StripePaymentViewModel: ObservableObject {
     @Published var customerId: String? = nil
     @Published var ephemeralKeySecret: String? = nil
     @Published var showSuccessMessage: Bool = false
+    @Published var isActivating: Bool = false // État pour l'écran "Activation en cours"
     
     private let subscriptionsAPIService: SubscriptionsAPIService
     private let billingAPIService = BillingAPIService()
@@ -487,8 +491,24 @@ class StripePaymentViewModel: ObservableObject {
             
             if let apiError = error as? APIError {
                 switch apiError {
-                case .unauthorized:
-                    errorMessage = "Erreur d'authentification. Veuillez vous reconnecter."
+                case .unauthorized(let reason):
+                    // Afficher le message d'erreur précis du backend
+                    if let reason = reason {
+                        errorMessage = apiError.errorDescription ?? "Erreur d'authentification. Veuillez vous reconnecter."
+                        print("[StripePaymentViewModel] Raison de l'erreur 401: \(reason)")
+                        
+                        // Si le token est expiré ou l'utilisateur n'existe plus, forcer la déconnexion
+                        if reason == "Token expired" || reason == "User not found" || reason == "Invalid token" {
+                            print("[StripePaymentViewModel] ⚠️ Token invalide/expiré - Déconnexion forcée")
+                            // Forcer la déconnexion après un court délai pour permettre l'affichage du message
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                                LoginViewModel.logout()
+                                NotificationCenter.default.post(name: NSNotification.Name("UserDidLogout"), object: nil)
+                            }
+                        }
+                    } else {
+                        errorMessage = "Erreur d'authentification. Veuillez vous reconnecter."
+                    }
                 case .networkError:
                     errorMessage = "Erreur de connexion. Vérifiez votre connexion internet."
                 case .invalidResponse:
@@ -512,46 +532,36 @@ class StripePaymentViewModel: ObservableObject {
             print("[StripePaymentViewModel] ✅ Paiement réussi dans le Payment Sheet")
             print("[StripePaymentViewModel] Étape C : Vérification du statut premium...")
             
-            // Attendre quelques millisecondes pour que le webhook soit traité
-            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconde
+            // Afficher l'écran "Activation en cours"
+            isActivating = true
             
-            // Vérifier le statut avec l'endpoint /api/billing/subscription/status
-            do {
-                let statusResponse = try await billingAPIService.getSubscriptionStatus()
-                print("[StripePaymentViewModel] Statut abonnement: premiumEnabled=\(statusResponse.premiumEnabled), status=\(statusResponse.subscriptionStatus ?? "N/A")")
+            // Attendre 0.5 seconde pour que le webhook soit traité
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            
+            // Utiliser PaymentStatusManager avec retry amélioré (7 tentatives avec backoff exponentiel)
+            // Source de vérité : GET /api/billing/status (pas /users/me/light)
+            let isPremiumConfirmed = await PaymentStatusManager.shared.checkPaymentStatus(maxRetries: 7)
+            
+            // Masquer l'écran d'activation
+            isActivating = false
+            
+            if isPremiumConfirmed {
+                // Afficher le message de succès
+                showSuccessMessage = true
+                print("[StripePaymentViewModel] 🎉 Statut premium confirmé !")
                 
-                if statusResponse.premiumEnabled {
-                    // Afficher le message de succès
-                    showSuccessMessage = true
-                    print("[StripePaymentViewModel] 🎉 Statut premium confirmé !")
-                    
-                    // Notifier les autres parties de l'app
-                    NotificationCenter.default.post(name: NSNotification.Name("SubscriptionUpdated"), object: nil)
-                    
-                    // Masquer le message après 3 secondes
-                    Task { @MainActor in
-                        try? await Task.sleep(nanoseconds: 3_000_000_000)
-                        showSuccessMessage = false
-                    }
-                } else {
-                    // Le statut n'est pas encore à jour, réessayer une fois
-                    try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 seconde
-                    let retryStatus = try await billingAPIService.getSubscriptionStatus()
-                    if retryStatus.premiumEnabled {
-                        showSuccessMessage = true
-                        NotificationCenter.default.post(name: NSNotification.Name("SubscriptionUpdated"), object: nil)
-                        Task { @MainActor in
-                            try? await Task.sleep(nanoseconds: 3_000_000_000)
-                            showSuccessMessage = false
-                        }
-                    } else {
-                        errorMessage = "Paiement réussi, mais la vérification du statut prend plus de temps que prévu. Veuillez rafraîchir votre profil."
-                        print("[StripePaymentViewModel] ⚠️ Statut premium non confirmé après retry")
-                    }
+                // Notifier les autres parties de l'app
+                NotificationCenter.default.post(name: NSNotification.Name("SubscriptionUpdated"), object: nil)
+                
+                // Masquer le message après 3 secondes
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 3_000_000_000)
+                    showSuccessMessage = false
                 }
-            } catch {
-                print("[StripePaymentViewModel] ⚠️ Erreur lors de la vérification du statut: \(error)")
-                errorMessage = "Paiement réussi, mais la vérification du statut a échoué. Veuillez rafraîchir votre profil."
+            } else {
+                // Le statut n'a pas été confirmé après tous les retries
+                errorMessage = "Paiement réussi, mais la vérification du statut prend plus de temps que prévu. Veuillez rafraîchir votre profil dans quelques instants."
+                print("[StripePaymentViewModel] ⚠️ Statut premium non confirmé après tous les retries")
             }
         } else {
             // Le paiement a échoué ou a été annulé
@@ -562,6 +572,59 @@ class StripePaymentViewModel: ObservableObject {
                 errorMessage = "Paiement annulé"
                 print("[StripePaymentViewModel] ⚠️ Paiement annulé par l'utilisateur")
             }
+        }
+    }
+}
+
+// MARK: - Activation In Progress View
+/// Écran affiché pendant la vérification du statut premium après paiement
+struct ActivationInProgressView: View {
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        ZStack {
+            // Background avec gradient
+            AppGradient.main
+                .ignoresSafeArea()
+            
+            VStack(spacing: 24) {
+                // Indicateur de chargement animé
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    .scaleEffect(2.0)
+                
+                // Titre
+                Text("Activation en cours...")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundColor(.white)
+                
+                // Description
+                VStack(spacing: 8) {
+                    Text("Paiement reçu, activation en cours...")
+                        .font(.system(size: 16, weight: .regular))
+                        .foregroundColor(.white.opacity(0.9))
+                        .multilineTextAlignment(.center)
+                    
+                    Text("Nous vérifions l'activation de votre abonnement avec le serveur.")
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(.white.opacity(0.7))
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.horizontal, 40)
+                
+                // Message informatif
+                HStack(spacing: 8) {
+                    Image(systemName: "info.circle.fill")
+                        .foregroundColor(.white.opacity(0.7))
+                        .font(.system(size: 14))
+                    
+                    Text("Cela peut prendre quelques secondes")
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+                .padding(.top, 8)
+            }
+            .padding(40)
         }
     }
 }

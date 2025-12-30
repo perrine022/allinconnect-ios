@@ -630,8 +630,8 @@ struct ProfileView: View {
                     // Menu options (affiché seulement après chargement)
                     if viewModel.hasLoadedOnce {
                         VStack(spacing: 0) {
-                        // Options PRO uniquement dans l'espace PRO (toujours affichées pour les tests)
-                        if viewModel.currentSpace == .pro {
+                        // Options PRO (affichées pour tous les professionnels, peu importe l'espace)
+                        if viewModel.user.userType == .pro {
                             ProfileMenuRow(
                                 icon: "building.2.fill",
                                 title: "Gérer mon établissement",

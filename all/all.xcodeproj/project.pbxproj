@@ -125,6 +125,7 @@
 			);
 			name = all;
 			packageProductDependencies = (
+				BF76E7622F03B4180045AF92 /* StripePaymentSheet */,
 			);
 			productName = all;
 			productReference = BF76DDD52EFAFD3F0045AF92 /* all.app */;
@@ -619,6 +620,14 @@
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		BF76E7622F03B4180045AF92 /* StripePaymentSheet */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BF76E7612F03B4180045AF92 /* XCRemoteSwiftPackageReference "stripe-ios" */;
+			productName = StripePaymentSheet;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = BF76DDCD2EFAFD3F0045AF92 /* Project object */;
 }

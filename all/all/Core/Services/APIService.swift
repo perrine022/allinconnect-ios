@@ -58,7 +58,7 @@ enum APIError: LocalizedError {
     case httpError(statusCode: Int, message: String?)
     case decodingError(Error)
     case networkError(Error)
-    case unauthorized
+    case unauthorized(reason: String?)
     case notFound
     
     var errorDescription: String? {
@@ -73,10 +73,31 @@ enum APIError: LocalizedError {
             return "Erreur de décodage: \(error.localizedDescription)"
         case .networkError(let error):
             return "Erreur réseau: \(error.localizedDescription)"
-        case .unauthorized:
+        case .unauthorized(let reason):
+            if let reason = reason {
+                switch reason {
+                case "Token expired":
+                    return "Votre session a expiré. Veuillez vous reconnecter."
+                case "User not found":
+                    return "Votre compte n'existe plus. Veuillez vous reconnecter."
+                case "Invalid token":
+                    return "Token invalide. Veuillez vous reconnecter."
+                default:
+                    return "Non autorisé: \(reason). Veuillez vous reconnecter."
+                }
+            }
             return "Non autorisé. Veuillez vous reconnecter."
         case .notFound:
             return "Ressource non trouvée"
+        }
+    }
+    
+    var shouldForceLogout: Bool {
+        switch self {
+        case .unauthorized(let reason):
+            return reason == "Token expired" || reason == "User not found" || reason == "Invalid token"
+        default:
+            return false
         }
     }
 }
@@ -184,7 +205,19 @@ class APIService: APIServiceProtocol, ObservableObject {
             case 200...299:
                 break
             case 401:
-                throw APIError.unauthorized
+                // Lire le message d'erreur précis du body de la réponse 401
+                var errorReason: String? = nil
+                if !data.isEmpty {
+                    // Essayer de décoder le message d'erreur depuis le body
+                    if let errorDict = try? JSONDecoder().decode([String: String].self, from: data) {
+                        errorReason = errorDict["message"] ?? errorDict["error"] ?? errorDict["reason"]
+                    } else if let errorString = String(data: data, encoding: .utf8) {
+                        // Si ce n'est pas du JSON, essayer de lire comme texte brut
+                        errorReason = errorString.trimmingCharacters(in: .whitespacesAndNewlines)
+                    }
+                }
+                print("[APIService] Erreur 401 - Raison: \(errorReason ?? "non spécifiée")")
+                throw APIError.unauthorized(reason: errorReason)
             case 404:
                 throw APIError.notFound
             default:
@@ -308,7 +341,19 @@ class APIService: APIServiceProtocol, ObservableObject {
             case 200...299:
                 break
             case 401:
-                throw APIError.unauthorized
+                // Lire le message d'erreur précis du body de la réponse 401
+                var errorReason: String? = nil
+                if !data.isEmpty {
+                    // Essayer de décoder le message d'erreur depuis le body
+                    if let errorDict = try? JSONDecoder().decode([String: String].self, from: data) {
+                        errorReason = errorDict["message"] ?? errorDict["error"] ?? errorDict["reason"]
+                    } else if let errorString = String(data: data, encoding: .utf8) {
+                        // Si ce n'est pas du JSON, essayer de lire comme texte brut
+                        errorReason = errorString.trimmingCharacters(in: .whitespacesAndNewlines)
+                    }
+                }
+                print("[APIService] Erreur 401 (multipart) - Raison: \(errorReason ?? "non spécifiée")")
+                throw APIError.unauthorized(reason: errorReason)
             case 404:
                 throw APIError.notFound
             default:

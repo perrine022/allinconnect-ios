@@ -14,8 +14,7 @@
 import SwiftUI
 import UIKit
 import SafariServices
-// Décommentez cette ligne après avoir installé le SDK Stripe :
-// import StripePaymentSheet
+import StripePaymentSheet
 
 struct StripeSubscriptionPaymentSheetView: UIViewControllerRepresentable {
     let paymentIntentClientSecret: String
@@ -40,11 +39,6 @@ struct StripeSubscriptionPaymentSheetView: UIViewControllerRepresentable {
         print("[StripeSubscriptionPaymentSheetView] makeUIViewController() - Début")
         let viewController = UIViewController()
         
-        // ⚠️ IMPORTANT: Décommentez le code ci-dessous après avoir installé le SDK Stripe
-        // Pour installer : File → Add Package Dependencies → https://github.com/stripe/stripe-ios
-        // Sélectionner : StripePaymentSheet
-        
-        /*
         // 1. Configurer la clé publique Stripe
         // Clé publique de test fournie par le backend
         StripeAPI.defaultPublishableKey = "pk_test_51SiVbTC2niFYoaySD4zt1bKI5Z6m3bcmedZGBZIU3jGCaMTaI6D6sHcW7dnd0ywxTbfswQpV1njEkg2D69vxDCEc00c46UdWsb"
@@ -106,12 +100,6 @@ struct StripeSubscriptionPaymentSheetView: UIViewControllerRepresentable {
                     onPaymentResult(false, "Erreur inconnue")
                 }
             }
-        }
-        */
-        
-        // Code temporaire : afficher un message d'erreur si le SDK n'est pas installé
-        DispatchQueue.main.async {
-            onPaymentResult(false, "SDK Stripe non installé. Veuillez installer le package Stripe iOS.")
         }
         
         print("[StripeSubscriptionPaymentSheetView] makeUIViewController() - Fin")
