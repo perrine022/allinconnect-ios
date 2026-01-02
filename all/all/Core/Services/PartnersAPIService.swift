@@ -28,6 +28,7 @@ struct PartnerProfessionalResponse: Codable, Identifiable {
     let subscriptionPlan: SubscriptionPlanResponse?
     let establishmentName: String? // Ajouté pour les favoris
     let establishmentDescription: String?
+    let establishmentImageUrl: String? // URL absolue de l'image de l'établissement
     let phoneNumber: String?
     let website: String?
     let instagram: String?
@@ -52,6 +53,7 @@ struct PartnerProfessionalResponse: Codable, Identifiable {
         case subscriptionPlan = "subscriptionPlan"
         case establishmentName = "establishmentName"
         case establishmentDescription = "establishmentDescription"
+        case establishmentImageUrl = "establishmentImageUrl"
         case phoneNumber = "phoneNumber"
         case website
         case instagram
@@ -230,6 +232,11 @@ extension PartnerProfessionalResponse {
             defaultImage = DefaultImageHelper.defaultImageForPartnerCategory(categoryName)
         }
         
+        // Le backend renvoie maintenant des URLs absolues directement
+        // Utiliser establishmentImageUrl si disponible (URL absolue)
+        // Si l'URL commence par "http", c'est déjà une URL absolue
+        let imageUrl: String? = establishmentImageUrl?.hasPrefix("http") == true ? establishmentImageUrl : nil
+        
         // Créer un Partner avec les données disponibles
         return Partner(
             id: partnerUUID,
@@ -248,6 +255,7 @@ extension PartnerProfessionalResponse {
             discount: isClub10 ? 10 : nil, // Réduction si CLUB10
             imageName: defaultImage,
             headerImageName: defaultImage,
+            establishmentImageUrl: imageUrl, // URL absolue de l'image depuis le backend
             isFavorite: false, // Sera géré via l'API
             apiId: id // Stocker l'ID original de l'API
         )

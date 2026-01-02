@@ -35,6 +35,24 @@ struct OffersView: View {
                     
                     // Pastilles de filtre par type
                     HStack(spacing: 12) {
+                        // Pastille "Tous" (toujours rouge)
+                        Button(action: {
+                            withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+                                viewModel.selectedOfferType = nil
+                                viewModel.applyFilters()
+                            }
+                        }) {
+                            Text("Tous")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .fill(Color.red)
+                                )
+                        }
+                        
                         // Pastille "Offres"
                         Button(action: {
                             withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
@@ -48,15 +66,15 @@ struct OffersView: View {
                         }) {
                             Text("Offres")
                                 .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(viewModel.selectedOfferType == .offer ? .black : .white)
-                                .padding(.horizontal, 20)
+                                .foregroundColor(viewModel.selectedOfferType == .offer ? .white : .red)
+                                .frame(maxWidth: .infinity)
                                 .padding(.vertical, 10)
                                 .background(
                                     RoundedRectangle(cornerRadius: 20)
-                                        .fill(viewModel.selectedOfferType == .offer ? Color.appGold : Color.clear)
+                                        .fill(viewModel.selectedOfferType == .offer ? Color.red : Color.clear)
                                         .overlay(
                                             RoundedRectangle(cornerRadius: 20)
-                                                .stroke(Color.appGold, lineWidth: 1.5)
+                                                .stroke(Color.red, lineWidth: 1.5)
                                         )
                                 )
                         }
@@ -74,24 +92,22 @@ struct OffersView: View {
                         }) {
                             Text("Événements")
                                 .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(viewModel.selectedOfferType == .event ? .black : .white)
-                                .padding(.horizontal, 20)
+                                .foregroundColor(viewModel.selectedOfferType == .event ? .white : .red)
+                                .frame(maxWidth: .infinity)
                                 .padding(.vertical, 10)
                                 .background(
                                     RoundedRectangle(cornerRadius: 20)
-                                        .fill(viewModel.selectedOfferType == .event ? Color.appGold : Color.clear)
+                                        .fill(viewModel.selectedOfferType == .event ? Color.red : Color.clear)
                                         .overlay(
                                             RoundedRectangle(cornerRadius: 20)
-                                                .stroke(Color.appGold, lineWidth: 1.5)
+                                                .stroke(Color.red, lineWidth: 1.5)
                                         )
                                 )
                         }
-                        
-                        Spacer()
                     }
                     .padding(.horizontal, 20)
                     
-                    // Boutons "Offres actuelles" et "À venir"
+                    // Boutons "Offres actuelles" et "À venir" (prennent toute la largeur)
                     HStack(spacing: 12) {
                         // Bouton "Offres actuelles"
                         Button(action: {
@@ -105,21 +121,22 @@ struct OffersView: View {
                         }) {
                             HStack(spacing: 8) {
                                 Image(systemName: "mappin.circle.fill")
-                                    .foregroundColor(viewModel.offerTimeMode == .current ? .white : .appRed)
+                                    .foregroundColor(viewModel.offerTimeMode == .current ? .white : .red)
                                     .font(.system(size: 14))
                                 
                                 Text("Offres actuelles")
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(viewModel.offerTimeMode == .current ? .white : .appRed)
+                                    .foregroundColor(viewModel.offerTimeMode == .current ? .white : .red)
                             }
+                            .frame(maxWidth: .infinity)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 10)
                             .background(
                                 RoundedRectangle(cornerRadius: 20)
-                                    .fill(viewModel.offerTimeMode == .current ? Color.appRed : Color.white)
+                                    .fill(viewModel.offerTimeMode == .current ? Color.red : Color.white)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 20)
-                                            .stroke(Color.appRed, lineWidth: 1.5)
+                                            .stroke(Color.red, lineWidth: 1.5)
                                     )
                             )
                         }
@@ -132,30 +149,46 @@ struct OffersView: View {
                             }
                         }) {
                             HStack(spacing: 8) {
-                                Image(systemName: "arrow.right.circle.fill")
-                                    .foregroundColor(viewModel.offerTimeMode == .upcoming ? .white : .appRed)
+                                Image(systemName: "calendar")
+                                    .foregroundColor(viewModel.offerTimeMode == .upcoming ? .white : .red)
                                     .font(.system(size: 14))
                                 
                                 Text("À venir")
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(viewModel.offerTimeMode == .upcoming ? .white : .appRed)
+                                    .foregroundColor(viewModel.offerTimeMode == .upcoming ? .white : .red)
                             }
+                            .frame(maxWidth: .infinity)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 10)
                             .background(
                                 RoundedRectangle(cornerRadius: 20)
-                                    .fill(viewModel.offerTimeMode == .upcoming ? Color.appRed : Color.white)
+                                    .fill(viewModel.offerTimeMode == .upcoming ? Color.red : Color.white)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 20)
-                                            .stroke(Color.appRed, lineWidth: 1.5)
+                                            .stroke(Color.red, lineWidth: 1.5)
                                     )
                             )
                         }
-                        
-                        Spacer()
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 8)
+                    
+                    // Filtres de date (affichés en permanence quand on est sur "À venir")
+                    if viewModel.offerTimeMode == .upcoming {
+                        DateRangePicker(
+                            startDate: $viewModel.startDate,
+                            endDate: $viewModel.endDate,
+                            alwaysExpanded: true
+                        )
+                        .padding(.horizontal, 20)
+                        .padding(.top, 8)
+                        .onChange(of: viewModel.startDate) { _, _ in
+                            viewModel.searchOffers()
+                        }
+                        .onChange(of: viewModel.endDate) { _, _ in
+                            viewModel.searchOffers()
+                        }
+                    }
                     
                     // Champs de recherche - Design compact et épuré (comme HomeView)
                     VStack(spacing: 6) {
@@ -263,20 +296,6 @@ struct OffersView: View {
                             .cornerRadius(8)
                         }
                         .buttonStyle(PlainButtonStyle())
-                        
-                        // Filtre par dates (seulement pour "À venir")
-                        if viewModel.offerTimeMode == .upcoming {
-                            DateRangePicker(
-                                startDate: $viewModel.startDate,
-                                endDate: $viewModel.endDate
-                            )
-                            .onChange(of: viewModel.startDate) { _, _ in
-                                viewModel.searchOffers()
-                            }
-                            .onChange(of: viewModel.endDate) { _, _ in
-                                viewModel.searchOffers()
-                            }
-                        }
                     }
                     .padding(.horizontal, 20)
                     .zIndex(1000) // zIndex élevé pour le VStack des champs de recherche

@@ -170,7 +170,7 @@ struct ProSubscriptionView: View {
                                         .foregroundColor(.white)
                                     
                                     // WebView Stripe embedded
-                                    StripePaymentView()
+                                    StripePaymentView(filterCategory: "PROFESSIONAL")
                                         .frame(height: 600)
                                         .cornerRadius(12)
                                 }

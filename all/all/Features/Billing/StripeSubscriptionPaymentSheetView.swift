@@ -22,17 +22,20 @@ struct StripeSubscriptionPaymentSheetView: UIViewControllerRepresentable {
     // Optionnel : Customer ID et Ephemeral Key (pour les abonnements récurrents)
     let customerId: String?
     let ephemeralKeySecret: String?
+    let publishableKey: String? // Clé publique Stripe renvoyée par le backend
     
     init(
         paymentIntentClientSecret: String,
         onPaymentResult: @escaping (Bool, String?) -> Void,
         customerId: String? = nil,
-        ephemeralKeySecret: String? = nil
+        ephemeralKeySecret: String? = nil,
+        publishableKey: String? = nil
     ) {
         self.paymentIntentClientSecret = paymentIntentClientSecret
         self.onPaymentResult = onPaymentResult
         self.customerId = customerId
         self.ephemeralKeySecret = ephemeralKeySecret
+        self.publishableKey = publishableKey
     }
     
     func makeUIViewController(context: Context) -> UIViewController {
@@ -40,8 +43,15 @@ struct StripeSubscriptionPaymentSheetView: UIViewControllerRepresentable {
         let viewController = UIViewController()
         
         // 1. Configurer la clé publique Stripe
-        // Clé publique de test fournie par le backend
-        StripeAPI.defaultPublishableKey = "pk_test_51SiVbTC2niFYoaySD4zt1bKI5Z6m3bcmedZGBZIU3jGCaMTaI6D6sHcW7dnd0ywxTbfswQpV1njEkg2D69vxDCEc00c46UdWsb"
+        // Utiliser la clé publique renvoyée par le backend, ou fallback sur la clé de test
+        if let publishableKey = publishableKey, !publishableKey.isEmpty {
+            StripeAPI.defaultPublishableKey = publishableKey
+            print("[StripeSubscriptionPaymentSheetView] Clé publique utilisée depuis le backend: \(publishableKey.prefix(20))...")
+        } else {
+            // Fallback sur la clé de test (pour compatibilité)
+            StripeAPI.defaultPublishableKey = "pk_test_51SiVbTC2niFYoaySD4zt1bKI5Z6m3bcmedZGBZIU3jGCaMTaI6D6sHcW7dnd0ywxTbfswQpV1njEkg2D69vxDCEc00c46UdWsb"
+            print("[StripeSubscriptionPaymentSheetView] ⚠️ Clé publique non fournie par le backend, utilisation de la clé de test par défaut")
+        }
         
         // 2. Créer la configuration du Payment Sheet
         var configuration = PaymentSheet.Configuration()
@@ -82,23 +92,33 @@ struct StripeSubscriptionPaymentSheetView: UIViewControllerRepresentable {
         )
         
         // 7. Présenter le Payment Sheet
+        print("💳 [STRIPE] Présentation du Payment Sheet à l'utilisateur...")
         DispatchQueue.main.async {
             paymentSheet.present(from: viewController) { paymentResult in
-                print("[StripeSubscriptionPaymentSheetView] Payment result: \(paymentResult)")
+                print("═══════════════════════════════════════════════════════════")
+                print("💳 [STRIPE] Résultat du Payment Sheet reçu")
+                print("═══════════════════════════════════════════════════════════")
+                print("💳 [STRIPE] Type de résultat: \(paymentResult)")
+                
                 switch paymentResult {
                 case .completed:
-                    print("[StripeSubscriptionPaymentSheetView] Payment completed")
+                    print("✅ [STRIPE] Payment completed - Paiement réussi")
+                    print("   → L'utilisateur a complété le paiement avec succès")
                     onPaymentResult(true, nil)
                 case .failed(let error):
-                    print("[StripeSubscriptionPaymentSheetView] Payment failed: \(error.localizedDescription)")
+                    print("❌ [STRIPE] Payment failed - Échec du paiement")
+                    print("   - Erreur: \(error.localizedDescription)")
+                    print("   - Type: \(type(of: error))")
                     onPaymentResult(false, error.localizedDescription)
                 case .canceled:
-                    print("[StripeSubscriptionPaymentSheetView] Payment canceled")
+                    print("⚠️ [STRIPE] Payment canceled - Paiement annulé par l'utilisateur")
+                    print("   → L'utilisateur a fermé le Payment Sheet sans payer")
                     onPaymentResult(false, "Paiement annulé")
                 @unknown default:
-                    print("[StripeSubscriptionPaymentSheetView] Payment unknown error")
+                    print("❓ [STRIPE] Unknown payment result - Résultat inconnu")
                     onPaymentResult(false, "Erreur inconnue")
                 }
+                print("═══════════════════════════════════════════════════════════")
             }
         }
         

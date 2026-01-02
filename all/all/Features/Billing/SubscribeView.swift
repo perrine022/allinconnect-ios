@@ -11,7 +11,7 @@ struct SubscribeView: View {
     @StateObject private var viewModel = BillingViewModel()
     @Environment(\.dismiss) private var dismiss
     @State private var showPaymentSheet = false
-    @State private var paymentSheetData: (customerId: String, ephemeralKey: String, clientSecret: String)?
+    @State private var paymentSheetData: (customerId: String, ephemeralKey: String, clientSecret: String, publishableKey: String?)?
     
     var body: some View {
         ZStack {
@@ -187,7 +187,8 @@ struct SubscribeView: View {
                         }
                     },
                     customerId: data.customerId,
-                    ephemeralKeySecret: data.ephemeralKey
+                    ephemeralKeySecret: data.ephemeralKey,
+                    publishableKey: data.publishableKey
                 )
                 .ignoresSafeArea()
             }
@@ -200,17 +201,9 @@ struct SubscribeView: View {
     }
     
     private func startSubscription() async {
-        do {
-            let response = try await viewModel.startSubscription()
-            paymentSheetData = (
-                customerId: response.customerId,
-                ephemeralKey: response.ephemeralKeySecret,
-                clientSecret: response.paymentIntentClientSecret
-            )
-            showPaymentSheet = true
-        } catch {
-            // L'erreur est déjà gérée dans le ViewModel
-        }
+        // TODO: À réimplémenter selon les nouvelles spécifications backend
+        print("[SubscribeView] ⚠️ startSubscription() - À implémenter")
+        // L'erreur est déjà gérée dans le ViewModel
     }
     
     private func formatDate(_ date: Date) -> String {

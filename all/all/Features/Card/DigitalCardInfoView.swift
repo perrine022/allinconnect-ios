@@ -126,7 +126,7 @@ struct DigitalCardInfoView: View {
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .navigationDestination(item: $stripePaymentNavigationId) { _ in
-            StripePaymentView()
+            StripePaymentView(filterCategory: "CLIENT")
         }
     }
 }
@@ -139,11 +139,14 @@ struct BenefitCard: View {
     
     var body: some View {
         HStack(spacing: 16) {
-            // Image -10%
-            Image("Discount10Percent")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 40, height: 40)
+            // Badge -10% vert (comme sur les fiches pros)
+            Text("-10%")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .background(Color.green)
+                .cornerRadius(8)
             
             // Texte
             VStack(alignment: .leading, spacing: 4) {
@@ -165,7 +168,7 @@ struct BenefitCard: View {
                 .fill(Color.appDarkRed2.opacity(0.6))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.appRed.opacity(0.3), lineWidth: 1)
+                        .stroke(Color.red.opacity(0.3), lineWidth: 1)
                 )
         )
     }

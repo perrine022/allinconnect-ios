@@ -57,15 +57,20 @@ struct Offer: Identifiable, Hashable, Codable {
         self.apiId = apiId
     }
     
-    /// Construit l'URL complète de l'image en concaténant l'URL de base du serveur avec le chemin relatif
+    /// Retourne l'URL complète de l'image
+    /// Le backend renvoie maintenant des URLs absolues directement
     func fullImageUrl() -> String? {
         guard let imageUrl = imageUrl, !imageUrl.isEmpty else {
             return nil
         }
         
-        // Construire l'URL complète
+        // Si l'URL commence déjà par "http", c'est une URL absolue, on l'utilise directement
+        if imageUrl.hasPrefix("http://") || imageUrl.hasPrefix("https://") {
+            return imageUrl
+        }
+        
+        // Sinon, construire l'URL complète (fallback pour compatibilité)
         let baseURL = APIConfig.baseURL.replacingOccurrences(of: "/api/v1", with: "")
-        // Si imageUrl commence déjà par /, on le garde, sinon on l'ajoute
         let path = imageUrl.hasPrefix("/") ? imageUrl : "/\(imageUrl)"
         return "\(baseURL)\(path)"
     }

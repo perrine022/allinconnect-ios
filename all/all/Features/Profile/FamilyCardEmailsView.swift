@@ -203,11 +203,16 @@ class FamilyCardEmailsViewModel: ObservableObject {
                     switch apiError {
                     case .httpError(let statusCode, let message):
                         if statusCode == 404 || statusCode == 403 {
-                            // Pas de carte famille, initialiser avec des champs vides
+                            // Pas de carte famille ou utilisateur non lié à sa carte
                             members = []
                             invitedEmails = []
                             emails = ["", "", "", ""]
-                            errorMessage = nil // Pas d'erreur, juste pas de carte famille
+                            // Afficher un message explicite si le backend renvoie un message spécifique
+                            if let errorMsg = message, errorMsg.contains("carte famille") || errorMsg.contains("propriétaire") {
+                                self.errorMessage = "Vous n'avez pas de carte famille ou vous n'êtes pas le propriétaire de la carte."
+                            } else {
+                                self.errorMessage = nil // Pas d'erreur, juste pas de carte famille
+                            }
                         } else {
                             errorMessage = message ?? "Erreur lors du chargement des membres"
                         }

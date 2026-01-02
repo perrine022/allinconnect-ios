@@ -11,6 +11,7 @@ struct NotificationPreferencesView: View {
     @StateObject private var viewModel = NotificationPreferencesViewModel()
     @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var profileAPIService = ProfileAPIService()
     
     var body: some View {
         GeometryReader { geometry in
@@ -84,7 +85,7 @@ struct NotificationPreferencesView: View {
                                         Slider(
                                             value: $viewModel.notificationRadius,
                                             in: 5...50,
-                                            step: 5
+                                            step: 1
                                         )
                                         .tint(.red)
                                         
@@ -143,6 +144,44 @@ struct NotificationPreferencesView: View {
                                 .padding(.horizontal, 20)
                             }
                             
+                            // Messages d'erreur/succès
+                            if let errorMessage = viewModel.errorMessage {
+                                Text(errorMessage)
+                                    .font(.system(size: 14, weight: .regular))
+                                    .foregroundColor(.red)
+                                    .padding(.horizontal, 20)
+                            }
+                            
+                            if let successMessage = viewModel.successMessage {
+                                Text(successMessage)
+                                    .font(.system(size: 14, weight: .regular))
+                                    .foregroundColor(.green)
+                                    .padding(.horizontal, 20)
+                            }
+                            
+                            // Bouton de sauvegarde
+                            Button(action: {
+                                viewModel.savePreferences()
+                            }) {
+                                HStack {
+                                    if viewModel.isSaving {
+                                        ProgressView()
+                                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                            .padding(.trailing, 8)
+                                    }
+                                    Text(viewModel.isSaving ? "Sauvegarde..." : "Sauvegarder les préférences")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.white)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(viewModel.isSaving ? Color.gray : Color.red)
+                                .cornerRadius(12)
+                            }
+                            .disabled(viewModel.isSaving)
+                            .padding(.horizontal, 20)
+                            .padding(.top, 8)
+                            
                             Spacer()
                                 .frame(height: 100)
                         }
@@ -166,6 +205,16 @@ struct NotificationPreferencesView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .task {
+            // Charger les préférences depuis userLight si disponible, sinon depuis l'API
+            do {
+                let userLight = try await profileAPIService.getUserLight()
+                viewModel.loadPreferences(from: userLight)
+            } catch {
+                // Si erreur, charger directement depuis l'API
+                viewModel.loadPreferences()
+            }
+        }
     }
     
     private func bindingForCategory(_ key: String) -> Binding<Bool> {

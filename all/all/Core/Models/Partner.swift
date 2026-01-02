@@ -24,6 +24,7 @@ struct Partner: Identifiable, Hashable {
     let discount: Int?
     let imageName: String
     let headerImageName: String
+    let establishmentImageUrl: String? // URL absolue de l'image de l'établissement (depuis le backend)
     var isFavorite: Bool
     let apiId: Int? // ID original de l'API pour pouvoir gérer les favoris
     
@@ -44,6 +45,7 @@ struct Partner: Identifiable, Hashable {
         discount: Int? = nil,
         imageName: String,
         headerImageName: String,
+        establishmentImageUrl: String? = nil,
         isFavorite: Bool = false,
         apiId: Int? = nil
     ) {
@@ -63,6 +65,7 @@ struct Partner: Identifiable, Hashable {
         self.discount = discount
         self.imageName = imageName
         self.headerImageName = headerImageName
+        self.establishmentImageUrl = establishmentImageUrl
         self.isFavorite = isFavorite
         self.apiId = apiId
     }

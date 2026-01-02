@@ -32,8 +32,12 @@ class ClientSubscriptionViewModel: ObservableObject {
         Task {
             do {
                 let allPlans = try await subscriptionsAPIService.getPlans()
-                // Filtrer uniquement les plans INDIVIDUAL et FAMILY
+                print("[ClientSubscriptionViewModel] Plans récupérés: \(allPlans.count) plans")
+                
+                // Filtrer uniquement les plans INDIVIDUAL et FAMILY (pour les clients)
                 plans = allPlans.filter { $0.category == "INDIVIDUAL" || $0.category == "FAMILY" }
+                print("[ClientSubscriptionViewModel] Plans filtrés pour CLIENT (INDIVIDUAL + FAMILY): \(plans.count) plans")
+                
                 // Sélectionner le plan mensuel individuel par défaut
                 selectedPlan = plans.first { $0.category == "INDIVIDUAL" && $0.isMonthly } ?? plans.first
                 isLoading = false
@@ -45,6 +49,7 @@ class ClientSubscriptionViewModel: ObservableObject {
         }
     }
 }
+
 
 
 

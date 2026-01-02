@@ -19,6 +19,7 @@ struct Professional: Identifiable, Codable, Hashable {
     let phone: String?
     let email: String?
     let profileImageName: String
+    let establishmentImageUrl: String? // URL absolue de l'image de l'établissement (depuis le backend)
     let websiteURL: String?
     let instagramURL: String?
     let description: String?
@@ -40,6 +41,7 @@ struct Professional: Identifiable, Codable, Hashable {
         phone: String? = nil,
         email: String? = nil,
         profileImageName: String,
+        establishmentImageUrl: String? = nil,
         websiteURL: String? = nil,
         instagramURL: String? = nil,
         description: String? = nil,
@@ -56,6 +58,7 @@ struct Professional: Identifiable, Codable, Hashable {
         self.phone = phone
         self.email = email
         self.profileImageName = profileImageName
+        self.establishmentImageUrl = establishmentImageUrl
         self.websiteURL = websiteURL
         self.instagramURL = instagramURL
         self.description = description

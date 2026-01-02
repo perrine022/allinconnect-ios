@@ -452,11 +452,18 @@ class ManageEstablishmentViewModel: ObservableObject {
                 profession = userMe.profession
                 category = userMe.category
                 
-                // Construire l'URL complète de l'image si elle existe
+                // Le backend renvoie maintenant des URLs absolues directement
+                // Si l'URL commence par "http", c'est déjà une URL absolue
                 if let imageUrl = userMe.establishmentImageUrl, !imageUrl.isEmpty {
-                    let baseURL = APIConfig.baseURL.replacingOccurrences(of: "/api/v1", with: "")
-                    let path = imageUrl.hasPrefix("/") ? imageUrl : "/\(imageUrl)"
-                    establishmentImageUrl = "\(baseURL)\(path)"
+                    if imageUrl.hasPrefix("http://") || imageUrl.hasPrefix("https://") {
+                        // URL absolue, utiliser directement
+                        establishmentImageUrl = imageUrl
+                    } else {
+                        // URL relative, construire l'URL complète (fallback pour compatibilité)
+                        let baseURL = APIConfig.baseURL.replacingOccurrences(of: "/api/v1", with: "")
+                        let path = imageUrl.hasPrefix("/") ? imageUrl : "/\(imageUrl)"
+                        establishmentImageUrl = "\(baseURL)\(path)"
+                    }
                 } else {
                     establishmentImageUrl = nil
                 }

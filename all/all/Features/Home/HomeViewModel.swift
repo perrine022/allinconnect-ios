@@ -102,33 +102,40 @@ class HomeViewModel: ObservableObject {
     func loadOffersByCity() {
         Task { @MainActor in
             do {
+                print("[HomeViewModel] 🔥 Chargement des 4 premières offres pour 'À ne pas louper'")
+                
                 // Récupérer la ville de l'utilisateur depuis son profil
                 let userProfile = try await profileAPIService.getUserMe()
                 
-                guard let userCity = userProfile.city, !userCity.isEmpty else {
-                    print("[HomeViewModel] Aucune ville trouvée pour l'utilisateur, chargement des offres sans filtre")
-                    // Si pas de ville, charger toutes les offres actives (limitées à 5)
-                    let allOffers = try await offersAPIService.getAllOffers()
-                    offers = Array(allOffers.prefix(5)).map { $0.toOffer() }
-                    return
+                let offersResponse: [OfferResponse]
+                
+                if let userCity = userProfile.city, !userCity.isEmpty {
+                    print("[HomeViewModel] Chargement des offres pour la ville: \(userCity)")
+                    // Charger les offres filtrées par ville depuis l'API
+                    offersResponse = try await offersAPIService.getAllOffers(city: userCity)
+                } else {
+                    print("[HomeViewModel] Aucune ville trouvée pour l'utilisateur, chargement de toutes les offres")
+                    // Si pas de ville, charger toutes les offres actives
+                    offersResponse = try await offersAPIService.getAllOffers()
                 }
                 
-                print("[HomeViewModel] Chargement des offres pour la ville: \(userCity)")
+                // Prendre les 4 premières offres avec leurs vraies images depuis l'API
+                let limitedOffers = Array(offersResponse.prefix(4))
                 
-                // Charger les offres filtrées par ville depuis l'API
-                let offersResponse = try await offersAPIService.getAllOffers(city: userCity)
+                print("[HomeViewModel] ✅ \(limitedOffers.count) offres chargées depuis l'API")
+                for (index, offer) in limitedOffers.enumerated() {
+                    print("[HomeViewModel]   \(index + 1). \(offer.title) - Image: \(offer.imageUrl ?? "aucune")")
+                }
                 
-                // Limiter à 5 offres maximum
-                let limitedOffers = Array(offersResponse.prefix(5))
-                
-                print("[HomeViewModel] \(limitedOffers.count) offres chargées pour \(userCity)")
-                
-                // Convertir les réponses API en modèles Offer
+                // Convertir les réponses API en modèles Offer (avec les vraies images)
                 offers = limitedOffers.map { $0.toOffer() }
+                
+                print("[HomeViewModel] ✅ Offres converties et prêtes à afficher avec images réelles")
             } catch {
-                print("[HomeViewModel] Erreur lors du chargement des offres par ville: \(error)")
-                // En cas d'erreur, utiliser les données mockées en fallback
-                offers = Array(dataService.getOffers().prefix(5))
+                print("[HomeViewModel] ❌ Erreur lors du chargement des offres: \(error)")
+                print("[HomeViewModel] ⚠️ Utilisation d'un tableau vide au lieu des données mockées")
+                // En cas d'erreur, laisser un tableau vide plutôt que d'utiliser des données mockées
+                offers = []
             }
         }
     }

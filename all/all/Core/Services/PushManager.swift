@@ -13,12 +13,10 @@ import UIKit
 class PushManager: NSObject {
     static let shared = PushManager()
     
-    private let pushRegistrationURL = "https://my-api.com/api/push/register"
+    private let pushRegistrationEndpoint = "/push/register"
     private let storedTokenKey = "apns_device_token"
-    private let storedUserIdKey = "push_user_id"
     
     private var deviceToken: String?
-    private var userId: String?
     
     private override init() {
         super.init()
@@ -52,80 +50,98 @@ class PushManager: NSObject {
         self.deviceToken = tokenString
         UserDefaults.standard.set(tokenString, forKey: storedTokenKey)
         
-        // Enregistrer le token si on a un userId
-        if let userId = getUserId() {
+        // Enregistrer le token si l'utilisateur est connecté (token JWT disponible)
+        if AuthTokenManager.shared.hasToken() {
             Task {
-                await registerTokenWithBackend(token: tokenString, userId: userId)
+                await registerTokenWithBackend(token: tokenString)
             }
         } else {
-            print("PushManager: No userId available, token will be registered after login")
+            print("PushManager: User not logged in, token will be registered after login")
         }
     }
     
     // MARK: - Register Token After Login
-    func registerTokenAfterLogin(userId: String) async {
-        self.userId = userId
-        UserDefaults.standard.set(userId, forKey: storedUserIdKey)
+    func registerTokenAfterLogin() async {
+        // L'utilisateur est identifié via le token JWT dans l'Authorization header
+        // Essayer d'abord le token FCM (Firebase), sinon le token APNS
+        if let fcmToken = UserDefaults.standard.string(forKey: "fcm_token") {
+            await registerTokenWithBackend(token: fcmToken)
+        } else if let token = deviceToken ?? UserDefaults.standard.string(forKey: storedTokenKey) {
+            await registerTokenWithBackend(token: token)
+        }
+    }
+    
+    // MARK: - Register FCM Token (Firebase)
+    func registerFCMToken(_ fcmToken: String) async {
+        // Stocker le token FCM
+        UserDefaults.standard.set(fcmToken, forKey: "fcm_token")
         
-        if let token = deviceToken ?? UserDefaults.standard.string(forKey: storedTokenKey) {
-            await registerTokenWithBackend(token: token, userId: userId)
+        // Enregistrer le token FCM si l'utilisateur est connecté
+        if AuthTokenManager.shared.hasToken() {
+            await registerTokenWithBackend(token: fcmToken)
+        } else {
+            print("PushManager: User not logged in, FCM token will be registered after login")
         }
     }
     
     // MARK: - Unregister Token on Logout
     func unregisterToken() {
-        self.userId = nil
-        UserDefaults.standard.removeObject(forKey: storedUserIdKey)
-        // Note: Le token reste stocké localement mais ne sera plus associé à un userId
+        // Note: Le token reste stocké localement mais ne sera plus associé à un utilisateur
+        // Le backend peut gérer la désactivation du token
     }
     
     // MARK: - Private Methods
     private func loadStoredData() {
         self.deviceToken = UserDefaults.standard.string(forKey: storedTokenKey)
-        self.userId = UserDefaults.standard.string(forKey: storedUserIdKey)
     }
     
-    private func getUserId() -> String? {
-        // D'abord essayer le userId stocké
-        if let userId = self.userId {
-            return userId
+    private func registerTokenWithBackend(token: String) async {
+        // Vérifier que l'utilisateur est connecté (token JWT requis)
+        guard AuthTokenManager.shared.hasToken() else {
+            print("PushManager: Cannot register token - user not authenticated")
+            return
         }
         
-        // Sinon, essayer de récupérer depuis UserDefaults
-        if let userId = UserDefaults.standard.string(forKey: storedUserIdKey) {
-            self.userId = userId
-            return userId
-        }
+        // Déterminer l'environnement (SANDBOX pour debug, PRODUCTION pour release)
+        #if DEBUG
+        let environment = "SANDBOX"
+        #else
+        let environment = "PRODUCTION"
+        #endif
         
-        // En dernier recours, essayer de récupérer depuis l'API
-        // (Cette partie sera appelée de manière asynchrone si nécessaire)
-        return nil
-    }
-    
-    private func registerTokenWithBackend(token: String, userId: String) async {
         let requestBody: [String: Any] = [
-            "userId": userId,
             "token": token,
-            "platform": "ios",
-            "environment": "prod"
+            "platform": "IOS",
+            "environment": environment
         ]
         
-        guard let url = URL(string: pushRegistrationURL) else {
-            print("PushManager: Invalid URL")
+        // Construire l'URL complète en utilisant APIConfig
+        let fullURL = "\(APIConfig.baseURL)\(pushRegistrationEndpoint)"
+        
+        guard let url = URL(string: fullURL) else {
+            print("PushManager: Invalid URL: \(fullURL)")
             return
         }
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
         
-        // Ajouter le token d'authentification si disponible
+        // Ajouter le token d'authentification (requis)
         if let authToken = AuthTokenManager.shared.getToken() {
             request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        } else {
+            print("PushManager: Cannot register token - no authentication token")
+            return
         }
         
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+            
+            print("[PushManager] Registering device token:")
+            print("   URL: POST \(fullURL)")
+            print("   Body: \(requestBody)")
             
             let (data, response) = try await URLSession.shared.data(for: request)
             

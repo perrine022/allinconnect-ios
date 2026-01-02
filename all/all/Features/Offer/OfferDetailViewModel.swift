@@ -92,6 +92,7 @@ class OfferDetailViewModel: ObservableObject {
                         subscriptionPlan: nil,
                         establishmentName: nil,
                         establishmentDescription: nil,
+                        establishmentImageUrl: nil,
                         phoneNumber: nil,
                         website: nil,
                         instagram: nil,

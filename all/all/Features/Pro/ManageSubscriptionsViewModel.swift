@@ -22,12 +22,20 @@ class ManageSubscriptionsViewModel: ObservableObject {
     @Published var nextPaymentDate: String = ""
     @Published var commitmentUntil: String = ""
     
+    // Factures (uniquement pour les pros)
+    @Published var invoices: [InvoiceResponse] = []
+    @Published var isLoadingInvoices: Bool = false
+    @Published var invoiceErrorMessage: String?
+    @Published var isDownloadingInvoice: Bool = false
+    
     private let profileAPIService: ProfileAPIService
     private let subscriptionsAPIService: SubscriptionsAPIService
+    private let invoicesAPIService: InvoicesAPIService
     
     init(
         profileAPIService: ProfileAPIService? = nil,
-        subscriptionsAPIService: SubscriptionsAPIService? = nil
+        subscriptionsAPIService: SubscriptionsAPIService? = nil,
+        invoicesAPIService: InvoicesAPIService? = nil
     ) {
         if let profileAPIService = profileAPIService {
             self.profileAPIService = profileAPIService
@@ -40,6 +48,12 @@ class ManageSubscriptionsViewModel: ObservableObject {
         } else {
             self.subscriptionsAPIService = SubscriptionsAPIService()
         }
+        
+        if let invoicesAPIService = invoicesAPIService {
+            self.invoicesAPIService = invoicesAPIService
+        } else {
+            self.invoicesAPIService = InvoicesAPIService()
+        }
     }
     
     func loadSubscriptionData() async {
@@ -50,11 +64,25 @@ class ManageSubscriptionsViewModel: ObservableObject {
                 // Charger les informations utilisateur avec abonnement
                 let userLight = try await profileAPIService.getUserLight()
                 
+                // Déterminer le type d'utilisateur depuis UserDefaults
+                let userTypeString = UserDefaults.standard.string(forKey: "user_type") ?? "CLIENT"
+                let isPro = userTypeString == "PRO"
+                
                 // Charger tous les plans disponibles
                 let allPlans = try await subscriptionsAPIService.getPlans()
+                print("[ManageSubscriptionsViewModel] Plans récupérés: \(allPlans.count) plans")
+                print("[ManageSubscriptionsViewModel] Type d'utilisateur: \(userTypeString) (isPro: \(isPro))")
                 
-                // Filtrer uniquement les plans PROFESSIONAL
-                availablePlans = allPlans.filter { $0.category == "PROFESSIONAL" }
+                // Filtrer les plans selon le type d'utilisateur
+                if isPro {
+                    // Pour les PRO : uniquement les plans PROFESSIONAL
+                    availablePlans = allPlans.filter { $0.category == "PROFESSIONAL" }
+                    print("[ManageSubscriptionsViewModel] Plans filtrés pour PROFESSIONAL: \(availablePlans.count) plans")
+                } else {
+                    // Pour les CLIENT : uniquement les plans INDIVIDUAL et FAMILY
+                    availablePlans = allPlans.filter { $0.category == "INDIVIDUAL" || $0.category == "FAMILY" }
+                    print("[ManageSubscriptionsViewModel] Plans filtrés pour CLIENT (INDIVIDUAL + FAMILY): \(availablePlans.count) plans")
+                }
                 
                 // Trouver le plan actuel basé sur les informations de l'utilisateur
                 if let subscriptionAmount = userLight.subscriptionAmount {
@@ -162,6 +190,55 @@ class ManageSubscriptionsViewModel: ObservableObject {
             NotificationCenter.default.post(name: NSNotification.Name("SubscriptionUpdated"), object: nil)
             
             isLoading = false
+        }
+    }
+    
+    // MARK: - Invoices Management (uniquement pour les pros)
+    func loadInvoices() async {
+        isLoadingInvoices = true
+        invoiceErrorMessage = nil
+        
+        do {
+            invoices = try await invoicesAPIService.getInvoices()
+            // Trier par date décroissante (plus récentes en premier)
+            invoices.sort { invoice1, invoice2 in
+                invoice1.date > invoice2.date
+            }
+            isLoadingInvoices = false
+        } catch {
+            isLoadingInvoices = false
+            invoiceErrorMessage = "Erreur lors du chargement des factures"
+            print("Erreur lors du chargement des factures: \(error)")
+        }
+    }
+    
+    @Published var downloadedInvoiceURL: URL? = nil
+    @Published var showShareSheet: Bool = false
+    
+    func downloadInvoice(invoiceId: Int) async {
+        isDownloadingInvoice = true
+        invoiceErrorMessage = nil
+        
+        do {
+            let pdfData = try await invoicesAPIService.downloadInvoicePDF(invoiceId: invoiceId)
+            
+            // Sauvegarder le PDF dans le dossier Documents
+            let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            let invoice = invoices.first { $0.id == invoiceId }
+            let fileName = "Facture_\(invoice?.invoiceNumber ?? "\(invoiceId)").pdf"
+            let fileURL = documentsPath.appendingPathComponent(fileName)
+            
+            try pdfData.write(to: fileURL)
+            
+            // Stocker l'URL pour le partage
+            downloadedInvoiceURL = fileURL
+            showShareSheet = true
+            
+            isDownloadingInvoice = false
+        } catch {
+            isDownloadingInvoice = false
+            invoiceErrorMessage = "Erreur lors du téléchargement de la facture"
+            print("Erreur lors du téléchargement de la facture: \(error)")
         }
     }
 }

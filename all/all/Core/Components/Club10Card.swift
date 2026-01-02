@@ -38,12 +38,14 @@ struct Club10Card: View {
             
             Spacer()
             
-            // Image -10% sur fond vert
-            Image("Discount10Percent")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 60, height: 60)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+            // Badge -10% vert (comme sur les fiches pros)
+            Text("-10%")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(Color.green)
+                .cornerRadius(10)
         }
         .padding(20)
         .background(Color(red: 0.95, green: 0.95, blue: 0.95))

@@ -38,7 +38,6 @@ class CardViewModel: ObservableObject {
     private let savingsAPIService: SavingsAPIService
     private let subscriptionsAPIService: SubscriptionsAPIService
     private let dataService: MockDataService // Gardé pour les favoris en fallback
-    private let cacheService = CacheService.shared
     private var cancellables = Set<AnyCancellable>()
     
     init(
@@ -113,46 +112,7 @@ class CardViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         
-        // Charger depuis le cache d'abord si disponible et pas de rafraîchissement forcé
-        if !forceRefresh, let cachedCardData = cacheService.getCardData() {
-            print("[CardViewModel] Chargement depuis le cache")
-            cardNumber = cachedCardData.cardNumber
-            cardType = cachedCardData.cardType
-            isCardActive = cachedCardData.isCardActive
-            cardExpirationDate = cachedCardData.cardExpirationDate
-            isMember = cachedCardData.isMember
-            referralCode = cachedCardData.referralCode
-            referralLink = cachedCardData.referralLink
-            savings = cachedCardData.savings
-            referrals = cachedCardData.referrals
-            wallet = cachedCardData.wallet
-            favoritesCount = cachedCardData.favoritesCount
-            
-            // Charger les données utilisateur depuis le cache profil
-            if let cachedProfile = cacheService.getProfile() {
-                user = User(
-                    firstName: cachedProfile.firstName,
-                    lastName: cachedProfile.lastName,
-                    username: cachedProfile.firstName.lowercased(),
-                    bio: (cachedProfile.isMember ?? false) ? "Membre CLUB10" : "",
-                    profileImageName: "person.circle.fill",
-                    publications: 0,
-                    subscribers: 0,
-                    subscriptions: 0
-                )
-            }
-            
-            hasLoadedOnce = true
-            isLoading = false
-            
-            // Charger les savings depuis l'API et rafraîchir en arrière-plan
-            Task {
-                loadSavings()
-                await refreshCardData()
-            }
-            return
-        }
-        
+        // Toujours charger depuis l'API (pas de cache)
         Task {
             do {
                 // Charger les données complètes depuis /users/me pour avoir le type de carte
@@ -160,9 +120,6 @@ class CardViewModel: ObservableObject {
                 
                 // Charger aussi les données light pour les autres infos
                 let userLight = try await profileAPIService.getUserLight()
-                
-                // Sauvegarder le profil en cache
-                cacheService.saveProfile(userLight)
                 
                 // Mettre à jour les données utilisateur
                 let firstName = userLight.firstName.isEmpty ? (userMe.firstName.isEmpty ? "Utilisateur" : userMe.firstName) : userLight.firstName
@@ -183,6 +140,7 @@ class CardViewModel: ObservableObject {
                 isMember = userLight.isMember ?? false
                 
                 // Déterminer si la carte est active : priorité à userMe.isCardActive, sinon vérifier si card existe
+                // Note: card peut être nil pour un nouvel utilisateur (normal, pas d'erreur)
                 if let cardActive = userMe.isCardActive {
                     isCardActive = cardActive
                 } else if let card = userMe.card, !card.cardNumber.isEmpty {
@@ -194,10 +152,14 @@ class CardViewModel: ObservableObject {
                 }
                 
                 // Récupérer cardNumber et cardType depuis userMe en priorité
+                // Si card est nil, c'est normal pour un nouvel utilisateur (pas encore de carte générée)
                 cardNumber = userMe.card?.cardNumber ?? userLight.card?.cardNumber
                 cardType = userMe.card?.type ?? userLight.card?.type
                 
                 // Log pour debug
+                if userMe.card == nil {
+                    print("[CardViewModel] ℹ️ card est nil (normal pour un nouvel utilisateur sans carte générée)")
+                }
                 print("[CardViewModel] Carte chargée - cardNumber: \(cardNumber ?? "nil"), isCardActive: \(isCardActive), cardType: \(cardType ?? "nil")")
                 print("[CardViewModel] userMe.card: \(userMe.card != nil ? "exists" : "nil"), userMe.isCardActive: \(userMe.isCardActive?.description ?? "nil")")
                 
@@ -245,21 +207,6 @@ class CardViewModel: ObservableObject {
                     await loadCardOwner()
                 }
                 
-                // Sauvegarder les données de carte en cache
-                let cardCacheData = CardCacheData(
-                    cardNumber: cardNumber,
-                    cardType: cardType,
-                    isCardActive: isCardActive,
-                    cardExpirationDate: cardExpirationDate,
-                    isMember: isMember,
-                    referralCode: referralCode,
-                    referralLink: referralLink,
-                    savings: savings,
-                    referrals: referrals,
-                    wallet: wallet,
-                    favoritesCount: favoritesCount
-                )
-                cacheService.saveCardData(cardCacheData)
                 
                 // Charger les partenaires favoris depuis l'API
                 await loadFavoritePartners()
@@ -283,9 +230,6 @@ class CardViewModel: ObservableObject {
         do {
             let userMe = try await profileAPIService.getUserMe()
             let userLight = try await profileAPIService.getUserLight()
-            
-            // Sauvegarder le profil en cache
-            cacheService.saveProfile(userLight)
             
             let firstName = userLight.firstName.isEmpty ? (userMe.firstName.isEmpty ? "Utilisateur" : userMe.firstName) : userLight.firstName
             let lastName = userLight.lastName.isEmpty ? (userMe.lastName.isEmpty ? "" : userMe.lastName) : userLight.lastName
@@ -326,20 +270,6 @@ class CardViewModel: ObservableObject {
                 print("[CardViewModel] Erreur lors du chargement des savings en rafraîchissement: \(error)")
             }
             
-            let cardCacheData = CardCacheData(
-                cardNumber: cardNumberValue,
-                cardType: cardTypeValue,
-                isCardActive: isCardActiveValue,
-                cardExpirationDate: nil, // Peut être ajouté si nécessaire
-                isMember: userLight.isMember ?? false,
-                referralCode: referralCodeValue,
-                referralLink: referralLinkValue,
-                savings: currentSavings,
-                referrals: userLight.referralCount ?? 0,
-                wallet: userLight.walletBalance ?? 0.0,
-                favoritesCount: userLight.favoriteCount ?? 0
-            )
-            cacheService.saveCardData(cardCacheData)
             
             // Si c'est une carte FAMILY ou CLIENT_FAMILY, vérifier si l'utilisateur est propriétaire
             if cardTypeValue == "FAMILY" || cardTypeValue == "CLIENT_FAMILY" {

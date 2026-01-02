@@ -208,7 +208,8 @@ struct StripePaymentView: View {
                         }
                     },
                     customerId: viewModel.customerId,
-                    ephemeralKeySecret: viewModel.ephemeralKeySecret
+                    ephemeralKeySecret: viewModel.ephemeralKeySecret,
+                    publishableKey: viewModel.publishableKey
                 )
             }
         }
@@ -354,11 +355,13 @@ class StripePaymentViewModel: ObservableObject {
     @Published var paymentIntentClientSecret: String? = nil
     @Published var customerId: String? = nil
     @Published var ephemeralKeySecret: String? = nil
+    @Published var publishableKey: String? = nil
+    @Published var currentPaymentIntentId: String? = nil // Pour vérifier le statut si nécessaire
     @Published var showSuccessMessage: Bool = false
     @Published var isActivating: Bool = false // État pour l'écran "Activation en cours"
     
     private let subscriptionsAPIService: SubscriptionsAPIService
-    private let billingAPIService = BillingAPIService()
+    private let paymentAPIService = PaymentAPIService()
     private let profileAPIService = ProfileAPIService()
     
     // Payment Link Stripe fourni (fallback si Payment Sheet non disponible)
@@ -384,18 +387,31 @@ class StripePaymentViewModel: ObservableObject {
                     print("  - \(plan.title): \(plan.formattedPrice) (\(plan.category ?? "N/A") - \(plan.duration ?? "N/A"))")
                 }
                 
-                // Filtrer les plans si une catégorie est spécifiée
+                // Filtrer les plans selon le type d'utilisateur
+                // Si filterCategory est fourni, l'utiliser, sinon déterminer automatiquement depuis UserDefaults
+                let categoryToFilter: String
                 if let filterCategory = filterCategory {
-                    if filterCategory == "CLIENT" {
-                        // Pour les clients, afficher INDIVIDUAL et FAMILY
-                        plans = allPlans.filter { $0.category == "INDIVIDUAL" || $0.category == "FAMILY" }
-                        print("[StripePaymentViewModel] Plans filtrés pour 'CLIENT' (INDIVIDUAL + FAMILY): \(plans.count) plans")
-                    } else {
-                        plans = allPlans.filter { $0.category == filterCategory }
-                        print("[StripePaymentViewModel] Plans filtrés pour '\(filterCategory)': \(plans.count) plans")
-                    }
+                    categoryToFilter = filterCategory
                 } else {
-                    plans = allPlans
+                    // Déterminer automatiquement le type d'utilisateur
+                    let userTypeString = UserDefaults.standard.string(forKey: "user_type") ?? "CLIENT"
+                    categoryToFilter = userTypeString == "PRO" ? "PROFESSIONAL" : "CLIENT"
+                    print("[StripePaymentViewModel] Type d'utilisateur détecté: \(userTypeString) -> catégorie: \(categoryToFilter)")
+                }
+                
+                // Filtrer selon la catégorie
+                if categoryToFilter == "CLIENT" {
+                    // Pour les clients, afficher INDIVIDUAL et FAMILY
+                    plans = allPlans.filter { $0.category == "INDIVIDUAL" || $0.category == "FAMILY" }
+                    print("[StripePaymentViewModel] Plans filtrés pour 'CLIENT' (INDIVIDUAL + FAMILY): \(plans.count) plans")
+                } else if categoryToFilter == "PROFESSIONAL" {
+                    // Pour les pros, afficher uniquement PROFESSIONAL
+                    plans = allPlans.filter { $0.category == "PROFESSIONAL" }
+                    print("[StripePaymentViewModel] Plans filtrés pour 'PROFESSIONAL': \(plans.count) plans")
+                } else {
+                    // Par défaut, ne rien afficher (sécurité)
+                    plans = []
+                    print("[StripePaymentViewModel] ⚠️ Catégorie inconnue '\(categoryToFilter)', aucun plan affiché")
                 }
                 
                 // Sélectionner le premier plan par défaut
@@ -457,50 +473,98 @@ class StripePaymentViewModel: ObservableObject {
         print("Retour du paiement Stripe - Vérification de l'abonnement en cours...")
     }
     
-    // MARK: - Stripe Payment Sheet Integration (Étapes A, B, C)
+    // MARK: - Stripe Payment Sheet Integration
     
-    /// Étape A : Récupérer les secrets depuis le backend
-    /// Étape B : Configurer et présenter le Payment Sheet
-    /// Étape C : Vérifier le statut après paiement réussi
+    /// Nouveau flux de paiement avec Payment Sheet (simplifié)
+    /// Le backend récupère automatiquement le userId depuis le JWT
+    /// 1. Convertir le prix en centimes
+    /// 2. Appeler POST /api/v1/payment/payment-sheet avec les détails (sans userId)
+    /// 3. Afficher le Payment Sheet avec les secrets reçus
     func processPaymentWithStripeSheet(plan: SubscriptionPlanResponse) async {
+        print("═══════════════════════════════════════════════════════════")
+        print("💳 [PAIEMENT] Début du processus de paiement")
+        print("═══════════════════════════════════════════════════════════")
+        print("💳 [PAIEMENT] Plan sélectionné:")
+        print("   - ID: \(plan.id)")
+        print("   - Titre: \(plan.title)")
+        print("   - Prix: \(plan.price)€")
+        print("   - Catégorie: \(plan.category ?? "N/A")")
+        print("   - Durée: \(plan.duration ?? "N/A")")
+        
         isProcessingPayment = true
         errorMessage = nil
         
         do {
-            // ÉTAPE A : Appeler POST /api/billing/subscription/start
-            print("[StripePaymentViewModel] Étape A : Démarrage de l'abonnement pour planId=\(plan.id)")
-            let startSubscriptionResponse = try await billingAPIService.startSubscription()
+            // ÉTAPE 1 : Convertir le prix en centimes (ex: 9.99€ → 999 centimes)
+            print("💳 [PAIEMENT] ÉTAPE 1 : Conversion du prix en centimes")
+            let amountInCents = Int(plan.price * 100)
+            print("   ✅ \(plan.price)€ = \(amountInCents) centimes")
             
-            print("[StripePaymentViewModel] ✅ Secrets récupérés avec succès")
-            print("[StripePaymentViewModel]   - customerId: \(startSubscriptionResponse.customerId)")
-            print("[StripePaymentViewModel]   - subscriptionId: \(startSubscriptionResponse.subscriptionId)")
-            print("[StripePaymentViewModel]   - paymentIntentClientSecret: \(startSubscriptionResponse.paymentIntentClientSecret.prefix(20))...")
-            print("[StripePaymentViewModel]   - ephemeralKeySecret: \(startSubscriptionResponse.ephemeralKeySecret.prefix(20))...")
+            // ÉTAPE 2 : Appeler POST /api/v1/payment/payment-sheet
+            // Le backend récupère automatiquement le userId depuis le JWT, pas besoin de l'envoyer
+            print("💳 [PAIEMENT] ÉTAPE 2 : Préparation de la requête Payment Sheet")
+            print("   - Montant: \(amountInCents) centimes")
+            print("   - Devise: eur")
+            print("   - Description: \(plan.description ?? "Abonnement \(plan.title)")")
+            print("   - Capture immédiate: true")
+            print("   - userId: Récupéré automatiquement depuis le JWT par le backend")
+            
+            let paymentSheetRequest = PaymentSheetRequest(
+                amount: amountInCents,
+                currency: "eur",
+                description: plan.description ?? "Abonnement \(plan.title)",
+                captureImmediately: true
+            )
+            
+            print("💳 [PAIEMENT] ÉTAPE 3 : Appel API POST /api/v1/payment/payment-sheet")
+            let paymentSheetResponse = try await paymentAPIService.createPaymentSheet(request: paymentSheetRequest)
+            
+            print("💳 [PAIEMENT] ✅ Réponse reçue du backend avec succès")
+            print("   - paymentIntent: \(paymentSheetResponse.paymentIntent.prefix(30))...")
+            print("   - customer: \(paymentSheetResponse.customer)")
+            print("   - ephemeralKey: \(paymentSheetResponse.ephemeralKey.prefix(30))...")
+            print("   - publishableKey: \(paymentSheetResponse.publishableKey.prefix(30))...")
             
             // Stocker les secrets pour le Payment Sheet
-            customerId = startSubscriptionResponse.customerId
-            ephemeralKeySecret = startSubscriptionResponse.ephemeralKeySecret
-            paymentIntentClientSecret = startSubscriptionResponse.paymentIntentClientSecret
+            // Le backend retourne "paymentIntent" qui est le clientSecret complet (format: "pi_xxx_secret_xxx")
+            print("💳 [PAIEMENT] ÉTAPE 4 : Stockage des secrets pour le Payment Sheet")
+            paymentIntentClientSecret = paymentSheetResponse.paymentIntent
+            customerId = paymentSheetResponse.customer
+            ephemeralKeySecret = paymentSheetResponse.ephemeralKey
+            publishableKey = paymentSheetResponse.publishableKey
+            print("   ✅ Secrets stockés dans le ViewModel")
             
-            // ÉTAPE B : Présenter le Payment Sheet
-            print("[StripePaymentViewModel] Étape B : Présentation du Payment Sheet")
+            // Extraire le paymentIntentId pour vérification du statut si nécessaire
+            // Format: "pi_xxx_secret_xxx" -> extraire "pi_xxx"
+            if let paymentIntentId = paymentSheetResponse.paymentIntent.components(separatedBy: "_secret_").first {
+                currentPaymentIntentId = paymentIntentId
+                print("   ✅ PaymentIntentId extrait: \(paymentIntentId)")
+            }
+            
+            // ÉTAPE 5 : Présenter le Payment Sheet
+            print("💳 [PAIEMENT] ÉTAPE 5 : Présentation du Payment Sheet Stripe")
+            print("   → Affichage de l'interface de paiement à l'utilisateur")
             showPaymentSheet = true
+            print("═══════════════════════════════════════════════════════════")
             
         } catch {
-            print("[StripePaymentViewModel] ❌ Erreur lors du démarrage de l'abonnement: \(error)")
+            print("═══════════════════════════════════════════════════════════")
+            print("❌ [PAIEMENT] ERREUR lors de l'initialisation du paiement")
+            print("═══════════════════════════════════════════════════════════")
+            print("❌ [PAIEMENT] Type d'erreur: \(type(of: error))")
+            print("❌ [PAIEMENT] Message: \(error.localizedDescription)")
             
             if let apiError = error as? APIError {
+                print("❌ [PAIEMENT] Erreur API détectée")
                 switch apiError {
                 case .unauthorized(let reason):
-                    // Afficher le message d'erreur précis du backend
+                    print("❌ [PAIEMENT] Erreur 401 - Non autorisé")
                     if let reason = reason {
+                        print("   - Raison: \(reason)")
                         errorMessage = apiError.errorDescription ?? "Erreur d'authentification. Veuillez vous reconnecter."
-                        print("[StripePaymentViewModel] Raison de l'erreur 401: \(reason)")
                         
-                        // Si le token est expiré ou l'utilisateur n'existe plus, forcer la déconnexion
                         if reason == "Token expired" || reason == "User not found" || reason == "Invalid token" {
-                            print("[StripePaymentViewModel] ⚠️ Token invalide/expiré - Déconnexion forcée")
-                            // Forcer la déconnexion après un court délai pour permettre l'affichage du message
+                            print("⚠️ [PAIEMENT] Token invalide/expiré - Déconnexion forcée dans 2 secondes")
                             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                                 LoginViewModel.logout()
                                 NotificationCenter.default.post(name: NSNotification.Name("UserDidLogout"), object: nil)
@@ -510,69 +574,101 @@ class StripePaymentViewModel: ObservableObject {
                         errorMessage = "Erreur d'authentification. Veuillez vous reconnecter."
                     }
                 case .networkError:
+                    print("❌ [PAIEMENT] Erreur réseau")
                     errorMessage = "Erreur de connexion. Vérifiez votre connexion internet."
                 case .invalidResponse:
+                    print("❌ [PAIEMENT] Réponse invalide du serveur")
                     errorMessage = "Réponse invalide du serveur. Veuillez réessayer."
                 default:
+                    print("❌ [PAIEMENT] Autre erreur API")
                     errorMessage = "Erreur lors de l'initialisation du paiement. Veuillez réessayer."
                 }
             } else {
+                print("❌ [PAIEMENT] Erreur inconnue")
                 errorMessage = "Erreur lors de l'initialisation du paiement. Veuillez réessayer."
             }
+            print("═══════════════════════════════════════════════════════════")
             isProcessingPayment = false
         }
     }
     
     /// Étape C : Appelée après que le Payment Sheet renvoie .completed
     func handlePaymentSheetResult(success: Bool, error: String?) async {
+        print("═══════════════════════════════════════════════════════════")
+        print("💳 [PAIEMENT] Résultat du Payment Sheet reçu")
+        print("═══════════════════════════════════════════════════════════")
+        
         isProcessingPayment = false
         showPaymentSheet = false
         
         if success {
-            print("[StripePaymentViewModel] ✅ Paiement réussi dans le Payment Sheet")
-            print("[StripePaymentViewModel] Étape C : Vérification du statut premium...")
+            print("✅ [PAIEMENT] Paiement réussi dans le Payment Sheet Stripe")
+            print("💳 [PAIEMENT] ÉTAPE 6 : Vérification du statut premium...")
             
             // Afficher l'écran "Activation en cours"
             isActivating = true
+            print("   → Affichage de l'écran 'Activation en cours'")
             
-            // Attendre 0.5 seconde pour que le webhook soit traité
-            try? await Task.sleep(nanoseconds: 500_000_000)
+            // Attendre un court délai pour que le webhook Stripe soit traité par le backend
+            // Le backend met automatiquement à jour tous les champs (subscriptionType, renewalDate, etc.)
+            print("   ⏳ Attente de 1 seconde pour laisser le webhook Stripe traiter le paiement...")
+            try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 seconde
+            print("   ✅ Délai écoulé, début de la vérification du statut")
             
-            // Utiliser PaymentStatusManager avec retry amélioré (7 tentatives avec backoff exponentiel)
-            // Source de vérité : GET /api/billing/status (pas /users/me/light)
-            let isPremiumConfirmed = await PaymentStatusManager.shared.checkPaymentStatus(maxRetries: 7)
+            // Rafraîchir simplement les données utilisateur avec GET /api/v1/users/me
+            // Le backend a déjà tout mis à jour, on vérifie juste que premiumEnabled est true
+            // Option A simple : quelques retries si le réseau est lent (max 3 tentatives)
+            print("💳 [PAIEMENT] ÉTAPE 7 : Vérification du statut premium (max 3 tentatives)")
+            let isPremiumConfirmed = await PaymentStatusManager.shared.checkPaymentStatus(maxRetries: 3)
             
             // Masquer l'écran d'activation
             isActivating = false
+            print("   → Masquage de l'écran 'Activation en cours'")
             
             if isPremiumConfirmed {
                 // Afficher le message de succès
                 showSuccessMessage = true
-                print("[StripePaymentViewModel] 🎉 Statut premium confirmé !")
+                print("═══════════════════════════════════════════════════════════")
+                print("🎉 [PAIEMENT] ✅ SUCCÈS COMPLET DU PAIEMENT")
+                print("═══════════════════════════════════════════════════════════")
+                print("   ✅ Paiement validé par Stripe")
+                print("   ✅ Statut premium confirmé par le backend")
+                print("   ✅ Abonnement activé avec succès")
                 
                 // Notifier les autres parties de l'app
                 NotificationCenter.default.post(name: NSNotification.Name("SubscriptionUpdated"), object: nil)
+                print("   ✅ Notification 'SubscriptionUpdated' envoyée")
                 
                 // Masquer le message après 3 secondes
                 Task { @MainActor in
                     try? await Task.sleep(nanoseconds: 3_000_000_000)
                     showSuccessMessage = false
+                    print("   → Message de succès masqué")
                 }
             } else {
                 // Le statut n'a pas été confirmé après tous les retries
+                print("═══════════════════════════════════════════════════════════")
+                print("⚠️ [PAIEMENT] Paiement réussi mais statut non confirmé")
+                print("═══════════════════════════════════════════════════════════")
+                print("   ✅ Paiement validé par Stripe")
+                print("   ⚠️ Statut premium non confirmé après 3 tentatives")
+                print("   → Le webhook peut prendre plus de temps")
                 errorMessage = "Paiement réussi, mais la vérification du statut prend plus de temps que prévu. Veuillez rafraîchir votre profil dans quelques instants."
-                print("[StripePaymentViewModel] ⚠️ Statut premium non confirmé après tous les retries")
             }
         } else {
             // Le paiement a échoué ou a été annulé
+            print("═══════════════════════════════════════════════════════════")
+            print("❌ [PAIEMENT] ÉCHEC DU PAIEMENT")
+            print("═══════════════════════════════════════════════════════════")
             if let error = error {
+                print("   ❌ Erreur: \(error)")
                 errorMessage = error
-                print("[StripePaymentViewModel] ❌ Paiement échoué: \(error)")
             } else {
+                print("   ⚠️ Paiement annulé par l'utilisateur")
                 errorMessage = "Paiement annulé"
-                print("[StripePaymentViewModel] ⚠️ Paiement annulé par l'utilisateur")
             }
         }
+        print("═══════════════════════════════════════════════════════════")
     }
 }
 

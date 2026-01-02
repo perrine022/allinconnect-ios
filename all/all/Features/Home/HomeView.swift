@@ -359,6 +359,10 @@ struct HomeView: View {
         .onTapGesture {
             hideKeyboard()
         }
+        .task {
+            // Charger les 4 premières offres réelles depuis l'API au démarrage
+            viewModel.loadOffersByCity()
+        }
         .onAppear {
             // Demander la permission de localisation si pas encore demandée
             if locationService.authorizationStatus == .notDetermined {

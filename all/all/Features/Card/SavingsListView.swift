@@ -211,13 +211,6 @@ struct SavingsRow: View {
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.white)
                 
-                if let description = entry.description, !description.isEmpty {
-                    Text(description)
-                        .font(.system(size: 13, weight: .regular))
-                        .foregroundColor(.gray)
-                        .lineLimit(2)
-                }
-                
                 HStack(spacing: 12) {
                     HStack(spacing: 4) {
                         Image(systemName: "calendar")

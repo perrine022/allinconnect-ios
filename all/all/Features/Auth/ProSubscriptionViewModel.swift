@@ -32,8 +32,12 @@ class ProSubscriptionViewModel: ObservableObject {
         Task {
             do {
                 let allPlans = try await subscriptionsAPIService.getPlans()
-                // Filtrer uniquement les plans PROFESSIONAL
+                print("[ProSubscriptionViewModel] Plans récupérés: \(allPlans.count) plans")
+                
+                // Filtrer uniquement les plans PROFESSIONAL (pour les professionnels)
                 plans = allPlans.filter { $0.category == "PROFESSIONAL" }
+                print("[ProSubscriptionViewModel] Plans filtrés pour PROFESSIONAL: \(plans.count) plans")
+                
                 // Sélectionner le plan mensuel par défaut
                 selectedPlan = plans.first { $0.isMonthly } ?? plans.first
                 isLoading = false
@@ -45,6 +49,7 @@ class ProSubscriptionViewModel: ObservableObject {
         }
     }
 }
+
 
 
 
