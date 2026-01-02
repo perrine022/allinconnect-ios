@@ -107,37 +107,104 @@ class BillingAPIService: ObservableObject {
         print("═══════════════════════════════════════════════════════════")
         print("💳 [BILLING] createSubscriptionPaymentSheet() - Début")
         print("═══════════════════════════════════════════════════════════")
-        // Note: L'endpoint backend est /api/billing/subscription/payment-sheet (sans /v1)
-        // APIConfig.baseURL contient déjà /api/v1, donc on utilise directement /billing/...
-        // Si le backend est sur /api/billing/... (sans v1), il faudra ajuster
-        print("💳 [BILLING] Endpoint: POST \(APIConfig.baseURL)/billing/subscription/payment-sheet")
-        print("💳 [BILLING] ⚠️ Vérifier que le backend mapping correspond à cet endpoint")
-        print("💳 [BILLING] priceId: \(priceId)")
-        print("💳 [BILLING] Note: Le backend crée une Subscription Stripe avec default_incomplete")
-        print("💳 [BILLING] Note: Le backend expand latest_invoice.payment_intent pour récupérer le client_secret")
         
+        // 1. URL appelée (endpoint exact)
+        let endpoint = "/billing/subscription/payment-sheet"
+        let fullURL = "\(APIConfig.baseURL)\(endpoint)"
+        print("💳 [BILLING] 📍 URL appelée (endpoint exact):")
+        print("   Endpoint: \(endpoint)")
+        print("   URL complète: \(fullURL)")
+        print("   Méthode: POST")
+        
+        // 2. Payload (priceId)
         let requestBody: [String: Any] = [
             "priceId": priceId
         ]
+        print("💳 [BILLING] 📦 Payload envoyé:")
+        print("   priceId: \(priceId)")
+        print("   Body JSON: \(requestBody)")
         
-        print("💳 [BILLING] Body JSON: \(requestBody)")
+        print("💳 [BILLING] Note: Le backend crée une Subscription Stripe avec default_incomplete")
+        print("💳 [BILLING] Note: Le backend expand latest_invoice.payment_intent pour récupérer le client_secret")
         
         do {
             let startTime = Date()
             let response: SubscriptionPaymentSheetResponse = try await apiService.request(
-                endpoint: "/billing/subscription/payment-sheet",
+                endpoint: endpoint,
                 method: .post,
                 parameters: requestBody,
                 headers: nil
             )
             let duration = Date().timeIntervalSince(startTime)
+            
+            // 3. Réponse reçue (en masquant les secrets)
             print("💳 [BILLING] ✅ Réponse reçue en \(String(format: "%.2f", duration))s")
-            print("💳 [BILLING]   - paymentIntent (client_secret): \(response.paymentIntent.prefix(30))...")
-            print("💳 [BILLING]     Format vérifié: \(response.paymentIntent.contains("_secret_") ? "✅ Format complet (pi_xxx_secret_xxx)" : "⚠️ Format incomplet")")
-            print("💳 [BILLING]   - customerId: \(response.customerId)")
-            print("💳 [BILLING]   - ephemeralKey: \(response.ephemeralKey.prefix(30))...")
-            print("💳 [BILLING]   - publishableKey: \(response.publishableKey.prefix(30))...")
-            print("💳 [BILLING]   - subscriptionId: \(response.subscriptionId ?? "nil")")
+            print("💳 [BILLING] 📥 Réponse reçue (secrets masqués):")
+            
+            // Masquer les secrets (afficher seulement les préfixes et quelques caractères)
+            let paymentIntentMasked = response.paymentIntent.count > 20 
+                ? "\(response.paymentIntent.prefix(10))...\(response.paymentIntent.suffix(10))" 
+                : "\(response.paymentIntent.prefix(10))..."
+            let ephemeralKeyMasked = response.ephemeralKey.count > 20 
+                ? "\(response.ephemeralKey.prefix(10))...\(response.ephemeralKey.suffix(10))" 
+                : "\(response.ephemeralKey.prefix(10))..."
+            let publishableKeyMasked = response.publishableKey.count > 20 
+                ? "\(response.publishableKey.prefix(10))...\(response.publishableKey.suffix(10))" 
+                : "\(response.publishableKey.prefix(10))..."
+            
+            print("   - paymentIntent: \(paymentIntentMasked) (longueur: \(response.paymentIntent.count) caractères)")
+            print("   - customerId: \(response.customerId)")
+            print("   - ephemeralKey: \(ephemeralKeyMasked) (longueur: \(response.ephemeralKey.count) caractères)")
+            print("   - publishableKey: \(publishableKeyMasked) (longueur: \(response.publishableKey.count) caractères)")
+            print("   - subscriptionId: \(response.subscriptionId ?? "nil")")
+            
+            // 4. Vérification des préfixes
+            print("💳 [BILLING] 🔍 Vérification des préfixes:")
+            
+            // paymentIntent doit commencer par "pi_" et contenir "_secret_"
+            let paymentIntentValid = response.paymentIntent.hasPrefix("pi_") && response.paymentIntent.contains("_secret_")
+            print("   - paymentIntent:")
+            print("     • startsWith \"pi_\": \(response.paymentIntent.hasPrefix("pi_") ? "✅" : "❌")")
+            print("     • contains \"_secret_\": \(response.paymentIntent.contains("_secret_") ? "✅" : "❌")")
+            if !paymentIntentValid {
+                print("     ⚠️ ATTENTION: Format paymentIntent invalide - PaymentSheet ne fonctionnera pas")
+                print("     ⚠️ Format attendu: pi_xxx_secret_xxx")
+                print("     ⚠️ Format reçu: \(response.paymentIntent)")
+            } else {
+                print("     ✅ Format paymentIntent valide")
+            }
+            
+            // customerId doit commencer par "cus_"
+            let customerIdValid = response.customerId.hasPrefix("cus_")
+            print("   - customerId:")
+            print("     • startsWith \"cus_\": \(customerIdValid ? "✅" : "❌")")
+            if !customerIdValid {
+                print("     ⚠️ ATTENTION: Format customerId invalide")
+                print("     ⚠️ Format attendu: cus_xxx")
+                print("     ⚠️ Format reçu: \(response.customerId)")
+            } else {
+                print("     ✅ Format customerId valide")
+            }
+            
+            // ephemeralKey doit commencer par "ek_"
+            let ephemeralKeyValid = response.ephemeralKey.hasPrefix("ek_")
+            print("   - ephemeralKey:")
+            print("     • startsWith \"ek_\": \(ephemeralKeyValid ? "✅" : "❌")")
+            if !ephemeralKeyValid {
+                print("     ⚠️ ATTENTION: Format ephemeralKey invalide")
+                print("     ⚠️ Format attendu: ek_xxx")
+                print("     ⚠️ Format reçu: \(response.ephemeralKey)")
+            } else {
+                print("     ✅ Format ephemeralKey valide")
+            }
+            
+            // Résumé de validation
+            if paymentIntentValid && customerIdValid && ephemeralKeyValid {
+                print("💳 [BILLING] ✅ Tous les formats sont valides - PaymentSheet peut être affiché")
+            } else {
+                print("💳 [BILLING] ❌ Certains formats sont invalides - PaymentSheet risque de ne pas fonctionner")
+            }
+            
             print("═══════════════════════════════════════════════════════════")
             return response
         } catch {

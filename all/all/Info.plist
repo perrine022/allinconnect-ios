@@ -4,5 +4,9 @@
 <dict>
 	<key>UIBackgroundModes</key>
 	<array/>
+	<key>NSCameraUsageDescription</key>
+	<string>Cette application a besoin d'accéder à votre caméra pour vous permettre de prendre des photos pour vos offres et votre établissement.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Cette application a besoin d'accéder à votre bibliothèque photo pour vous permettre de sélectionner des images pour vos offres et votre établissement.</string>
 </dict>
 </plist>
