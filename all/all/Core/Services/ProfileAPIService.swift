@@ -102,6 +102,8 @@ struct UserMeResponse: Codable {
     let card: CardResponse?
     let isCardActive: Bool?
     let referralCode: String?
+    let premiumEnabled: Bool?
+    let subscriptionType: String?
     
     // Champs professionnel (établissement)
     let establishmentName: String?
@@ -127,6 +129,8 @@ struct UserMeResponse: Codable {
         case card
         case isCardActive = "cardActive" // Backend retourne "cardActive" au lieu de "isCardActive"
         case referralCode = "referralCode"
+        case premiumEnabled = "premiumEnabled"
+        case subscriptionType = "subscriptionType"
         case establishmentName = "establishmentName"
         case establishmentDescription = "establishmentDescription"
         case establishmentImageUrl = "establishmentImageUrl"
@@ -154,6 +158,8 @@ struct UserMeResponse: Codable {
         card = try container.decodeIfPresent(CardResponse.self, forKey: .card)
         isCardActive = try container.decodeIfPresent(Bool.self, forKey: .isCardActive)
         referralCode = try container.decodeIfPresent(String.self, forKey: .referralCode)
+        premiumEnabled = try container.decodeIfPresent(Bool.self, forKey: .premiumEnabled)
+        subscriptionType = try container.decodeIfPresent(String.self, forKey: .subscriptionType)
         establishmentName = try container.decodeIfPresent(String.self, forKey: .establishmentName)
         establishmentDescription = try container.decodeIfPresent(String.self, forKey: .establishmentDescription)
         establishmentImageUrl = try container.decodeIfPresent(String.self, forKey: .establishmentImageUrl)
@@ -181,6 +187,7 @@ struct UserLightResponse: Codable {
     let payments: [PaymentResponse]?
     let walletBalance: Double?
     let referralCode: String?
+    let notificationPreference: NotificationPreferencesResponse?
     
     enum CodingKeys: String, CodingKey {
         case firstName = "firstName"
@@ -196,6 +203,7 @@ struct UserLightResponse: Codable {
         case payments
         case walletBalance = "walletBalance"
         case referralCode = "referralCode"
+        case notificationPreference = "notificationPreference"
     }
     
     // Initializer personnalisé pour gérer les valeurs optionnelles avec valeurs par défaut
@@ -215,6 +223,7 @@ struct UserLightResponse: Codable {
         payments = try container.decodeIfPresent([PaymentResponse].self, forKey: .payments)
         walletBalance = try container.decodeIfPresent(Double.self, forKey: .walletBalance) ?? 0.0
         referralCode = try container.decodeIfPresent(String.self, forKey: .referralCode)
+        notificationPreference = try container.decodeIfPresent(NotificationPreferencesResponse.self, forKey: .notificationPreference)
     }
 }
 

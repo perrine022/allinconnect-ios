@@ -163,7 +163,7 @@ struct ClientSubscriptionView: View {
                                         .foregroundColor(.white)
                                     
                                     // WebView Stripe embedded
-                                    StripePaymentView()
+                                    StripePaymentView(filterCategory: "CLIENT")
                                         .frame(height: 600)
                                         .cornerRadius(12)
                                 }

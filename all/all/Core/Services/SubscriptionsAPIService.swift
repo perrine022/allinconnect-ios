@@ -117,14 +117,38 @@ class SubscriptionsAPIService: ObservableObject {
     }
     
     // MARK: - Get Available Plans
+    // Récupère tous les plans de paiement configurés (Titre, Prix, Description, Catégorie, Durée)
+    // Endpoint: GET /api/v1/subscriptions/plans
+    // Les plans doivent être filtrés côté front selon le type d'utilisateur :
+    // - INDIVIDUAL et FAMILY pour les clients
+    // - PROFESSIONAL pour les professionnels
+    /// Récupère la liste des plans d'abonnement disponibles
+    /// Endpoint public : Ne nécessite pas de token valide (même avec un token expiré, l'endpoint fonctionne)
     func getPlans() async throws -> [SubscriptionPlanResponse] {
-        let plans: [SubscriptionPlanResponse] = try await apiService.request(
-            endpoint: "/subscriptions/plans",
-            method: .get,
-            parameters: nil,
-            headers: nil
-        )
-        return plans
+        print("[SubscriptionsAPIService] 📞 Appel GET /api/v1/subscriptions/plans (endpoint public)")
+        do {
+            let plans: [SubscriptionPlanResponse] = try await apiService.request(
+                endpoint: "/subscriptions/plans",
+                method: .get,
+                parameters: nil,
+                headers: nil
+            )
+            print("[SubscriptionsAPIService] ✅ Plans récupérés: \(plans.count) plans")
+            for plan in plans {
+                print("[SubscriptionsAPIService]   - \(plan.title): \(plan.formattedPrice) (category: \(plan.category ?? "N/A"), duration: \(plan.duration ?? "N/A"))")
+            }
+            return plans
+        } catch let apiError as APIError {
+            // Si on reçoit une 401 sur cet endpoint public, c'est anormal mais on log quand même
+            // Le backend ne devrait plus retourner 401 pour cet endpoint, mais on gère toutes les erreurs
+            if case .unauthorized = apiError {
+                print("[SubscriptionsAPIService] ⚠️ Erreur 401 sur endpoint public (anormal mais géré)")
+            }
+            throw apiError
+        } catch {
+            print("[SubscriptionsAPIService] ❌ Erreur lors de la récupération des plans: \(error)")
+            throw error
+        }
     }
     
     // MARK: - Subscribe to a Plan
@@ -178,7 +202,7 @@ class SubscriptionsAPIService: ObservableObject {
             throw APIError.invalidResponse
         }
         
-        print("[SubscriptionsAPIService] Endpoint: POST /api/v1/subscriptions/invite")
+        print("[SubscriptionsAPIService] Endpoint: POST /api/v1/cards/invite")
         print("[SubscriptionsAPIService] Request payload: \(parameters)")
         print("[SubscriptionsAPIService] Content-Type: application/json (géré automatiquement)")
         
@@ -188,7 +212,7 @@ class SubscriptionsAPIService: ObservableObject {
         // La réponse peut être vide (200 OK)
         struct EmptyResponse: Codable {}
         let _: EmptyResponse = try await apiService.request(
-            endpoint: "/subscriptions/invite",
+            endpoint: "/cards/invite",
             method: .post,
             parameters: parameters,
             headers: nil // Les headers par défaut (incluant Authorization si disponible) sont ajoutés automatiquement

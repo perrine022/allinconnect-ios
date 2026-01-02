@@ -7,13 +7,21 @@
 
 import UIKit
 import UserNotifications
+import FirebaseCore
+import FirebaseMessaging
 
-class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
     
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil
     ) -> Bool {
+        // Configurer Firebase
+        FirebaseApp.configure()
+        
+        // Configurer Firebase Cloud Messaging
+        Messaging.messaging().delegate = self
+        
         // Configurer le delegate pour les notifications
         UNUserNotificationCenter.current().delegate = self
         
@@ -90,6 +98,10 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
+        // Enregistrer le token avec Firebase Messaging
+        Messaging.messaging().apnsToken = deviceToken
+        
+        // Enregistrer aussi avec notre PushManager pour l'envoyer au backend
         Task { @MainActor in
             PushManager.shared.handleDeviceToken(deviceToken)
         }
@@ -131,6 +143,22 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         }
         
         completionHandler()
+    }
+    
+    // MARK: - Firebase Messaging Delegate
+    func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+        print("Firebase registration token: \(String(describing: fcmToken))")
+        
+        // Enregistrer le token FCM avec notre backend
+        // Note: Firebase fournit le token FCM qui est différent du token APNS
+        // Le backend doit accepter le token FCM pour les notifications Firebase
+        if let fcmToken = fcmToken {
+            Task { @MainActor in
+                // Utiliser directement le token FCM (String) pour l'enregistrement
+                // Le PushManager doit être adapté pour gérer les tokens FCM
+                await PushManager.shared.registerFCMToken(fcmToken)
+            }
+        }
     }
 }
 

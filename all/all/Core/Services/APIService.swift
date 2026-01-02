@@ -205,7 +205,9 @@ class APIService: APIServiceProtocol, ObservableObject {
             case 200...299:
                 break
             case 401:
-                // Lire le message d'erreur précis du body de la réponse 401
+                // Erreur 401 : Token expiré ou invalide
+                // Note: Sur les endpoints publics (comme /api/v1/subscriptions/plans), le backend ne devrait plus retourner 401 même avec un token expiré
+                // Si on reçoit une 401, c'est que le token est expiré/invalide ET que l'endpoint est privé
                 var errorReason: String? = nil
                 if !data.isEmpty {
                     // Essayer de décoder le message d'erreur depuis le body
@@ -217,6 +219,7 @@ class APIService: APIServiceProtocol, ObservableObject {
                     }
                 }
                 print("[APIService] Erreur 401 - Raison: \(errorReason ?? "non spécifiée")")
+                print("[APIService] ⚠️ Token expiré ou invalide - L'utilisateur doit se reconnecter")
                 throw APIError.unauthorized(reason: errorReason)
             case 404:
                 throw APIError.notFound

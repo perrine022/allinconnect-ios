@@ -47,7 +47,7 @@ struct ProCard: View {
         }
         .padding(20)
         .background(Color(red: 0.95, green: 0.95, blue: 0.95))
-        .cornerRadius(16)
+        .cornerRadius(20)
     }
 }
 

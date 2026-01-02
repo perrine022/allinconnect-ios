@@ -12,7 +12,6 @@ struct AddSavingsPopupView: View {
     @State private var amount: String = ""
     @State private var date: String = ""
     @State private var store: String = ""
-    @State private var description: String = ""
     @State private var errorMessage: String? = nil
     @FocusState private var focusedField: Field?
     
@@ -22,7 +21,7 @@ struct AddSavingsPopupView: View {
     var editingEntry: SavingsEntry? = nil
     
     enum Field {
-        case amount, date, store, description
+        case amount, date, store
     }
     
     var body: some View {
@@ -105,7 +104,7 @@ struct AddSavingsPopupView: View {
                                     .font(.system(size: 15, weight: .semibold))
                                     .foregroundColor(.white)
                                 
-                                TextField("DD/MM/YYYY", text: $date)
+                                TextField("", text: $date, prompt: Text("JJ/MM/AAAA (ex: 25/12/2025)").foregroundColor(.gray.opacity(0.6)))
                                     .keyboardType(.numbersAndPunctuation)
                                     .foregroundColor(.black)
                                     .font(.system(size: 16))
@@ -144,23 +143,6 @@ struct AddSavingsPopupView: View {
                                     .foregroundColor(.black)
                                     .font(.system(size: 16))
                                     .focused($focusedField, equals: .store)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 16)
-                                    .background(Color.white)
-                                    .cornerRadius(12)
-                            }
-                            
-                            // Description (optionnelle)
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text("Description (optionnelle)")
-                                    .font(.system(size: 15, weight: .semibold))
-                                    .foregroundColor(.white)
-                                
-                                TextField("Description de l'économie", text: $description, axis: .vertical)
-                                    .lineLimit(4...8)
-                                    .foregroundColor(.black)
-                                    .font(.system(size: 16))
-                                    .focused($focusedField, equals: .description)
                                     .padding(.horizontal, 16)
                                     .padding(.vertical, 16)
                                     .background(Color.white)
@@ -209,8 +191,7 @@ struct AddSavingsPopupView: View {
                         let storeName = store.trimmingCharacters(in: .whitespaces).isEmpty ? "Non spécifié" : store.trimmingCharacters(in: .whitespaces)
                         
                         errorMessage = nil
-                        let descriptionText = description.trimmingCharacters(in: .whitespaces).isEmpty ? nil : description.trimmingCharacters(in: .whitespaces)
-                            onSave(amountValue, dateValue, storeName, descriptionText)
+                            onSave(amountValue, dateValue, storeName, nil)
                             isPresented = false
                         }) {
                             Text(editingEntry == nil ? "Ajouter" : "Modifier")
@@ -241,7 +222,6 @@ struct AddSavingsPopupView: View {
                 dateFormatter.locale = Locale(identifier: "fr_FR")
                 date = dateFormatter.string(from: entry.date)
                 store = entry.store
-                description = entry.description ?? ""
             }
         }
     }

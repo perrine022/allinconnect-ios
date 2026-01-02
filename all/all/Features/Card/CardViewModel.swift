@@ -183,6 +183,7 @@ class CardViewModel: ObservableObject {
                 isMember = userLight.isMember ?? false
                 
                 // Déterminer si la carte est active : priorité à userMe.isCardActive, sinon vérifier si card existe
+                // Note: card peut être nil pour un nouvel utilisateur (normal, pas d'erreur)
                 if let cardActive = userMe.isCardActive {
                     isCardActive = cardActive
                 } else if let card = userMe.card, !card.cardNumber.isEmpty {
@@ -194,10 +195,14 @@ class CardViewModel: ObservableObject {
                 }
                 
                 // Récupérer cardNumber et cardType depuis userMe en priorité
+                // Si card est nil, c'est normal pour un nouvel utilisateur (pas encore de carte générée)
                 cardNumber = userMe.card?.cardNumber ?? userLight.card?.cardNumber
                 cardType = userMe.card?.type ?? userLight.card?.type
                 
                 // Log pour debug
+                if userMe.card == nil {
+                    print("[CardViewModel] ℹ️ card est nil (normal pour un nouvel utilisateur sans carte générée)")
+                }
                 print("[CardViewModel] Carte chargée - cardNumber: \(cardNumber ?? "nil"), isCardActive: \(isCardActive), cardType: \(cardType ?? "nil")")
                 print("[CardViewModel] userMe.card: \(userMe.card != nil ? "exists" : "nil"), userMe.isCardActive: \(userMe.isCardActive?.description ?? "nil")")
                 

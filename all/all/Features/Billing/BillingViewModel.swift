@@ -72,23 +72,12 @@ class BillingViewModel: ObservableObject {
     }
     
     // MARK: - Start Subscription
+    // TODO: À réimplémenter selon les nouvelles spécifications backend
     func startSubscription() async throws -> StartSubscriptionResponse {
-        print("[BillingViewModel] startSubscription() - Début")
-        isLoading = true
-        errorMessage = nil
-        successMessage = nil
-        
-        do {
-            let response = try await billingAPIService.startSubscription()
-            isLoading = false
-            print("[BillingViewModel] startSubscription() - Succès: subscriptionId=\(response.subscriptionId)")
-            return response
-        } catch {
-            isLoading = false
-            errorMessage = "Erreur lors du démarrage de l'abonnement: \(error.localizedDescription)"
-            print("[BillingViewModel] startSubscription() - Erreur: \(error.localizedDescription)")
-            throw error
-        }
+        print("[BillingViewModel] ⚠️ startSubscription() - À implémenter")
+        isLoading = false
+        errorMessage = "Fonctionnalité de paiement en cours de développement"
+        throw APIError.invalidResponse
     }
     
     // MARK: - Handle Payment Success

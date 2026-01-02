@@ -24,62 +24,87 @@ class PaymentStatusManager: ObservableObject {
     private init() {}
     
     // Vérifier le statut du paiement via l'API (Étape C)
-    // Après la fermeture du Payment Sheet, vérifier le statut premium avec retry et backoff exponentiel
-    // Source de vérité : GET /api/billing/status (pas /users/me/light)
-    func checkPaymentStatus(maxRetries: Int = 7) async -> Bool {
+    // Après la fermeture du Payment Sheet, rafraîchir simplement les données utilisateur
+    // Le backend a déjà tout mis à jour via le webhook Stripe
+    // Source de vérité : GET /api/v1/users/me
+    // Option A (simple) : Un appel après un court délai pour laisser le webhook se traiter
+    func checkPaymentStatus(maxRetries: Int = 3) async -> Bool {
         pendingPaymentCheck = true
         defer { pendingPaymentCheck = false }
         
-        let billingAPIService = BillingAPIService()
+        let profileAPIService = ProfileAPIService()
         
-        // Backoff exponentiel : 0.5s, 1s, 2s, 3s, 5s, 8s (total ~19.5s max)
-        let delays: [UInt64] = [500_000_000, 1_000_000_000, 2_000_000_000, 3_000_000_000, 5_000_000_000, 8_000_000_000]
+        // Option A simple : Attendre un court délai puis appeler une fois
+        // Si le réseau est lent, on peut faire quelques retries (max 3 tentatives, 2 secondes entre chaque)
+        let delayBetweenAttempts: UInt64 = 2_000_000_000 // 2 secondes
         
-        // Première tentative après délai initial de 0.5s
-        for attempt in 0...maxRetries {
+        for attempt in 0..<maxRetries {
             do {
-                // Appeler GET /api/billing/status (endpoint dédié, source de vérité backend)
-                let statusResponse = try await billingAPIService.getSubscriptionStatus()
+                // Appeler GET /api/v1/users/me pour rafraîchir les données
+                // Le backend a déjà tout mis à jour (subscriptionType, renewalDate, etc.)
+                print("🔍 [STATUS] ───────────────────────────────────────────────────")
+                print("🔍 [STATUS] Tentative \(attempt + 1)/\(maxRetries) : Vérification du statut premium")
+                print("🔍 [STATUS] Appel GET /api/v1/users/me...")
+                let startTime = Date()
                 
-                // Vérifier si le statut premium est activé (source de vérité backend)
-                if statusResponse.premiumEnabled {
-                    // Le statut est à jour, le paiement a réussi
+                let userMe = try await profileAPIService.getUserMe()
+                
+                let duration = Date().timeIntervalSince(startTime)
+                print("🔍 [STATUS] ✅ Réponse reçue en \(String(format: "%.2f", duration))s")
+                print("🔍 [STATUS] Données utilisateur:")
+                print("   - premiumEnabled: \(userMe.premiumEnabled?.description ?? "nil")")
+                print("   - subscriptionType: \(userMe.subscriptionType ?? "nil")")
+                print("   - userId: \(userMe.id?.description ?? "nil")")
+                
+                // Vérifier si le statut premium est activé
+                // Le backend a déjà mis à jour tous les champs (subscriptionType, renewalDate, etc.)
+                let isPremium = userMe.premiumEnabled == true
+                
+                if isPremium {
+                    // Le statut est confirmé, le paiement a réussi
                     lastPaymentStatus = .success
                     NotificationCenter.default.post(name: NSNotification.Name("PaymentSuccess"), object: nil)
                     NotificationCenter.default.post(name: NSNotification.Name("SubscriptionUpdated"), object: nil)
-                    print("[PaymentStatusManager] ✅ Statut premium confirmé après \(attempt + 1) tentative(s)")
-                    print("[PaymentStatusManager]   - premiumEnabled: \(statusResponse.premiumEnabled)")
-                    print("[PaymentStatusManager]   - subscriptionStatus: \(statusResponse.subscriptionStatus ?? "N/A")")
+                    print("🔍 [STATUS] ───────────────────────────────────────────────────")
+                    print("✅ [STATUS] Statut premium CONFIRMÉ après \(attempt + 1) tentative(s)")
+                    print("   - premiumEnabled: \(userMe.premiumEnabled ?? false)")
+                    print("   - subscriptionType: \(userMe.subscriptionType ?? "N/A")")
+                    print("🔍 [STATUS] ───────────────────────────────────────────────────")
                     return true
                 } else {
-                    // Le statut n'est pas encore à jour
-                    if attempt < maxRetries {
-                        // Backoff exponentiel : 0.5s, 1s, 2s, 3s, 5s, 8s
-                        let delayIndex = min(attempt, delays.count - 1)
-                        let delay = delays[delayIndex]
-                        let delaySeconds = Double(delay) / 1_000_000_000.0
-                        
-                        print("[PaymentStatusManager] ⏳ Statut pas encore à jour (premiumEnabled=\(statusResponse.premiumEnabled)), attente \(Int(delaySeconds))s avant retry \(attempt + 2)/\(maxRetries + 1)...")
-                        try await Task.sleep(nanoseconds: delay)
+                    // Le statut n'est pas encore activé (webhook peut prendre quelques millisecondes)
+                    if attempt < maxRetries - 1 {
+                        // Attendre 2 secondes avant le prochain essai (polling simple si réseau lent)
+                        print("⏳ [STATUS] Statut premium pas encore activé")
+                        print("   - premiumEnabled: \(userMe.premiumEnabled?.description ?? "nil")")
+                        print("   - subscriptionType: \(userMe.subscriptionType ?? "nil")")
+                        print("   ⏳ Attente de 2 secondes avant retry \(attempt + 2)/\(maxRetries)...")
+                        print("   → Le webhook Stripe peut prendre quelques secondes")
+                        try await Task.sleep(nanoseconds: delayBetweenAttempts)
                     } else {
                         // Dernière tentative échouée
-                        print("[PaymentStatusManager] ⚠️ Statut premium non confirmé après \(maxRetries + 1) tentatives")
-                        print("[PaymentStatusManager]   - premiumEnabled: \(statusResponse.premiumEnabled)")
-                        print("[PaymentStatusManager]   - subscriptionStatus: \(statusResponse.subscriptionStatus ?? "N/A")")
+                        print("🔍 [STATUS] ───────────────────────────────────────────────────")
+                        print("⚠️ [STATUS] Statut premium NON CONFIRMÉ après \(maxRetries) tentatives")
+                        print("   - premiumEnabled: \(userMe.premiumEnabled ?? false)")
+                        print("   - subscriptionType: \(userMe.subscriptionType ?? "N/A")")
+                        print("   → Le webhook peut prendre plus de temps, vérification manuelle recommandée")
+                        print("🔍 [STATUS] ───────────────────────────────────────────────────")
                         lastPaymentStatus = .pending
                         return false
                     }
                 }
             } catch {
-                print("[PaymentStatusManager] ❌ Erreur lors de la vérification du statut (tentative \(attempt + 1)): \(error)")
-                if attempt < maxRetries {
-                    // Backoff exponentiel en cas d'erreur aussi
-                    let delayIndex = min(attempt, delays.count - 1)
-                    let delay = delays[delayIndex]
-                    let delaySeconds = Double(delay) / 1_000_000_000.0
-                    print("[PaymentStatusManager] ⏳ Erreur, attente \(Int(delaySeconds))s avant retry...")
-                    try? await Task.sleep(nanoseconds: delay)
+                print("🔍 [STATUS] ───────────────────────────────────────────────────")
+                print("❌ [STATUS] Erreur lors de la vérification (tentative \(attempt + 1)/\(maxRetries))")
+                print("   - Type: \(type(of: error))")
+                print("   - Message: \(error.localizedDescription)")
+                if attempt < maxRetries - 1 {
+                    // Attendre 2 secondes avant le prochain essai en cas d'erreur
+                    print("   ⏳ Attente de 2 secondes avant retry...")
+                    try? await Task.sleep(nanoseconds: delayBetweenAttempts)
                 } else {
+                    print("   ❌ Toutes les tentatives ont échoué")
+                    print("🔍 [STATUS] ───────────────────────────────────────────────────")
                     lastPaymentStatus = .pending
                     return false
                 }

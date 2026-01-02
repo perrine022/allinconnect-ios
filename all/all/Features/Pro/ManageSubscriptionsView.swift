@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct ManageSubscriptionsView: View {
     @EnvironmentObject private var appState: AppState
@@ -201,6 +202,69 @@ struct ManageSubscriptionsView: View {
                                 }
                             }
                             
+                            // Section Mes factures (uniquement pour les pros)
+                            // Déterminer si l'utilisateur est pro
+                            let userTypeString = UserDefaults.standard.string(forKey: "user_type") ?? "CLIENT"
+                            let isPro = userTypeString == "PRO"
+                            
+                            if isPro {
+                                VStack(alignment: .leading, spacing: 16) {
+                                    HStack {
+                                        Image(systemName: "doc.text.fill")
+                                            .foregroundColor(.red)
+                                            .font(.system(size: 18))
+                                        
+                                        Text("Mes factures")
+                                            .font(.system(size: 18, weight: .bold))
+                                            .foregroundColor(.white)
+                                        
+                                        Spacer()
+                                    }
+                                    
+                                    if viewModel.isLoadingInvoices {
+                                        ProgressView()
+                                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                            .frame(maxWidth: .infinity)
+                                            .padding()
+                                    } else if viewModel.invoices.isEmpty {
+                                        Text("Aucune facture disponible")
+                                            .font(.system(size: 14, weight: .regular))
+                                            .foregroundColor(.white.opacity(0.6))
+                                            .padding(.vertical, 12)
+                                    } else {
+                                        VStack(spacing: 12) {
+                                            ForEach(viewModel.invoices) { invoice in
+                                                InvoiceRow(
+                                                    invoice: invoice,
+                                                    isDownloading: viewModel.isDownloadingInvoice,
+                                                    onDownload: {
+                                                        Task {
+                                                            await viewModel.downloadInvoice(invoiceId: invoice.id)
+                                                        }
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+                                    
+                                    if let invoiceError = viewModel.invoiceErrorMessage {
+                                        Text(invoiceError)
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.red)
+                                            .padding(.top, 4)
+                                    }
+                                }
+                                .padding(16)
+                                .background(Color.appDarkRed1.opacity(0.8))
+                                .cornerRadius(12)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                )
+                                .padding(.horizontal, 20)
+                                .padding(.top, 8)
+                            }
+                            
                             // Bouton Résilier
                             Button(action: {
                                 showCancelAlert = true
@@ -245,6 +309,11 @@ struct ManageSubscriptionsView: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
             await viewModel.loadSubscriptionData()
+            // Charger les factures si l'utilisateur est pro
+            let userTypeString = UserDefaults.standard.string(forKey: "user_type") ?? "CLIENT"
+            if userTypeString == "PRO" {
+                await viewModel.loadInvoices()
+            }
         }
         .alert("Résilier l'abonnement", isPresented: $showCancelAlert) {
             Button("Annuler", role: .cancel) { }
@@ -254,6 +323,79 @@ struct ManageSubscriptionsView: View {
         } message: {
             Text("Êtes-vous sûr de vouloir résilier votre abonnement ? Vous perdrez l'accès à toutes les fonctionnalités Pro.")
         }
+        .sheet(isPresented: $viewModel.showShareSheet) {
+            if let fileURL = viewModel.downloadedInvoiceURL {
+                ShareSheet(activityItems: [fileURL])
+            }
+        }
+    }
+}
+
+// MARK: - Share Sheet
+struct ShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+        return controller
+    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+// MARK: - Invoice Row Component
+struct InvoiceRow: View {
+    let invoice: InvoiceResponse
+    let isDownloading: Bool
+    let onDownload: () -> Void
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            // Icône facture
+            Image(systemName: "doc.text.fill")
+                .foregroundColor(.red)
+                .font(.system(size: 20))
+                .frame(width: 40, height: 40)
+                .background(Color.red.opacity(0.2))
+                .clipShape(Circle())
+            
+            // Informations de la facture
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Facture \(invoice.invoiceNumber)")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.white)
+                
+                HStack(spacing: 8) {
+                    Text(invoice.formattedDate)
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundColor(.white.opacity(0.7))
+                    
+                    Text("•")
+                        .foregroundColor(.white.opacity(0.5))
+                    
+                    Text(invoice.formattedAmount)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+            }
+            
+            Spacer()
+            
+            // Bouton télécharger
+            Button(action: onDownload) {
+                if isDownloading {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(0.8)
+                } else {
+                    Image(systemName: "arrow.down.circle.fill")
+                        .foregroundColor(.red)
+                        .font(.system(size: 20))
+                }
+            }
+            .disabled(isDownloading)
+        }
+        .padding(.vertical, 8)
     }
 }
 

@@ -136,8 +136,8 @@ struct SettingsView: View {
                 VStack(spacing: 8) {
                     Spacer()
                     
-                    // Texte "développé par Codyxo.com 2025"
-                    Text("développé par Codyxo.com 2025")
+                    // Texte "Made with love ❤️ par Codyxo.com"
+                    Text("Made with love ❤️ par Codyxo.com")
                         .font(.system(size: 12, weight: .regular))
                         .foregroundColor(.white.opacity(0.6))
                         .padding(.bottom, 4)

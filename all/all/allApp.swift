@@ -12,13 +12,15 @@ import CoreLocation
 struct allApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var locationService = LocationService.shared
+    @State private var hasSeenTutorial = TutorialViewModel.hasSeenTutorial()
     @State private var hasCompletedOnboarding = OnboardingViewModel.hasCompletedOnboarding()
     @State private var isLoggedIn = LoginViewModel.isLoggedIn()
     
     var body: some Scene {
         WindowGroup {
             AppContentView(
-                hasCompletedOnboarding: .constant(true), // Toujours considérer l'onboarding comme complété
+                hasSeenTutorial: $hasSeenTutorial,
+                hasCompletedOnboarding: $hasCompletedOnboarding,
                 isLoggedIn: $isLoggedIn,
                 locationService: locationService
             )
@@ -28,19 +30,35 @@ struct allApp: App {
 
 // MARK: - App Content View
 struct AppContentView: View {
+    @Binding var hasSeenTutorial: Bool
     @Binding var hasCompletedOnboarding: Bool
     @Binding var isLoggedIn: Bool
     @ObservedObject var locationService: LocationService
     
     var body: some View {
         Group {
-            if !hasCompletedOnboarding {
-                // Étape 1: Onboarding
+            if !hasSeenTutorial {
+                // Étape 0: Tutoriel (premier lancement uniquement)
+                TutorialView(
+                    onComplete: {
+                        hasSeenTutorial = true
+                        // Après le tutoriel, afficher l'inscription si premier lancement
+                        if !hasCompletedOnboarding {
+                            // L'inscription sera affichée automatiquement
+                        }
+                    },
+                    onSkip: {
+                        hasSeenTutorial = true
+                        // Si on passe le tutoriel, aller directement à la connexion/inscription
+                    }
+                )
+            } else if !hasCompletedOnboarding {
+                // Étape 1: Inscription (après tutoriel, premier lancement)
                 OnboardingView {
                     hasCompletedOnboarding = true
                 }
             } else if !isLoggedIn {
-                // Étape 2: Connexion/Inscription (après onboarding)
+                // Étape 2: Connexion (si déjà lancé l'app)
                 LoginViewWrapper()
                     .environmentObject(AppState())
                     .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserDidLogin"))) { _ in
@@ -90,17 +108,7 @@ struct AppContentView: View {
     
     @MainActor
     private func registerPushTokenAfterLogin() async {
-        // Récupérer l'ID utilisateur depuis l'API
-        let profileService = ProfileAPIService()
-        do {
-            let userId = try await profileService.getCurrentUserId()
-            await PushManager.shared.registerTokenAfterLogin(userId: userId)
-        } catch {
-            print("Error getting user ID, trying fallback: \(error.localizedDescription)")
-            // Fallback: utiliser l'email comme identifiant temporaire
-            if let email = UserDefaults.standard.string(forKey: "user_email") {
-                await PushManager.shared.registerTokenAfterLogin(userId: email)
-            }
-        }
+        // L'utilisateur est identifié via le token JWT, pas besoin de récupérer userId
+        await PushManager.shared.registerTokenAfterLogin()
     }
 }

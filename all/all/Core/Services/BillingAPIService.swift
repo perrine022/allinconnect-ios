@@ -8,18 +8,37 @@
 import Foundation
 import Combine
 
-// MARK: - Start Subscription Response
-struct StartSubscriptionResponse: Codable {
+// MARK: - Payment Sheet Init Response
+struct PaymentSheetInitResponse: Codable {
+    let paymentIntentClientSecret: String
     let customerId: String
     let ephemeralKeySecret: String
-    let paymentIntentClientSecret: String
-    let subscriptionId: String
+    let publishableKey: String
+    
+    enum CodingKeys: String, CodingKey {
+        case paymentIntentClientSecret = "paymentIntentClientSecret"
+        case customerId = "customerId"
+        case ephemeralKeySecret = "ephemeralKeySecret"
+        case publishableKey = "publishableKey"
+    }
+}
+
+// MARK: - Start Subscription Response (Legacy - pour compatibilité)
+struct StartSubscriptionResponse: Codable {
+    let customerId: String?
+    let ephemeralKeySecret: String?
+    let paymentIntentClientSecret: String?
+    let subscriptionId: String?
+    let status: String? // "active", "trialing", "incomplete", etc.
+    let publishableKey: String? // Clé publique Stripe renvoyée par le backend
     
     enum CodingKeys: String, CodingKey {
         case customerId = "customerId"
         case ephemeralKeySecret = "ephemeralKeySecret"
         case paymentIntentClientSecret = "paymentIntentClientSecret"
         case subscriptionId = "subscriptionId"
+        case status = "status"
+        case publishableKey = "publishableKey"
     }
 }
 
@@ -60,86 +79,16 @@ class BillingAPIService: ObservableObject {
         print("[BillingAPIService] init() - Fin")
     }
     
-    // MARK: - Start Subscription
-    func startSubscription() async throws -> StartSubscriptionResponse {
-        print("[BillingAPIService] startSubscription() - Début")
-        print("[BillingAPIService] Endpoint: POST /api/billing/subscription/start")
-        
-        // Vérifier que le token est présent
-        if let token = AuthTokenManager.shared.getToken() {
-            print("[BillingAPIService] ✅ Token présent: \(token.prefix(20))...")
-        } else {
-            print("[BillingAPIService] ⚠️ Token manquant")
-        }
-        
-        do {
-            // Utiliser l'endpoint sans /v1 car le backend attend /api/billing/...
-            // On construit l'URL complète manuellement pour éviter le préfixe /v1
-            // let baseURL = "https://allinconnect-back-1.onrender.com/api" // Production
-            let baseURL = "http://127.0.0.1:8080/api" // Local
-            let endpoint = "/billing/subscription/start"
-            let fullURL = "\(baseURL)\(endpoint)"
-            
-            print("[BillingAPIService] URL complète: \(fullURL)")
-            
-            // Créer une requête manuelle pour ce cas spécifique
-            guard let url = URL(string: fullURL) else {
-                throw APIError.invalidURL
-            }
-            
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue("application/json", forHTTPHeaderField: "Accept")
-            
-            // Ajouter le header Authorization avec un espace après "Bearer"
-            if let token = AuthTokenManager.shared.getToken() {
-                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-                print("[BillingAPIService] Authorization header: Bearer \(token.prefix(20))...")
-            }
-            
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw APIError.invalidResponse
-            }
-            
-            print("[BillingAPIService] Status code: \(httpResponse.statusCode)")
-            
-            switch httpResponse.statusCode {
-            case 200...299:
-                let decoder = JSONDecoder()
-                let decoded = try decoder.decode(StartSubscriptionResponse.self, from: data)
-                print("[BillingAPIService] startSubscription() - Succès: customerId=\(decoded.customerId), subscriptionId=\(decoded.subscriptionId)")
-                return decoded
-            case 401:
-                // Lire le message d'erreur précis du body
-                var errorReason: String? = nil
-                if !data.isEmpty {
-                    if let errorDict = try? JSONDecoder().decode([String: String].self, from: data) {
-                        errorReason = errorDict["message"] ?? errorDict["error"] ?? errorDict["reason"]
-                    } else if let errorString = String(data: data, encoding: .utf8) {
-                        errorReason = errorString.trimmingCharacters(in: .whitespacesAndNewlines)
-                    }
-                }
-                print("[BillingAPIService] Erreur 401 - Raison: \(errorReason ?? "non spécifiée")")
-                throw APIError.unauthorized(reason: errorReason)
-            default:
-                let errorMessage = try? JSONDecoder().decode([String: String].self, from: data)["message"]
-                throw APIError.httpError(statusCode: httpResponse.statusCode, message: errorMessage)
-            }
-        } catch let error as APIError {
-            print("[BillingAPIService] startSubscription() - Erreur API: \(error.localizedDescription)")
-            throw error
-        } catch {
-            print("[BillingAPIService] startSubscription() - Erreur: \(error.localizedDescription)")
-            throw APIError.networkError(error)
-        }
-    }
+    // MARK: - Payment Sheet Initialization
+    // TODO: À implémenter selon les nouvelles spécifications backend
+    // Endpoint: POST /api/stripe/paymentsheet/init
+    // Body: {"planId": 3}
+    // Response: PaymentSheetInitResponse
     
     // MARK: - Get Subscription Status
     func getSubscriptionStatus() async throws -> SubscriptionStatusResponse {
         print("[BillingAPIService] getSubscriptionStatus() - Début")
+        print("[BillingAPIService] Endpoint: GET /api/billing/subscription/status")
         do {
             let response: SubscriptionStatusResponse = try await apiService.request(
                 endpoint: "/billing/subscription/status",
@@ -158,6 +107,7 @@ class BillingAPIService: ObservableObject {
     // MARK: - Create Portal Session
     func createPortalSession() async throws -> PortalResponse {
         print("[BillingAPIService] createPortalSession() - Début")
+        print("[BillingAPIService] Endpoint: POST /api/billing/portal")
         do {
             let response: PortalResponse = try await apiService.request(
                 endpoint: "/billing/portal",

@@ -58,3 +58,6 @@ struct OfferImage: View {
     }
 }
 
+
+
+
