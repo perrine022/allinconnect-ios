@@ -16,6 +16,8 @@ struct SubscriptionPlanResponse: Codable, Identifiable {
     let price: Double
     let category: String? // "PROFESSIONAL", "INDIVIDUAL", ou "FAMILY"
     let duration: String? // "MONTHLY" ou "ANNUAL"
+    let stripePriceId: String? // ID Stripe du price (ex: "price_123...")
+    let stripeProductId: String? // ID Stripe du product (optionnel)
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -24,6 +26,8 @@ struct SubscriptionPlanResponse: Codable, Identifiable {
         case price
         case category
         case duration
+        case stripePriceId = "stripePriceId"
+        case stripeProductId = "stripeProductId"
     }
     
     // Helper pour formater le prix

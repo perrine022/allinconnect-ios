@@ -109,6 +109,11 @@ class CardViewModel: ObservableObject {
     }
     
     func loadData(forceRefresh: Bool = false) {
+        print("═══════════════════════════════════════════════════════════")
+        print("💳 [MA CARTE] Début du chargement des données")
+        print("═══════════════════════════════════════════════════════════")
+        print("💳 [MA CARTE] forceRefresh: \(forceRefresh)")
+        
         isLoading = true
         errorMessage = nil
         
@@ -116,10 +121,43 @@ class CardViewModel: ObservableObject {
         Task {
             do {
                 // Charger les données complètes depuis /users/me pour avoir le type de carte
+                print("💳 [MA CARTE] ───────────────────────────────────────────────────")
+                print("💳 [MA CARTE] Appel API: GET /api/v1/users/me")
+                print("💳 [MA CARTE] Objectif: Récupérer les données complètes de l'utilisateur")
+                let startTime = Date()
+                
                 let userMe = try await profileAPIService.getUserMe()
                 
+                let duration = Date().timeIntervalSince(startTime)
+                print("💳 [MA CARTE] ✅ Réponse reçue en \(String(format: "%.2f", duration))s")
+                print("💳 [MA CARTE] Données reçues:")
+                print("   - userId: \(userMe.id?.description ?? "nil")")
+                print("   - firstName: \(userMe.firstName)")
+                print("   - lastName: \(userMe.lastName)")
+                print("   - city: \(userMe.city ?? "nil")")
+                print("   - card: \(userMe.card != nil ? "exists" : "nil")")
+                print("   - isCardActive: \(userMe.isCardActive?.description ?? "nil")")
+                print("💳 [MA CARTE] ───────────────────────────────────────────────────")
+                
                 // Charger aussi les données light pour les autres infos
+                print("💳 [MA CARTE] Appel API: GET /api/v1/users/me/light")
+                print("💳 [MA CARTE] Objectif: Récupérer les données allégées (savings, referrals, etc.)")
+                let startTimeLight = Date()
+                
                 let userLight = try await profileAPIService.getUserLight()
+                
+                let durationLight = Date().timeIntervalSince(startTimeLight)
+                print("💳 [MA CARTE] ✅ Réponse reçue en \(String(format: "%.2f", durationLight))s")
+                print("💳 [MA CARTE] Données reçues:")
+                print("   - firstName: \(userLight.firstName)")
+                print("   - lastName: \(userLight.lastName)")
+                print("   - isMember: \(userLight.isMember?.description ?? "nil")")
+                print("   - referralCount: \(userLight.referralCount?.description ?? "nil")")
+                print("   - favoriteCount: \(userLight.favoriteCount?.description ?? "nil")")
+                print("   - walletBalance: \(userLight.walletBalance?.description ?? "nil")")
+                print("   - renewalDate: \(userLight.renewalDate ?? "nil")")
+                print("   - referralCode: \(userLight.referralCode ?? "nil")")
+                print("💳 [MA CARTE] ───────────────────────────────────────────────────")
                 
                 // Mettre à jour les données utilisateur
                 let firstName = userLight.firstName.isEmpty ? (userMe.firstName.isEmpty ? "Utilisateur" : userMe.firstName) : userLight.firstName
@@ -204,20 +242,58 @@ class CardViewModel: ObservableObject {
                 
                 // Si c'est une carte FAMILY ou CLIENT_FAMILY, vérifier si l'utilisateur est propriétaire
                 if cardType == "FAMILY" || cardType == "CLIENT_FAMILY" {
+                    print("💳 [MA CARTE] Carte FAMILY détectée, vérification du propriétaire...")
                     await loadCardOwner()
                 }
                 
+                // Charger les savings
+                print("💳 [MA CARTE] Chargement des savings...")
+                await loadSavings()
                 
                 // Charger les partenaires favoris depuis l'API
+                print("💳 [MA CARTE] Chargement des partenaires favoris...")
                 await loadFavoritePartners()
+                
+                print("═══════════════════════════════════════════════════════════")
+                print("💳 [MA CARTE] ✅ Chargement terminé avec succès")
+                print("═══════════════════════════════════════════════════════════")
                 
                 hasLoadedOnce = true
                 isLoading = false
             } catch {
+                print("═══════════════════════════════════════════════════════════")
+                print("💳 [MA CARTE] ❌ ERREUR lors du chargement des données")
+                print("═══════════════════════════════════════════════════════════")
+                print("💳 [MA CARTE] Type d'erreur: \(type(of: error))")
+                print("💳 [MA CARTE] Message: \(error.localizedDescription)")
+                
+                if let apiError = error as? APIError {
+                    print("💳 [MA CARTE] Détails APIError:")
+                    switch apiError {
+                    case .unauthorized(let reason):
+                        print("   - Type: unauthorized")
+                        print("   - Raison: \(reason ?? "non spécifiée")")
+                    case .networkError(let underlyingError):
+                        print("   - Type: networkError")
+                        print("   - Erreur sous-jacente: \(underlyingError.localizedDescription)")
+                    case .httpError(let statusCode, let message):
+                        print("   - Type: httpError")
+                        print("   - Status code: \(statusCode)")
+                        print("   - Message: \(message ?? "nil")")
+                    case .invalidResponse:
+                        print("   - Type: invalidResponse")
+                    case .decodingError(let underlyingError):
+                        print("   - Type: decodingError")
+                        print("   - Erreur: \(underlyingError.localizedDescription)")
+                    default:
+                        print("   - Type: autre")
+                    }
+                }
+                print("═══════════════════════════════════════════════════════════")
+                
                 hasLoadedOnce = true
                 isLoading = false
                 errorMessage = error.localizedDescription
-                print("Erreur lors du chargement des données de la carte: \(error)")
                 
                 // En cas d'erreur, utiliser les données mockées en fallback
                 favoritePartners = dataService.getPartners().filter { $0.isFavorite }
@@ -227,9 +303,19 @@ class CardViewModel: ObservableObject {
     }
     
     private func refreshCardData() async {
+        print("💳 [MA CARTE] 🔄 Rafraîchissement des données en arrière-plan")
         do {
+            print("💳 [MA CARTE] Appel API: GET /api/v1/users/me (refresh)")
+            let startTime = Date()
             let userMe = try await profileAPIService.getUserMe()
+            let duration = Date().timeIntervalSince(startTime)
+            print("💳 [MA CARTE] ✅ getUserMe() réussi en \(String(format: "%.2f", duration))s")
+            
+            print("💳 [MA CARTE] Appel API: GET /api/v1/users/me/light (refresh)")
+            let startTimeLight = Date()
             let userLight = try await profileAPIService.getUserLight()
+            let durationLight = Date().timeIntervalSince(startTimeLight)
+            print("💳 [MA CARTE] ✅ getUserLight() réussi en \(String(format: "%.2f", durationLight))s")
             
             let firstName = userLight.firstName.isEmpty ? (userMe.firstName.isEmpty ? "Utilisateur" : userMe.firstName) : userLight.firstName
             let lastName = userLight.lastName.isEmpty ? (userMe.lastName.isEmpty ? "" : userMe.lastName) : userLight.lastName
@@ -263,11 +349,20 @@ class CardViewModel: ObservableObject {
             // Charger les savings pour avoir la valeur à jour
             var currentSavings = savings
             do {
+                print("💳 [MA CARTE] Appel API: GET /api/v1/savings (refresh)")
+                let startTimeSavings = Date()
                 let savingsResponse = try await savingsAPIService.getSavings()
+                let durationSavings = Date().timeIntervalSince(startTimeSavings)
+                print("💳 [MA CARTE] ✅ getSavings() réussi en \(String(format: "%.2f", durationSavings))s")
+                print("💳 [MA CARTE] Nombre d'entrées: \(savingsResponse.count)")
+                
                 let savingsEntries = savingsResponse.map { $0.toSavingsEntry() }
                 currentSavings = savingsEntries.reduce(0) { $0 + $1.amount }
+                print("💳 [MA CARTE] Total savings calculé: \(currentSavings)€")
             } catch {
-                print("[CardViewModel] Erreur lors du chargement des savings en rafraîchissement: \(error)")
+                print("💳 [MA CARTE] ❌ Erreur lors du chargement des savings en rafraîchissement")
+                print("💳 [MA CARTE] Type: \(type(of: error))")
+                print("💳 [MA CARTE] Message: \(error.localizedDescription)")
             }
             
             
@@ -300,39 +395,81 @@ class CardViewModel: ObservableObject {
                 savings = currentSavings
             }
         } catch {
-            print("[CardViewModel] Erreur lors du rafraîchissement en arrière-plan: \(error)")
+            print("💳 [MA CARTE] ❌ Erreur lors du rafraîchissement en arrière-plan")
+            print("💳 [MA CARTE] Type: \(type(of: error))")
+            print("💳 [MA CARTE] Message: \(error.localizedDescription)")
+            
+            if let apiError = error as? APIError {
+                switch apiError {
+                case .unauthorized(let reason):
+                    print("💳 [MA CARTE] ⚠️ Erreur 401 - Non autorisé")
+                    print("💳 [MA CARTE] Raison: \(reason ?? "non spécifiée")")
+                case .networkError(let underlyingError):
+                    print("💳 [MA CARTE] ⚠️ Erreur réseau")
+                    print("💳 [MA CARTE] Erreur sous-jacente: \(underlyingError.localizedDescription)")
+                default:
+                    print("💳 [MA CARTE] ⚠️ Autre erreur API")
+                }
+            }
         }
     }
     
     private func loadCardOwner() async {
+        print("💳 [MA CARTE] ───────────────────────────────────────────────────")
+        print("💳 [MA CARTE] Appel API: GET /api/v1/cards/owner")
+        print("💳 [MA CARTE] Objectif: Vérifier si l'utilisateur est propriétaire de la carte famille")
+        let startTime = Date()
+        
         do {
             let cardOwnerResponse = try await subscriptionsAPIService.getCardOwner()
+            let duration = Date().timeIntervalSince(startTime)
+            print("💳 [MA CARTE] ✅ Réponse reçue en \(String(format: "%.2f", duration))s")
+            print("💳 [MA CARTE] isOwner: \(cardOwnerResponse.isOwner)")
+            
             await MainActor.run {
                 isCardOwner = cardOwnerResponse.isOwner
-                print("[CardViewModel] User is card owner: \(isCardOwner)")
+                print("💳 [MA CARTE] ✅ Propriétaire de la carte: \(isCardOwner)")
             }
         } catch {
+            let duration = Date().timeIntervalSince(startTime)
+            print("💳 [MA CARTE] ❌ Erreur après \(String(format: "%.2f", duration))s")
+            print("💳 [MA CARTE] Type: \(type(of: error))")
+            print("💳 [MA CARTE] Message: \(error.localizedDescription)")
+            
             // Si c'est une erreur unauthorized, c'est probablement que l'utilisateur n'a pas de carte famille
             // ou n'a pas les permissions. On ignore silencieusement.
-            if let apiError = error as? APIError,
-               case .unauthorized = apiError {
-                print("[CardViewModel] Utilisateur non autorisé pour vérifier le propriétaire de la carte (probablement pas de carte famille)")
-                await MainActor.run {
-                    isCardOwner = false
-                }
-            } else {
-                print("[CardViewModel] Erreur lors de la vérification du propriétaire de la carte: \(error)")
-                await MainActor.run {
-                    isCardOwner = false
+            if let apiError = error as? APIError {
+                switch apiError {
+                case .unauthorized(let reason):
+                    print("💳 [MA CARTE] ⚠️ Erreur 401 - Non autorisé")
+                    print("💳 [MA CARTE] Raison: \(reason ?? "non spécifiée")")
+                    print("💳 [MA CARTE] → Probablement pas de carte famille ou pas les permissions")
+                case .notFound:
+                    print("💳 [MA CARTE] ⚠️ Erreur 404 - Carte non trouvée")
+                default:
+                    print("💳 [MA CARTE] ⚠️ Autre erreur API")
                 }
             }
+            
+            await MainActor.run {
+                isCardOwner = false
+            }
         }
+        print("💳 [MA CARTE] ───────────────────────────────────────────────────")
     }
     
     private func loadFavoritePartners() async {
+        print("💳 [MA CARTE] ───────────────────────────────────────────────────")
+        print("💳 [MA CARTE] Appel API: GET /api/v1/favorites")
+        print("💳 [MA CARTE] Objectif: Récupérer les partenaires favoris")
+        let startTime = Date()
+        
         do {
-            // Charger les favoris depuis l'API
             let favoritesResponse = try await favoritesAPIService.getFavorites()
+            let duration = Date().timeIntervalSince(startTime)
+            print("💳 [MA CARTE] ✅ Réponse reçue en \(String(format: "%.2f", duration))s")
+            print("💳 [MA CARTE] Nombre de favoris: \(favoritesResponse.count)")
+            
             // Marquer tous les favoris comme favoris
             favoritePartners = favoritesResponse.map { response in
                 let basePartner = response.toPartner()
@@ -359,12 +496,31 @@ class CardViewModel: ObservableObject {
             }
             // Mettre à jour le compteur
             favoritesCount = favoritePartners.count
+            print("💳 [MA CARTE] ✅ \(favoritesCount) partenaires favoris chargés")
         } catch {
-            print("Erreur lors du chargement des favoris: \(error)")
+            let duration = Date().timeIntervalSince(startTime)
+            print("💳 [MA CARTE] ❌ Erreur après \(String(format: "%.2f", duration))s")
+            print("💳 [MA CARTE] Type: \(type(of: error))")
+            print("💳 [MA CARTE] Message: \(error.localizedDescription)")
+            
+            if let apiError = error as? APIError {
+                switch apiError {
+                case .unauthorized(let reason):
+                    print("💳 [MA CARTE] ⚠️ Erreur 401 - Non autorisé")
+                    print("💳 [MA CARTE] Raison: \(reason ?? "non spécifiée")")
+                case .notFound:
+                    print("💳 [MA CARTE] ⚠️ Erreur 404 - Favoris non trouvés")
+                default:
+                    print("💳 [MA CARTE] ⚠️ Autre erreur API")
+                }
+            }
+            
             // En cas d'erreur, utiliser les données mockées en fallback
             favoritePartners = dataService.getPartners().filter { $0.isFavorite }
             favoritesCount = favoritePartners.count
+            print("💳 [MA CARTE] ⚠️ Utilisation de données mockées en fallback: \(favoritesCount) favoris")
         }
+        print("💳 [MA CARTE] ───────────────────────────────────────────────────")
     }
     
     func removeFavorite(partner: Partner) {
@@ -407,29 +563,60 @@ class CardViewModel: ObservableObject {
     
     // MARK: - Savings Management
     func loadSavings() {
+        print("💳 [MA CARTE] ───────────────────────────────────────────────────")
+        print("💳 [MA CARTE] Appel API: GET /api/v1/savings")
+        print("💳 [MA CARTE] Objectif: Récupérer les économies de l'utilisateur")
+        let startTime = Date()
+        
         isLoading = true
         errorMessage = nil
         
         Task {
             do {
-                // Charger depuis l'API
                 let savingsResponse = try await savingsAPIService.getSavings()
+                let duration = Date().timeIntervalSince(startTime)
+                print("💳 [MA CARTE] ✅ Réponse reçue en \(String(format: "%.2f", duration))s")
+                print("💳 [MA CARTE] Nombre d'entrées: \(savingsResponse.count)")
+                
                 savingsEntries = savingsResponse.map { $0.toSavingsEntry() }
                 updateSavingsTotal()
+                
+                print("💳 [MA CARTE] ✅ Total savings: \(savings)€")
+                print("💳 [MA CARTE] ───────────────────────────────────────────────────")
+                
                 isLoading = false
             } catch {
+                let duration = Date().timeIntervalSince(startTime)
+                print("💳 [MA CARTE] ❌ Erreur après \(String(format: "%.2f", duration))s")
+                print("💳 [MA CARTE] Type: \(type(of: error))")
+                print("💳 [MA CARTE] Message: \(error.localizedDescription)")
+                
+                if let apiError = error as? APIError {
+                    switch apiError {
+                    case .unauthorized(let reason):
+                        print("💳 [MA CARTE] ⚠️ Erreur 401 - Non autorisé")
+                        print("💳 [MA CARTE] Raison: \(reason ?? "non spécifiée")")
+                    case .notFound:
+                        print("💳 [MA CARTE] ⚠️ Erreur 404 - Savings non trouvés")
+                    default:
+                        print("💳 [MA CARTE] ⚠️ Autre erreur API")
+                    }
+                }
+                
                 isLoading = false
                 errorMessage = error.localizedDescription
-                print("Erreur lors du chargement des économies: \(error)")
                 
                 // En cas d'erreur, charger depuis UserDefaults en fallback
                 if let data = UserDefaults.standard.data(forKey: "savings_entries"),
                    let decoded = try? JSONDecoder().decode([SavingsEntry].self, from: data) {
                     savingsEntries = decoded
                     updateSavingsTotal()
+                    print("💳 [MA CARTE] ⚠️ Utilisation de UserDefaults en fallback: \(savingsEntries.count) entrées")
                 } else {
                     savings = 0.0
+                    print("💳 [MA CARTE] ⚠️ Aucune donnée en fallback, savings = 0€")
                 }
+                print("💳 [MA CARTE] ───────────────────────────────────────────────────")
             }
         }
     }

@@ -103,28 +103,46 @@ class HomeViewModel: ObservableObject {
         Task { @MainActor in
             do {
                 print("[HomeViewModel] 🔥 Chargement des 4 premières offres pour 'À ne pas louper'")
+                print("[HomeViewModel] Filtre: type=OFFRE (uniquement les offres, pas les événements)")
                 
                 // Récupérer la ville de l'utilisateur depuis son profil
                 let userProfile = try await profileAPIService.getUserMe()
                 
+                // Utiliser le même endpoint que OffersViewModel avec le filtre type="OFFRE"
                 let offersResponse: [OfferResponse]
                 
                 if let userCity = userProfile.city, !userCity.isEmpty {
                     print("[HomeViewModel] Chargement des offres pour la ville: \(userCity)")
-                    // Charger les offres filtrées par ville depuis l'API
-                    offersResponse = try await offersAPIService.getAllOffers(city: userCity)
+                    // Charger les offres filtrées par ville et type OFFRE depuis l'API
+                    offersResponse = try await offersAPIService.getAllOffers(
+                        city: userCity,
+                        category: nil,
+                        professionalId: nil,
+                        type: "OFFRE", // Filtrer uniquement les offres (pas les événements)
+                        startDate: nil,
+                        endDate: nil
+                    )
                 } else {
                     print("[HomeViewModel] Aucune ville trouvée pour l'utilisateur, chargement de toutes les offres")
-                    // Si pas de ville, charger toutes les offres actives
-                    offersResponse = try await offersAPIService.getAllOffers()
+                    // Si pas de ville, charger toutes les offres actives de type OFFRE
+                    offersResponse = try await offersAPIService.getAllOffers(
+                        city: nil,
+                        category: nil,
+                        professionalId: nil,
+                        type: "OFFRE", // Filtrer uniquement les offres (pas les événements)
+                        startDate: nil,
+                        endDate: nil
+                    )
                 }
+                
+                print("[HomeViewModel] ✅ \(offersResponse.count) offres récupérées depuis l'API (type=OFFRE)")
                 
                 // Prendre les 4 premières offres avec leurs vraies images depuis l'API
                 let limitedOffers = Array(offersResponse.prefix(4))
                 
-                print("[HomeViewModel] ✅ \(limitedOffers.count) offres chargées depuis l'API")
+                print("[HomeViewModel] ✅ \(limitedOffers.count) offres sélectionnées pour affichage")
                 for (index, offer) in limitedOffers.enumerated() {
-                    print("[HomeViewModel]   \(index + 1). \(offer.title) - Image: \(offer.imageUrl ?? "aucune")")
+                    print("[HomeViewModel]   \(index + 1). \(offer.title) - Type: \(offer.type ?? "N/A") - Image: \(offer.imageUrl ?? "aucune")")
                 }
                 
                 // Convertir les réponses API en modèles Offer (avec les vraies images)

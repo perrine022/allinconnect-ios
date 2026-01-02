@@ -141,6 +141,8 @@ class OffersAPIService: ObservableObject {
     }
     
     // MARK: - Get All Offers (toutes les offres actives sans filtre temporel)
+    /// Récupère la liste des offres disponibles
+    /// Endpoint public : Ne nécessite pas de token valide (même avec un token expiré, l'endpoint fonctionne)
     func getAllOffers(
         city: String? = nil,
         category: OfferCategory? = nil,
@@ -149,6 +151,9 @@ class OffersAPIService: ObservableObject {
         startDate: String? = nil, // Format ISO 8601: YYYY-MM-DDTHH:mm:ss
         endDate: String? = nil // Format ISO 8601: YYYY-MM-DDTHH:mm:ss
     ) async throws -> [OfferResponse] {
+        print("📡 [API] 📞 Appel GET /api/v1/offers (endpoint public)")
+        print("📡 [API] Paramètres: city=\(city ?? "nil"), type=\(type ?? "nil"), category=\(category?.rawValue ?? "nil")")
+        
         var parameters: [String: Any] = [:]
         
         if let city = city {
@@ -175,14 +180,31 @@ class OffersAPIService: ObservableObject {
             parameters["endDate"] = endDate
         }
         
-        // L'API retourne directement un tableau d'offres, pas un objet avec une clé "offers"
-        let offers: [OfferResponse] = try await apiService.request(
-            endpoint: "/offers",
-            method: .get,
-            parameters: parameters.isEmpty ? nil : parameters,
-            headers: nil
-        )
-        return offers
+        do {
+            // L'API retourne directement un tableau d'offres, pas un objet avec une clé "offres"
+            // Endpoint public : fonctionne même sans token ou avec token expiré
+            let offers: [OfferResponse] = try await apiService.request(
+                endpoint: "/offers",
+                method: .get,
+                parameters: parameters.isEmpty ? nil : parameters,
+                headers: nil
+            )
+            print("📡 [API] ✅ Offres récupérées: \(offers.count) offres")
+            return offers
+        } catch let apiError as APIError {
+            if case .unauthorized = apiError {
+                // Si on reçoit une 401 sur cet endpoint public, c'est anormal mais on log quand même
+                // Le backend ne devrait plus retourner 401 pour cet endpoint, mais on gère toutes les erreurs
+                print("📡 [API] ⚠️ Erreur 401 sur endpoint public /offers (anormal mais géré)")
+                print("📡 [API] ⚠️ Retour d'un tableau vide au lieu d'une erreur bloquante")
+                // Retourner un tableau vide plutôt que de bloquer l'application
+                return []
+            }
+            throw apiError
+        } catch {
+            print("📡 [API] ❌ Erreur lors de la récupération des offres: \(error)")
+            throw error
+        }
     }
     
     // MARK: - Get Offer Detail

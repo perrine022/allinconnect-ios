@@ -361,7 +361,8 @@ class StripePaymentViewModel: ObservableObject {
     @Published var isActivating: Bool = false // État pour l'écran "Activation en cours"
     
     private let subscriptionsAPIService: SubscriptionsAPIService
-    private let paymentAPIService = PaymentAPIService()
+    private let paymentAPIService = PaymentAPIService() // Pour les paiements one-shot
+    private let billingAPIService = BillingAPIService() // Pour les abonnements
     private let profileAPIService = ProfileAPIService()
     
     // Payment Link Stripe fourni (fallback si Payment Sheet non disponible)
@@ -477,73 +478,83 @@ class StripePaymentViewModel: ObservableObject {
     
     /// Nouveau flux de paiement avec Payment Sheet (simplifié)
     /// Le backend récupère automatiquement le userId depuis le JWT
-    /// 1. Convertir le prix en centimes
-    /// 2. Appeler POST /api/v1/payment/payment-sheet avec les détails (sans userId)
-    /// 3. Afficher le Payment Sheet avec les secrets reçus
+    /// Processus de paiement pour un abonnement
+    /// Utilise le flow Stripe Subscription (create subscription avec priceId) au lieu du flow PaymentIntent one-shot
+    /// 1. Vérifier si le plan a un stripePriceId
+    /// 2. Appeler POST /api/billing/subscription/payment-sheet avec priceId
+    /// 3. Afficher le Payment Sheet avec les secrets reçus (paymentIntent vient de subscription.latest_invoice.payment_intent)
     func processPaymentWithStripeSheet(plan: SubscriptionPlanResponse) async {
         print("═══════════════════════════════════════════════════════════")
-        print("💳 [PAIEMENT] Début du processus de paiement")
+        print("💳 [ABONNEMENT] Début du processus de paiement pour abonnement")
         print("═══════════════════════════════════════════════════════════")
-        print("💳 [PAIEMENT] Plan sélectionné:")
+        print("💳 [ABONNEMENT] Plan sélectionné:")
         print("   - ID: \(plan.id)")
         print("   - Titre: \(plan.title)")
         print("   - Prix: \(plan.price)€")
         print("   - Catégorie: \(plan.category ?? "N/A")")
         print("   - Durée: \(plan.duration ?? "N/A")")
+        print("   - stripePriceId: \(plan.stripePriceId ?? "NIL - ERREUR")")
         
         isProcessingPayment = true
         errorMessage = nil
         
+        // Vérifier que le plan a un stripePriceId (obligatoire pour créer une subscription)
+        guard let priceId = plan.stripePriceId, !priceId.isEmpty else {
+            print("═══════════════════════════════════════════════════════════")
+            print("❌ [ABONNEMENT] ERREUR: Le plan n'a pas de stripePriceId")
+            print("═══════════════════════════════════════════════════════════")
+            errorMessage = "Erreur: Le plan sélectionné n'a pas d'ID Stripe valide. Veuillez réessayer."
+            isProcessingPayment = false
+            return
+        }
+        
         do {
-            // ÉTAPE 1 : Convertir le prix en centimes (ex: 9.99€ → 999 centimes)
-            print("💳 [PAIEMENT] ÉTAPE 1 : Conversion du prix en centimes")
-            let amountInCents = Int(plan.price * 100)
-            print("   ✅ \(plan.price)€ = \(amountInCents) centimes")
+            // ÉTAPE 1 : Appeler POST /api/billing/subscription/payment-sheet avec priceId
+            // Le backend crée une Subscription Stripe en default_incomplete
+            // Le backend expand latest_invoice.payment_intent pour récupérer le client_secret
+            print("💳 [ABONNEMENT] ÉTAPE 1 : Appel API POST /api/billing/subscription/payment-sheet")
+            print("   - priceId: \(priceId)")
+            print("   - Note: Le backend crée une Subscription Stripe avec default_incomplete")
+            print("   - Note: Le paymentIntent vient de subscription.latest_invoice.payment_intent.client_secret")
             
-            // ÉTAPE 2 : Appeler POST /api/v1/payment/payment-sheet
-            // Le backend récupère automatiquement le userId depuis le JWT, pas besoin de l'envoyer
-            print("💳 [PAIEMENT] ÉTAPE 2 : Préparation de la requête Payment Sheet")
-            print("   - Montant: \(amountInCents) centimes")
-            print("   - Devise: eur")
-            print("   - Description: \(plan.description ?? "Abonnement \(plan.title)")")
-            print("   - Capture immédiate: true")
-            print("   - userId: Récupéré automatiquement depuis le JWT par le backend")
+            let subscriptionSheetResponse = try await billingAPIService.createSubscriptionPaymentSheet(priceId: priceId)
             
-            let paymentSheetRequest = PaymentSheetRequest(
-                amount: amountInCents,
-                currency: "eur",
-                description: plan.description ?? "Abonnement \(plan.title)",
-                captureImmediately: true
-            )
-            
-            print("💳 [PAIEMENT] ÉTAPE 3 : Appel API POST /api/v1/payment/payment-sheet")
-            let paymentSheetResponse = try await paymentAPIService.createPaymentSheet(request: paymentSheetRequest)
-            
-            print("💳 [PAIEMENT] ✅ Réponse reçue du backend avec succès")
-            print("   - paymentIntent: \(paymentSheetResponse.paymentIntent.prefix(30))...")
-            print("   - customer: \(paymentSheetResponse.customer)")
-            print("   - ephemeralKey: \(paymentSheetResponse.ephemeralKey.prefix(30))...")
-            print("   - publishableKey: \(paymentSheetResponse.publishableKey.prefix(30))...")
+            print("💳 [ABONNEMENT] ✅ Réponse reçue du backend avec succès")
+            print("   - paymentIntent (client_secret): \(subscriptionSheetResponse.paymentIntent.prefix(30))...")
+            // Vérifier que le format est correct (doit contenir "_secret_")
+            if subscriptionSheetResponse.paymentIntent.contains("_secret_") {
+                print("   ✅ Format client_secret correct (pi_xxx_secret_xxx)")
+            } else {
+                print("   ⚠️ ATTENTION: Format client_secret incomplet - PaymentSheet ne fonctionnera pas")
+                print("   ⚠️ Format attendu: pi_xxx_secret_xxx")
+                print("   ⚠️ Format reçu: \(subscriptionSheetResponse.paymentIntent)")
+            }
+            print("   - customerId: \(subscriptionSheetResponse.customerId)")
+            print("   - ephemeralKey: \(subscriptionSheetResponse.ephemeralKey.prefix(30))...")
+            print("   - publishableKey: \(subscriptionSheetResponse.publishableKey.prefix(30))...")
+            print("   - subscriptionId: \(subscriptionSheetResponse.subscriptionId ?? "nil")")
             
             // Stocker les secrets pour le Payment Sheet
-            // Le backend retourne "paymentIntent" qui est le clientSecret complet (format: "pi_xxx_secret_xxx")
-            print("💳 [PAIEMENT] ÉTAPE 4 : Stockage des secrets pour le Payment Sheet")
-            paymentIntentClientSecret = paymentSheetResponse.paymentIntent
-            customerId = paymentSheetResponse.customer
-            ephemeralKeySecret = paymentSheetResponse.ephemeralKey
-            publishableKey = paymentSheetResponse.publishableKey
+            // Le paymentIntent est le client_secret COMPLET du PaymentIntent de la première invoice
+            // Format requis: "pi_xxx_secret_xxx" (pas juste "pi_xxx")
+            print("💳 [ABONNEMENT] ÉTAPE 2 : Stockage des secrets pour le Payment Sheet")
+            paymentIntentClientSecret = subscriptionSheetResponse.paymentIntent
+            customerId = subscriptionSheetResponse.customerId // Utiliser customerId (standardisé)
+            ephemeralKeySecret = subscriptionSheetResponse.ephemeralKey
+            publishableKey = subscriptionSheetResponse.publishableKey
             print("   ✅ Secrets stockés dans le ViewModel")
             
             // Extraire le paymentIntentId pour vérification du statut si nécessaire
             // Format: "pi_xxx_secret_xxx" -> extraire "pi_xxx"
-            if let paymentIntentId = paymentSheetResponse.paymentIntent.components(separatedBy: "_secret_").first {
+            if let paymentIntentId = subscriptionSheetResponse.paymentIntent.components(separatedBy: "_secret_").first {
                 currentPaymentIntentId = paymentIntentId
                 print("   ✅ PaymentIntentId extrait: \(paymentIntentId)")
             }
             
-            // ÉTAPE 5 : Présenter le Payment Sheet
-            print("💳 [PAIEMENT] ÉTAPE 5 : Présentation du Payment Sheet Stripe")
+            // ÉTAPE 3 : Présenter le Payment Sheet
+            print("💳 [ABONNEMENT] ÉTAPE 3 : Présentation du Payment Sheet Stripe")
             print("   → Affichage de l'interface de paiement à l'utilisateur")
+            print("   → Après confirmation, le webhook backend activera premiumEnabled via invoice.paid")
             showPaymentSheet = true
             print("═══════════════════════════════════════════════════════════")
             
