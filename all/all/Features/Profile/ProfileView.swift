@@ -613,7 +613,11 @@ struct ProfileView: View {
                     if viewModel.hasLoadedOnce {
                         VStack(spacing: 0) {
                         // Options PRO (affichées pour tous les professionnels, peu importe l'espace)
-                        if viewModel.user.userType == .pro {
+                        // Vérifier userType, cardType PROFESSIONAL, ou espace PRO pour être sûr
+                        let isProUser = viewModel.user.userType == .pro || 
+                                      viewModel.cardType == "PROFESSIONAL" || 
+                                      viewModel.currentSpace == .pro
+                        if isProUser {
                             ProfileMenuRow(
                                 icon: "building.2.fill",
                                 title: "Gérer mon établissement",

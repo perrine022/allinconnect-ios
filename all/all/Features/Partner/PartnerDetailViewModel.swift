@@ -174,6 +174,7 @@ class PartnerDetailViewModel: ObservableObject {
                 discount: partner.discount,
                 imageName: partner.imageName,
                 headerImageName: partner.headerImageName,
+                establishmentImageUrl: partner.establishmentImageUrl,
                 isFavorite: partner.isFavorite,
                 apiId: partner.apiId
             )
@@ -456,6 +457,7 @@ class PartnerDetailViewModel: ObservableObject {
                 print("[PartnerDetailViewModel] 📝 Création de l'avis pour le professionnel ID: \(apiId), score: \(rating)")
                 
                 // Soumettre l'avis via l'API POST /api/v1/ratings
+                // Le backend renvoie immédiatement l'objet complet de l'avis créé
                 let ratingResponse = try await ratingsAPIService.createRating(
                     ratedId: apiId,
                     score: rating,
@@ -464,11 +466,48 @@ class PartnerDetailViewModel: ObservableObject {
                 
                 print("[PartnerDetailViewModel] ✅ Avis créé avec succès: ID \(ratingResponse.id)")
                 
-                // Recharger les avis pour mettre à jour la liste et voir son propre avis
-                // loadRatings met déjà à jour la note moyenne et hasUserRated
-                await loadRatings(professionalId: apiId)
+                // Ajouter directement l'avis à la liste locale (mise à jour instantanée)
+                let newReview = ratingResponse.toReview()
+                reviews.append(newReview)
                 
-                print("[PartnerDetailViewModel] ✅ Liste des avis rafraîchie, l'avis de l'utilisateur est maintenant visible")
+                // Mettre à jour hasUserRated pour masquer le bouton "Laisser un avis"
+                hasUserRated = true
+                
+                // Mettre à jour la note moyenne depuis l'API
+                do {
+                    let averageRating = try await ratingsAPIService.getAverageRating(userId: apiId)
+                    let reviewCount = reviews.count
+                    
+                    // Mettre à jour le partenaire avec la nouvelle note moyenne et le nombre d'avis
+                    partner = Partner(
+                        id: partner.id,
+                        name: partner.name,
+                        category: partner.category,
+                        address: partner.address,
+                        city: partner.city,
+                        postalCode: partner.postalCode,
+                        phone: partner.phone,
+                        email: partner.email,
+                        website: partner.website,
+                        instagram: partner.instagram,
+                        description: partner.description,
+                        rating: averageRating,
+                        reviewCount: reviewCount,
+                        discount: partner.discount,
+                        imageName: partner.imageName,
+                        headerImageName: partner.headerImageName,
+                        establishmentImageUrl: partner.establishmentImageUrl,
+                        isFavorite: partner.isFavorite,
+                        apiId: partner.apiId
+                    )
+                    
+                    print("[PartnerDetailViewModel] ✅ Note moyenne mise à jour: \(averageRating), nombre d'avis: \(reviewCount)")
+                } catch {
+                    print("[PartnerDetailViewModel] ⚠️ Erreur lors de la mise à jour de la note moyenne: \(error)")
+                    // On continue quand même, l'avis a été ajouté à la liste
+                }
+                
+                print("[PartnerDetailViewModel] ✅ Avis ajouté à la liste, mise à jour instantanée effectuée")
             } catch {
                 print("[PartnerDetailViewModel] ❌ Erreur lors de la soumission de l'avis: \(error)")
             }

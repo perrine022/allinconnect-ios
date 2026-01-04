@@ -18,6 +18,7 @@ class HomeViewModel: ObservableObject {
     @Published var filteredPartners: [Partner] = []
     @Published var isLoadingOffers: Bool = false
     @Published var offersError: String? = nil
+    @Published var offersAPIError: APIError? = nil // Pour détecter les erreurs 500
     
     // Search fields
     @Published var cityText: String = ""
@@ -103,8 +104,9 @@ class HomeViewModel: ObservableObject {
     
     func loadOffersByCity() {
         Task { @MainActor in
-            isLoadingOffers = true
-            offersError = nil
+        isLoadingOffers = true
+        offersError = nil
+        offersAPIError = nil // Réinitialiser l'erreur API
             
             do {
                 print("═══════════════════════════════════════════════════════════")
@@ -165,6 +167,14 @@ class HomeViewModel: ObservableObject {
                 isLoadingOffers = false
                 let errorMessage = error.localizedDescription
                 offersError = errorMessage
+                
+                // Stocker l'erreur API complète pour détecter les erreurs 500
+                if let apiError = error as? APIError {
+                    offersAPIError = apiError
+                } else {
+                    offersAPIError = nil
+                }
+                
                 print("═══════════════════════════════════════════════════════════")
                 print("[HomeViewModel] ❌ ERREUR lors du chargement des offres")
                 print("[HomeViewModel] Type d'erreur: \(type(of: error))")
@@ -181,6 +191,11 @@ class HomeViewModel: ObservableObject {
                         print("   - Réponse invalide du serveur")
                     case .decodingError(let underlyingError):
                         print("   - Erreur de décodage: \(underlyingError.localizedDescription)")
+                    case .httpError(let statusCode, _):
+                        print("   - Erreur HTTP \(statusCode)")
+                        if statusCode >= 500 {
+                            print("   - ⚠️ Erreur serveur détectée (500+)")
+                        }
                     default:
                         print("   - Autre erreur API")
                     }

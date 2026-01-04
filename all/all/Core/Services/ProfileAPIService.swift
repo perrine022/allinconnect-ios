@@ -98,6 +98,7 @@ struct UserMeResponse: Codable {
     let email: String?
     let firstName: String
     let lastName: String
+    let userType: String? // "CLIENT", "PROFESSIONAL", "MEGA_ADMIN"
     let address: String?
     let city: String?
     let postalCode: String?
@@ -125,6 +126,7 @@ struct UserMeResponse: Codable {
         case email
         case firstName = "firstName"
         case lastName = "lastName"
+        case userType = "userType"
         case address
         case city
         case postalCode = "postalCode"
@@ -154,6 +156,7 @@ struct UserMeResponse: Codable {
         // Rendre firstName et lastName optionnels avec valeurs par défaut
         firstName = try container.decodeIfPresent(String.self, forKey: .firstName) ?? ""
         lastName = try container.decodeIfPresent(String.self, forKey: .lastName) ?? ""
+        userType = try container.decodeIfPresent(String.self, forKey: .userType)
         address = try container.decodeIfPresent(String.self, forKey: .address)
         city = try container.decodeIfPresent(String.self, forKey: .city)
         postalCode = try container.decodeIfPresent(String.self, forKey: .postalCode)
@@ -181,6 +184,7 @@ struct UserLightResponse: Codable {
     let firstName: String
     let lastName: String
     let isMember: Bool?
+    let userType: String? // "CLIENT", "PROFESSIONAL", "MEGA_ADMIN"
     let card: CardResponse?
     let isCardActive: Bool?
     let referralCount: Int?
@@ -197,6 +201,7 @@ struct UserLightResponse: Codable {
         case firstName = "firstName"
         case lastName = "lastName"
         case isMember = "member" // Backend retourne "member" au lieu de "isMember"
+        case userType = "userType"
         case card
         case isCardActive = "cardActive" // Backend retourne "cardActive" au lieu de "isCardActive"
         case referralCount = "referralCount"
@@ -217,6 +222,7 @@ struct UserLightResponse: Codable {
         firstName = try container.decodeIfPresent(String.self, forKey: .firstName) ?? ""
         lastName = try container.decodeIfPresent(String.self, forKey: .lastName) ?? ""
         isMember = try container.decodeIfPresent(Bool.self, forKey: .isMember) ?? false
+        userType = try container.decodeIfPresent(String.self, forKey: .userType)
         card = try container.decodeIfPresent(CardResponse.self, forKey: .card)
         isCardActive = try container.decodeIfPresent(Bool.self, forKey: .isCardActive) ?? false
         referralCount = try container.decodeIfPresent(Int.self, forKey: .referralCount) ?? 0

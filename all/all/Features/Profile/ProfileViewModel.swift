@@ -371,6 +371,21 @@ class ProfileViewModel: ObservableObject {
             // Sauvegarder en cache
             cacheService.saveProfile(userLight)
             
+            // Extraire userType depuis l'API (priorité sur UserDefaults)
+            let apiUserType: UserType
+            if let userTypeString = userLight.userType {
+                // Convertir la valeur de l'API en UserType
+                apiUserType = (userTypeString == "PROFESSIONAL" || userTypeString == "PRO") ? .pro : .client
+                
+                // Mettre à jour UserDefaults avec la valeur de l'API
+                UserDefaults.standard.set(userTypeString == "PROFESSIONAL" || userTypeString == "PRO" ? "PRO" : "CLIENT", forKey: "user_type")
+                print("[ProfileViewModel] ✅ userType mis à jour depuis l'API: \(userTypeString) -> \(apiUserType)")
+            } else {
+                // Fallback sur la valeur actuelle si l'API ne retourne pas userType
+                apiUserType = user.userType
+                print("[ProfileViewModel] ⚠️ userType non disponible dans l'API, utilisation de la valeur actuelle: \(apiUserType)")
+            }
+            
             // Mettre à jour le prénom et nom depuis le backend
             user = User(
                 firstName: userLight.firstName,
@@ -381,8 +396,14 @@ class ProfileViewModel: ObservableObject {
                 publications: user.publications,
                 subscribers: user.subscribers,
                 subscriptions: user.subscriptions,
-                userType: user.userType
+                userType: apiUserType // Utiliser la valeur de l'API
             )
+            
+            // Mettre à jour l'espace si nécessaire (si PRO, s'assurer qu'on est en espace PRO)
+            if apiUserType == .pro && currentSpace != .pro {
+                currentSpace = .pro
+                print("[ProfileViewModel] ✅ Espace mis à jour vers PRO")
+            }
             
             // Mettre à jour les informations de la carte
             cardType = userLight.card?.type
@@ -489,6 +510,20 @@ class ProfileViewModel: ObservableObject {
             // Sauvegarder en cache
             cacheService.saveProfile(userLight)
             
+            // Extraire userType depuis l'API (priorité sur UserDefaults)
+            let apiUserType: UserType
+            if let userTypeString = userLight.userType {
+                // Convertir la valeur de l'API en UserType
+                apiUserType = (userTypeString == "PROFESSIONAL" || userTypeString == "PRO") ? .pro : .client
+                
+                // Mettre à jour UserDefaults avec la valeur de l'API
+                UserDefaults.standard.set(userTypeString == "PROFESSIONAL" || userTypeString == "PRO" ? "PRO" : "CLIENT", forKey: "user_type")
+                print("[ProfileViewModel] ✅ userType mis à jour depuis l'API (refresh): \(userTypeString) -> \(apiUserType)")
+            } else {
+                // Fallback sur la valeur actuelle si l'API ne retourne pas userType
+                apiUserType = user.userType
+            }
+            
             // Mettre à jour les données en arrière-plan
             await MainActor.run {
                 user = User(
@@ -500,8 +535,14 @@ class ProfileViewModel: ObservableObject {
                     publications: user.publications,
                     subscribers: user.subscribers,
                     subscriptions: user.subscriptions,
-                    userType: user.userType
+                    userType: apiUserType // Utiliser la valeur de l'API
                 )
+                
+                // Mettre à jour l'espace si nécessaire (si PRO, s'assurer qu'on est en espace PRO)
+                if apiUserType == .pro && currentSpace != .pro {
+                    currentSpace = .pro
+                }
+                
                 cardType = userLight.card?.type
                 hasActiveClub10Subscription = userLight.isCardActive ?? false
                 

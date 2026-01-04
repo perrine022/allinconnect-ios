@@ -26,12 +26,36 @@ struct InvoicesView: View {
                     
                     ScrollView {
                         VStack(spacing: 24) {
-                            // Titre
+                            // Titre avec bouton retour
                             HStack {
+                                // Bouton retour
+                                Button(action: {
+                                    dismiss()
+                                }) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "chevron.left")
+                                            .font(.system(size: 14, weight: .semibold))
+                                        Text("Retour")
+                                            .font(.system(size: 15, weight: .medium))
+                                    }
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(Color.white.opacity(0.2))
+                                    .cornerRadius(8)
+                                }
+                                
+                                Spacer()
+                                
                                 Text("Factures")
                                     .font(.system(size: 28, weight: .bold))
                                     .foregroundColor(.white)
+                                
                                 Spacer()
+                                
+                                // Espace invisible pour équilibrer le bouton retour
+                                Color.clear
+                                    .frame(width: 80)
                             }
                             .padding(.horizontal, 20)
                             .padding(.top, 20)

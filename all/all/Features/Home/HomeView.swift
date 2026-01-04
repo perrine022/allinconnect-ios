@@ -324,6 +324,12 @@ struct HomeView: View {
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 20)
+                        } else if let apiError = viewModel.offersAPIError, apiError.isServerError {
+                            // Afficher ServerErrorView pour les erreurs 500
+                            ServerErrorView {
+                                viewModel.loadOffersByCity()
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 400)
                         } else if let error = viewModel.offersError {
                             VStack(spacing: 8) {
                                 Text("Erreur lors du chargement")

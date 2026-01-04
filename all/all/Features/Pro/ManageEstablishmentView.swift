@@ -271,19 +271,19 @@ struct ManageEstablishmentView: View {
                                 HStack {
                                     if viewModel.isLoading {
                                         ProgressView()
-                                            .progressViewStyle(CircularProgressViewStyle(tint: .black))
+                                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                     } else {
                                         Text("Enregistrer les modifications")
                                             .font(.system(size: 16, weight: .bold))
                                     }
                                 }
-                                .foregroundColor(.black)
+                                .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
-                                .background((viewModel.isValid && !viewModel.isLoading) ? Color.appGold : Color.gray.opacity(0.5))
+                                .background((viewModel.isValid && viewModel.hasChanges && !viewModel.isLoading) ? Color.appRed : Color.gray.opacity(0.5))
                                 .cornerRadius(12)
                             }
-                            .disabled(!viewModel.isValid || viewModel.isLoading || viewModel.isLoadingData)
+                            .disabled(!viewModel.isValid || !viewModel.hasChanges || viewModel.isLoading || viewModel.isLoadingData)
                             .padding(.horizontal, 20)
                             .padding(.top, 8)
                             
@@ -389,6 +389,24 @@ class ManageEstablishmentViewModel: ObservableObject {
     @Published var selectedImageItem: PhotosPickerItem? = nil
     @Published var establishmentImageUrl: String? = nil
     
+    // Valeurs initiales pour détecter les modifications
+    private var initialName: String = ""
+    private var initialDescription: String = ""
+    private var initialAddress: String = ""
+    private var initialCity: String = ""
+    private var initialPostalCode: String = ""
+    private var initialPhone: String = ""
+    private var initialEmail: String = ""
+    private var initialWebsite: String = ""
+    private var initialInstagram: String = ""
+    private var initialOpeningHours: String = ""
+    private var initialLatitude: Double? = nil
+    private var initialLongitude: Double? = nil
+    private var initialProfession: String? = nil
+    private var initialCategory: OfferCategory? = nil
+    private var initialImageUrl: String? = nil
+    private var hasInitialImage: Bool = false
+    
     private let profileAPIService: ProfileAPIService
     private let locationService: LocationService
     
@@ -458,6 +476,9 @@ class ManageEstablishmentViewModel: ObservableObject {
                 // Gère les URLs absolues (http/https) et les URLs relatives (/uploads/)
                 establishmentImageUrl = ImageURLHelper.buildImageURL(from: userMe.establishmentImageUrl)
                 
+                // Sauvegarder les valeurs initiales pour détecter les modifications
+                saveInitialValues()
+                
                 isLoadingData = false
             } catch {
                 isLoadingData = false
@@ -465,6 +486,52 @@ class ManageEstablishmentViewModel: ObservableObject {
                 print("Erreur lors du chargement des données de l'établissement: \(error)")
             }
         }
+    }
+    
+    // Sauvegarder les valeurs initiales
+    private func saveInitialValues() {
+        initialName = name
+        initialDescription = description
+        initialAddress = address
+        initialCity = city
+        initialPostalCode = postalCode
+        initialPhone = phone
+        initialEmail = email
+        initialWebsite = website
+        initialInstagram = instagram
+        initialOpeningHours = openingHours
+        initialLatitude = latitude
+        initialLongitude = longitude
+        initialProfession = profession
+        initialCategory = category
+        initialImageUrl = establishmentImageUrl
+        hasInitialImage = (establishmentImageUrl != nil)
+    }
+    
+    // Vérifier si des modifications ont été faites
+    var hasChanges: Bool {
+        // Vérifier les modifications de texte
+        let textChanged = name.trimmingCharacters(in: .whitespaces) != initialName.trimmingCharacters(in: .whitespaces) ||
+                         description.trimmingCharacters(in: .whitespaces) != initialDescription.trimmingCharacters(in: .whitespaces) ||
+                         address.trimmingCharacters(in: .whitespaces) != initialAddress.trimmingCharacters(in: .whitespaces) ||
+                         city.trimmingCharacters(in: .whitespaces) != initialCity.trimmingCharacters(in: .whitespaces) ||
+                         postalCode.trimmingCharacters(in: .whitespaces) != initialPostalCode.trimmingCharacters(in: .whitespaces) ||
+                         phone.trimmingCharacters(in: .whitespaces) != initialPhone.trimmingCharacters(in: .whitespaces) ||
+                         email.trimmingCharacters(in: .whitespaces) != initialEmail.trimmingCharacters(in: .whitespaces) ||
+                         website.trimmingCharacters(in: .whitespaces) != initialWebsite.trimmingCharacters(in: .whitespaces) ||
+                         instagram.trimmingCharacters(in: .whitespaces) != initialInstagram.trimmingCharacters(in: .whitespaces) ||
+                         openingHours.trimmingCharacters(in: .whitespaces) != initialOpeningHours.trimmingCharacters(in: .whitespaces)
+        
+        // Vérifier les modifications de localisation
+        let locationChanged = latitude != initialLatitude || longitude != initialLongitude
+        
+        // Vérifier les modifications de profession/catégorie
+        let professionChanged = profession != initialProfession || category != initialCategory
+        
+        // Vérifier si une nouvelle image a été sélectionnée
+        let imageChanged = selectedImage != nil
+        
+        return textChanged || locationChanged || professionChanged || imageChanged
     }
     
     var isValid: Bool {
@@ -524,6 +591,9 @@ class ManageEstablishmentViewModel: ObservableObject {
                 
                 isLoading = false
                 successMessage = "Fiche établissement mise à jour avec succès"
+                
+                // Réinitialiser l'image sélectionnée après sauvegarde
+                selectedImage = nil
                 
                 // Recharger les données depuis l'API pour s'assurer qu'on a les dernières valeurs
                 loadEstablishmentData()

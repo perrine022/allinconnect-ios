@@ -23,10 +23,12 @@ struct RatingRequest: Codable {
 
 // MARK: - Rater Response Model
 struct RaterResponse: Codable {
+    let id: Int
     let firstName: String
     let lastName: String
     
     enum CodingKeys: String, CodingKey {
+        case id
         case firstName
         case lastName
     }
@@ -144,6 +146,7 @@ extension RatingResponse {
         )
     }
 }
+
 
 
 
