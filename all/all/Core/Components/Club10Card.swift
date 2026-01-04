@@ -16,6 +16,8 @@ struct Club10Card: View {
                 Text("Pourquoi ta carte digitale ?")
                     .font(.system(size: 18, weight: .bold))
                     .foregroundColor(.black)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 
                 Text("Des bénéfices qui changent tout")
                     .font(.system(size: 14, weight: .regular))

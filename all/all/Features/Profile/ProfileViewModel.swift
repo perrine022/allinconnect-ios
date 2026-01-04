@@ -422,8 +422,36 @@ class ProfileViewModel: ObservableObject {
             }
             
             // Si c'est une carte FAMILY ou CLIENT_FAMILY, vérifier si l'utilisateur est propriétaire
+            // Selon le backend : comparer userMe.id avec card.ownerId
             if cardType == "FAMILY" || cardType == "CLIENT_FAMILY" {
-                await loadCardOwner()
+                // Récupérer userMe pour avoir l'ID utilisateur et la carte complète
+                do {
+                    let userMe = try await profileAPIService.getUserMe()
+                    if let userCard = userMe.card, let ownerId = userCard.ownerId, let userId = userMe.id {
+                        // Comparer l'ID utilisateur avec ownerId de la carte
+                        isCardOwner = (userId == ownerId)
+                        print("[ProfileViewModel] Comparaison ownerId:")
+                        print("   - userId: \(userId)")
+                        print("   - card.ownerId: \(ownerId)")
+                        print("   - ownerName: \(userCard.ownerName ?? "nil")")
+                        print("   - isCardOwner: \(isCardOwner)")
+                    } else if let userCard = userLight.card, let ownerId = userCard.ownerId, let userId = userMe.id {
+                        // Fallback avec userLight.card
+                        isCardOwner = (userId == ownerId)
+                        print("[ProfileViewModel] Comparaison ownerId (via userLight):")
+                        print("   - userId: \(userId)")
+                        print("   - card.ownerId: \(ownerId)")
+                        print("   - ownerName: \(userCard.ownerName ?? "nil")")
+                        print("   - isCardOwner: \(isCardOwner)")
+                    } else {
+                        // Si ownerId n'est pas disponible, utiliser l'ancienne méthode en fallback
+                        print("[ProfileViewModel] ⚠️ ownerId non disponible, utilisation de l'ancienne méthode getCardOwner()")
+                        await loadCardOwner()
+                    }
+                } catch {
+                    print("[ProfileViewModel] ⚠️ Erreur lors de la récupération de userMe, utilisation de l'ancienne méthode")
+                    await loadCardOwner()
+                }
                 await loadFamilyCardEmails()
             }
         } catch {
@@ -506,6 +534,44 @@ class ProfileViewModel: ObservableObject {
                 
                 if let subscriptionAmount = userLight.subscriptionAmount {
                     club10Amount = String(format: "%.2f€", subscriptionAmount)
+                }
+            }
+            
+            // Si c'est une carte FAMILY ou CLIENT_FAMILY, vérifier si l'utilisateur est propriétaire
+            // Selon le backend : comparer userMe.id avec card.ownerId
+            // Cette vérification doit être faite en dehors de MainActor.run car elle nécessite des appels async
+            if let cardTypeValue = cardType, (cardTypeValue == "FAMILY" || cardTypeValue == "CLIENT_FAMILY") {
+                // Récupérer userMe pour avoir l'ID utilisateur et la carte complète
+                do {
+                    let userMe = try await profileAPIService.getUserMe()
+                    if let userCard = userMe.card, let ownerId = userCard.ownerId, let userId = userMe.id {
+                        // Comparer l'ID utilisateur avec ownerId de la carte
+                        await MainActor.run {
+                            isCardOwner = (userId == ownerId)
+                        }
+                        print("[ProfileViewModel] Comparaison ownerId (refresh):")
+                        print("   - userId: \(userId)")
+                        print("   - card.ownerId: \(ownerId)")
+                        print("   - ownerName: \(userCard.ownerName ?? "nil")")
+                        print("   - isCardOwner: \(isCardOwner)")
+                    } else if let userCard = userLight.card, let ownerId = userCard.ownerId, let userId = userMe.id {
+                        // Fallback avec userLight.card
+                        await MainActor.run {
+                            isCardOwner = (userId == ownerId)
+                        }
+                        print("[ProfileViewModel] Comparaison ownerId (refresh via userLight):")
+                        print("   - userId: \(userId)")
+                        print("   - card.ownerId: \(ownerId)")
+                        print("   - ownerName: \(userCard.ownerName ?? "nil")")
+                        print("   - isCardOwner: \(isCardOwner)")
+                    } else {
+                        // Si ownerId n'est pas disponible, utiliser l'ancienne méthode en fallback
+                        print("[ProfileViewModel] ⚠️ ownerId non disponible (refresh), utilisation de l'ancienne méthode getCardOwner()")
+                        await loadCardOwner()
+                    }
+                } catch {
+                    print("[ProfileViewModel] ⚠️ Erreur lors de la récupération de userMe (refresh), utilisation de l'ancienne méthode")
+                    await loadCardOwner()
                 }
             }
         } catch {

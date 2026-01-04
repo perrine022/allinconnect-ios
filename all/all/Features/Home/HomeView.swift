@@ -373,7 +373,9 @@ struct HomeView: View {
                     .padding(.top, viewModel.hasSearched ? 24 : 16)
                     
                     // Carte Pro - pour les professionnels
-                    ProCard()
+                    ProCard(onLearnMore: {
+                        digitalCardInfoNavigationId = UUID()
+                    })
                     .padding(.horizontal, 20)
                     .padding(.top, 16)
                     

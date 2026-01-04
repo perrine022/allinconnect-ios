@@ -9,6 +9,7 @@ import SwiftUI
 
 struct PaymentResultView: View {
     let status: PaymentResultStatus
+    let planPrice: String? // Prix du plan choisi (ex: "9,99€ / mois")
     @Environment(\.dismiss) private var dismiss
     
     enum PaymentResultStatus {
@@ -17,16 +18,30 @@ struct PaymentResultView: View {
         case pending
     }
     
+    init(status: PaymentResultStatus, planPrice: String? = nil) {
+        self.status = status
+        self.planPrice = planPrice
+    }
+    
     var body: some View {
         ZStack {
-            // Background avec gradient : sombre en haut vers rouge en bas
-            AppGradient.main
+            // Background rouge (au lieu du gradient)
+            Color.appDarkRed1
                 .ignoresSafeArea()
             
             VStack(spacing: 24) {
                 Spacer()
                 
-                // Icône
+                // Logo de l'app en haut
+                if status == .success {
+                    Image("AppLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 120, height: 120)
+                        .padding(.bottom, 20)
+                }
+                
+                // Icône de statut
                 Image(systemName: statusIcon)
                     .font(.system(size: 80))
                     .foregroundColor(statusColor)
@@ -37,6 +52,14 @@ struct PaymentResultView: View {
                     .font(.system(size: 28, weight: .bold))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
+                
+                // Prix du plan (uniquement si succès et prix disponible)
+                if status == .success, let price = planPrice {
+                    Text(price)
+                        .font(.system(size: 32, weight: .bold))
+                        .foregroundColor(.appGold)
+                        .padding(.top, 8)
+                }
                 
                 // Message
                 Text(statusMessage)

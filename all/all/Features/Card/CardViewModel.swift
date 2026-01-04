@@ -241,9 +241,30 @@ class CardViewModel: ObservableObject {
                 referralLink = "allin.fr/r/\(referralCode)"
                 
                 // Si c'est une carte FAMILY ou CLIENT_FAMILY, vérifier si l'utilisateur est propriétaire
+                // Selon le backend : comparer userMe.id avec card.ownerId
                 if cardType == "FAMILY" || cardType == "CLIENT_FAMILY" {
                     print("💳 [MA CARTE] Carte FAMILY détectée, vérification du propriétaire...")
-                    await loadCardOwner()
+                    if let userCard = userMe.card, let ownerId = userCard.ownerId, let userId = userMe.id {
+                        // Comparer l'ID utilisateur avec ownerId de la carte
+                        isCardOwner = (userId == ownerId)
+                        print("💳 [MA CARTE] Comparaison ownerId:")
+                        print("   - userId: \(userId)")
+                        print("   - card.ownerId: \(ownerId)")
+                        print("   - ownerName: \(userCard.ownerName ?? "nil")")
+                        print("   - isCardOwner: \(isCardOwner)")
+                    } else if let userCard = userLight.card, let ownerId = userCard.ownerId, let userId = userMe.id {
+                        // Fallback avec userLight.card
+                        isCardOwner = (userId == ownerId)
+                        print("💳 [MA CARTE] Comparaison ownerId (via userLight):")
+                        print("   - userId: \(userId)")
+                        print("   - card.ownerId: \(ownerId)")
+                        print("   - ownerName: \(userCard.ownerName ?? "nil")")
+                        print("   - isCardOwner: \(isCardOwner)")
+                    } else {
+                        // Si ownerId n'est pas disponible, utiliser l'ancienne méthode en fallback
+                        print("💳 [MA CARTE] ⚠️ ownerId non disponible, utilisation de l'ancienne méthode getCardOwner()")
+                        await loadCardOwner()
+                    }
                 }
                 
                 // Charger les savings
@@ -389,8 +410,36 @@ class CardViewModel: ObservableObject {
             
             
             // Si c'est une carte FAMILY ou CLIENT_FAMILY, vérifier si l'utilisateur est propriétaire
+            // Selon le backend : comparer userMe.id avec card.ownerId
             if cardTypeValue == "FAMILY" || cardTypeValue == "CLIENT_FAMILY" {
-                await loadCardOwner()
+                print("💳 [MA CARTE] Carte FAMILY détectée (refresh), vérification du propriétaire...")
+                if let userCard = userMe.card, let ownerId = userCard.ownerId, let userId = userMe.id {
+                    // Comparer l'ID utilisateur avec ownerId de la carte
+                    let isOwner = (userId == ownerId)
+                    print("💳 [MA CARTE] Comparaison ownerId (refresh):")
+                    print("   - userId: \(userId)")
+                    print("   - card.ownerId: \(ownerId)")
+                    print("   - ownerName: \(userCard.ownerName ?? "nil")")
+                    print("   - isCardOwner: \(isOwner)")
+                    await MainActor.run {
+                        isCardOwner = isOwner
+                    }
+                } else if let userCard = userLight.card, let ownerId = userCard.ownerId, let userId = userMe.id {
+                    // Fallback avec userLight.card
+                    let isOwner = (userId == ownerId)
+                    print("💳 [MA CARTE] Comparaison ownerId (refresh via userLight):")
+                    print("   - userId: \(userId)")
+                    print("   - card.ownerId: \(ownerId)")
+                    print("   - ownerName: \(userCard.ownerName ?? "nil")")
+                    print("   - isCardOwner: \(isOwner)")
+                    await MainActor.run {
+                        isCardOwner = isOwner
+                    }
+                } else {
+                    // Si ownerId n'est pas disponible, utiliser l'ancienne méthode en fallback
+                    print("💳 [MA CARTE] ⚠️ ownerId non disponible (refresh), utilisation de l'ancienne méthode getCardOwner()")
+                    await loadCardOwner()
+                }
             }
             
             // Mettre à jour les données en arrière-plan

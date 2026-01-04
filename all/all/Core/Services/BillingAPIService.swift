@@ -274,5 +274,52 @@ class BillingAPIService: ObservableObject {
             throw error
         }
     }
+    
+    // MARK: - Cancel Subscription
+    /// Annule un abonnement Stripe
+    /// Endpoint: POST /api/v1/billing/subscription/cancel
+    /// Body: {"subscriptionId": "sub_..."}
+    /// Response: L'objet Subscription de Stripe au format JSON
+    func cancelSubscription(subscriptionId: String) async throws -> CancelSubscriptionResponse {
+        print("═══════════════════════════════════════════════════════════")
+        print("💳 [BILLING] cancelSubscription() - Début")
+        print("═══════════════════════════════════════════════════════════")
+        print("💳 [BILLING] Endpoint: POST /api/v1/billing/subscription/cancel")
+        print("💳 [BILLING] subscriptionId: \(subscriptionId)")
+        
+        let requestBody: [String: Any] = [
+            "subscriptionId": subscriptionId
+        ]
+        
+        do {
+            let response: CancelSubscriptionResponse = try await apiService.request(
+                endpoint: "/billing/subscription/cancel",
+                method: .post,
+                parameters: requestBody,
+                headers: nil
+            )
+            print("💳 [BILLING] ✅ Abonnement annulé avec succès")
+            print("💳 [BILLING] Statut: \(response.status ?? "N/A")")
+            print("═══════════════════════════════════════════════════════════")
+            return response
+        } catch {
+            print("💳 [BILLING] ❌ Erreur lors de l'annulation: \(error.localizedDescription)")
+            print("═══════════════════════════════════════════════════════════")
+            throw error
+        }
+    }
+}
+
+// MARK: - Cancel Subscription Response
+struct CancelSubscriptionResponse: Codable {
+    let id: String // subscription ID (sub_...)
+    let status: String? // "canceled", "active", etc.
+    let canceledAt: Int? // Timestamp Unix
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case status
+        case canceledAt = "canceled_at"
+    }
 }
 

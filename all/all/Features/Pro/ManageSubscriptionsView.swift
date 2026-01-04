@@ -103,103 +103,12 @@ struct ManageSubscriptionsView: View {
                                     .padding(.horizontal, 20)
                             }
                             
-                            // Changer de formule
-                            if !viewModel.availablePlans.isEmpty {
-                                VStack(alignment: .leading, spacing: 16) {
-                                    Text("Changer de formule")
-                                        .font(.system(size: 18, weight: .bold))
-                                        .foregroundColor(.white)
-                                        .padding(.horizontal, 20)
-                                    
-                                    VStack(spacing: 12) {
-                                        ForEach(viewModel.availablePlans) { plan in
-                                            Button(action: {
-                                                viewModel.selectedPlan = plan
-                                            }) {
-                                                HStack {
-                                                    VStack(alignment: .leading, spacing: 4) {
-                                                        Text(plan.title)
-                                                            .font(.system(size: 16, weight: .bold))
-                                                            .foregroundColor(.white)
-                                                        
-                                                        VStack(alignment: .leading, spacing: 2) {
-                                                            Text(plan.priceLabel)
-                                                                .font(.system(size: 13, weight: .regular))
-                                                                .foregroundColor(.white.opacity(0.8))
-                                                            
-                                                            if plan.isMonthly {
-                                                                Text("(engagement 6 mois)")
-                                                                    .font(.system(size: 11, weight: .regular))
-                                                                    .foregroundColor(.white.opacity(0.6))
-                                                            }
-                                                        }
-                                                        
-                                                        if plan.isAnnual {
-                                                            // Calculer l'économie
-                                                            if let monthlyPlan = viewModel.availablePlans.first(where: { $0.isMonthly }) {
-                                                                let monthlyPrice = monthlyPlan.price
-                                                                let savings = ((monthlyPrice * 12) - plan.price) / (monthlyPrice * 12) * 100
-                                                                
-                                                                Text("Économisez \(Int(savings))%")
-                                                                    .font(.system(size: 12, weight: .semibold))
-                                                                    .foregroundColor(.red)
-                                                            }
-                                                        }
-                                                    }
-                                                    
-                                                    Spacer()
-                                                    
-                                                    ZStack {
-                                                        Circle()
-                                                            .fill(viewModel.selectedPlan?.id == plan.id ? Color.red : Color.clear)
-                                                            .frame(width: 24, height: 24)
-                                                        
-                                                        if viewModel.selectedPlan?.id == plan.id {
-                                                            Image(systemName: "checkmark")
-                                                                .foregroundColor(.white)
-                                                                .font(.system(size: 12, weight: .bold))
-                                                        } else {
-                                                            Circle()
-                                                                .stroke(Color.white.opacity(0.5), lineWidth: 2)
-                                                                .frame(width: 24, height: 24)
-                                                        }
-                                                    }
-                                                }
-                                                .padding(16)
-                                                .background(viewModel.selectedPlan?.id == plan.id ? Color.appDarkRed1.opacity(0.8) : Color.appDarkRed1.opacity(0.4))
-                                                .overlay(
-                                                    RoundedRectangle(cornerRadius: 12)
-                                                        .stroke(viewModel.selectedPlan?.id == plan.id ? Color.red : Color.clear, lineWidth: 2)
-                                                )
-                                                .cornerRadius(12)
-                                            }
-                                        }
-                                    }
+                            // Message de succès
+                            if let successMessage = viewModel.billingViewModel.successMessage {
+                                Text(successMessage)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.green)
                                     .padding(.horizontal, 20)
-                                    
-                                    // Bouton Modifier
-                                    Button(action: {
-                                        viewModel.updateSubscription()
-                                    }) {
-                                        HStack {
-                                            if viewModel.isLoading {
-                                                ProgressView()
-                                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                            } else {
-                                                Text("Modifier mon abonnement")
-                                                    .font(.system(size: 16, weight: .bold))
-                                            }
-                                        }
-                                        .foregroundColor(.white)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 14)
-                                        .background((viewModel.selectedPlan != nil && !viewModel.isLoading) ? Color.red : Color.gray.opacity(0.5))
-                                        .cornerRadius(12)
-                                    }
-                                    .disabled(viewModel.selectedPlan == nil || viewModel.isLoading)
-                                    .padding(.horizontal, 20)
-                                    .padding(.top, 8)
-                                }
                             }
                             
                             // Section Mes factures (uniquement pour les pros)
@@ -318,7 +227,9 @@ struct ManageSubscriptionsView: View {
         .alert("Résilier l'abonnement", isPresented: $showCancelAlert) {
             Button("Annuler", role: .cancel) { }
             Button("Résilier", role: .destructive) {
-                viewModel.cancelSubscription()
+                Task {
+                    await viewModel.cancelSubscription()
+                }
             }
         } message: {
             Text("Êtes-vous sûr de vouloir résilier votre abonnement ? Vous perdrez l'accès à toutes les fonctionnalités Pro.")

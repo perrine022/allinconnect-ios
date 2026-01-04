@@ -13,14 +13,12 @@ struct allApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var locationService = LocationService.shared
     @State private var hasSeenTutorial = TutorialViewModel.hasSeenTutorial()
-    @State private var hasCompletedOnboarding = OnboardingViewModel.hasCompletedOnboarding()
     @State private var isLoggedIn = LoginViewModel.isLoggedIn()
     
     var body: some Scene {
         WindowGroup {
             AppContentView(
                 hasSeenTutorial: $hasSeenTutorial,
-                hasCompletedOnboarding: $hasCompletedOnboarding,
                 isLoggedIn: $isLoggedIn,
                 locationService: locationService
             )
@@ -31,7 +29,6 @@ struct allApp: App {
 // MARK: - App Content View
 struct AppContentView: View {
     @Binding var hasSeenTutorial: Bool
-    @Binding var hasCompletedOnboarding: Bool
     @Binding var isLoggedIn: Bool
     @ObservedObject var locationService: LocationService
     
@@ -42,23 +39,15 @@ struct AppContentView: View {
                 TutorialView(
                     onComplete: {
                         hasSeenTutorial = true
-                        // Après le tutoriel, afficher l'inscription si premier lancement
-                        if !hasCompletedOnboarding {
-                            // L'inscription sera affichée automatiquement
-                        }
+                        // Après le tutoriel, aller directement à la connexion/inscription
                     },
                     onSkip: {
                         hasSeenTutorial = true
                         // Si on passe le tutoriel, aller directement à la connexion/inscription
                     }
                 )
-            } else if !hasCompletedOnboarding {
-                // Étape 1: Inscription (après tutoriel, premier lancement)
-                OnboardingView {
-                    hasCompletedOnboarding = true
-                }
             } else if !isLoggedIn {
-                // Étape 2: Connexion (si déjà lancé l'app)
+                // Étape 1: Connexion/Inscription (après tutoriel)
                 LoginViewWrapper()
                     .environmentObject(AppState())
                     .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserDidLogin"))) { _ in
@@ -69,7 +58,7 @@ struct AppContentView: View {
                         }
                     }
             } else {
-                // Étape 3: App principale (si connecté)
+                // Étape 2: App principale (si connecté)
                 TabBarView()
                     .environmentObject(locationService)
                     .onAppear {

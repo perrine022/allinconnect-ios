@@ -230,6 +230,75 @@ class BillingViewModel: ObservableObject {
         }
     }
     
+    // MARK: - Cancel Subscription
+    /// Annule un abonnement Stripe
+    /// Endpoint: POST /api/v1/billing/subscription/cancel
+    /// Body: {"subscriptionId": "sub_..."}
+    /// Après annulation, le backend met à jour automatiquement le statut via webhook
+    /// Le front doit rafraîchir le profil pour voir le nouveau statut
+    func cancelSubscription(subscriptionId: String) async throws {
+        print("═══════════════════════════════════════════════════════════")
+        print("💳 [BILLING] cancelSubscription() - Début")
+        print("═══════════════════════════════════════════════════════════")
+        print("💳 [BILLING] subscriptionId: \(subscriptionId)")
+        
+        isLoading = true
+        errorMessage = nil
+        successMessage = nil
+        
+        do {
+            // Appeler l'endpoint d'annulation
+            let response = try await billingAPIService.cancelSubscription(subscriptionId: subscriptionId)
+            
+            print("💳 [BILLING] ✅ Abonnement annulé avec succès")
+            print("   - Statut: \(response.status ?? "N/A")")
+            print("   - canceledAt: \(response.canceledAt != nil ? "\(response.canceledAt!)" : "N/A")")
+            
+            // Attendre un court délai pour que le webhook Stripe soit traité
+            print("💳 [BILLING] ⏳ Attente de 1 seconde pour laisser le webhook Stripe traiter l'annulation...")
+            try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 seconde
+            
+            // Rafraîchir le profil utilisateur pour voir le nouveau statut
+            // Le backend met à jour automatiquement premiumEnabled et subscriptionStatus via webhook
+            print("💳 [BILLING] Rafraîchissement du profil utilisateur via GET /api/v1/users/me...")
+            let profileAPIService = ProfileAPIService()
+            do {
+                let userMe = try await profileAPIService.getUserMe()
+                print("💳 [BILLING] ✅ Profil utilisateur récupéré")
+                print("   - premiumEnabled: \(userMe.premiumEnabled?.description ?? "nil")")
+                print("   - subscriptionType: \(userMe.subscriptionType ?? "nil")")
+            } catch {
+                print("💳 [BILLING] ⚠️ Erreur lors du rafraîchissement du profil: \(error.localizedDescription)")
+                // On continue quand même, le webhook peut avoir déjà traité
+            }
+            
+            // Recharger aussi le statut de l'abonnement via l'endpoint dédié
+            print("💳 [BILLING] Rechargement du statut de l'abonnement via GET /billing/subscription/status...")
+            await loadSubscriptionStatus()
+            
+            // Nettoyer le subscriptionId de UserDefaults après annulation réussie
+            UserDefaults.standard.removeObject(forKey: "current_subscription_id")
+            print("💳 [BILLING] ✅ subscriptionId supprimé de UserDefaults")
+            
+            isLoading = false
+            successMessage = "Abonnement annulé avec succès"
+            
+            // Notifier les autres parties de l'app
+            NotificationCenter.default.post(name: NSNotification.Name("SubscriptionUpdated"), object: nil)
+            print("💳 [BILLING] ✅ Notification 'SubscriptionUpdated' envoyée")
+            
+            print("═══════════════════════════════════════════════════════════")
+            print("💳 [BILLING] cancelSubscription() - Fin")
+            print("═══════════════════════════════════════════════════════════")
+        } catch {
+            isLoading = false
+            errorMessage = "Erreur lors de l'annulation de l'abonnement: \(error.localizedDescription)"
+            print("💳 [BILLING] ❌ Erreur lors de l'annulation: \(error.localizedDescription)")
+            print("═══════════════════════════════════════════════════════════")
+            throw error
+        }
+    }
+    
     // MARK: - Cache Management (optionnel)
     private func loadPremiumCache() {
         premiumEnabled = UserDefaults.standard.bool(forKey: premiumCacheKey)

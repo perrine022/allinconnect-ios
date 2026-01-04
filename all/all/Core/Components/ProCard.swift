@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ProCard: View {
     @EnvironmentObject private var appState: AppState
+    var onLearnMore: () -> Void = {}
     
     var body: some View {
         HStack(spacing: 16) {
@@ -21,16 +22,17 @@ struct ProCard: View {
                     .font(.system(size: 14, weight: .regular))
                     .foregroundColor(.gray)
                 
-                Button(action: {
-                    // Naviguer vers l'onglet "Ma carte" avec les offres d'abonnement
-                    appState.navigateToTab(.card)
-                }) {
-                    Text("S'abonner")
+                Button(action: onLearnMore) {
+                    Text("En savoir plus")
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.white)
+                        .foregroundColor(.black)
                         .padding(.horizontal, 20)
                         .padding(.vertical, 10)
-                        .background(Color.red)
+                        .background(Color.white)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                        )
                         .cornerRadius(8)
                 }
             }

@@ -31,11 +31,16 @@ class ManageSubscriptionsViewModel: ObservableObject {
     private let profileAPIService: ProfileAPIService
     private let subscriptionsAPIService: SubscriptionsAPIService
     private let invoicesAPIService: InvoicesAPIService
+    let billingViewModel: BillingViewModel // Public pour accéder à successMessage
+    
+    // Stocker le subscriptionId pour l'annulation
+    @Published var currentSubscriptionId: String? = nil
     
     init(
         profileAPIService: ProfileAPIService? = nil,
         subscriptionsAPIService: SubscriptionsAPIService? = nil,
-        invoicesAPIService: InvoicesAPIService? = nil
+        invoicesAPIService: InvoicesAPIService? = nil,
+        billingViewModel: BillingViewModel? = nil
     ) {
         if let profileAPIService = profileAPIService {
             self.profileAPIService = profileAPIService
@@ -54,11 +59,25 @@ class ManageSubscriptionsViewModel: ObservableObject {
         } else {
             self.invoicesAPIService = InvoicesAPIService()
         }
+        
+        if let billingViewModel = billingViewModel {
+            self.billingViewModel = billingViewModel
+        } else {
+            self.billingViewModel = BillingViewModel()
+        }
     }
     
     func loadSubscriptionData() async {
         isLoading = true
         errorMessage = nil
+        
+        // Récupérer le subscriptionId depuis UserDefaults
+        currentSubscriptionId = UserDefaults.standard.string(forKey: "current_subscription_id")
+        if let subscriptionId = currentSubscriptionId {
+            print("[ManageSubscriptionsViewModel] subscriptionId récupéré depuis UserDefaults: \(subscriptionId)")
+        } else {
+            print("[ManageSubscriptionsViewModel] ⚠️ subscriptionId non trouvé dans UserDefaults")
+        }
         
         do {
                 // Charger les informations utilisateur avec abonnement
@@ -177,19 +196,31 @@ class ManageSubscriptionsViewModel: ObservableObject {
         }
     }
     
-    func cancelSubscription() {
-        // TODO: Implémenter l'annulation d'abonnement via l'API
+    func cancelSubscription() async {
+        guard let subscriptionId = currentSubscriptionId else {
+            errorMessage = "Impossible de trouver l'ID de l'abonnement. Veuillez contacter le support."
+            print("[ManageSubscriptionsViewModel] ❌ subscriptionId manquant pour l'annulation")
+            return
+        }
+        
         isLoading = true
         errorMessage = nil
         
-        Task {
-            // Appeler l'API pour annuler l'abonnement
-            // try await subscriptionsAPIService.cancelSubscription()
+        do {
+            // Appeler l'endpoint d'annulation via BillingViewModel
+            try await billingViewModel.cancelSubscription(subscriptionId: subscriptionId)
             
-            // Pour l'instant, juste notifier
+            // Recharger les données pour voir le nouveau statut
+            await loadSubscriptionData()
+            
+            // Notifier la mise à jour
             NotificationCenter.default.post(name: NSNotification.Name("SubscriptionUpdated"), object: nil)
             
             isLoading = false
+        } catch {
+            isLoading = false
+            errorMessage = "Erreur lors de l'annulation de l'abonnement: \(error.localizedDescription)"
+            print("[ManageSubscriptionsViewModel] ❌ Erreur lors de l'annulation: \(error.localizedDescription)")
         }
     }
     

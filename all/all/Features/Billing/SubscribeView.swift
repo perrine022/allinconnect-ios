@@ -14,6 +14,7 @@ struct SubscribeView: View {
     @State private var paymentSheetData: (customerId: String, ephemeralKey: String, clientSecret: String, intentType: String?, publishableKey: String?)?
     @State private var monthlyPlan: SubscriptionPlanResponse? // Plan mensuel récupéré depuis le backend
     @State private var currentPaymentIntentClientSecret: String? // Pour vérifier le statut après paiement
+    @State private var showPaymentSuccess: Bool = false // Pour afficher PaymentResultView après succès
     private let subscriptionsAPIService = SubscriptionsAPIService()
     
     var body: some View {
@@ -192,6 +193,8 @@ struct SubscribeView: View {
                     onPaymentResult: { success, error in
                         showPaymentSheet = false
                         if success {
+                            // Afficher la page de succès avec le prix du plan
+                            showPaymentSuccess = true
                             Task {
                                 // Passer le clientSecret pour extraire le paymentIntentId et vérifier le statut
                                 await viewModel.handlePaymentSuccess(paymentIntentClientSecret: currentPaymentIntentClientSecret)
@@ -206,6 +209,12 @@ struct SubscribeView: View {
                 )
                 .ignoresSafeArea()
             }
+        }
+        .sheet(isPresented: $showPaymentSuccess) {
+            PaymentResultView(
+                status: .success,
+                planPrice: monthlyPlan?.priceLabel
+            )
         }
         .onAppear {
             Task {
@@ -282,6 +291,12 @@ struct SubscribeView: View {
             
             // Afficher le PaymentSheet
             showPaymentSheet = true
+            
+            // Stocker le subscriptionId dans UserDefaults pour l'annulation future
+            if let subscriptionId = response.subscriptionId {
+                UserDefaults.standard.set(subscriptionId, forKey: "current_subscription_id")
+                print("💳 [SUBSCRIBE] ✅ subscriptionId stocké dans UserDefaults: \(subscriptionId)")
+            }
             
             print("💳 [SUBSCRIBE] ✅ PaymentSheet prêt à être affiché")
             print("   - subscriptionId: \(response.subscriptionId ?? "nil")")

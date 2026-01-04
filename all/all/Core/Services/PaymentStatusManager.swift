@@ -63,6 +63,7 @@ class PaymentStatusManager: ObservableObject {
                 if isPremium {
                     // Le statut est confirmé, le paiement a réussi
                     lastPaymentStatus = .success
+                    // Note: Le prix du plan sera passé depuis StripePaymentView si disponible
                     NotificationCenter.default.post(name: NSNotification.Name("PaymentSuccess"), object: nil)
                     NotificationCenter.default.post(name: NSNotification.Name("SubscriptionUpdated"), object: nil)
                     print("🔍 [STATUS] ───────────────────────────────────────────────────")

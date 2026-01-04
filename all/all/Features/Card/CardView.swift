@@ -15,6 +15,7 @@ struct CardView: View {
     @State private var showFamilyManagement: Bool = false
     @State private var showPaymentResult: Bool = false
     @State private var paymentResultStatus: PaymentResultView.PaymentResultStatus? = nil
+    @State private var paymentResultPlanPrice: String? = nil // Prix du plan choisi pour l'affichage
     @State private var showWalletView: Bool = false
     
     var body: some View {
@@ -401,19 +402,29 @@ struct CardView: View {
                 )
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("PaymentSuccess"))) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("PaymentSuccess"))) { notification in
             paymentResultStatus = .success
+            // Récupérer le prix du plan depuis userInfo si disponible
+            if let userInfo = notification.userInfo,
+               let planPrice = userInfo["planPrice"] as? String {
+                paymentResultPlanPrice = planPrice
+            } else {
+                // Essayer de récupérer depuis le plan sélectionné dans StripePaymentView
+                // Pour l'instant, on utilise une valeur par défaut ou nil
+                paymentResultPlanPrice = nil
+            }
             showPaymentResult = true
             // Recharger les données de la carte
             viewModel.loadData()
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("PaymentFailed"))) { _ in
             paymentResultStatus = .failed
+            paymentResultPlanPrice = nil
             showPaymentResult = true
         }
         .sheet(isPresented: $showPaymentResult) {
             if let status = paymentResultStatus {
-                PaymentResultView(status: status)
+                PaymentResultView(status: status, planPrice: paymentResultPlanPrice)
             }
         }
     }

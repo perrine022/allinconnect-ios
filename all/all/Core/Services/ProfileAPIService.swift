@@ -78,6 +78,8 @@ struct CardResponse: Codable {
     let type: String
     let members: [CardMember]?
     let invitedEmails: [String]?
+    let ownerId: Int? // ID de l'utilisateur qui possède la carte
+    let ownerName: String? // Nom complet du propriétaire (ex: "Perrine Honore")
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -85,6 +87,8 @@ struct CardResponse: Codable {
         case type
         case members
         case invitedEmails
+        case ownerId = "ownerId"
+        case ownerName = "ownerName"
     }
 }
 

@@ -580,6 +580,12 @@ class StripePaymentViewModel: ObservableObject {
                 print("   ✅ PaymentIntentId extrait: \(paymentIntentId)")
             }
             
+            // Stocker le subscriptionId dans UserDefaults pour l'annulation future
+            if let subscriptionId = subscriptionSheetResponse.subscriptionId {
+                UserDefaults.standard.set(subscriptionId, forKey: "current_subscription_id")
+                print("💳 [ABONNEMENT] ✅ subscriptionId stocké dans UserDefaults: \(subscriptionId)")
+            }
+            
             // ÉTAPE 3 : Présenter le Payment Sheet
             print("💳 [ABONNEMENT] ÉTAPE 3 : Présentation du Payment Sheet Stripe")
             print("   → Affichage de l'interface de paiement à l'utilisateur")
@@ -675,8 +681,17 @@ class StripePaymentViewModel: ObservableObject {
                 print("   ✅ Statut premium confirmé par le backend")
                 print("   ✅ Abonnement activé avec succès")
                 
-                // Notifier les autres parties de l'app
+                // Récupérer le prix du plan choisi pour l'afficher dans PaymentResultView
+                let planPrice = selectedPlan?.priceLabel
+                
+                // Notifier les autres parties de l'app avec le prix du plan
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("PaymentSuccess"),
+                    object: nil,
+                    userInfo: planPrice != nil ? ["planPrice": planPrice!] : nil
+                )
                 NotificationCenter.default.post(name: NSNotification.Name("SubscriptionUpdated"), object: nil)
+                print("   ✅ Notification 'PaymentSuccess' envoyée avec planPrice: \(planPrice ?? "nil")")
                 print("   ✅ Notification 'SubscriptionUpdated' envoyée")
                 
                 // Masquer le message après 3 secondes
