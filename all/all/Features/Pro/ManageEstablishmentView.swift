@@ -280,7 +280,7 @@ struct ManageEstablishmentView: View {
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
-                                .background((viewModel.isValid && viewModel.hasChanges && !viewModel.isLoading) ? Color.appRed : Color.gray.opacity(0.5))
+                                .background((viewModel.hasChanges && !viewModel.isLoading) ? Color.appRed : Color.gray.opacity(0.5))
                                 .cornerRadius(12)
                             }
                             .disabled(!viewModel.isValid || !viewModel.hasChanges || viewModel.isLoading || viewModel.isLoadingData)

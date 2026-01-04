@@ -37,50 +37,17 @@ struct TutorialView: View {
                     TutorialWelcomePage()
                         .tag(0)
                     
-                    // Écran 2: "Tout ce dont tu as besoin, près de chez toi."
-                    TutorialPage(
-                        icon: "star.fill",
-                        iconColor: .yellow,
-                        title: "Tout ce dont tu as besoin, près de chez toi.",
-                        description1: "Découvre les communautés, services, offres et événements autour de toi... en un seul endroit.",
-                        description2: "All in Connect te simplifie la vie, et t'aide à trouver le meilleur près de chez toi.",
-                        cardColor: Color(red: 0.2, green: 0.1, blue: 0.15) // Rouge foncé
-                    )
-                    .tag(1)
+                    // Écran 2: Image promotionnelle "Toujours en avance sur les bonnes affaires"
+                    TutorialSecondPage()
+                        .tag(1)
                     
-                    // Écran 3: "Le local, mais plus accessible."
-                    TutorialPage(
-                        icon: "",
-                        iconColor: .green,
-                        title: "Le local,\nmais plus accessible.",
-                        description1: "Avec la carte digitale, tu profites de -10%\nchez tous les pros du Club10.",
-                        description2: "Des petits plaisirs aux besoins essentiels :\ntout devient plus simple, plus doux, plus\naccessible.",
-                        cardColor: Color.red,
-                        showDiscountBadge: true
-                    )
-                    .tag(2)
+                    // Écran 3: Image promotionnelle Club10
+                    TutorialThirdPage()
+                        .tag(2)
                     
-                    // Écran 4: "Seulement ce qui compte pour toi."
-                    TutorialPage(
-                        icon: "bell.fill",
-                        iconColor: .yellow,
-                        title: "Seulement ce qui compte pour toi.",
-                        description1: "Choisis tes catégories, ajoute tes pros favoris, reçois toutes les actualités, offres et événements en direct.",
-                        description2: "Ton quotidien total, personnalisé. Sans spam, sans bruit, sans l'essentiel.",
-                        cardColor: Color(red: 1.0, green: 0.4, blue: 0.6) // Rose/Magenta
-                    )
-                    .tag(3)
-                    
-                    // Écran 5: "Les bonnes adresses, les bonnes infos... au bon moment."
-                    TutorialPage(
-                        icon: "map.fill",
-                        iconColor: .blue,
-                        title: "Les bonnes adresses, les bonnes infos... au bon moment.",
-                        description1: "Accède à des centaines de professionnels.",
-                        description2: "Filtre par catégorie, activité, ville... et trouve exactement ce qu'il te faut - sans chercher pendant des heures.",
-                        cardColor: Color.red
-                    )
-                    .tag(4)
+                    // Écran 4: Image promotionnelle (dernière page)
+                    TutorialFourthPage()
+                        .tag(3)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .indexViewStyle(.page(backgroundDisplayMode: .never))
@@ -131,6 +98,42 @@ struct TutorialWelcomePage: View {
     var body: some View {
         // Image en plein écran avec les deux femmes et le téléphone
         Image("TutorialFirstPageImage")
+            .resizable()
+            .scaledToFill()
+            .ignoresSafeArea(.all)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+// MARK: - Tutorial Second Page
+struct TutorialSecondPage: View {
+    var body: some View {
+        // Image promotionnelle "Toujours en avance sur les bonnes affaires"
+        Image("TutorialSecondPageImage")
+            .resizable()
+            .scaledToFill()
+            .ignoresSafeArea(.all)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+// MARK: - Tutorial Third Page
+struct TutorialThirdPage: View {
+    var body: some View {
+        // Image promotionnelle Club10 "-10% chez tous les membres du club 10"
+        Image("TutorialThirdPageImage")
+            .resizable()
+            .scaledToFill()
+            .ignoresSafeArea(.all)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+// MARK: - Tutorial Fourth Page (Dernière page)
+struct TutorialFourthPage: View {
+    var body: some View {
+        // Image promotionnelle (dernière page du tutoriel)
+        Image("TutorialFourthPageImage")
             .resizable()
             .scaledToFill()
             .ignoresSafeArea(.all)

@@ -11,7 +11,7 @@ import Combine
 @MainActor
 class TutorialViewModel: ObservableObject {
     @Published var currentPage: Int = 0
-    let totalPages: Int = 5
+    let totalPages: Int = 4
     
     static func hasSeenTutorial() -> Bool {
         // Toujours retourner false pour forcer l'affichage du tutoriel
