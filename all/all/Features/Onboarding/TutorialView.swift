@@ -85,28 +85,6 @@ struct TutorialView: View {
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .indexViewStyle(.page(backgroundDisplayMode: .never))
                 
-                // Texte pour la première page (uniquement si on est sur la page 0)
-                if viewModel.currentPage == 0 {
-                    VStack(spacing: 16) {
-                        // Titre
-                        Text("un réseau pensé pour les pros, créé pour les habitants.")
-                            .font(.system(size: 24, weight: .bold))
-                            .foregroundColor(.white)
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(4)
-                            .padding(.horizontal, 30)
-                        
-                        // Sous-titre
-                        Text("Toutes les bonnes adresses autour de toi & leurs offres réunies dans une seule application.")
-                            .font(.system(size: 16, weight: .regular))
-                            .foregroundColor(.white.opacity(0.9))
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(3)
-                            .padding(.horizontal, 30)
-                    }
-                    .padding(.bottom, 20)
-                }
-                
                 // Boutons de navigation
                 VStack(spacing: 12) {
                     // Bouton Suivant
@@ -130,6 +108,7 @@ struct TutorialView: View {
                             .cornerRadius(12)
                     }
                     .padding(.horizontal, 20)
+                    .padding(.top, 30) // Ajout d'espace entre l'image et le bouton
                     
                     // Bouton Passer
                     Button(action: {
@@ -150,18 +129,12 @@ struct TutorialView: View {
 // MARK: - Tutorial Welcome Page
 struct TutorialWelcomePage: View {
     var body: some View {
-        ZStack {
-            // Image en plein écran
-            Image("AppLogo")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            
-            // Overlay sombre pour améliorer la lisibilité du texte
-            Color.black.opacity(0.3)
-                .ignoresSafeArea()
-        }
+        // Image en plein écran avec les deux femmes et le téléphone
+        Image("TutorialFirstPageImage")
+            .resizable()
+            .scaledToFill()
+            .ignoresSafeArea(.all)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

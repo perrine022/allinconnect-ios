@@ -40,59 +40,6 @@ struct ProInfoView: View {
                             .padding(.top, 20)
                             .padding(.horizontal, 20)
                             
-                            // Plans d'abonnement
-                            if viewModel.isLoading {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                    .padding()
-                            } else if viewModel.plans.isEmpty {
-                                Text("Aucun plan disponible")
-                                    .font(.system(size: 14, weight: .regular))
-                                    .foregroundColor(.white.opacity(0.7))
-                                    .padding()
-                            } else {
-                                VStack(spacing: 16) {
-                                    ForEach(viewModel.plans) { plan in
-                                        Button(action: {
-                                            viewModel.selectedPlan = plan
-                                        }) {
-                                            VStack(alignment: .leading, spacing: 8) {
-                                                Text(plan.title)
-                                                    .font(.system(size: 14, weight: .medium))
-                                                    .foregroundColor(.white.opacity(0.9))
-                                                
-                                                VStack(alignment: .leading, spacing: 2) {
-                                                    Text(plan.priceLabel)
-                                                        .font(.system(size: 24, weight: .bold))
-                                                        .foregroundColor(.white)
-                                                    
-                                                    if plan.isMonthly {
-                                                        Text("(engagement 6 mois)")
-                                                            .font(.system(size: 12, weight: .regular))
-                                                            .foregroundColor(.white.opacity(0.7))
-                                                    }
-                                                }
-                                                
-                                                if plan.isAnnual {
-                                                    Text("Économisez avec l'abonnement annuel 🎉")
-                                                        .font(.system(size: 13, weight: .medium))
-                                                        .foregroundColor(.white.opacity(0.9))
-                                                }
-                                            }
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                            .padding(20)
-                                            .background(viewModel.selectedPlan?.id == plan.id ? Color.appDarkRed1.opacity(0.9) : Color.appDarkRed1.opacity(0.5))
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 12)
-                                                    .stroke(viewModel.selectedPlan?.id == plan.id ? Color.red : Color.clear, lineWidth: 2)
-                                            )
-                                            .cornerRadius(12)
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal, 20)
-                            }
-                            
                             // Section "Ce que tu obtiens"
                             VStack(alignment: .leading, spacing: 20) {
                                 HStack(spacing: 8) {
@@ -148,50 +95,18 @@ struct ProInfoView: View {
                             
                             // Bouton S'abonner
                             Button(action: {
-                                if showStripePayment {
-                                    // Simuler le paiement (mock)
-                                    isProcessingPayment = true
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                                        isProcessingPayment = false
-                                        // Sauvegarder l'abonnement actif
-                                        UserDefaults.standard.set(true, forKey: "has_active_subscription")
-                                        UserDefaults.standard.set("PRO", forKey: "subscription_type")
-                                        if let selectedPlan = viewModel.selectedPlan {
-                                            let nextPaymentDate = Calendar.current.date(byAdding: selectedPlan.isAnnual ? .year : .month, value: 1, to: Date()) ?? Date()
-                                            let formatter = DateFormatter()
-                                            formatter.dateFormat = "dd/MM/yyyy"
-                                            UserDefaults.standard.set(formatter.string(from: nextPaymentDate), forKey: "subscription_next_payment_date")
-                                        }
-                                        
-                                        // Rediriger vers le profil
-                                        appState.selectedTab = .profile
-                                    }
-                                } else {
-                                    // Afficher le formulaire de paiement Stripe
-                                    showStripePayment = true
-                                }
+                                // Rediriger directement vers l'onglet "Ma carte"
+                                dismiss()
+                                appState.selectedTab = .card
                             }) {
-                                HStack {
-                                    if isProcessingPayment {
-                                        ProgressView()
-                                            .progressViewStyle(CircularProgressViewStyle(tint: .black))
-                                    } else {
-                                        if let selectedPlan = viewModel.selectedPlan {
-                                            Text(showStripePayment ? "Confirmer le paiement" : "S'abonner - \(selectedPlan.priceLabel)")
-                                                .font(.system(size: 18, weight: .bold))
-                                        } else {
-                                            Text("Sélectionnez un plan")
-                                                .font(.system(size: 18, weight: .bold))
-                                        }
-                                    }
-                                }
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
-                                .background(Color.red)
-                                .cornerRadius(12)
+                                Text("S'abonner")
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 16)
+                                    .background(Color.red)
+                                    .cornerRadius(12)
                             }
-                            .disabled(isProcessingPayment || viewModel.selectedPlan == nil)
                             .padding(.horizontal, 20)
                             .padding(.top, 8)
                             

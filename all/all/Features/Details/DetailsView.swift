@@ -39,7 +39,8 @@ struct DetailsView: View {
                             lastName: professional.lastName,
                             profession: professional.profession,
                             category: professional.category,
-                            profileImageName: professional.profileImageName
+                            profileImageName: professional.profileImageName,
+                            establishmentImageUrl: professional.establishmentImageUrl
                         )
                         
                         // Contenu principal

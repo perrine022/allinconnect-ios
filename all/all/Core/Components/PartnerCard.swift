@@ -15,13 +15,43 @@ struct PartnerCard: View {
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 12) {
-                // Image
-                Image(systemName: partner.imageName)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 80, height: 80)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .foregroundColor(.gray.opacity(0.3))
+                // Image de l'établissement ou icône par défaut
+                Group {
+                    if let imageUrl = ImageURLHelper.buildImageURL(from: partner.establishmentImageUrl),
+                       let url = URL(string: imageUrl) {
+                        AsyncImage(url: url) { phase in
+                            switch phase {
+                            case .empty:
+                                Image(systemName: partner.imageName)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .foregroundColor(.gray.opacity(0.3))
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                            case .failure:
+                                Image(systemName: partner.imageName)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .foregroundColor(.gray.opacity(0.3))
+                            @unknown default:
+                                Image(systemName: partner.imageName)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .foregroundColor(.gray.opacity(0.3))
+                            }
+                        }
+                    } else {
+                        // Fallback : icône par défaut
+                        Image(systemName: partner.imageName)
+                            .resizable()
+                            .scaledToFill()
+                            .foregroundColor(.gray.opacity(0.3))
+                    }
+                }
+                .frame(width: 80, height: 80)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
                 
                 VStack(alignment: .leading, spacing: 6) {
                     // Nom

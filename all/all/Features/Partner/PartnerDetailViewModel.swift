@@ -117,6 +117,7 @@ class PartnerDetailViewModel: ObservableObject {
                 discount: updatedPartner.discount,
                 imageName: updatedPartner.imageName,
                 headerImageName: updatedPartner.headerImageName,
+                establishmentImageUrl: updatedPartner.establishmentImageUrl, // Préserver l'URL de l'image
                 isFavorite: currentFavoriteState, // Préserver l'état actuel
                 apiId: updatedPartner.apiId
             )
@@ -446,23 +447,30 @@ class PartnerDetailViewModel: ObservableObject {
     
     func submitRating(_ rating: Int, comment: String? = nil) {
         guard let apiId = partner.apiId else {
-            print("Impossible de soumettre l'avis : pas d'ID API pour le partenaire")
+            print("[PartnerDetailViewModel] ❌ Impossible de soumettre l'avis : pas d'ID API pour le partenaire")
             return
         }
         
         Task {
             do {
-                // Soumettre l'avis via l'API
-                let _ = try await ratingsAPIService.createRating(
+                print("[PartnerDetailViewModel] 📝 Création de l'avis pour le professionnel ID: \(apiId), score: \(rating)")
+                
+                // Soumettre l'avis via l'API POST /api/v1/ratings
+                let ratingResponse = try await ratingsAPIService.createRating(
                     ratedId: apiId,
                     score: rating,
                     comment: comment
                 )
                 
-                // Recharger les avis pour mettre à jour la liste
+                print("[PartnerDetailViewModel] ✅ Avis créé avec succès: ID \(ratingResponse.id)")
+                
+                // Recharger les avis pour mettre à jour la liste et voir son propre avis
+                // loadRatings met déjà à jour la note moyenne et hasUserRated
                 await loadRatings(professionalId: apiId)
+                
+                print("[PartnerDetailViewModel] ✅ Liste des avis rafraîchie, l'avis de l'utilisateur est maintenant visible")
             } catch {
-                print("Erreur lors de la soumission de l'avis: \(error)")
+                print("[PartnerDetailViewModel] ❌ Erreur lors de la soumission de l'avis: \(error)")
             }
         }
     }

@@ -83,156 +83,69 @@ struct CardView: View {
                         }
                         .padding(.vertical, 50)
                     } else if viewModel.hasLoadedOnce && viewModel.cardNumber != nil && viewModel.isCardActive {
-                        // Afficher la carte si elle existe et est active - avec transition fluide
-                        // Carte utilisateur principale
-                        let cardBackgroundColor = viewModel.isCardValid ? Color.white : Color.red
-                        let textColor = viewModel.isCardValid ? Color.black : Color.white
-                        let secondaryTextColor = viewModel.isCardValid ? Color.gray : Color.white.opacity(0.8)
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            // Image VIP en haut de la carte - plus visible
+                        // Afficher la carte si elle existe et est active - Format carte de crédit avec image en plein écran
+                        ZStack {
+                            // Image "MEMBRE DU CLUB10" en plein écran de la carte
                             Image("VIPCardImage")
                                 .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(height: 80)
-                                .frame(maxWidth: .infinity)
+                                .scaledToFill()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 .clipped()
-                                .cornerRadius(20, corners: [.topLeft, .topRight])
-                                .padding(.horizontal, -16)
-                                .padding(.top, -16)
-                                .padding(.bottom, 8)
+                                .cornerRadius(16)
                             
-                            HStack(alignment: .top, spacing: 8) {
-                                // Logo ALL IN - plus compact
-                                VStack(alignment: .leading, spacing: 2) {
-                                    HStack(spacing: 3) {
-                                        Text("ALL")
-                                            .font(.system(size: 22, weight: .bold, design: .rounded))
-                                            .foregroundColor(textColor)
-                                        
-                                        ZStack {
-                                            Circle()
-                                                .fill(Color.red)
-                                                .frame(width: 16, height: 16)
-                                            
-                                            Circle()
-                                                .fill(Color.red.opacity(0.6))
-                                                .frame(width: 13, height: 13)
-                                            
-                                            Circle()
-                                                .fill(Color.red.opacity(0.3))
-                                                .frame(width: 10, height: 10)
-                                        }
-                                        
-                                        Text("IN")
-                                            .font(.system(size: 22, weight: .bold, design: .rounded))
-                                            .foregroundColor(textColor)
-                                    }
-                                    
-                                    Text("Connect")
-                                        .font(.system(size: 11, weight: .medium))
-                                        .foregroundColor(viewModel.isCardValid ? Color.red : Color.white.opacity(0.9))
-                                }
-                                
+                            // Overlay avec texte en noir
+                            VStack(alignment: .leading, spacing: 10) {
                                 Spacer()
                                 
-                                // Badge ACTIVE (seulement si la carte est active)
-                                if viewModel.isCardActive {
-                                    Text("ACTIVE")
-                                        .font(.system(size: 9, weight: .bold))
-                                        .foregroundColor(.white)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 4)
-                                        .background(Color.green)
-                                        .cornerRadius(5)
-                                }
-                            }
-                            .padding(.top, 8)
-                            
-                            // Badge "Carte familiale" si type FAMILY ou CLIENT_FAMILY - plus compact
-                            if viewModel.cardType == "FAMILY" || viewModel.cardType == "CLIENT_FAMILY" {
-                                Text("Carte familiale")
-                                    .font(.system(size: 11, weight: .semibold))
-                                    .foregroundColor(viewModel.isCardValid ? .red : .white)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 4)
-                                    .background(viewModel.isCardValid ? Color.red.opacity(0.2) : Color.white.opacity(0.2))
-                                    .cornerRadius(6)
-                                    .padding(.top, 2)
-                            }
-                            
-                            // Nom utilisateur - plus compact
-                            Text(viewModel.user.fullName)
-                                .font(.system(size: 20, weight: .bold))
-                                .foregroundColor(textColor)
-                                .padding(.top, 2)
-                            
-                            // Numéro de carte et date sur la même ligne - plus compact
-                            HStack(spacing: 12) {
-                                if let cardNumber = viewModel.cardNumber {
-                                    Text("Carte: \(cardNumber)")
-                                        .font(.system(size: 11, weight: .regular))
-                                        .foregroundColor(secondaryTextColor)
+                                // Badge "Carte familiale" si type FAMILY ou CLIENT_FAMILY
+                                if viewModel.cardType == "FAMILY" || viewModel.cardType == "CLIENT_FAMILY" {
+                                    Text("Carte familiale")
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundColor(.black)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 5)
+                                        .background(Color.white.opacity(0.9))
+                                        .cornerRadius(6)
                                 }
                                 
-                                HStack(spacing: 3) {
-                                    Image(systemName: "calendar")
-                                        .foregroundColor(secondaryTextColor)
-                                        .font(.system(size: 9))
-                                    Text("Valide: \(viewModel.formattedExpirationDate)")
-                                        .font(.system(size: 11, weight: .regular))
-                                        .foregroundColor(secondaryTextColor)
-                                }
-                            }
-                            .padding(.top, 1)
-                            
-                            // Membre CLUB10 (seulement si membre) - plus compact
-                            if viewModel.isMember {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "star.fill")
-                                        .foregroundColor(viewModel.isCardValid ? .red : .white)
-                                        .font(.system(size: 11))
-                                    
-                                    Text("Membre CLUB10")
-                                        .font(.system(size: 12, weight: .semibold))
-                                        .foregroundColor(viewModel.isCardValid ? .red : .white)
-                                }
-                                .padding(.top, 2)
-                            }
-                            
-                            // Bouton "Gérer ma famille" si carte familiale et si l'utilisateur est propriétaire - plus compact
-                            if (viewModel.cardType == "FAMILY" || viewModel.cardType == "CLIENT_FAMILY") && viewModel.isCardOwner {
-                                Button(action: {
-                                    showFamilyManagement = true
-                                }) {
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "person.2.fill")
-                                            .foregroundColor(viewModel.isCardValid ? .red : .white)
-                                            .font(.system(size: 13))
-                                        
-                                        Text("Gérer ma famille")
-                                            .font(.system(size: 12, weight: .semibold))
-                                            .foregroundColor(viewModel.isCardValid ? .red : .white)
+                                // Nom et prénom utilisateur avec fond blanc
+                                Text(viewModel.user.fullName)
+                                    .font(.system(size: 20, weight: .bold))
+                                    .foregroundColor(.black)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(Color.white.opacity(0.9))
+                                    .cornerRadius(6)
+                                
+                                // Bouton "Gérer ma famille" si carte familiale et si l'utilisateur est propriétaire
+                                if (viewModel.cardType == "FAMILY" || viewModel.cardType == "CLIENT_FAMILY") && viewModel.isCardOwner {
+                                    Button(action: {
+                                        showFamilyManagement = true
+                                    }) {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "person.2.fill")
+                                                .foregroundColor(.black)
+                                                .font(.system(size: 13))
+                                            
+                                            Text("Gérer ma famille")
+                                                .font(.system(size: 13, weight: .semibold))
+                                                .foregroundColor(.black)
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 10)
+                                        .background(Color.white.opacity(0.9))
+                                        .cornerRadius(8)
                                     }
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 8)
-                                    .background(viewModel.isCardValid ? Color.red.opacity(0.2) : Color.white.opacity(0.2))
-                                    .cornerRadius(8)
+                                    .padding(.top, 4)
                                 }
-                                .padding(.top, 6)
                             }
+                            .padding(16)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
                         }
-                        .padding(16)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(cardBackgroundColor)
-                                .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 4)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 20)
-                                .stroke(viewModel.isCardValid ? Color.gray.opacity(0.2) : Color.white.opacity(0.3), lineWidth: 1)
-                        )
+                        .frame(height: 220) // Format carte de crédit (ratio ~2:1)
+                        .frame(maxWidth: .infinity)
+                        .cornerRadius(20)
+                        .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 4)
                         .padding(.horizontal, 20)
                         .padding(.top, 0)
                         .transition(.opacity.combined(with: .move(edge: .bottom)))

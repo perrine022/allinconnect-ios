@@ -25,39 +25,54 @@ enum TabItem: String, CaseIterable {
 
 struct TabBarView: View {
     @StateObject private var appState = AppState()
+    @State private var isLoggedIn = LoginViewModel.isLoggedIn()
     
     var body: some View {
-        NavigationStack {
-            GeometryReader { geometry in
-                ZStack(alignment: .bottom) {
-                    // Contenu principal
-                    Group {
-                        switch appState.selectedTab {
-                        case .home:
-                            HomeView()
-                        case .offers:
-                            OffersView()
-                        case .card:
-                            CardView()
-                        case .profile:
-                            ProfileView()
+        Group {
+            if !isLoggedIn {
+                // Rediriger vers la connexion si l'utilisateur n'est pas connecté
+                LoginViewWrapper()
+                    .environmentObject(appState)
+                    .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserDidLogin"))) { _ in
+                        isLoggedIn = true
+                    }
+            } else {
+                NavigationStack {
+                    GeometryReader { geometry in
+                        ZStack(alignment: .bottom) {
+                            // Contenu principal
+                            Group {
+                                switch appState.selectedTab {
+                                case .home:
+                                    HomeView()
+                                case .offers:
+                                    OffersView()
+                                case .card:
+                                    CardView()
+                                case .profile:
+                                    ProfileView()
+                                }
+                            }
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                        
+                            // Footer Bar réutilisable - toujours visible au-dessus
+                            VStack {
+                                Spacer()
+                                FooterBar(selectedTab: $appState.selectedTab) { tab in
+                                    appState.navigateToTab(tab)
+                                }
+                                .frame(width: geometry.size.width)
+                            }
+                            .ignoresSafeArea(edges: .bottom)
                         }
                     }
-                    .frame(width: geometry.size.width, height: geometry.size.height)
-                
-                    // Footer Bar réutilisable - toujours visible au-dessus
-                    VStack {
-                        Spacer()
-                        FooterBar(selectedTab: $appState.selectedTab) { tab in
-                            appState.navigateToTab(tab)
-                        }
-                        .frame(width: geometry.size.width)
-                    }
-                    .ignoresSafeArea(edges: .bottom)
+                }
+                .environmentObject(appState)
+                .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserDidLogout"))) { _ in
+                    isLoggedIn = false
                 }
             }
         }
-        .environmentObject(appState)
     }
 }
 

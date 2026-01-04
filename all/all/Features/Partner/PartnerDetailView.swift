@@ -28,17 +28,46 @@ struct PartnerDetailView: View {
                     
                     ScrollView {
                         VStack(spacing: 0) {
-                            // Header avec fond rouge foncé et logo stylisé
+                            // Header avec fond rouge foncé et image d'établissement
                             ZStack(alignment: .topLeading) {
                                 // Fond rouge foncé
                                 Color.appDarkRed2
                                     .frame(height: 200)
                                 
-                                // Logo stylisé "A" en arrière-plan
-                                Text("A")
-                                    .font(.system(size: 120, weight: .ultraLight))
-                                    .foregroundColor(Color.appDarkRed1.opacity(0.3))
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                                // Image de l'établissement ou logo stylisé "A" en arrière-plan
+                                Group {
+                                    if let imageUrl = ImageURLHelper.buildImageURL(from: viewModel.partner.establishmentImageUrl),
+                                       let url = URL(string: imageUrl) {
+                                        AsyncImage(url: url) { phase in
+                                            switch phase {
+                                            case .empty:
+                                                Text("A")
+                                                    .font(.system(size: 120, weight: .ultraLight))
+                                                    .foregroundColor(Color.appDarkRed1.opacity(0.3))
+                                            case .success(let image):
+                                                image
+                                                    .resizable()
+                                                    .scaledToFill()
+                                                    .opacity(0.3)
+                                            case .failure:
+                                                Text("A")
+                                                    .font(.system(size: 120, weight: .ultraLight))
+                                                    .foregroundColor(Color.appDarkRed1.opacity(0.3))
+                                            @unknown default:
+                                                Text("A")
+                                                    .font(.system(size: 120, weight: .ultraLight))
+                                                    .foregroundColor(Color.appDarkRed1.opacity(0.3))
+                                            }
+                                        }
+                                    } else {
+                                        // Logo stylisé "A" en arrière-plan
+                                        Text("A")
+                                            .font(.system(size: 120, weight: .ultraLight))
+                                            .foregroundColor(Color.appDarkRed1.opacity(0.3))
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                                .clipped()
                                 
                                 // Boutons de navigation
                                 HStack {

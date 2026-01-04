@@ -83,7 +83,9 @@ struct DigitalCardInfoView: View {
                             
                             // Bouton OBTENIR MA CARTE
                             Button(action: {
-                                stripePaymentNavigationId = UUID()
+                                // Rediriger vers l'onglet "Ma carte"
+                                appState.selectedTab = .card
+                                dismiss()
                             }) {
                                 HStack(spacing: 8) {
                                     Image(systemName: "flame.fill")

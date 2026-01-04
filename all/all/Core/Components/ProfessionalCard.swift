@@ -15,13 +15,43 @@ struct ProfessionalCard: View {
     var body: some View {
         Button(action: onTap) {
             HStack(alignment: .top, spacing: 12) {
-                // Photo de profil
-                Image(systemName: professional.profileImageName)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 50, height: 50)
-                    .clipShape(Circle())
-                    .foregroundColor(.gray.opacity(0.6))
+                // Photo de l'établissement ou icône par défaut
+                Group {
+                    if let imageUrl = ImageURLHelper.buildImageURL(from: professional.establishmentImageUrl),
+                       let url = URL(string: imageUrl) {
+                        AsyncImage(url: url) { phase in
+                            switch phase {
+                            case .empty:
+                                Image(systemName: professional.profileImageName)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .foregroundColor(.gray.opacity(0.6))
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                            case .failure:
+                                Image(systemName: professional.profileImageName)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .foregroundColor(.gray.opacity(0.6))
+                            @unknown default:
+                                Image(systemName: professional.profileImageName)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .foregroundColor(.gray.opacity(0.6))
+                            }
+                        }
+                    } else {
+                        // Fallback : icône par défaut
+                        Image(systemName: professional.profileImageName)
+                            .resizable()
+                            .scaledToFill()
+                            .foregroundColor(.gray.opacity(0.6))
+                    }
+                }
+                .frame(width: 50, height: 50)
+                .clipShape(Circle())
                 
                 VStack(alignment: .leading, spacing: 6) {
                     // Nom complet

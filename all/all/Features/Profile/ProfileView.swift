@@ -420,24 +420,6 @@ struct ProfileView: View {
                                     .font(.system(size: 14, weight: .regular))
                                     .foregroundColor(isFamilyCardNonOwner ? .gray.opacity(0.7) : .white.opacity(0.7))
                             }
-                            
-                            // Bouton pour gérer les emails de la carte famille
-                            if (viewModel.cardType == "FAMILY" || viewModel.cardType == "CLIENT_FAMILY") && viewModel.isCardOwner {
-                                Button(action: {
-                                    familyCardEmailsNavigationId = UUID()
-                                }) {
-                                    HStack {
-                                        Spacer()
-                                        Text("Gérer les emails de la carte famille")
-                                            .font(.system(size: 15, weight: .semibold))
-                                            .foregroundColor(.black)
-                                        Spacer()
-                                    }
-                                    .padding(.vertical, 12)
-                                    .background(Color.red)
-                                    .cornerRadius(10)
-                                }
-                            }
                         }
                         .padding(16)
                         .background(isFamilyCardNonOwner ? Color.white : Color.appDarkRed1.opacity(0.8))
@@ -646,7 +628,7 @@ struct ProfileView: View {
                             
                             ProfileMenuRow(
                                 icon: "creditcard.fill",
-                                title: "Gérer mes abonnements",
+                                title: "Gérer mon abonnement",
                                 action: {
                                     manageSubscriptionsNavigationId = UUID()
                                 }
@@ -661,7 +643,7 @@ struct ProfileView: View {
                         if viewModel.currentSpace == .client {
                             ProfileMenuRow(
                                 icon: "creditcard.fill",
-                                title: "Gérer mes abonnements",
+                                title: "Gérer mon abonnement",
                                 action: {
                                     manageSubscriptionsNavigationId = UUID()
                                 }

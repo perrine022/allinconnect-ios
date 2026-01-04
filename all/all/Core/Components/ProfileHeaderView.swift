@@ -13,6 +13,7 @@ struct ProfileHeaderView: View {
     let profession: String
     let category: String
     let profileImageName: String
+    let establishmentImageUrl: String?
     let height: CGFloat
     
     init(
@@ -21,6 +22,7 @@ struct ProfileHeaderView: View {
         profession: String,
         category: String,
         profileImageName: String,
+        establishmentImageUrl: String? = nil,
         height: CGFloat = 280
     ) {
         self.firstName = firstName
@@ -28,6 +30,7 @@ struct ProfileHeaderView: View {
         self.profession = profession
         self.category = category
         self.profileImageName = profileImageName
+        self.establishmentImageUrl = establishmentImageUrl
         self.height = height
     }
     
@@ -62,12 +65,43 @@ struct ProfileHeaderView: View {
                         )
                         .frame(width: 140, height: 140)
                     
-                    Image(systemName: profileImageName)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 130, height: 130)
-                        .clipShape(Circle())
-                        .foregroundColor(.white.opacity(0.9))
+                    // Afficher l'image de l'établissement si disponible, sinon l'icône par défaut
+                    Group {
+                        if let imageUrl = ImageURLHelper.buildImageURL(from: establishmentImageUrl),
+                           let url = URL(string: imageUrl) {
+                            AsyncImage(url: url) { phase in
+                                switch phase {
+                                case .empty:
+                                    Image(systemName: profileImageName)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .foregroundColor(.white.opacity(0.9))
+                                case .success(let image):
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                case .failure:
+                                    Image(systemName: profileImageName)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .foregroundColor(.white.opacity(0.9))
+                                @unknown default:
+                                    Image(systemName: profileImageName)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .foregroundColor(.white.opacity(0.9))
+                                }
+                            }
+                        } else {
+                            // Fallback : icône par défaut
+                            Image(systemName: profileImageName)
+                                .resizable()
+                                .scaledToFill()
+                                .foregroundColor(.white.opacity(0.9))
+                        }
+                    }
+                    .frame(width: 130, height: 130)
+                    .clipShape(Circle())
                 }
                 .shadow(color: Color.red.opacity(0.5), radius: 20, x: 0, y: 10)
                 .padding(.bottom, 20)

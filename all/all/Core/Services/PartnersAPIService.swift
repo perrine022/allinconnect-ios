@@ -232,10 +232,9 @@ extension PartnerProfessionalResponse {
             defaultImage = DefaultImageHelper.defaultImageForPartnerCategory(categoryName)
         }
         
-        // Le backend renvoie maintenant des URLs absolues directement
-        // Utiliser establishmentImageUrl si disponible (URL absolue)
-        // Si l'URL commence par "http", c'est déjà une URL absolue
-        let imageUrl: String? = establishmentImageUrl?.hasPrefix("http") == true ? establishmentImageUrl : nil
+        // Construire l'URL complète de l'image d'établissement
+        // Gère les URLs absolues (http/https) et les URLs relatives (/uploads/)
+        let imageUrl: String? = ImageURLHelper.buildImageURL(from: establishmentImageUrl)
         
         // Créer un Partner avec les données disponibles
         return Partner(

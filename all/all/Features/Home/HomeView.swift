@@ -25,6 +25,7 @@ struct HomeView: View {
     @State private var selectedOffer: Offer?
     @State private var showLocationPermission = false
     @State private var digitalCardInfoNavigationId: UUID?
+    @State private var proInfoNavigationId: UUID?
     @State private var partnersListNavigationId: UUID?
     var body: some View {
         ZStack {
@@ -374,7 +375,7 @@ struct HomeView: View {
                     
                     // Carte Pro - pour les professionnels
                     ProCard(onLearnMore: {
-                        digitalCardInfoNavigationId = UUID()
+                        proInfoNavigationId = UUID()
                     })
                     .padding(.horizontal, 20)
                     .padding(.top, 16)
@@ -425,6 +426,9 @@ struct HomeView: View {
         }
         .navigationDestination(item: $digitalCardInfoNavigationId) { _ in
             DigitalCardInfoView()
+        }
+        .navigationDestination(item: $proInfoNavigationId) { _ in
+            ProInfoView()
         }
         .navigationDestination(item: $partnersListNavigationId) { _ in
             PartnersListView()
