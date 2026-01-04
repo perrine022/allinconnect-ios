@@ -199,9 +199,12 @@ struct StripePaymentView: View {
         }
         .sheet(isPresented: $viewModel.showPaymentSheet) {
             // Payment Sheet Stripe (Étape B)
+            // Le clientSecret peut être soit un PaymentIntent (pi_...) soit un SetupIntent (seti_...)
+            // Utilise intentType du backend si disponible, sinon détection auto par préfixe
             if let clientSecret = viewModel.paymentIntentClientSecret {
                 StripeSubscriptionPaymentSheetView(
-                    paymentIntentClientSecret: clientSecret,
+                    clientSecret: clientSecret,
+                    intentType: viewModel.intentType, // Utilise intentType du backend
                     onPaymentResult: { success, error in
                         Task { @MainActor in
                             await viewModel.handlePaymentSheetResult(success: success, error: error)
@@ -352,7 +355,8 @@ class StripePaymentViewModel: ObservableObject {
     @Published var paymentURL: URL? = nil
     @Published var isProcessingPayment: Bool = false
     @Published var showPaymentSheet: Bool = false
-    @Published var paymentIntentClientSecret: String? = nil
+    @Published var paymentIntentClientSecret: String? = nil // Peut contenir pi_... ou seti_...
+    @Published var intentType: String? = nil // "payment_intent" | "setup_intent" (renvoyé par le backend)
     @Published var customerId: String? = nil
     @Published var ephemeralKeySecret: String? = nil
     @Published var publishableKey: String? = nil
@@ -521,12 +525,18 @@ class StripePaymentViewModel: ObservableObject {
             
             print("💳 [ABONNEMENT] ✅ Réponse reçue du backend avec succès")
             print("   - paymentIntent (client_secret): \(subscriptionSheetResponse.paymentIntent.prefix(30))...")
+            print("   - intentType: \(subscriptionSheetResponse.intentType ?? "non spécifié (détection auto)")")
+            
             // Vérifier que le format est correct (doit contenir "_secret_")
-            if subscriptionSheetResponse.paymentIntent.contains("_secret_") {
-                print("   ✅ Format client_secret correct (pi_xxx_secret_xxx)")
+            let intentType = subscriptionSheetResponse.intentType ?? (subscriptionSheetResponse.paymentIntent.hasPrefix("seti_") ? "setup_intent" : "payment_intent")
+            let expectedPrefix = intentType == "setup_intent" ? "seti_" : "pi_"
+            let expectedFormat = intentType == "setup_intent" ? "seti_xxx_secret_xxx" : "pi_xxx_secret_xxx"
+            
+            if subscriptionSheetResponse.paymentIntent.hasPrefix(expectedPrefix) && subscriptionSheetResponse.paymentIntent.contains("_secret_") {
+                print("   ✅ Format client_secret correct (\(expectedFormat))")
             } else {
                 print("   ⚠️ ATTENTION: Format client_secret incomplet - PaymentSheet ne fonctionnera pas")
-                print("   ⚠️ Format attendu: pi_xxx_secret_xxx")
+                print("   ⚠️ Format attendu: \(expectedFormat)")
                 print("   ⚠️ Format reçu: \(subscriptionSheetResponse.paymentIntent)")
             }
             print("   - customerId: \(subscriptionSheetResponse.customerId)")
@@ -535,10 +545,29 @@ class StripePaymentViewModel: ObservableObject {
             print("   - subscriptionId: \(subscriptionSheetResponse.subscriptionId ?? "nil")")
             
             // Stocker les secrets pour le Payment Sheet
-            // Le paymentIntent est le client_secret COMPLET du PaymentIntent de la première invoice
-            // Format requis: "pi_xxx_secret_xxx" (pas juste "pi_xxx")
+            // Le paymentIntent est le client_secret COMPLET du PaymentIntent ou SetupIntent
+            // Format requis: "pi_xxx_secret_xxx" (payment_intent) ou "seti_xxx_secret_xxx" (setup_intent)
+            // La détection du type se fait automatiquement dans StripeSubscriptionPaymentSheetView selon le préfixe
             print("💳 [ABONNEMENT] ÉTAPE 2 : Stockage des secrets pour le Payment Sheet")
+            
+            // Stocker le clientSecret et intentType (renvoyés par le backend)
             paymentIntentClientSecret = subscriptionSheetResponse.paymentIntent
+            self.intentType = subscriptionSheetResponse.intentType // Utilise intentType du backend
+            
+            // Log du type
+            let detectedType = subscriptionSheetResponse.intentType ?? (subscriptionSheetResponse.paymentIntent.hasPrefix("seti_") ? "setup_intent" : "payment_intent")
+            if detectedType == "setup_intent" {
+                print("   ✅ SetupIntent stocké (trial/0€)")
+                if subscriptionSheetResponse.intentType == nil {
+                    print("   ⚠️ intentType non fourni par le backend, détection par préfixe")
+                }
+            } else {
+                print("   ✅ PaymentIntent stocké (paiement normal)")
+                if subscriptionSheetResponse.intentType == nil {
+                    print("   ⚠️ intentType non fourni par le backend, détection par préfixe")
+                }
+            }
+            
             customerId = subscriptionSheetResponse.customerId // Utiliser customerId (standardisé)
             ephemeralKeySecret = subscriptionSheetResponse.ephemeralKey
             publishableKey = subscriptionSheetResponse.publishableKey

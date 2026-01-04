@@ -11,14 +11,16 @@ import Combine
 @MainActor
 class TutorialViewModel: ObservableObject {
     @Published var currentPage: Int = 0
-    let totalPages: Int = 4
+    let totalPages: Int = 5
     
     static func hasSeenTutorial() -> Bool {
-        return UserDefaults.standard.bool(forKey: "tutorial_completed")
+        // Toujours retourner false pour forcer l'affichage du tutoriel
+        return false
     }
     
     func completeTutorial() {
-        UserDefaults.standard.set(true, forKey: "tutorial_completed")
+        // Ne plus sauvegarder pour forcer l'affichage à chaque fois
+        // UserDefaults.standard.set(true, forKey: "tutorial_completed")
     }
 }
 

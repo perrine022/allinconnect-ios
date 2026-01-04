@@ -26,7 +26,6 @@ struct HomeView: View {
     @State private var showLocationPermission = false
     @State private var digitalCardInfoNavigationId: UUID?
     @State private var partnersListNavigationId: UUID?
-    @State private var proInfoNavigationId: UUID?
     var body: some View {
         ZStack {
             // Background avec gradient : identique partout dans l'app
@@ -314,7 +313,42 @@ struct HomeView: View {
                         .padding(.horizontal, 20)
                         
                         // Scroll horizontal des offres
-                        if viewModel.offers.isEmpty {
+                        if viewModel.isLoadingOffers {
+                            HStack {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                Text("Chargement des offres...")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.white.opacity(0.7))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 20)
+                        } else if let error = viewModel.offersError {
+                            VStack(spacing: 8) {
+                                Text("Erreur lors du chargement")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.red.opacity(0.9))
+                                Text(error)
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .multilineTextAlignment(.center)
+                                Button(action: {
+                                    viewModel.loadOffersByCity()
+                                }) {
+                                    Text("Réessayer")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 8)
+                                        .background(Color.red.opacity(0.8))
+                                        .cornerRadius(8)
+                                }
+                                .padding(.top, 8)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 20)
+                            .padding(.horizontal, 20)
+                        } else if viewModel.offers.isEmpty {
                             VStack(spacing: 8) {
                                 Text("Aucune offre disponible pour le moment")
                                     .font(.system(size: 14))
@@ -339,9 +373,7 @@ struct HomeView: View {
                     .padding(.top, viewModel.hasSearched ? 24 : 16)
                     
                     // Carte Pro - pour les professionnels
-                    ProCard(onLearnMore: {
-                        proInfoNavigationId = UUID()
-                    })
+                    ProCard()
                     .padding(.horizontal, 20)
                     .padding(.top, 16)
                     
@@ -394,9 +426,6 @@ struct HomeView: View {
         }
         .navigationDestination(item: $partnersListNavigationId) { _ in
             PartnersListView()
-        }
-        .navigationDestination(item: $proInfoNavigationId) { _ in
-            ProInfoView()
         }
     }
 }

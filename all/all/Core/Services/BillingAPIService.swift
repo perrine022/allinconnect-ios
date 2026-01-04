@@ -59,11 +59,12 @@ struct SubscriptionStatusResponse: Codable {
 /// Réponse standardisée pour le Payment Sheet d'abonnement
 /// Format standardisé : customerId (pas customer) pour cohérence avec le reste de l'API
 struct SubscriptionPaymentSheetResponse: Codable {
-    let paymentIntent: String // client_secret complet du PaymentIntent (format: "pi_123_secret_abc")
+    let paymentIntent: String // client_secret complet du PaymentIntent ou SetupIntent (format: "pi_123_secret_abc" ou "seti_123_secret_abc")
     let customerId: String // ID du customer Stripe (format: "cus_...")
     let ephemeralKey: String // ephemeralKeySecret (format: "ek_...")
     let publishableKey: String // publishableKey (format: "pk_...")
     let subscriptionId: String? // ID de la subscription créée (format: "sub_...")
+    let intentType: String? // "payment_intent" ou "setup_intent" (pour trial/0€)
     
     enum CodingKeys: String, CodingKey {
         case paymentIntent = "paymentIntent"
@@ -71,6 +72,7 @@ struct SubscriptionPaymentSheetResponse: Codable {
         case ephemeralKey = "ephemeralKey"
         case publishableKey = "publishableKey"
         case subscriptionId = "subscriptionId"
+        case intentType = "intentType"
     }
 }
 
@@ -153,6 +155,7 @@ class BillingAPIService: ObservableObject {
                 : "\(response.publishableKey.prefix(10))..."
             
             print("   - paymentIntent: \(paymentIntentMasked) (longueur: \(response.paymentIntent.count) caractères)")
+            print("   - intentType: \(response.intentType ?? "non spécifié (détection auto)")")
             print("   - customerId: \(response.customerId)")
             print("   - ephemeralKey: \(ephemeralKeyMasked) (longueur: \(response.ephemeralKey.count) caractères)")
             print("   - publishableKey: \(publishableKeyMasked) (longueur: \(response.publishableKey.count) caractères)")
@@ -161,17 +164,36 @@ class BillingAPIService: ObservableObject {
             // 4. Vérification des préfixes
             print("💳 [BILLING] 🔍 Vérification des préfixes:")
             
-            // paymentIntent doit commencer par "pi_" et contenir "_secret_"
-            let paymentIntentValid = response.paymentIntent.hasPrefix("pi_") && response.paymentIntent.contains("_secret_")
-            print("   - paymentIntent:")
-            print("     • startsWith \"pi_\": \(response.paymentIntent.hasPrefix("pi_") ? "✅" : "❌")")
-            print("     • contains \"_secret_\": \(response.paymentIntent.contains("_secret_") ? "✅" : "❌")")
-            if !paymentIntentValid {
-                print("     ⚠️ ATTENTION: Format paymentIntent invalide - PaymentSheet ne fonctionnera pas")
-                print("     ⚠️ Format attendu: pi_xxx_secret_xxx")
+            // Déterminer le type d'intent
+            let intentType = response.intentType ?? (response.paymentIntent.hasPrefix("seti_") ? "setup_intent" : "payment_intent")
+            let isSetupIntent = intentType == "setup_intent"
+            
+            // paymentIntent/SetupIntent doit commencer par "pi_" ou "seti_" et contenir "_secret_"
+            let isValidPaymentIntent = response.paymentIntent.hasPrefix("pi_") && response.paymentIntent.contains("_secret_")
+            let isValidSetupIntent = response.paymentIntent.hasPrefix("seti_") && response.paymentIntent.contains("_secret_")
+            let clientSecretValid = isValidPaymentIntent || isValidSetupIntent
+            
+            print("   - clientSecret (paymentIntent/setupIntent):")
+            if isSetupIntent {
+                print("     • Type: setup_intent (trial/0€)")
+                print("     • startsWith \"seti_\": \(response.paymentIntent.hasPrefix("seti_") ? "✅" : "❌")")
+                print("     • contains \"_secret_\": \(response.paymentIntent.contains("_secret_") ? "✅" : "❌")")
+            } else {
+                print("     • Type: payment_intent (paiement normal)")
+                print("     • startsWith \"pi_\": \(response.paymentIntent.hasPrefix("pi_") ? "✅" : "❌")")
+                print("     • contains \"_secret_\": \(response.paymentIntent.contains("_secret_") ? "✅" : "❌")")
+            }
+            
+            if !clientSecretValid {
+                print("     ⚠️ ATTENTION: Format clientSecret invalide - PaymentSheet ne fonctionnera pas")
+                if isSetupIntent {
+                    print("     ⚠️ Format attendu: seti_xxx_secret_xxx")
+                } else {
+                    print("     ⚠️ Format attendu: pi_xxx_secret_xxx")
+                }
                 print("     ⚠️ Format reçu: \(response.paymentIntent)")
             } else {
-                print("     ✅ Format paymentIntent valide")
+                print("     ✅ Format clientSecret valide")
             }
             
             // customerId doit commencer par "cus_"
@@ -199,7 +221,7 @@ class BillingAPIService: ObservableObject {
             }
             
             // Résumé de validation
-            if paymentIntentValid && customerIdValid && ephemeralKeyValid {
+            if clientSecretValid && customerIdValid && ephemeralKeyValid {
                 print("💳 [BILLING] ✅ Tous les formats sont valides - PaymentSheet peut être affiché")
             } else {
                 print("💳 [BILLING] ❌ Certains formats sont invalides - PaymentSheet risque de ne pas fonctionner")

@@ -13,124 +13,155 @@
 
 import SwiftUI
 import UIKit
-import SafariServices
 import StripePaymentSheet
 
 struct StripeSubscriptionPaymentSheetView: UIViewControllerRepresentable {
-    let paymentIntentClientSecret: String
+    let clientSecret: String // Peut être PaymentIntent (pi_...) ou SetupIntent (seti_...)
+    let intentType: String? // "payment_intent" | "setup_intent" (renvoyé par le backend)
     let onPaymentResult: (Bool, String?) -> Void
-    // Optionnel : Customer ID et Ephemeral Key (pour les abonnements récurrents)
     let customerId: String?
     let ephemeralKeySecret: String?
-    let publishableKey: String? // Clé publique Stripe renvoyée par le backend
-    
+    let publishableKey: String?
+
     init(
-        paymentIntentClientSecret: String,
+        paymentIntentClientSecret: String? = nil,
+        setupIntentClientSecret: String? = nil,
+        clientSecret: String? = nil,
+        intentType: String? = nil,
         onPaymentResult: @escaping (Bool, String?) -> Void,
         customerId: String? = nil,
         ephemeralKeySecret: String? = nil,
         publishableKey: String? = nil
     ) {
-        self.paymentIntentClientSecret = paymentIntentClientSecret
+        // Déterminer le clientSecret (priorité: paramètres explicites > clientSecret générique)
+        if let setupSecret = setupIntentClientSecret {
+            self.clientSecret = setupSecret
+            self.intentType = "setup_intent"
+        } else if let paymentSecret = paymentIntentClientSecret {
+            self.clientSecret = paymentSecret
+            self.intentType = intentType ?? "payment_intent"
+        } else if let genericSecret = clientSecret {
+            self.clientSecret = genericSecret
+            self.intentType = intentType
+        } else {
+            // Fallback pour compatibilité (ne devrait pas arriver)
+            self.clientSecret = paymentIntentClientSecret ?? ""
+            self.intentType = intentType
+        }
+        
         self.onPaymentResult = onPaymentResult
         self.customerId = customerId
         self.ephemeralKeySecret = ephemeralKeySecret
         self.publishableKey = publishableKey
     }
-    
+
     func makeUIViewController(context: Context) -> UIViewController {
         print("[StripeSubscriptionPaymentSheetView] makeUIViewController() - Début")
         let viewController = UIViewController()
-        
-        // 1. Configurer la clé publique Stripe
-        // Utiliser la clé publique renvoyée par le backend, ou fallback sur la clé de test
+
+        // 1) Publishable key
         if let publishableKey = publishableKey, !publishableKey.isEmpty {
             StripeAPI.defaultPublishableKey = publishableKey
-            print("[StripeSubscriptionPaymentSheetView] Clé publique utilisée depuis le backend: \(publishableKey.prefix(20))...")
+            print("[StripeSubscriptionPaymentSheetView] PK backend: \(publishableKey.prefix(20))...")
         } else {
-            // Fallback sur la clé de test (pour compatibilité)
             StripeAPI.defaultPublishableKey = "pk_test_51SiVbTC2niFYoaySD4zt1bKI5Z6m3bcmedZGBZIU3jGCaMTaI6D6sHcW7dnd0ywxTbfswQpV1njEkg2D69vxDCEc00c46UdWsb"
-            print("[StripeSubscriptionPaymentSheetView] ⚠️ Clé publique non fournie par le backend, utilisation de la clé de test par défaut")
+            print("[StripeSubscriptionPaymentSheetView] ⚠️ PK manquante -> fallback test")
         }
-        
-        // 2. Créer la configuration du Payment Sheet
+
+        // 2) Config
         var configuration = PaymentSheet.Configuration()
         configuration.merchantDisplayName = "AllinConnect"
-        
-        // 3. Configurer le Customer avec l'ephemeral key (pour les abonnements récurrents)
-        if let customerId = customerId, let ephemeralKeySecret = ephemeralKeySecret {
-            configuration.customer = .init(
-                id: customerId,
-                ephemeralKeySecret: ephemeralKeySecret
-            )
+
+        // IMPORTANT subscriptions
+        configuration.allowsDelayedPaymentMethods = true
+
+        // 3) Customer + ephemeral key (nécessaire pour PaymentSheet subscription)
+        if let customerId = customerId,
+           !customerId.isEmpty,
+           let ephemeralKeySecret = ephemeralKeySecret,
+           !ephemeralKeySecret.isEmpty {
+            configuration.customer = .init(id: customerId, ephemeralKeySecret: ephemeralKeySecret)
             print("[StripeSubscriptionPaymentSheetView] Customer configuré: \(customerId)")
+        } else {
+            print("[StripeSubscriptionPaymentSheetView] ⚠️ customer/ephemeralKey manquants (Subscription PaymentSheet risque de ne pas fonctionner)")
         }
-        
-        // 4. Activer Apple Pay si disponible
-        // IMPORTANT: Configurer votre merchantId dans Info.plist si vous voulez Apple Pay
-        // Ajouter : <key>com.apple.developer.in-app-payments</key>
-        //           <array><string>merchant.com.yourapp.merchantid</string></array>
+
+        // 4) Apple Pay (optionnel)
         if let merchantId = Bundle.main.object(forInfoDictionaryKey: "ApplePayMerchantId") as? String,
            !merchantId.isEmpty {
-            configuration.applePay = .init(
-                merchantId: merchantId,
-                merchantCountryCode: "FR"
-            )
-            print("[StripeSubscriptionPaymentSheetView] Apple Pay activé avec merchantId: \(merchantId)")
+            configuration.applePay = .init(merchantId: merchantId, merchantCountryCode: "FR")
+            print("[StripeSubscriptionPaymentSheetView] Apple Pay activé: \(merchantId)")
         }
-        
-        // 5. Préremplir l'email si disponible
+
+        // 5) Return URL (recommandé)
+        // Mets un schéma que tu as déclaré dans ton app: allinconnect://stripe-redirect
+        // et configure les URL schemes.
+        configuration.returnURL = "allinconnect://stripe-redirect"
+
+        // 6) Prefill email
         if let userEmail = UserDefaults.standard.string(forKey: "user_email"), !userEmail.isEmpty {
             configuration.defaultBillingDetails.email = userEmail
             print("[StripeSubscriptionPaymentSheetView] Email prérempli: \(userEmail)")
         }
+
+        // 7) Créer le PaymentSheet selon PI vs SetupIntent
+        // Priorité : intentType du backend > détection par préfixe
+        let secret = clientSecret
+        let paymentSheet: PaymentSheet
         
-        // 6. Créer le Payment Sheet
-        let paymentSheet = PaymentSheet(
-            paymentIntentClientSecret: paymentIntentClientSecret,
-            configuration: configuration
-        )
-        
-        // 7. Présenter le Payment Sheet
-        print("💳 [STRIPE] Présentation du Payment Sheet à l'utilisateur...")
-        DispatchQueue.main.async {
-            paymentSheet.present(from: viewController) { paymentResult in
-                print("═══════════════════════════════════════════════════════════")
-                print("💳 [STRIPE] Résultat du Payment Sheet reçu")
-                print("═══════════════════════════════════════════════════════════")
-                print("💳 [STRIPE] Type de résultat: \(paymentResult)")
-                
-                switch paymentResult {
-                case .completed:
-                    print("✅ [STRIPE] Payment completed - Paiement réussi")
-                    print("   → L'utilisateur a complété le paiement avec succès")
-                    onPaymentResult(true, nil)
-                case .failed(let error):
-                    print("❌ [STRIPE] Payment failed - Échec du paiement")
-                    print("   - Erreur: \(error.localizedDescription)")
-                    print("   - Type: \(type(of: error))")
-                    onPaymentResult(false, error.localizedDescription)
-                case .canceled:
-                    print("⚠️ [STRIPE] Payment canceled - Paiement annulé par l'utilisateur")
-                    print("   → L'utilisateur a fermé le Payment Sheet sans payer")
-                    onPaymentResult(false, "Paiement annulé")
-                @unknown default:
-                    print("❓ [STRIPE] Unknown payment result - Résultat inconnu")
-                    onPaymentResult(false, "Erreur inconnue")
-                }
-                print("═══════════════════════════════════════════════════════════")
+        // Déterminer le type d'intent (priorité: intentType du backend > détection par préfixe)
+        let detectedIntentType: String
+        if let intentType = intentType, !intentType.isEmpty {
+            detectedIntentType = intentType
+            print("[StripeSubscriptionPaymentSheetView] IntentType depuis backend: \(intentType)")
+        } else if secret.hasPrefix("seti_") {
+            detectedIntentType = "setup_intent"
+            print("[StripeSubscriptionPaymentSheetView] IntentType détecté par préfixe: setup_intent")
+        } else if secret.hasPrefix("pi_") {
+            detectedIntentType = "payment_intent"
+            print("[StripeSubscriptionPaymentSheetView] IntentType détecté par préfixe: payment_intent")
+        } else {
+            print("[StripeSubscriptionPaymentSheetView] ❌ client_secret invalide: \(secret)")
+            print("[StripeSubscriptionPaymentSheetView] ❌ Format attendu: pi_..._secret_... ou seti_..._secret_...")
+            DispatchQueue.main.async {
+                onPaymentResult(false, "client_secret Stripe invalide (attendu pi_..._secret_... ou seti_..._secret_...)")
             }
+            return viewController
         }
         
+        // Créer le PaymentSheet avec le bon initializer selon intentType
+        if detectedIntentType == "setup_intent" {
+            paymentSheet = PaymentSheet(setupIntentClientSecret: secret, configuration: configuration)
+            print("[StripeSubscriptionPaymentSheetView] ✅ PaymentSheet initialisé avec SetupIntent (trial/0€)")
+        } else {
+            paymentSheet = PaymentSheet(paymentIntentClientSecret: secret, configuration: configuration)
+            print("[StripeSubscriptionPaymentSheetView] ✅ PaymentSheet initialisé avec PaymentIntent")
+        }
+
+        // 8) Present
+        DispatchQueue.main.async {
+            print("💳 [STRIPE] Présentation du PaymentSheet…")
+            paymentSheet.present(from: viewController) { paymentResult in
+                print("═══════════════════════════════════════════════════════════")
+                print("💳 [STRIPE] Résultat PaymentSheet: \(paymentResult)")
+                print("═══════════════════════════════════════════════════════════")
+
+                switch paymentResult {
+                case .completed:
+                    onPaymentResult(true, nil)
+                case .failed(let error):
+                    onPaymentResult(false, error.localizedDescription)
+                case .canceled:
+                    onPaymentResult(false, "Paiement annulé")
+                @unknown default:
+                    onPaymentResult(false, "Erreur inconnue")
+                }
+            }
+        }
+
         print("[StripeSubscriptionPaymentSheetView] makeUIViewController() - Fin")
         return viewController
     }
-    
-    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
-        // Pas de mise à jour nécessaire
-    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
 }
-
-
-
-

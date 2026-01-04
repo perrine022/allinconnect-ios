@@ -18,7 +18,7 @@ struct OfferCard: View {
                 ZStack(alignment: .topTrailing) {
                     OfferImage(offer: offer, contentMode: .fill)
                         .frame(height: 150)
-                        .clipped()
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
                     
                     // Overlay gradient
                     LinearGradient(

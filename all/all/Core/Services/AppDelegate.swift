@@ -55,7 +55,15 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     private func handleUniversalLink(url: URL) -> Bool {
         print("📱 Universal Link reçu: \(url.absoluteString)")
         
-        // Vérifier si c'est un retour de paiement Stripe
+        // Gérer le retour du PaymentSheet Stripe (3DS/redirections)
+        if url.scheme == "allinconnect" && url.host == "stripe-redirect" {
+            print("[AppDelegate] Retour depuis PaymentSheet Stripe (3DS/redirection)")
+            // Le PaymentSheet gère déjà le résultat, on peut juste logger
+            // Le callback onPaymentResult sera appelé automatiquement par Stripe
+            return true
+        }
+        
+        // Vérifier si c'est un retour de paiement Stripe (Payment Links)
         if url.absoluteString.contains("payment-success") || url.absoluteString.contains("payment_success") {
             // Extraire les paramètres de l'URL
             let components = URLComponents(url: url, resolvingAgainstBaseURL: false)

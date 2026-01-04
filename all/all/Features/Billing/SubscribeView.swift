@@ -11,7 +11,10 @@ struct SubscribeView: View {
     @StateObject private var viewModel = BillingViewModel()
     @Environment(\.dismiss) private var dismiss
     @State private var showPaymentSheet = false
-    @State private var paymentSheetData: (customerId: String, ephemeralKey: String, clientSecret: String, publishableKey: String?)?
+    @State private var paymentSheetData: (customerId: String, ephemeralKey: String, clientSecret: String, intentType: String?, publishableKey: String?)?
+    @State private var monthlyPlan: SubscriptionPlanResponse? // Plan mensuel récupéré depuis le backend
+    @State private var currentPaymentIntentClientSecret: String? // Pour vérifier le statut après paiement
+    private let subscriptionsAPIService = SubscriptionsAPIService()
     
     var body: some View {
         ZStack {
@@ -95,12 +98,21 @@ struct SubscribeView: View {
                         
                         // Prix
                         VStack(spacing: 8) {
-                            Text("9,99€")
-                                .font(.system(size: 48, weight: .bold))
-                                .foregroundColor(.appGold)
-                            Text("par mois")
-                                .font(.system(size: 16, weight: .regular))
-                                .foregroundColor(.gray)
+                            if let plan = monthlyPlan {
+                                Text(plan.formattedPrice)
+                                    .font(.system(size: 48, weight: .bold))
+                                    .foregroundColor(.appGold)
+                                Text(plan.duration == "MONTHLY" ? "par mois" : plan.duration == "ANNUAL" ? "par an" : "")
+                                    .font(.system(size: 16, weight: .regular))
+                                    .foregroundColor(.gray)
+                            } else {
+                                Text("9,99€")
+                                    .font(.system(size: 48, weight: .bold))
+                                    .foregroundColor(.appGold)
+                                Text("par mois")
+                                    .font(.system(size: 16, weight: .regular))
+                                    .foregroundColor(.gray)
+                            }
                         }
                         .padding(.vertical, 20)
                         
@@ -175,12 +187,14 @@ struct SubscribeView: View {
         .sheet(isPresented: $showPaymentSheet) {
             if let data = paymentSheetData {
                 StripeSubscriptionPaymentSheetView(
-                    paymentIntentClientSecret: data.clientSecret,
+                    clientSecret: data.clientSecret,
+                    intentType: data.intentType, // Utilise intentType du backend
                     onPaymentResult: { success, error in
                         showPaymentSheet = false
                         if success {
                             Task {
-                                await viewModel.handlePaymentSuccess()
+                                // Passer le clientSecret pour extraire le paymentIntentId et vérifier le statut
+                                await viewModel.handlePaymentSuccess(paymentIntentClientSecret: currentPaymentIntentClientSecret)
                             }
                         } else {
                             viewModel.errorMessage = error ?? "Paiement échoué ou annulé"
@@ -195,15 +209,90 @@ struct SubscribeView: View {
         }
         .onAppear {
             Task {
+                // Charger le statut de l'abonnement
                 await viewModel.loadSubscriptionStatus()
+                
+                // Précharger le plan mensuel pour éviter de le récupérer à chaque clic
+                if monthlyPlan == nil {
+                    do {
+                        let plans = try await subscriptionsAPIService.getPlans()
+                        monthlyPlan = plans.first { plan in
+                            plan.duration == "MONTHLY" && abs(plan.price - 9.99) < 0.01
+                        } ?? plans.first { $0.duration == "MONTHLY" }
+                    } catch {
+                        print("[SubscribeView] ⚠️ Erreur lors du préchargement des plans: \(error.localizedDescription)")
+                    }
+                }
             }
         }
     }
     
     private func startSubscription() async {
-        // TODO: À réimplémenter selon les nouvelles spécifications backend
-        print("[SubscribeView] ⚠️ startSubscription() - À implémenter")
-        // L'erreur est déjà gérée dans le ViewModel
+        print("═══════════════════════════════════════════════════════════")
+        print("💳 [SUBSCRIBE] startSubscription() - Début")
+        print("═══════════════════════════════════════════════════════════")
+        
+        // Récupérer le plan mensuel si pas déjà chargé
+        if monthlyPlan == nil {
+            do {
+                let plans = try await subscriptionsAPIService.getPlans()
+                // Trouver le plan mensuel (9.99€)
+                monthlyPlan = plans.first { plan in
+                    plan.duration == "MONTHLY" && abs(plan.price - 9.99) < 0.01
+                } ?? plans.first { $0.duration == "MONTHLY" }
+                
+                if monthlyPlan == nil {
+                    viewModel.errorMessage = "Aucun plan mensuel trouvé. Veuillez réessayer."
+                    print("💳 [SUBSCRIBE] ❌ Aucun plan mensuel trouvé")
+                    return
+                }
+            } catch {
+                viewModel.errorMessage = "Erreur lors de la récupération des plans: \(error.localizedDescription)"
+                print("💳 [SUBSCRIBE] ❌ Erreur lors de la récupération des plans: \(error.localizedDescription)")
+                return
+            }
+        }
+        
+        // Vérifier que le plan a un stripePriceId
+        guard let priceId = monthlyPlan?.stripePriceId, !priceId.isEmpty else {
+            viewModel.errorMessage = "Erreur: Le plan sélectionné n'a pas d'ID Stripe valide. Veuillez réessayer."
+            print("💳 [SUBSCRIBE] ❌ Le plan n'a pas de stripePriceId")
+            return
+        }
+        
+        print("💳 [SUBSCRIBE] Plan sélectionné:")
+        print("   - Titre: \(monthlyPlan?.title ?? "N/A")")
+        print("   - Prix: \(monthlyPlan?.formattedPrice ?? "N/A")")
+        print("   - priceId: \(priceId)")
+        
+        do {
+            // Appeler le ViewModel pour créer la subscription et récupérer le PaymentSheet
+            // Cela appelle POST /api/billing/subscription/payment-sheet avec le priceId
+            let response = try await viewModel.startSubscription(priceId: priceId)
+            
+            // Stocker les données pour afficher le PaymentSheet
+            currentPaymentIntentClientSecret = response.paymentIntent // Pour vérifier le statut après paiement
+            paymentSheetData = (
+                customerId: response.customerId,
+                ephemeralKey: response.ephemeralKey,
+                clientSecret: response.paymentIntent, // Peut être pi_... ou seti_...
+                intentType: response.intentType, // "payment_intent" | "setup_intent" (renvoyé par le backend)
+                publishableKey: response.publishableKey
+            )
+            
+            // Afficher le PaymentSheet
+            showPaymentSheet = true
+            
+            print("💳 [SUBSCRIBE] ✅ PaymentSheet prêt à être affiché")
+            print("   - subscriptionId: \(response.subscriptionId ?? "nil")")
+            print("   - customerId: \(response.customerId)")
+            print("   - intentType: \(response.intentType ?? "auto-détecté")")
+            print("═══════════════════════════════════════════════════════════")
+        } catch {
+            print("💳 [SUBSCRIBE] ❌ Erreur: \(error.localizedDescription)")
+            print("═══════════════════════════════════════════════════════════")
+            // L'erreur est déjà gérée dans le ViewModel (errorMessage)
+        }
     }
     
     private func formatDate(_ date: Date) -> String {

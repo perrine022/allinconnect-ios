@@ -16,6 +16,8 @@ class HomeViewModel: ObservableObject {
     @Published var partners: [Partner] = []
     @Published var filteredProfessionals: [Professional] = []
     @Published var filteredPartners: [Partner] = []
+    @Published var isLoadingOffers: Bool = false
+    @Published var offersError: String? = nil
     
     // Search fields
     @Published var cityText: String = ""
@@ -101,18 +103,26 @@ class HomeViewModel: ObservableObject {
     
     func loadOffersByCity() {
         Task { @MainActor in
+            isLoadingOffers = true
+            offersError = nil
+            
             do {
-                print("[HomeViewModel] 🔥 Chargement des 4 premières offres pour 'À ne pas louper'")
+                print("═══════════════════════════════════════════════════════════")
+                print("[HomeViewModel] 🔥 DÉBUT Chargement des 5 premières offres pour 'À ne pas louper'")
                 print("[HomeViewModel] Filtre: type=OFFRE (uniquement les offres, pas les événements)")
+                print("═══════════════════════════════════════════════════════════")
                 
                 // Récupérer la ville de l'utilisateur depuis son profil
+                print("[HomeViewModel] 📍 Étape 1: Récupération du profil utilisateur...")
                 let userProfile = try await profileAPIService.getUserMe()
+                print("[HomeViewModel] ✅ Profil utilisateur récupéré")
+                print("   - Ville: \(userProfile.city ?? "non définie")")
                 
                 // Utiliser le même endpoint que OffersViewModel avec le filtre type="OFFRE"
                 let offersResponse: [OfferResponse]
                 
                 if let userCity = userProfile.city, !userCity.isEmpty {
-                    print("[HomeViewModel] Chargement des offres pour la ville: \(userCity)")
+                    print("[HomeViewModel] 📍 Étape 2: Chargement des offres pour la ville: \(userCity)")
                     // Charger les offres filtrées par ville et type OFFRE depuis l'API
                     offersResponse = try await offersAPIService.getAllOffers(
                         city: userCity,
@@ -123,7 +133,7 @@ class HomeViewModel: ObservableObject {
                         endDate: nil
                     )
                 } else {
-                    print("[HomeViewModel] Aucune ville trouvée pour l'utilisateur, chargement de toutes les offres")
+                    print("[HomeViewModel] 📍 Étape 2: Aucune ville trouvée, chargement de toutes les offres")
                     // Si pas de ville, charger toutes les offres actives de type OFFRE
                     offersResponse = try await offersAPIService.getAllOffers(
                         city: nil,
@@ -137,8 +147,8 @@ class HomeViewModel: ObservableObject {
                 
                 print("[HomeViewModel] ✅ \(offersResponse.count) offres récupérées depuis l'API (type=OFFRE)")
                 
-                // Prendre les 4 premières offres avec leurs vraies images depuis l'API
-                let limitedOffers = Array(offersResponse.prefix(4))
+                // Prendre les 5 premières offres avec leurs vraies images depuis l'API
+                let limitedOffers = Array(offersResponse.prefix(5))
                 
                 print("[HomeViewModel] ✅ \(limitedOffers.count) offres sélectionnées pour affichage")
                 for (index, offer) in limitedOffers.enumerated() {
@@ -149,11 +159,36 @@ class HomeViewModel: ObservableObject {
                 offers = limitedOffers.map { $0.toOffer() }
                 
                 print("[HomeViewModel] ✅ Offres converties et prêtes à afficher avec images réelles")
+                print("═══════════════════════════════════════════════════════════")
+                isLoadingOffers = false
             } catch {
-                print("[HomeViewModel] ❌ Erreur lors du chargement des offres: \(error)")
-                print("[HomeViewModel] ⚠️ Utilisation d'un tableau vide au lieu des données mockées")
-                // En cas d'erreur, laisser un tableau vide plutôt que d'utiliser des données mockées
+                isLoadingOffers = false
+                let errorMessage = error.localizedDescription
+                offersError = errorMessage
+                print("═══════════════════════════════════════════════════════════")
+                print("[HomeViewModel] ❌ ERREUR lors du chargement des offres")
+                print("[HomeViewModel] Type d'erreur: \(type(of: error))")
+                print("[HomeViewModel] Message: \(errorMessage)")
+                
+                if let apiError = error as? APIError {
+                    print("[HomeViewModel] Détails APIError:")
+                    switch apiError {
+                    case .unauthorized:
+                        print("   - Erreur 401: Token expiré ou invalide")
+                    case .networkError:
+                        print("   - Erreur réseau: Vérifier la connexion")
+                    case .invalidResponse:
+                        print("   - Réponse invalide du serveur")
+                    case .decodingError(let underlyingError):
+                        print("   - Erreur de décodage: \(underlyingError.localizedDescription)")
+                    default:
+                        print("   - Autre erreur API")
+                    }
+                }
+                
+                print("[HomeViewModel] ⚠️ Utilisation d'un tableau vide")
                 offers = []
+                print("═══════════════════════════════════════════════════════════")
             }
         }
     }

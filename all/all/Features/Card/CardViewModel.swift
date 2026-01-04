@@ -293,7 +293,29 @@ class CardViewModel: ObservableObject {
                 
                 hasLoadedOnce = true
                 isLoading = false
-                errorMessage = error.localizedDescription
+                
+                // Si c'est une erreur 500 ou 404, c'est probablement que l'utilisateur n'a pas de carte
+                // On n'affiche pas d'erreur, on laisse afficher l'écran d'abonnement
+                if let apiError = error as? APIError {
+                    switch apiError {
+                    case .httpError(let statusCode, _):
+                        if statusCode == 500 || statusCode == 404 {
+                            print("💳 [MA CARTE] ⚠️ Erreur \(statusCode) - Pas de carte, affichage de l'écran d'abonnement")
+                            // Ne pas définir errorMessage pour afficher CardSubscriptionView
+                            errorMessage = nil
+                            // Réinitialiser les données de carte
+                            cardNumber = nil
+                            isCardActive = false
+                            cardType = nil
+                        } else {
+                            errorMessage = error.localizedDescription
+                        }
+                    default:
+                        errorMessage = error.localizedDescription
+                    }
+                } else {
+                    errorMessage = error.localizedDescription
+                }
                 
                 // En cas d'erreur, utiliser les données mockées en fallback
                 favoritePartners = dataService.getPartners().filter { $0.isFavorite }
