@@ -442,29 +442,27 @@ class CardViewModel: ObservableObject {
                 }
             }
             
-            // Mettre à jour les données en arrière-plan
-            await MainActor.run {
-                user = User(
-                    firstName: firstName,
-                    lastName: lastName,
-                    username: firstName.lowercased(),
-                    bio: (userLight.isMember ?? false) ? "Membre CLUB10" : "",
-                    profileImageName: "person.circle.fill",
-                    publications: 0,
-                    subscribers: 0,
-                    subscriptions: 0
-                )
-                cardNumber = cardNumberValue
-                cardType = cardTypeValue
-                isCardActive = isCardActiveValue
-                isMember = userLight.isMember ?? false
-                referralCode = referralCodeValue
-                referralLink = referralLinkValue
-                referrals = userLight.referralCount ?? 0
-                wallet = userLight.walletBalance ?? 0.0
-                favoritesCount = userLight.favoriteCount ?? 0
-                savings = currentSavings
-            }
+            // Mettre à jour les données (on est déjà sur MainActor car la classe est @MainActor)
+            user = User(
+                firstName: firstName,
+                lastName: lastName,
+                username: firstName.lowercased(),
+                bio: (userLight.isMember ?? false) ? "Membre CLUB10" : "",
+                profileImageName: "person.circle.fill",
+                publications: 0,
+                subscribers: 0,
+                subscriptions: 0
+            )
+            cardNumber = cardNumberValue
+            cardType = cardTypeValue
+            isCardActive = isCardActiveValue
+            isMember = userLight.isMember ?? false
+            referralCode = referralCodeValue
+            referralLink = referralLinkValue
+            referrals = userLight.referralCount ?? 0
+            wallet = userLight.walletBalance ?? 0.0
+            favoritesCount = userLight.favoriteCount ?? 0
+            savings = currentSavings
         } catch {
             print("💳 [MA CARTE] ❌ Erreur lors du rafraîchissement en arrière-plan")
             print("💳 [MA CARTE] Type: \(type(of: error))")

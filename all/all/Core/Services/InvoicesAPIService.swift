@@ -8,51 +8,68 @@
 import Foundation
 import Combine
 
-// MARK: - Invoice Response Model
+// MARK: - Invoice Response Model (Stripe)
 struct InvoiceResponse: Codable, Identifiable {
-    let id: Int
-    let invoiceNumber: String
-    let date: String // Format ISO ou YYYY-MM-DD
-    let amount: Double
-    let status: String? // "PAID", "PENDING", etc.
+    let id: String // ID Stripe (ex: "in_1St...")
+    let amountPaid: Int // Montant en centimes
+    let status: String // "paid", "open", "void", "uncollectible", etc.
+    let hostedInvoiceUrl: String? // URL pour afficher dans un navigateur
+    let invoicePdf: String? // URL du PDF à télécharger
+    let created: Int // Timestamp Unix
+    let currency: String // "eur", "usd", etc.
+    let number: String? // Numéro de facture (ex: "ABC1234-001")
     
     enum CodingKeys: String, CodingKey {
         case id
-        case invoiceNumber = "invoiceNumber"
-        case date
-        case amount
+        case amountPaid
         case status
+        case hostedInvoiceUrl
+        case invoicePdf
+        case created
+        case currency
+        case number
     }
     
-    // Helper pour formater la date
+    // Helper pour formater la date depuis le timestamp Unix
     var formattedDate: String {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
-        
-        if let dateObj = dateFormatter.date(from: date) {
-            let displayFormatter = DateFormatter()
-            displayFormatter.dateFormat = "dd/MM/yyyy"
-            displayFormatter.locale = Locale(identifier: "fr_FR")
-            return displayFormatter.string(from: dateObj)
-        }
-        
-        // Essayer avec format ISO
-        let isoFormatter = ISO8601DateFormatter()
-        isoFormatter.formatOptions = [.withFullDate, .withTime, .withColonSeparatorInTime]
-        if let dateObj = isoFormatter.date(from: date) {
-            let displayFormatter = DateFormatter()
-            displayFormatter.dateFormat = "dd/MM/yyyy"
-            displayFormatter.locale = Locale(identifier: "fr_FR")
-            return displayFormatter.string(from: dateObj)
-        }
-        
-        return date
+        let date = Date(timeIntervalSince1970: TimeInterval(created))
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yyyy"
+        formatter.locale = Locale(identifier: "fr_FR")
+        return formatter.string(from: date)
     }
     
-    // Helper pour formater le montant
+    // Helper pour formater le montant (convertir centimes en euros)
     var formattedAmount: String {
-        String(format: "%.2f€", amount)
+        let amountInEuros = Double(amountPaid) / 100.0
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = currency.uppercased()
+        formatter.locale = Locale(identifier: "fr_FR")
+        return formatter.string(from: NSNumber(value: amountInEuros)) ?? String(format: "%.2f€", amountInEuros)
+    }
+    
+    // Helper pour formater le statut en français
+    var formattedStatus: String {
+        switch status.lowercased() {
+        case "paid":
+            return "Payée"
+        case "open":
+            return "Ouverte"
+        case "void":
+            return "Annulée"
+        case "uncollectible":
+            return "Impayable"
+        case "draft":
+            return "Brouillon"
+        default:
+            return status.capitalized
+        }
+    }
+    
+    // Helper pour obtenir le numéro de facture ou l'ID
+    var invoiceNumber: String {
+        number ?? id
     }
 }
 
@@ -69,11 +86,11 @@ class InvoicesAPIService: ObservableObject {
         }
     }
     
-    // MARK: - Get All Invoices
+    // MARK: - Get All Invoices (utilisateur connecté)
     func getInvoices() async throws -> [InvoiceResponse] {
-        print("[InvoicesAPIService] 📞 Appel GET /api/v1/invoices")
+        print("[InvoicesAPIService] 📞 Appel GET /api/v1/billing/invoices")
         let invoices: [InvoiceResponse] = try await apiService.request(
-            endpoint: "/invoices",
+            endpoint: "/billing/invoices",
             method: .get,
             parameters: nil,
             headers: nil
@@ -82,25 +99,18 @@ class InvoicesAPIService: ObservableObject {
         return invoices
     }
     
-    // MARK: - Download Invoice PDF
-    func downloadInvoicePDF(invoiceId: Int) async throws -> Data {
-        print("[InvoicesAPIService] 📥 Téléchargement PDF facture ID: \(invoiceId)")
+    // MARK: - Download Invoice PDF (depuis l'URL Stripe)
+    func downloadInvoicePDF(invoicePdfUrl: String) async throws -> Data {
+        print("[InvoicesAPIService] 📥 Téléchargement du PDF depuis: \(invoicePdfUrl)")
         
-        guard let url = URL(string: "\(APIConfig.baseURL)/invoices/\(invoiceId)/download") else {
+        guard let url = URL(string: invoicePdfUrl) else {
             throw APIError.invalidURL
         }
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         
-        // Ajouter l'Authorization header
-        if let token = AuthTokenManager.shared.getToken() {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-        
-        // Accepter PDF
-        request.setValue("application/pdf", forHTTPHeaderField: "Accept")
-        
+        // Les URLs Stripe sont publiques, pas besoin d'authentification
         let (data, response) = try await URLSession.shared.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {

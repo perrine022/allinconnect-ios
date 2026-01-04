@@ -231,9 +231,9 @@ class ManageSubscriptionsViewModel: ObservableObject {
         
         do {
             invoices = try await invoicesAPIService.getInvoices()
-            // Trier par date décroissante (plus récentes en premier)
-            invoices.sort { invoice1, invoice2 in
-                invoice1.date > invoice2.date
+            // Trier par date décroissante (plus récentes en premier) - utiliser created (timestamp Unix)
+            invoices.sort { (invoice1: InvoiceResponse, invoice2: InvoiceResponse) -> Bool in
+                invoice1.created > invoice2.created
             }
             isLoadingInvoices = false
         } catch {
@@ -246,17 +246,25 @@ class ManageSubscriptionsViewModel: ObservableObject {
     @Published var downloadedInvoiceURL: URL? = nil
     @Published var showShareSheet: Bool = false
     
-    func downloadInvoice(invoiceId: Int) async {
+    func downloadInvoice(invoiceId: String) async {
         isDownloadingInvoice = true
         invoiceErrorMessage = nil
         
         do {
-            let pdfData = try await invoicesAPIService.downloadInvoicePDF(invoiceId: invoiceId)
+            // Trouver la facture par son ID (String maintenant)
+            guard let invoice = invoices.first(where: { $0.id == invoiceId }),
+                  let invoicePdfUrl = invoice.invoicePdf else {
+                invoiceErrorMessage = "URL du PDF non disponible pour cette facture"
+                isDownloadingInvoice = false
+                return
+            }
+            
+            // Télécharger le PDF depuis l'URL Stripe
+            let pdfData = try await invoicesAPIService.downloadInvoicePDF(invoicePdfUrl: invoicePdfUrl)
             
             // Sauvegarder le PDF dans le dossier Documents
             let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            let invoice = invoices.first { $0.id == invoiceId }
-            let fileName = "Facture_\(invoice?.invoiceNumber ?? "\(invoiceId)").pdf"
+            let fileName = "Facture_\(invoice.invoiceNumber).pdf"
             let fileURL = documentsPath.appendingPathComponent(fileName)
             
             try pdfData.write(to: fileURL)

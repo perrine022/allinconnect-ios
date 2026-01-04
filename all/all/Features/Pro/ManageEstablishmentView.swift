@@ -415,10 +415,12 @@ class ManageEstablishmentViewModel: ObservableObject {
         $selectedImageItem
             .compactMap { $0 }
             .sink { [weak self] item in
-                Task { @MainActor in
+                Task { @MainActor [weak self] in
                     if let data = try? await item.loadTransferable(type: Data.self),
                        let image = UIImage(data: data) {
-                        self?.selectedImage = image
+                        await MainActor.run {
+                            self?.selectedImage = image
+                        }
                     }
                 }
             }
