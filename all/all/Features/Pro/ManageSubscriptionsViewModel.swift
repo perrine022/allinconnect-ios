@@ -116,73 +116,73 @@ class ManageSubscriptionsViewModel: ObservableObject {
             let userLight = try await profileAPIService.getUserLight()
             let userTypeString = userLight.userType ?? ""
             let isUnknown = userTypeString == "UNKNOWN" || userTypeString.isEmpty
-                
-                // Déterminer le type d'utilisateur depuis l'API (ou UserDefaults si UNKNOWN)
-                let userTypeForPlans = isUnknown ? (UserDefaults.standard.string(forKey: "user_type") ?? "CLIENT") : userTypeString
-                let isPro = userTypeForPlans == "PROFESSIONAL" || userTypeForPlans == "PRO"
-                
-                // Charger tous les plans disponibles (même si pas d'abonnement actif, pour permettre l'abonnement)
-                let allPlans = try await subscriptionsAPIService.getPlans()
-                print("[ManageSubscriptionsViewModel] Plans récupérés: \(allPlans.count) plans")
-                print("[ManageSubscriptionsViewModel] Type d'utilisateur pour plans: \(userTypeForPlans) (isPro: \(isPro))")
-                
-                // Filtrer les plans selon le type d'utilisateur
-                if isPro {
-                    // Pour les PRO : uniquement les plans PROFESSIONAL
-                    availablePlans = allPlans.filter { $0.category == "PROFESSIONAL" }
-                    print("[ManageSubscriptionsViewModel] Plans filtrés pour PROFESSIONAL: \(availablePlans.count) plans")
+            
+            // Déterminer le type d'utilisateur depuis l'API (ou UserDefaults si UNKNOWN)
+            let userTypeForPlans = isUnknown ? (UserDefaults.standard.string(forKey: "user_type") ?? "CLIENT") : userTypeString
+            let isPro = userTypeForPlans == "PROFESSIONAL" || userTypeForPlans == "PRO"
+            
+            // Charger tous les plans disponibles (même si pas d'abonnement actif, pour permettre l'abonnement)
+            let allPlans = try await subscriptionsAPIService.getPlans()
+            print("[ManageSubscriptionsViewModel] Plans récupérés: \(allPlans.count) plans")
+            print("[ManageSubscriptionsViewModel] Type d'utilisateur pour plans: \(userTypeForPlans) (isPro: \(isPro))")
+            
+            // Filtrer les plans selon le type d'utilisateur
+            if isPro {
+                // Pour les PRO : uniquement les plans PROFESSIONAL
+                availablePlans = allPlans.filter { $0.category == "PROFESSIONAL" }
+                print("[ManageSubscriptionsViewModel] Plans filtrés pour PROFESSIONAL: \(availablePlans.count) plans")
+            } else {
+                // Pour les CLIENT : uniquement les plans INDIVIDUAL et FAMILY
+                availablePlans = allPlans.filter { $0.category == "INDIVIDUAL" || $0.category == "FAMILY" }
+                print("[ManageSubscriptionsViewModel] Plans filtrés pour CLIENT (INDIVIDUAL + FAMILY): \(availablePlans.count) plans")
+            }
+            
+            // Si l'utilisateur a un abonnement actif, utiliser les informations de subscriptionDetails
+            if hasActiveSubscription {
+                // Trouver le plan correspondant au planName
+                if let planName = subscriptionDetails.planName {
+                    currentSubscriptionPlan = availablePlans.first(where: { plan in
+                        plan.title == planName || plan.name == planName
+                    })
+                    
+                    // Si pas trouvé par nom, essayer de trouver par catégorie et durée
+                    if currentSubscriptionPlan == nil {
+                        // Essayer de trouver un plan mensuel par défaut
+                        currentSubscriptionPlan = availablePlans.first(where: { $0.duration == "MONTHLY" })
+                    }
                 } else {
-                    // Pour les CLIENT : uniquement les plans INDIVIDUAL et FAMILY
-                    availablePlans = allPlans.filter { $0.category == "INDIVIDUAL" || $0.category == "FAMILY" }
-                    print("[ManageSubscriptionsViewModel] Plans filtrés pour CLIENT (INDIVIDUAL + FAMILY): \(availablePlans.count) plans")
+                    // Si pas de planName, prendre le premier plan disponible
+                    currentSubscriptionPlan = availablePlans.first
                 }
                 
-                // Si l'utilisateur a un abonnement actif, utiliser les informations de subscriptionDetails
-                if hasActiveSubscription {
-                    // Trouver le plan correspondant au planName
-                    if let planName = subscriptionDetails.planName {
-                        currentSubscriptionPlan = availablePlans.first { plan in
-                            plan.title == planName || plan.name == planName
-                        }
-                        
-                        // Si pas trouvé par nom, essayer de trouver par catégorie et durée
-                        if currentSubscriptionPlan == nil {
-                            // Essayer de trouver un plan mensuel par défaut
-                            currentSubscriptionPlan = availablePlans.first { $0.duration == "MONTHLY" }
-                        }
-                    } else {
-                        // Si pas de planName, prendre le premier plan disponible
-                        currentSubscriptionPlan = availablePlans.first
-                    }
-                    
-                    // Mettre à jour les informations d'affichage
-                    if let currentPlan = currentSubscriptionPlan {
-                        currentFormula = currentPlan.isMonthly ? "Mensuel" : "Annuel"
-                        currentAmount = "\(currentPlan.formattedPrice) / \(currentPlan.isMonthly ? "mois" : "an")"
-                        selectedPlan = currentPlan
-                    } else {
-                        // Si pas de plan trouvé, utiliser les infos de base
-                        currentFormula = "Actif"
-                        currentAmount = subscriptionDetails.planName ?? "N/A"
-                    }
-                    
-                    // Formater les dates depuis currentPeriodEnd
-                    if let periodEndString = subscriptionDetails.currentPeriodEnd {
-                        let formatter = ISO8601DateFormatter()
-                        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds, .withTimeZone]
-                        
-                        if let date = formatter.date(from: periodEndString) {
-                            let displayFormatter = DateFormatter()
-                            displayFormatter.dateFormat = "dd/MM/yyyy"
-                            nextPaymentDate = displayFormatter.string(from: date)
-                            
-                            // Calculer la date d'engagement (1 an après)
-                            if let commitmentDate = Calendar.current.date(byAdding: .year, value: 1, to: date) {
-                                commitmentUntil = displayFormatter.string(from: commitmentDate)
-                            }
-                        }
-                    }
+                // Mettre à jour les informations d'affichage
+                if let currentPlan = currentSubscriptionPlan {
+                    currentFormula = currentPlan.isMonthly ? "Mensuel" : "Annuel"
+                    currentAmount = "\(currentPlan.formattedPrice) / \(currentPlan.isMonthly ? "mois" : "an")"
+                    selectedPlan = currentPlan
                 } else {
+                    // Si pas de plan trouvé, utiliser les infos de base
+                    currentFormula = "Actif"
+                    currentAmount = subscriptionDetails.planName ?? "N/A"
+                }
+                
+                // Formater les dates depuis currentPeriodEnd
+                if let periodEndString = subscriptionDetails.currentPeriodEnd {
+                    let formatter = ISO8601DateFormatter()
+                    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds, .withTimeZone]
+                    
+                    if let date = formatter.date(from: periodEndString) {
+                        let displayFormatter = DateFormatter()
+                        displayFormatter.dateFormat = "dd/MM/yyyy"
+                        nextPaymentDate = displayFormatter.string(from: date)
+                        
+                        // Calculer la date d'engagement (1 an après)
+                        if let commitmentDate = Calendar.current.date(byAdding: .year, value: 1, to: date) {
+                            commitmentUntil = displayFormatter.string(from: commitmentDate)
+                        }
+                    }
+                }
+            } else {
                     // Pas d'abonnement actif, ne pas afficher de plan
                     print("[ManageSubscriptionsViewModel] ⚠️ Pas d'abonnement actif détecté")
                     currentSubscriptionPlan = nil
