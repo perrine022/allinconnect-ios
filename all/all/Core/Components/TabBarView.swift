@@ -84,9 +84,11 @@ struct TabBarView: View {
                 }
                 .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("NavigateToCardAfterPayment"))) { _ in
                     // Naviguer vers l'onglet "Ma Carte" après un paiement réussi
+                    print("📍 [TabBarView] Notification 'NavigateToCardAfterPayment' reçue - Navigation vers Ma Carte")
                     appState.selectedTab = .card
                     // Notifier pour recharger les données de la carte
                     NotificationCenter.default.post(name: NSNotification.Name("ReloadCardData"), object: nil)
+                    print("📍 [TabBarView] Navigation effectuée vers l'onglet 'Ma Carte'")
                 }
                 .navigationDestination(item: $pushNotificationOfferId) { offerId in
                     OfferDetailView(offerId: offerId)

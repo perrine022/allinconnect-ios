@@ -87,12 +87,30 @@ struct StripePaymentView: View {
             Button("OK", role: .cancel) {
                 // Annuler le task de masquage automatique si l'utilisateur ferme manuellement
                 viewModel.cancelAutoHideTask()
-                viewModel.showSuccessMessage = false
-                dismiss()
-                // Notifier pour naviguer vers l'onglet "Ma Carte" et recharger les données
-                NotificationCenter.default.post(name: NSNotification.Name("NavigateToCardAfterPayment"), object: nil)
-                // Forcer le rechargement des données de la carte depuis le backend
-                NotificationCenter.default.post(name: NSNotification.Name("ForceReloadCardData"), object: nil)
+                
+                // Fermer l'alert d'abord de manière asynchrone pour éviter les conflits
+                Task.detached { @MainActor [weak viewModel] in
+                    viewModel?.showSuccessMessage = false
+                    
+                    // Attendre un court délai pour que l'alert soit complètement fermé
+                    try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconde
+                    
+                    // Notifier pour naviguer vers l'onglet "Ma Carte" et recharger les données
+                    // Envoyer plusieurs fois pour s'assurer que la notification est reçue
+                    NotificationCenter.default.post(name: NSNotification.Name("NavigateToCardAfterPayment"), object: nil)
+                    NotificationCenter.default.post(name: NSNotification.Name("ForceReloadCardData"), object: nil)
+                    
+                    // Attendre un peu plus pour laisser le temps à TabBarView de traiter la notification
+                    try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconde
+                    
+                    // Envoyer à nouveau pour être sûr
+                    NotificationCenter.default.post(name: NSNotification.Name("NavigateToCardAfterPayment"), object: nil)
+                    
+                    // Fermer la vue
+                    await MainActor.run {
+                        dismiss()
+                    }
+                }
             }
         } message: {
             Text("Votre abonnement a été activé avec succès. Vous êtes maintenant Premium !")
@@ -721,16 +739,32 @@ class StripePaymentViewModel: ObservableObject {
                 NotificationCenter.default.post(name: NSNotification.Name("SubscriptionUpdated"), object: nil)
                 // Forcer le rechargement des données de la carte depuis le backend
                 NotificationCenter.default.post(name: NSNotification.Name("ForceReloadCardData"), object: nil)
+                // Naviguer vers l'onglet "Ma Carte" après un paiement réussi
+                // Envoyer immédiatement pour que la navigation se fasse même si l'alert n'est pas encore fermé
+                print("   📍 Envoi de la notification 'NavigateToCardAfterPayment' pour rediriger vers Ma Carte...")
+                NotificationCenter.default.post(name: NSNotification.Name("NavigateToCardAfterPayment"), object: nil)
                 print("   ✅ Notification 'PaymentSuccess' envoyée avec planPrice: \(planPrice ?? "nil")")
                 print("   ✅ Notification 'SubscriptionUpdated' envoyée")
                 print("   ✅ Notification 'ForceReloadCardData' envoyée pour forcer le rechargement")
+                print("   ✅ Notification 'NavigateToCardAfterPayment' envoyée pour rediriger vers Ma Carte")
+                
+                // Envoyer à nouveau après un court délai pour s'assurer que TabBarView la reçoit
+                Task.detached {
+                    try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 seconde
+                    await MainActor.run {
+                        print("   📍 Envoi secondaire de 'NavigateToCardAfterPayment' pour garantir la navigation...")
+                        NotificationCenter.default.post(name: NSNotification.Name("NavigateToCardAfterPayment"), object: nil)
+                    }
+                }
                 
                 // Masquer le message après 3 secondes (seulement si l'utilisateur ne l'a pas déjà fermé)
-                autoHideTask = Task { @MainActor in
+                // Utiliser Task.detached pour éviter "Publishing changes from within view updates"
+                autoHideTask = Task.detached { [weak self] in
                     try? await Task.sleep(nanoseconds: 3_000_000_000)
                     // Vérifier que l'alert est toujours affichée avant de la fermer
-                    if showSuccessMessage {
-                        showSuccessMessage = false
+                    await MainActor.run {
+                        guard let self = self, self.showSuccessMessage else { return }
+                        self.showSuccessMessage = false
                         print("   → Message de succès masqué automatiquement")
                     }
                 }
