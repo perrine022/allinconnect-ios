@@ -268,13 +268,9 @@ struct ManageEstablishmentView: View {
                                 print("   - isLoading: \(viewModel.isLoading)")
                                 print("   - isLoadingData: \(viewModel.isLoadingData)")
                                 print("🏢 [GÉRER ÉTABLISSEMENT] =========================================")
+                                
+                                // Toujours appeler saveEstablishment, la validation se fait à l'intérieur
                                 viewModel.saveEstablishment()
-                                // Ne pas fermer automatiquement, attendre le succès
-                                if viewModel.successMessage != nil {
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                                        dismiss()
-                                    }
-                                }
                             }) {
                                 HStack {
                                     if viewModel.isLoading {
@@ -288,10 +284,10 @@ struct ManageEstablishmentView: View {
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
-                                .background((viewModel.hasChanges && !viewModel.isLoading) ? Color.appRed : Color.gray.opacity(0.5))
+                                .background((viewModel.isValid && viewModel.hasChanges && !viewModel.isLoading && !viewModel.isLoadingData) ? Color.appRed : Color.gray.opacity(0.5))
                                 .cornerRadius(12)
                             }
-                            .disabled(!viewModel.isValid || !viewModel.hasChanges || viewModel.isLoading || viewModel.isLoadingData)
+                            .disabled(viewModel.isLoading || viewModel.isLoadingData)
                             .padding(.horizontal, 20)
                             .padding(.top, 8)
                             
@@ -337,6 +333,14 @@ struct ManageEstablishmentView: View {
         .onAppear {
             // Charger les données au démarrage
             viewModel.loadEstablishmentData()
+        }
+        .onReceive(viewModel.$successMessage) { successMessage in
+            // Fermer la vue après un délai si la sauvegarde réussit
+            if successMessage != nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    dismiss()
+                }
+            }
         }
     }
 }
