@@ -53,20 +53,20 @@ struct WalletView: View {
                                 VStack(spacing: 12) {
                                     Text("Solde disponible")
                                         .font(.system(size: 14, weight: .medium))
-                                        .foregroundColor(.white.opacity(0.8))
+                                        .foregroundColor(.red)
                                     
                                     Text("\(String(format: "%.2f", viewModel.walletBalance))€")
                                         .font(.system(size: 48, weight: .bold))
-                                        .foregroundColor(.appGold)
+                                        .foregroundColor(.red)
                                 }
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 30)
                                 .background(
                                     RoundedRectangle(cornerRadius: 20)
-                                        .fill(Color.appDarkRed1.opacity(0.8))
+                                        .fill(Color.white)
                                         .overlay(
                                             RoundedRectangle(cornerRadius: 20)
-                                                .stroke(Color.appGold.opacity(0.3), lineWidth: 2)
+                                                .stroke(Color.red.opacity(0.3), lineWidth: 2)
                                         )
                                 )
                                 .padding(.horizontal, 20)
@@ -115,11 +115,11 @@ struct WalletView: View {
                                                 Spacer()
                                                 Text("Décagnotter")
                                                     .font(.system(size: 16, weight: .semibold))
-                                                    .foregroundColor(.black)
+                                                    .foregroundColor(.white)
                                                 Spacer()
                                             }
                                             .padding(.vertical, 14)
-                                            .background(viewModel.isValidWithdrawalAmount ? Color.appGold : Color.gray.opacity(0.5))
+                                            .background(viewModel.isValidWithdrawalAmount ? Color.red : Color.gray.opacity(0.5))
                                             .cornerRadius(10)
                                         }
                                         .disabled(!viewModel.isValidWithdrawalAmount || viewModel.isLoading)

@@ -164,13 +164,16 @@ class EditProfileViewModel: ObservableObject {
         
         // La date de naissance est optionnelle mais si remplie, doit être valide
         if !birthDay.isEmpty || !birthMonth.isEmpty || !birthYear.isEmpty {
-            return isValidBirthDate()
+            // Ne pas modifier birthDateError ici pour éviter les modifications pendant le rendu
+            // La validation de l'erreur sera faite de manière asynchrone
+            return isValidBirthDateWithoutError()
         }
         
         return true
     }
     
-    private func isValidBirthDate() -> Bool {
+    // Validation sans modification de birthDateError (pour isValid)
+    private func isValidBirthDateWithoutError() -> Bool {
         // Si tous les champs sont vides, c'est valide (optionnel)
         if birthDay.isEmpty && birthMonth.isEmpty && birthYear.isEmpty {
             return true
@@ -178,31 +181,26 @@ class EditProfileViewModel: ObservableObject {
         
         // Si un champ est rempli, tous doivent l'être
         guard !birthDay.isEmpty, !birthMonth.isEmpty, !birthYear.isEmpty else {
-            birthDateError = "Tous les champs de date doivent être remplis"
             return false
         }
         
         guard let day = Int(birthDay), let month = Int(birthMonth), let year = Int(birthYear) else {
-            birthDateError = "La date doit contenir uniquement des chiffres"
             return false
         }
         
         // Valider le jour (1-31)
         if day < 1 || day > 31 {
-            birthDateError = "Le jour doit être entre 1 et 31"
             return false
         }
         
         // Valider le mois (1-12)
         if month < 1 || month > 12 {
-            birthDateError = "Le mois doit être entre 1 et 12"
             return false
         }
         
         // Valider l'année (1900 à année actuelle)
         let currentYear = Calendar.current.component(.year, from: Date())
         if year < 1900 || year > currentYear {
-            birthDateError = "L'année doit être entre 1900 et \(currentYear)"
             return false
         }
         
@@ -212,12 +210,63 @@ class EditProfileViewModel: ObservableObject {
         components.month = month
         components.day = day
         guard Calendar.current.date(from: components) != nil else {
-            birthDateError = "Cette date n'existe pas"
             return false
         }
         
-        birthDateError = nil
         return true
+    }
+    
+    // Validation avec mise à jour de birthDateError (appelée de manière asynchrone)
+    func validateBirthDate() {
+        Task { @MainActor in
+            // Si tous les champs sont vides, c'est valide (optionnel)
+            if birthDay.isEmpty && birthMonth.isEmpty && birthYear.isEmpty {
+                birthDateError = nil
+                return
+            }
+            
+            // Si un champ est rempli, tous doivent l'être
+            guard !birthDay.isEmpty, !birthMonth.isEmpty, !birthYear.isEmpty else {
+                birthDateError = "Tous les champs de date doivent être remplis"
+                return
+            }
+            
+            guard let day = Int(birthDay), let month = Int(birthMonth), let year = Int(birthYear) else {
+                birthDateError = "La date doit contenir uniquement des chiffres"
+                return
+            }
+            
+            // Valider le jour (1-31)
+            if day < 1 || day > 31 {
+                birthDateError = "Le jour doit être entre 1 et 31"
+                return
+            }
+            
+            // Valider le mois (1-12)
+            if month < 1 || month > 12 {
+                birthDateError = "Le mois doit être entre 1 et 12"
+                return
+            }
+            
+            // Valider l'année (1900 à année actuelle)
+            let currentYear = Calendar.current.component(.year, from: Date())
+            if year < 1900 || year > currentYear {
+                birthDateError = "L'année doit être entre 1900 et \(currentYear)"
+                return
+            }
+            
+            // Valider que la date existe (ex: pas de 31 février)
+            var components = DateComponents()
+            components.year = year
+            components.month = month
+            components.day = day
+            guard Calendar.current.date(from: components) != nil else {
+                birthDateError = "Cette date n'existe pas"
+                return
+            }
+            
+            birthDateError = nil
+        }
     }
     
     private func formatBirthDate() -> String? {

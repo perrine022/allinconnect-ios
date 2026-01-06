@@ -40,9 +40,9 @@ struct HomeView: View {
                         Image("AppLogo")
                             .resizable()
                             .scaledToFit()
-                            .frame(maxWidth: 337.5, maxHeight: 135)
+                            .frame(maxWidth: 120, maxHeight: 48)
                             .padding(.top, 12)
-                            .padding(.bottom, 2)
+                            .padding(.bottom, 20)
                     }
                     
                     // Bouton "L'app qui pense à toi"

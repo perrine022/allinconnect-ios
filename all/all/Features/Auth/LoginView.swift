@@ -39,7 +39,7 @@ struct LoginView: View {
                         Image("AppLogo")
                             .resizable()
                             .scaledToFit()
-                            .frame(maxWidth: 337.5, maxHeight: 135)
+                            .frame(maxWidth: 112.5, maxHeight: 45)
                             .padding(.top, 40)
                             .padding(.bottom, 2)
                     }
@@ -69,6 +69,7 @@ struct LoginView: View {
                                 .autocorrectionDisabled()
                                 .textInputAutocapitalization(.never)
                                 .submitLabel(.next)
+                                .tint(.black)
                                 .onSubmit {
                                     focusedField = .password
                                 }

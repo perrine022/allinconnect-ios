@@ -769,7 +769,7 @@ struct EditProfileView: View {
     @FocusState private var focusedField: Field?
     
     enum Field: Hashable {
-        case firstName, lastName, email, address, city, birthDay, birthMonth, birthYear
+        case firstName, lastName, email, address, city
     }
     
     var body: some View {
@@ -844,7 +844,9 @@ struct EditProfileView: View {
                                 )
                                 .focused($focusedField, equals: .lastName)
                                 .onChange(of: viewModel.lastName) { _, _ in
-                                    viewModel.checkForChanges()
+                                    Task { @MainActor in
+                                        viewModel.checkForChanges()
+                                    }
                                 }
                                 
                                 // Prénom
@@ -856,7 +858,9 @@ struct EditProfileView: View {
                                 )
                                 .focused($focusedField, equals: .firstName)
                                 .onChange(of: viewModel.firstName) { _, _ in
-                                    viewModel.checkForChanges()
+                                    Task { @MainActor in
+                                        viewModel.checkForChanges()
+                                    }
                                 }
                                 
                                 // Email
@@ -870,7 +874,9 @@ struct EditProfileView: View {
                                 .focused($focusedField, equals: .email)
                                 .autocapitalization(.none)
                                 .onChange(of: viewModel.email) { _, _ in
-                                    viewModel.checkForChanges()
+                                    Task { @MainActor in
+                                        viewModel.checkForChanges()
+                                    }
                                 }
                                 
                                 // Adresse
@@ -882,7 +888,9 @@ struct EditProfileView: View {
                                 )
                                 .focused($focusedField, equals: .address)
                                 .onChange(of: viewModel.address) { _, _ in
-                                    viewModel.checkForChanges()
+                                    Task { @MainActor in
+                                        viewModel.checkForChanges()
+                                    }
                                 }
                                 
                                 // Ville
@@ -894,159 +902,16 @@ struct EditProfileView: View {
                                 )
                                 .focused($focusedField, equals: .city)
                                 .onChange(of: viewModel.city) { _, _ in
-                                    viewModel.checkForChanges()
+                                    Task { @MainActor in
+                                        viewModel.checkForChanges()
+                                    }
                                 }
                                 
-                                // Date de naissance
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Date de naissance")
-                                        .font(.system(size: 14, weight: .medium))
-                                        .foregroundColor(.white.opacity(0.9))
-                                    
-                                    HStack(spacing: 12) {
-                                        // Jour
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text("Jour")
-                                                .font(.system(size: 12, weight: .regular))
-                                                .foregroundColor(.gray.opacity(0.7))
-                                            
-                                            TextField("", text: $viewModel.birthDay, prompt: Text("JJ").foregroundColor(.gray.opacity(0.5)))
-                                                .keyboardType(.numberPad)
-                                                .foregroundColor(.black)
-                                                .font(.system(size: 16))
-                                                .focused($focusedField, equals: .birthDay)
-                                                .frame(width: 60)
-                                                .padding(.horizontal, 12)
-                                                .padding(.vertical, 12)
-                                                .background(Color.white)
-                                                .cornerRadius(10)
-                                                .onChange(of: viewModel.birthDay) { _, newValue in
-                                                    // Filtrer pour garder uniquement les chiffres
-                                                    let digitsOnly = newValue.filter { $0.isNumber }
-                                                    if digitsOnly != newValue {
-                                                        viewModel.birthDay = digitsOnly
-                                                        return
-                                                    }
-                                                    
-                                                    // Limiter à 2 chiffres max
-                                                    if digitsOnly.count > 2 {
-                                                        viewModel.birthDay = String(digitsOnly.prefix(2))
-                                                    } else {
-                                                        viewModel.birthDay = digitsOnly
-                                                    }
-                                                    
-                                                    // Valider que c'est un nombre entre 1 et 31
-                                                    if let day = Int(viewModel.birthDay), day > 31 {
-                                                        viewModel.birthDay = "31"
-                                                    }
-                                                    
-                                                    viewModel.checkForChanges()
-                                                }
-                                        }
-                                        
-                                        // Mois
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text("Mois")
-                                                .font(.system(size: 12, weight: .regular))
-                                                .foregroundColor(.gray.opacity(0.7))
-                                            
-                                            TextField("", text: $viewModel.birthMonth, prompt: Text("MM").foregroundColor(.gray.opacity(0.5)))
-                                                .keyboardType(.numberPad)
-                                                .foregroundColor(.black)
-                                                .font(.system(size: 16))
-                                                .focused($focusedField, equals: .birthMonth)
-                                                .frame(width: 60)
-                                                .padding(.horizontal, 12)
-                                                .padding(.vertical, 12)
-                                                .background(Color.white)
-                                                .cornerRadius(10)
-                                                .onChange(of: viewModel.birthMonth) { _, newValue in
-                                                    // Filtrer pour garder uniquement les chiffres
-                                                    let digitsOnly = newValue.filter { $0.isNumber }
-                                                    if digitsOnly != newValue {
-                                                        viewModel.birthMonth = digitsOnly
-                                                        return
-                                                    }
-                                                    
-                                                    // Limiter à 2 chiffres max
-                                                    if digitsOnly.count > 2 {
-                                                        viewModel.birthMonth = String(digitsOnly.prefix(2))
-                                                    } else {
-                                                        viewModel.birthMonth = digitsOnly
-                                                    }
-                                                    
-                                                    // Valider que c'est un nombre entre 1 et 12
-                                                    if let month = Int(viewModel.birthMonth), month > 12 {
-                                                        viewModel.birthMonth = "12"
-                                                    }
-                                                    
-                                                    viewModel.checkForChanges()
-                                                }
-                                        }
-                                        
-                                        // Année
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text("Année")
-                                                .font(.system(size: 12, weight: .regular))
-                                                .foregroundColor(.gray.opacity(0.7))
-                                            
-                                            TextField("", text: $viewModel.birthYear, prompt: Text("AAAA").foregroundColor(.gray.opacity(0.5)))
-                                                .keyboardType(.numberPad)
-                                                .foregroundColor(.black)
-                                                .font(.system(size: 16))
-                                                .focused($focusedField, equals: .birthYear)
-                                                .frame(width: 80)
-                                                .padding(.horizontal, 12)
-                                                .padding(.vertical, 12)
-                                                .background(Color.white)
-                                                .cornerRadius(10)
-                                                .onChange(of: viewModel.birthYear) { _, newValue in
-                                                    // Filtrer pour garder uniquement les chiffres
-                                                    let digitsOnly = newValue.filter { $0.isNumber }
-                                                    if digitsOnly != newValue {
-                                                        viewModel.birthYear = digitsOnly
-                                                        return
-                                                    }
-                                                    
-                                                    // Limiter à 4 chiffres max
-                                                    if digitsOnly.count > 4 {
-                                                        viewModel.birthYear = String(digitsOnly.prefix(4))
-                                                    } else {
-                                                        viewModel.birthYear = digitsOnly
-                                                    }
-                                                    
-                                                    // Valider que l'année est avant l'année actuelle
-                                                    let currentYear = Calendar.current.component(.year, from: Date())
-                                                    if let year = Int(viewModel.birthYear), year > currentYear {
-                                                        viewModel.birthYear = String(currentYear)
-                                                    }
-                                                    
-                                                    viewModel.checkForChanges()
-                                                }
-                                        }
-                                        
-                                        Spacer()
-                                    }
-                                    
-                                    // Message d'erreur pour la date
-                                    if let dateError = viewModel.birthDateError {
-                                        Text(dateError)
-                                            .font(.system(size: 12))
-                                            .foregroundColor(.red)
-                                    }
-                                }
-                                .padding(.horizontal, 20)
                             }
                             
                             // Bouton Enregistrer
                             Button(action: {
                                 viewModel.saveProfile()
-                                // Fermer après succès
-                                if viewModel.successMessage != nil {
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                                        dismiss()
-                                    }
-                                }
                             }) {
                                 HStack {
                                     if viewModel.isLoading {
@@ -1090,6 +955,13 @@ struct EditProfileView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .onReceive(viewModel.$successMessage) { successMessage in
+            if successMessage != nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    dismiss()
+                }
+            }
+        }
     }
     }
 }

@@ -9,7 +9,6 @@ import SwiftUI
 
 struct CardSubscriptionView: View {
     @State private var showPayment = false
-    @State private var showWhyCard = false
     
     var body: some View {
         ScrollView {
@@ -56,13 +55,6 @@ struct CardSubscriptionView: View {
                     )
                     
                     CardBenefitCard(
-                        icon: "wallet.pass.fill",
-                        iconColor: .green,
-                        title: "Wallet intégré",
-                        description: "Apple Wallet & Google Pay"
-                    )
-                    
-                    CardBenefitCard(
                         icon: "bell.fill",
                         iconColor: .green,
                         title: "Alertes personnalisées",
@@ -87,17 +79,6 @@ struct CardSubscriptionView: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
                 
-                // Lien "Pourquoi ma carte digitale"
-                Button(action: {
-                    showWhyCard = true
-                }) {
-                    Text("Pourquoi ma carte digitale ?")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(.appGold)
-                        .underline()
-                }
-                .padding(.top, 8)
-                
                 Spacer()
                     .frame(height: 100)
             }
@@ -105,11 +86,6 @@ struct CardSubscriptionView: View {
         .sheet(isPresented: $showPayment) {
             NavigationStack {
                 StripePaymentView(filterCategory: "CLIENT")
-            }
-        }
-        .sheet(isPresented: $showWhyCard) {
-            NavigationStack {
-                WhyCardDigitalView()
             }
         }
     }

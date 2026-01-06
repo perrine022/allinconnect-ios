@@ -114,38 +114,25 @@ class HomeViewModel: ObservableObject {
                 print("[HomeViewModel] Filtre: type=OFFRE (uniquement les offres, pas les événements)")
                 print("═══════════════════════════════════════════════════════════")
                 
-                // Récupérer la ville de l'utilisateur depuis son profil
-                print("[HomeViewModel] 📍 Étape 1: Récupération du profil utilisateur...")
-                let userProfile = try await profileAPIService.getUserMe()
-                print("[HomeViewModel] ✅ Profil utilisateur récupéré")
-                print("   - Ville: \(userProfile.city ?? "non définie")")
-                
-                // Utiliser le même endpoint que OffersViewModel avec le filtre type="OFFRE"
-                let offersResponse: [OfferResponse]
-                
-                if let userCity = userProfile.city, !userCity.isEmpty {
-                    print("[HomeViewModel] 📍 Étape 2: Chargement des offres pour la ville: \(userCity)")
-                    // Charger les offres filtrées par ville et type OFFRE depuis l'API
-                    offersResponse = try await offersAPIService.getAllOffers(
-                        city: userCity,
-                        category: nil,
-                        professionalId: nil,
-                        type: "OFFRE", // Filtrer uniquement les offres (pas les événements)
-                        startDate: nil,
-                        endDate: nil
-                    )
+                // Utiliser la même logique que OffersViewModel : utiliser cityText s'il est rempli
+                // Ne pas utiliser getUserMe() qui nécessite une authentification
+                var city: String? = nil
+                if !cityText.isEmpty {
+                    city = cityText
+                    print("[HomeViewModel] 📍 Utilisation de la ville depuis cityText: \(cityText)")
                 } else {
-                    print("[HomeViewModel] 📍 Étape 2: Aucune ville trouvée, chargement de toutes les offres")
-                    // Si pas de ville, charger toutes les offres actives de type OFFRE
-                    offersResponse = try await offersAPIService.getAllOffers(
-                        city: nil,
-                        category: nil,
-                        professionalId: nil,
-                        type: "OFFRE", // Filtrer uniquement les offres (pas les événements)
-                        startDate: nil,
-                        endDate: nil
-                    )
+                    print("[HomeViewModel] 📍 Aucune ville spécifiée, chargement de toutes les offres")
                 }
+                
+                // Utiliser exactement le même appel API que OffersViewModel
+                let offersResponse = try await offersAPIService.getAllOffers(
+                    city: city,
+                    category: nil,
+                    professionalId: nil,
+                    type: "OFFRE", // Filtrer uniquement les offres (pas les événements)
+                    startDate: nil,
+                    endDate: nil
+                )
                 
                 print("[HomeViewModel] ✅ \(offersResponse.count) offres récupérées depuis l'API (type=OFFRE)")
                 

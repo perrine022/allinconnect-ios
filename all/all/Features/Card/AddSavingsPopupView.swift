@@ -196,10 +196,10 @@ struct AddSavingsPopupView: View {
                         }) {
                             Text(editingEntry == nil ? "Ajouter" : "Modifier")
                                 .font(.system(size: 17, weight: .bold))
-                                .foregroundColor(.black)
+                                .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 16)
-                                .background(isValid ? Color.appGold : Color.gray.opacity(0.5))
+                                .background(isValid ? Color.red : Color.gray.opacity(0.5))
                                 .cornerRadius(12)
                         }
                         .disabled(!isValid)
