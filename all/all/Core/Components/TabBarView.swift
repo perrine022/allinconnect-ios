@@ -129,7 +129,7 @@ struct TabBarView: View {
 // Vue helper pour charger un partenaire depuis son ID
 struct PartnerDetailViewFromId: View {
     let professionalId: Int
-    @StateObject private var viewModel: PartnerDetailViewModel?
+    @StateObject private var viewModel: PartnerDetailViewModel
     @Environment(\.dismiss) private var dismiss
     
     init(professionalId: Int) {
@@ -151,14 +151,7 @@ struct PartnerDetailViewFromId: View {
     }
     
     var body: some View {
-        if let viewModel = viewModel {
-            PartnerDetailView(partner: viewModel.partner)
-        } else {
-            ProgressView()
-                .onAppear {
-                    // Le ViewModel chargera automatiquement les données via loadData()
-                }
-        }
+        PartnerDetailView(partner: viewModel.partner)
     }
 }
 
