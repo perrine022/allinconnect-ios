@@ -13,7 +13,7 @@ import UIKit
 class PushManager: NSObject {
     static let shared = PushManager()
     
-    private let pushRegistrationEndpoint = "/push/register"
+    private let pushRegistrationEndpoint = "/push/register" // POST /api/v1/push/register
     private let storedTokenKey = "apns_device_token"
     
     private var deviceToken: String?
@@ -102,9 +102,9 @@ class PushManager: NSObject {
             return
         }
         
-        // Déterminer l'environnement (SANDBOX pour debug, PRODUCTION pour release)
+        // Déterminer l'environnement (DEVELOPMENT pour debug, PRODUCTION pour release)
         #if DEBUG
-        let environment = "SANDBOX"
+        let environment = "DEVELOPMENT"
         #else
         let environment = "PRODUCTION"
         #endif

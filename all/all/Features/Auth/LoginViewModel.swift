@@ -71,6 +71,11 @@ class LoginViewModel: ObservableObject {
                 
                 isLoading = false
                 
+                // Enregistrer le token push après la connexion
+                Task { @MainActor in
+                    await PushManager.shared.registerTokenAfterLogin()
+                }
+                
                 // Notifier que la connexion est réussie
                 NotificationCenter.default.post(name: NSNotification.Name("UserDidLogin"), object: nil)
             } catch {

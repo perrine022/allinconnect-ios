@@ -158,6 +158,14 @@ struct LoginView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 12)
                     
+                    // Phrase avant inscription
+                    Text("Pas encore dans l'aventure ? Rejoignez-nous !")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(.white.opacity(0.9))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 8)
+                    
                     // Bouton Inscrivez-vous
                     Button(action: {
                         signUpNavigationId = UUID()

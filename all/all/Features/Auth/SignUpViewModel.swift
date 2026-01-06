@@ -240,6 +240,11 @@ class SignUpViewModel: ObservableObject {
                 
                 isLoading = false
                 
+                // Enregistrer le token push après l'inscription
+                Task { @MainActor in
+                    await PushManager.shared.registerTokenAfterLogin()
+                }
+                
                 // Notifier que l'inscription est réussie
                 NotificationCenter.default.post(name: NSNotification.Name("UserDidLogin"), object: nil)
                 

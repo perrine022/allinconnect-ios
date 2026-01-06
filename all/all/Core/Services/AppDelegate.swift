@@ -144,10 +144,39 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         // Gérer l'interaction avec la notification
         let userInfo = response.notification.request.content.userInfo
         
-        // Vous pouvez extraire des données de la notification ici
+        print("[AppDelegate] Notification tapped - userInfo: \(userInfo)")
+        
+        // Extraire les données du payload pour la navigation
+        var navigationData: [String: Any] = [:]
+        
+        // Pour une nouvelle offre ou un événement
         if let offerId = userInfo["offerId"] as? String {
-            print("Notification tapped for offer: \(offerId)")
-            // Naviguer vers l'offre si nécessaire
+            navigationData["offerId"] = offerId
+            print("[AppDelegate] Notification pour offre/événement: \(offerId)")
+            
+            // Vérifier si c'est un événement
+            if let type = userInfo["type"] as? String, type == "EVENT" {
+                navigationData["type"] = "EVENT"
+                print("[AppDelegate] Type: Événement local")
+            } else {
+                navigationData["type"] = "OFFER"
+                print("[AppDelegate] Type: Offre")
+            }
+        }
+        
+        // Pour un nouvel établissement
+        if let professionalId = userInfo["professionalId"] as? String {
+            navigationData["professionalId"] = professionalId
+            print("[AppDelegate] Notification pour professionnel: \(professionalId)")
+        }
+        
+        // Poster une notification pour déclencher la navigation
+        if !navigationData.isEmpty {
+            NotificationCenter.default.post(
+                name: NSNotification.Name("PushNotificationTapped"),
+                object: nil,
+                userInfo: navigationData
+            )
         }
         
         completionHandler()
