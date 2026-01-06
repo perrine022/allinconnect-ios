@@ -29,7 +29,7 @@ struct RegistrationRequest: Codable {
     let address: String?
     let city: String?
     let birthDate: String?
-    let userType: APIUserType
+    let userType: APIUserType? // Optionnel - le backend mettra UNKNOWN par défaut si non fourni
     let subscriptionType: APISubscriptionType
     let profession: String?
     let category: OfferCategory?

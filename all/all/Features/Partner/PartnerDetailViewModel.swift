@@ -447,6 +447,19 @@ class PartnerDetailViewModel: ObservableObject {
     }
     
     func submitRating(_ rating: Int, comment: String? = nil) {
+        // Vérifier que l'utilisateur est connecté
+        guard LoginViewModel.isLoggedIn() else {
+            print("[PartnerDetailViewModel] ❌ Impossible de soumettre l'avis : utilisateur non connecté")
+            return
+        }
+        
+        // Vérifier que l'utilisateur a un statut CLIENT ou PRO
+        let userTypeString = UserDefaults.standard.string(forKey: "user_type") ?? ""
+        guard userTypeString == "CLIENT" || userTypeString == "PRO" else {
+            print("[PartnerDetailViewModel] ❌ Impossible de soumettre l'avis : utilisateur n'a pas le statut CLIENT ou PRO (statut actuel: \(userTypeString))")
+            return
+        }
+        
         guard let apiId = partner.apiId else {
             print("[PartnerDetailViewModel] ❌ Impossible de soumettre l'avis : pas d'ID API pour le partenaire")
             return

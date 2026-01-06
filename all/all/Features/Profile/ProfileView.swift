@@ -612,12 +612,8 @@ struct ProfileView: View {
                     // Menu options (affiché seulement après chargement)
                     if viewModel.hasLoadedOnce {
                         VStack(spacing: 0) {
-                        // Options PRO (affichées pour tous les professionnels, peu importe l'espace)
-                        // Vérifier userType, cardType PROFESSIONAL, ou espace PRO pour être sûr
-                        let isProUser = viewModel.user.userType == .pro || 
-                                      viewModel.cardType == "PROFESSIONAL" || 
-                                      viewModel.currentSpace == .pro
-                        if isProUser {
+                        // Options PRO (uniquement dans l'espace PRO)
+                        if viewModel.currentSpace == .pro {
                             ProfileMenuRow(
                                 icon: "building.2.fill",
                                 title: "Gérer mon établissement",
@@ -643,7 +639,7 @@ struct ProfileView: View {
                                 .padding(.leading, 54)
                         }
                         
-                        // Options CLUB10 (espace client)
+                        // Options CLUB10 (espace client uniquement)
                         if viewModel.currentSpace == .client {
                             ProfileMenuRow(
                                 icon: "creditcard.fill",

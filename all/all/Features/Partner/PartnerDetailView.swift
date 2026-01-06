@@ -13,6 +13,14 @@ struct PartnerDetailView: View {
     @EnvironmentObject private var appState: AppState
     @State private var selectedOffer: Offer?
     @State private var showRatingPopup = false
+    @State private var isLoggedIn = LoginViewModel.isLoggedIn()
+    
+    // Vérifier si l'utilisateur peut laisser un avis (connecté avec statut CLIENT ou PRO)
+    private var canLeaveRating: Bool {
+        guard isLoggedIn else { return false }
+        let userTypeString = UserDefaults.standard.string(forKey: "user_type") ?? ""
+        return userTypeString == "CLIENT" || userTypeString == "PRO"
+    }
     
     init(partner: Partner) {
         _viewModel = StateObject(wrappedValue: PartnerDetailViewModel(partner: partner))
@@ -392,8 +400,9 @@ struct PartnerDetailView: View {
                                         
                                         Spacer()
                                         
-                                        // Afficher le bouton seulement si l'utilisateur n'a pas déjà laissé un avis
-                                        if !viewModel.hasUserRated {
+                                        // Afficher le bouton seulement si l'utilisateur est connecté avec statut CLIENT ou PRO
+                                        // et n'a pas déjà laissé un avis
+                                        if canLeaveRating && !viewModel.hasUserRated {
                                             Button(action: {
                                                 showRatingPopup = true
                                             }) {
@@ -466,10 +475,19 @@ struct PartnerDetailView: View {
                     isPresented: $showRatingPopup,
                     partnerName: viewModel.partner.name,
                     onRatingSubmit: { rating in
-                        viewModel.submitRating(rating, comment: nil)
+                        // Vérifier à nouveau avant de soumettre
+                        if canLeaveRating {
+                            viewModel.submitRating(rating, comment: nil)
+                        }
                     }
                 )
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserDidLogin"))) { _ in
+            isLoggedIn = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserDidLogout"))) { _ in
+            isLoggedIn = false
         }
     }
 }

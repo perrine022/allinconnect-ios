@@ -146,7 +146,7 @@ struct CardView: View {
                         .frame(maxWidth: .infinity)
                         .cornerRadius(20)
                         .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 4)
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, 24)
                         .padding(.top, 0)
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
                         .animation(.easeInOut(duration: 0.3), value: viewModel.hasLoadedOnce)

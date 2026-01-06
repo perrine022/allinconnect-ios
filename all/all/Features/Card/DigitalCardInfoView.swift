@@ -83,9 +83,8 @@ struct DigitalCardInfoView: View {
                             
                             // Bouton OBTENIR MA CARTE
                             Button(action: {
-                                // Rediriger vers l'onglet "Ma carte"
-                                appState.selectedTab = .card
-                                dismiss()
+                                // Naviguer vers la page de sélection d'abonnement CLIENT
+                                stripePaymentNavigationId = UUID()
                             }) {
                                 HStack(spacing: 8) {
                                     Image(systemName: "flame.fill")
@@ -128,7 +127,7 @@ struct DigitalCardInfoView: View {
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .navigationDestination(item: $stripePaymentNavigationId) { _ in
-            StripePaymentView(filterCategory: "CLIENT")
+            StripePaymentView(filterCategory: "CLIENT", showFamilyCardPromotion: true)
         }
     }
 }

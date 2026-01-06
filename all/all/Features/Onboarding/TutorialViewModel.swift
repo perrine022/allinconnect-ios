@@ -14,13 +14,13 @@ class TutorialViewModel: ObservableObject {
     let totalPages: Int = 4
     
     static func hasSeenTutorial() -> Bool {
-        // Toujours retourner false pour forcer l'affichage du tutoriel
-        return false
+        // Vérifier si l'utilisateur a déjà vu le tutoriel
+        return UserDefaults.standard.bool(forKey: "tutorial_completed")
     }
     
     func completeTutorial() {
-        // Ne plus sauvegarder pour forcer l'affichage à chaque fois
-        // UserDefaults.standard.set(true, forKey: "tutorial_completed")
+        // Sauvegarder que le tutoriel a été complété
+        UserDefaults.standard.set(true, forKey: "tutorial_completed")
     }
 }
 

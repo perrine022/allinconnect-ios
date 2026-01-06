@@ -155,6 +155,52 @@ class SubscriptionsAPIService: ObservableObject {
         }
     }
     
+    // MARK: - Get Client Plans
+    /// Récupère les plans d'abonnement pour les clients (INDIVIDUAL et FAMILY)
+    /// Endpoint: GET /api/v1/subscriptions/client
+    func getClientPlans() async throws -> [SubscriptionPlanResponse] {
+        print("[SubscriptionsAPIService] 📞 Appel GET /api/v1/subscriptions/client")
+        do {
+            let plans: [SubscriptionPlanResponse] = try await apiService.request(
+                endpoint: "/subscriptions/client",
+                method: .get,
+                parameters: nil,
+                headers: nil
+            )
+            print("[SubscriptionsAPIService] ✅ Plans client récupérés: \(plans.count) plans")
+            for plan in plans {
+                print("[SubscriptionsAPIService]   - \(plan.title): \(plan.formattedPrice) (category: \(plan.category ?? "N/A"), duration: \(plan.duration ?? "N/A"))")
+            }
+            return plans
+        } catch {
+            print("[SubscriptionsAPIService] ❌ Erreur lors de la récupération des plans client: \(error)")
+            throw error
+        }
+    }
+    
+    // MARK: - Get Pro Plans
+    /// Récupère les plans d'abonnement pour les professionnels (PROFESSIONAL)
+    /// Endpoint: GET /api/v1/subscriptions/pro
+    func getProPlans() async throws -> [SubscriptionPlanResponse] {
+        print("[SubscriptionsAPIService] 📞 Appel GET /api/v1/subscriptions/pro")
+        do {
+            let plans: [SubscriptionPlanResponse] = try await apiService.request(
+                endpoint: "/subscriptions/pro",
+                method: .get,
+                parameters: nil,
+                headers: nil
+            )
+            print("[SubscriptionsAPIService] ✅ Plans pro récupérés: \(plans.count) plans")
+            for plan in plans {
+                print("[SubscriptionsAPIService]   - \(plan.title): \(plan.formattedPrice) (category: \(plan.category ?? "N/A"), duration: \(plan.duration ?? "N/A"))")
+            }
+            return plans
+        } catch {
+            print("[SubscriptionsAPIService] ❌ Erreur lors de la récupération des plans pro: \(error)")
+            throw error
+        }
+    }
+    
     // MARK: - Subscribe to a Plan
     func subscribe(planId: Int) async throws {
         // La réponse peut être vide (200 OK)

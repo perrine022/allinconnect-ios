@@ -15,8 +15,10 @@ struct StripePaymentView: View {
     @StateObject private var viewModel = StripePaymentViewModel()
     @State private var showSafari = false
     
-    // Paramètre optionnel pour filtrer les plans par catégorie
+    // Paramètre optionnel pour afficher des messages informatifs selon le contexte
+    // Note: Ne filtre plus les plans - tous les plans sont affichés
     var filterCategory: String? = nil // "PROFESSIONAL", "INDIVIDUAL", "FAMILY", ou "CLIENT" (INDIVIDUAL + FAMILY)
+    var showFamilyCardPromotion: Bool = false // Afficher le message "Pensez à la carte famille !" uniquement depuis "Obtenir ma carte"
     
     var body: some View {
         ZStack {
@@ -68,8 +70,8 @@ struct StripePaymentView: View {
                         .padding(.horizontal, 20)
                     }
                     
-                    // Message incitatif pour la carte famille (quand on est sur CLIENT)
-                    if filterCategory == "CLIENT" {
+                    // Message incitatif pour la carte famille (uniquement depuis "Obtenir ma carte")
+                    if showFamilyCardPromotion {
                         HStack(spacing: 12) {
                             Image(systemName: "person.2.fill")
                                 .foregroundColor(.red)
@@ -112,6 +114,7 @@ struct StripePaymentView: View {
                                 PlanCard(
                                     plan: plan,
                                     isSelected: viewModel.selectedPlan?.id == plan.id,
+                                    showFamilyCardPromotion: showFamilyCardPromotion,
                                     onSelect: {
                                         viewModel.selectedPlan = plan
                                     }
@@ -232,6 +235,7 @@ struct StripePaymentView: View {
 struct PlanCard: View {
     let plan: SubscriptionPlanResponse
     let isSelected: Bool
+    let showFamilyCardPromotion: Bool
     let onSelect: () -> Void
     
     var body: some View {
@@ -297,10 +301,12 @@ struct PlanCard: View {
                         Text("• Carte digitale personnelle")
                             .font(.system(size: 14, weight: .regular))
                             .foregroundColor(.white.opacity(0.9))
-                        Text("• Pensez à la carte famille !")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(.red.opacity(0.9))
-                            .italic()
+                        if showFamilyCardPromotion {
+                            Text("• Pensez à la carte famille !")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(.red.opacity(0.9))
+                                .italic()
+                        }
                     }
                 }
             }
@@ -386,38 +392,31 @@ class StripePaymentViewModel: ObservableObject {
         
         Task {
             do {
-                let allPlans = try await subscriptionsAPIService.getPlans()
+                let allPlans: [SubscriptionPlanResponse]
+                
+                // Utiliser les endpoints spécifiques selon le contexte
+                if filterCategory == "PROFESSIONAL" {
+                    // Pour "S'abonner" (Pro) → appeler /api/v1/subscriptions/pro
+                    print("[StripePaymentViewModel] Chargement des plans PRO")
+                    allPlans = try await subscriptionsAPIService.getProPlans()
+                } else if filterCategory == "CLIENT" {
+                    // Pour "Obtenir ma carte" (Client) → appeler /api/v1/subscriptions/client
+                    print("[StripePaymentViewModel] Chargement des plans CLIENT")
+                    allPlans = try await subscriptionsAPIService.getClientPlans()
+                } else {
+                    // Par défaut, utiliser l'endpoint général (pour compatibilité)
+                    print("[StripePaymentViewModel] Chargement de tous les plans")
+                    allPlans = try await subscriptionsAPIService.getPlans()
+                }
+                
                 print("[StripePaymentViewModel] Plans récupérés depuis l'API: \(allPlans.count) plans")
                 for plan in allPlans {
                     print("  - \(plan.title): \(plan.formattedPrice) (\(plan.category ?? "N/A") - \(plan.duration ?? "N/A"))")
                 }
                 
-                // Filtrer les plans selon le type d'utilisateur
-                // Si filterCategory est fourni, l'utiliser, sinon déterminer automatiquement depuis UserDefaults
-                let categoryToFilter: String
-                if let filterCategory = filterCategory {
-                    categoryToFilter = filterCategory
-                } else {
-                    // Déterminer automatiquement le type d'utilisateur
-                    let userTypeString = UserDefaults.standard.string(forKey: "user_type") ?? "CLIENT"
-                    categoryToFilter = userTypeString == "PRO" ? "PROFESSIONAL" : "CLIENT"
-                    print("[StripePaymentViewModel] Type d'utilisateur détecté: \(userTypeString) -> catégorie: \(categoryToFilter)")
-                }
-                
-                // Filtrer selon la catégorie
-                if categoryToFilter == "CLIENT" {
-                    // Pour les clients, afficher INDIVIDUAL et FAMILY
-                    plans = allPlans.filter { $0.category == "INDIVIDUAL" || $0.category == "FAMILY" }
-                    print("[StripePaymentViewModel] Plans filtrés pour 'CLIENT' (INDIVIDUAL + FAMILY): \(plans.count) plans")
-                } else if categoryToFilter == "PROFESSIONAL" {
-                    // Pour les pros, afficher uniquement PROFESSIONAL
-                    plans = allPlans.filter { $0.category == "PROFESSIONAL" }
-                    print("[StripePaymentViewModel] Plans filtrés pour 'PROFESSIONAL': \(plans.count) plans")
-                } else {
-                    // Par défaut, ne rien afficher (sécurité)
-                    plans = []
-                    print("[StripePaymentViewModel] ⚠️ Catégorie inconnue '\(categoryToFilter)', aucun plan affiché")
-                }
+                // Afficher les plans récupérés
+                plans = allPlans
+                print("[StripePaymentViewModel] Plans affichés: \(plans.count) plans")
                 
                 // Sélectionner le premier plan par défaut
                 if self.selectedPlan == nil && !plans.isEmpty {

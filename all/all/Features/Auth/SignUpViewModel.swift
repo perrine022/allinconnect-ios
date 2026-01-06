@@ -20,7 +20,6 @@ class SignUpViewModel: ObservableObject {
     @Published var birthMonth: String = ""
     @Published var birthYear: String = ""
     @Published var referralCode: String = ""
-    @Published var userType: UserType = .client
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
     
@@ -209,6 +208,7 @@ class SignUpViewModel: ObservableObject {
                 }
                 
                 // Créer la requête d'inscription
+                // Le backend mettra userType à UNKNOWN par défaut si on ne le passe pas
                 let registrationRequest = RegistrationRequest(
                     firstName: firstName.trimmingCharacters(in: .whitespaces),
                     lastName: lastName.trimmingCharacters(in: .whitespaces),
@@ -217,9 +217,9 @@ class SignUpViewModel: ObservableObject {
                     address: nil, // Peut être ajouté plus tard
                     city: city,
                     birthDate: birthDateString,
-                    userType: userType == .pro ? .professional : .client,
+                    userType: nil, // Ne pas envoyer userType - le backend mettra UNKNOWN par défaut
                     subscriptionType: .free, // Par défaut FREE
-                    profession: userType == .pro ? nil : nil, // Peut être ajouté plus tard
+                    profession: nil, // Peut être ajouté plus tard
                     category: nil, // Peut être sélectionné plus tard pour les PRO
                     referralCode: referralCode.trimmingCharacters(in: .whitespaces).isEmpty ? nil : referralCode.trimmingCharacters(in: .whitespaces)
                 )
@@ -236,7 +236,7 @@ class SignUpViewModel: ObservableObject {
                 UserDefaults.standard.set(firstName.trimmingCharacters(in: .whitespaces), forKey: "user_first_name")
                 UserDefaults.standard.set(lastName.trimmingCharacters(in: .whitespaces), forKey: "user_last_name")
                 UserDefaults.standard.set(postalCode, forKey: "user_postal_code")
-                UserDefaults.standard.set(userType == .pro ? "PRO" : "CLIENT", forKey: "user_type")
+                // Ne plus sauvegarder userType - il sera déterminé lors du choix du plan d'abonnement
                 
                 isLoading = false
                 

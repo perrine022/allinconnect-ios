@@ -174,24 +174,46 @@ struct ManageSubscriptionsView: View {
                                 .padding(.top, 8)
                             }
                             
-                            // Bouton Résilier
-                            Button(action: {
-                                showCancelAlert = true
-                            }) {
-                                Text("Résilier mon abonnement")
-                                    .font(.system(size: 15, weight: .semibold))
-                                    .foregroundColor(.red)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 14)
-                                    .background(Color.clear)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(Color.red, lineWidth: 1.5)
-                                    )
-                                    .cornerRadius(12)
+                            // Bouton Résilier (uniquement si l'utilisateur a un abonnement actif)
+                            if viewModel.currentSubscriptionPlan != nil {
+                                Button(action: {
+                                    showCancelAlert = true
+                                }) {
+                                    Text("Résilier mon abonnement")
+                                        .font(.system(size: 15, weight: .semibold))
+                                        .foregroundColor(.red)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 14)
+                                        .background(Color.clear)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(Color.red, lineWidth: 1.5)
+                                        )
+                                        .cornerRadius(12)
+                                }
+                                .padding(.horizontal, 20)
+                                .padding(.top, 8)
                             }
-                            .padding(.horizontal, 20)
-                            .padding(.top, 8)
+                            
+                            // Message si pas d'abonnement
+                            if viewModel.currentSubscriptionPlan == nil && !viewModel.isLoading {
+                                VStack(spacing: 12) {
+                                    Text("Aucun abonnement actif")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.white.opacity(0.8))
+                                    
+                                    Text("Vous n'avez pas d'abonnement en cours. Choisissez un plan pour commencer.")
+                                        .font(.system(size: 14, weight: .regular))
+                                        .foregroundColor(.white.opacity(0.6))
+                                        .multilineTextAlignment(.center)
+                                }
+                                .padding(20)
+                                .frame(maxWidth: .infinity)
+                                .background(Color.appDarkRed1.opacity(0.6))
+                                .cornerRadius(12)
+                                .padding(.horizontal, 20)
+                                .padding(.top, 8)
+                            }
                             
                             Spacer()
                                 .frame(height: 100)

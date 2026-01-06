@@ -17,7 +17,7 @@ class ManageSubscriptionsViewModel: ObservableObject {
     @Published var errorMessage: String?
     
     // Informations d'abonnement actuel
-    @Published var currentFormula: String = "Mensuel"
+    @Published var currentFormula: String = ""
     @Published var currentAmount: String = ""
     @Published var nextPaymentDate: String = ""
     @Published var commitmentUntil: String = ""
@@ -83,14 +83,32 @@ class ManageSubscriptionsViewModel: ObservableObject {
                 // Charger les informations utilisateur avec abonnement
                 let userLight = try await profileAPIService.getUserLight()
                 
-                // Déterminer le type d'utilisateur depuis UserDefaults
-                let userTypeString = UserDefaults.standard.string(forKey: "user_type") ?? "CLIENT"
-                let isPro = userTypeString == "PRO"
+                // Vérifier si l'utilisateur a le statut UNKNOWN ou n'a pas d'abonnement actif
+                let userTypeString = userLight.userType ?? ""
+                let hasActiveSubscription = userLight.subscriptionAmount != nil && userLight.renewalDate != nil
+                let isUnknown = userTypeString == "UNKNOWN" || userTypeString.isEmpty
                 
-                // Charger tous les plans disponibles
+                print("[ManageSubscriptionsViewModel] Statut utilisateur: \(userTypeString)")
+                print("[ManageSubscriptionsViewModel] Abonnement actif: \(hasActiveSubscription)")
+                
+                // Si l'utilisateur est UNKNOWN ou n'a pas d'abonnement actif, ne pas afficher d'abonnement
+                if isUnknown || !hasActiveSubscription {
+                    print("[ManageSubscriptionsViewModel] ⚠️ Utilisateur UNKNOWN ou sans abonnement actif - aucun abonnement affiché")
+                    currentSubscriptionPlan = nil
+                    currentFormula = ""
+                    currentAmount = ""
+                    nextPaymentDate = ""
+                    commitmentUntil = ""
+                }
+                
+                // Déterminer le type d'utilisateur depuis l'API (ou UserDefaults si UNKNOWN)
+                let userTypeForPlans = isUnknown ? (UserDefaults.standard.string(forKey: "user_type") ?? "CLIENT") : userTypeString
+                let isPro = userTypeForPlans == "PROFESSIONAL" || userTypeForPlans == "PRO"
+                
+                // Charger tous les plans disponibles (même si pas d'abonnement actif, pour permettre l'abonnement)
                 let allPlans = try await subscriptionsAPIService.getPlans()
                 print("[ManageSubscriptionsViewModel] Plans récupérés: \(allPlans.count) plans")
-                print("[ManageSubscriptionsViewModel] Type d'utilisateur: \(userTypeString) (isPro: \(isPro))")
+                print("[ManageSubscriptionsViewModel] Type d'utilisateur pour plans: \(userTypeForPlans) (isPro: \(isPro))")
                 
                 // Filtrer les plans selon le type d'utilisateur
                 if isPro {
@@ -104,29 +122,31 @@ class ManageSubscriptionsViewModel: ObservableObject {
                 }
                 
                 // Trouver le plan actuel basé sur les informations de l'utilisateur
-                if let subscriptionAmount = userLight.subscriptionAmount {
+                // Seulement si l'utilisateur a un abonnement actif
+                if hasActiveSubscription, let subscriptionAmount = userLight.subscriptionAmount {
                     // Trouver le plan correspondant au montant
                     currentSubscriptionPlan = availablePlans.first { plan in
                         abs(plan.price - subscriptionAmount) < 0.01
                     }
                     
-                    // Si pas trouvé par montant, essayer de trouver par date
-                    if currentSubscriptionPlan == nil {
-                        // Par défaut, prendre le premier plan mensuel
-                        currentSubscriptionPlan = availablePlans.first { $0.isMonthly }
-                    }
+                    // Si pas trouvé par montant, ne pas définir de plan par défaut
+                    // L'utilisateur doit avoir un abonnement réel pour voir les détails
                 } else {
-                    // Par défaut, prendre le premier plan mensuel
-                    currentSubscriptionPlan = availablePlans.first { $0.isMonthly }
+                    // Pas d'abonnement actif, ne pas afficher de plan
+                    currentSubscriptionPlan = nil
                 }
                 
-                // Mettre à jour les informations d'affichage
+                // Mettre à jour les informations d'affichage seulement si un plan actuel existe
                 if let currentPlan = currentSubscriptionPlan {
                     currentFormula = currentPlan.isMonthly ? "Mensuel" : "Annuel"
                     currentAmount = "\(currentPlan.formattedPrice) / \(currentPlan.isMonthly ? "mois" : "an")"
                     
                     // Sélectionner le plan actuel par défaut
                     selectedPlan = currentPlan
+                } else {
+                    // Réinitialiser les valeurs si pas d'abonnement
+                    currentFormula = ""
+                    currentAmount = ""
                 }
                 
                 // Formater les dates

@@ -14,8 +14,7 @@ struct SignUpView: View {
     @StateObject private var viewModel = SignUpViewModel()
     @State private var showPassword = false
     @State private var showConfirmPassword = false
-    @State private var clientSubscriptionNavigationId: UUID?
-    @State private var proSubscriptionNavigationId: UUID?
+    @State private var subscriptionNavigationId: UUID?
     @FocusState private var focusedField: Field?
     
     enum Field: Hashable {
@@ -407,58 +406,6 @@ struct SignUpView: View {
                                 .focused($focusedField, equals: .referralCode)
                                 .autocapitalization(.allCharacters)
                                 
-                                // Choix Client/Pro
-                                VStack(alignment: .leading, spacing: 12) {
-                                    Text("Type de compte")
-                                        .font(.system(size: 14, weight: .medium))
-                                        .foregroundColor(.white.opacity(0.9))
-                                    
-                                    HStack(spacing: 12) {
-                                        Button(action: {
-                                            viewModel.userType = .client
-                                        }) {
-                                            HStack {
-                                                Image(systemName: viewModel.userType == .client ? "checkmark.circle.fill" : "circle")
-                                                    .foregroundColor(viewModel.userType == .client ? .appGold : .gray.opacity(0.6))
-                                                
-                                                Text("Client")
-                                                    .font(.system(size: 15, weight: .medium))
-                                                    .foregroundColor(.white)
-                                            }
-                                            .frame(maxWidth: .infinity)
-                                            .padding(.vertical, 12)
-                                            .background(viewModel.userType == .client ? Color.appDarkRed1.opacity(0.8) : Color.appDarkRed1.opacity(0.4))
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 10)
-                                                    .stroke(viewModel.userType == .client ? Color.appGold : Color.clear, lineWidth: 2)
-                                            )
-                                            .cornerRadius(10)
-                                        }
-                                        
-                                        Button(action: {
-                                            viewModel.userType = .pro
-                                        }) {
-                                            HStack {
-                                                Image(systemName: viewModel.userType == .pro ? "checkmark.circle.fill" : "circle")
-                                                    .foregroundColor(viewModel.userType == .pro ? .appGold : .gray.opacity(0.6))
-                                                
-                                                Text("Pro")
-                                                    .font(.system(size: 15, weight: .medium))
-                                                    .foregroundColor(.white)
-                                            }
-                                            .frame(maxWidth: .infinity)
-                                            .padding(.vertical, 12)
-                                            .background(viewModel.userType == .pro ? Color.appDarkRed1.opacity(0.8) : Color.appDarkRed1.opacity(0.4))
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 10)
-                                                    .stroke(viewModel.userType == .pro ? Color.appGold : Color.clear, lineWidth: 2)
-                                            )
-                                            .cornerRadius(10)
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal, 20)
-                                
                                 // Message d'erreur
                                 if let errorMessage = viewModel.errorMessage {
                                     Text(errorMessage)
@@ -485,14 +432,8 @@ struct SignUpView: View {
                                     hideKeyboard()
                                     viewModel.signUp { success in
                                         if success {
-                                            // Tous les utilisateurs doivent s'abonner après l'inscription
-                                            if viewModel.userType == .pro {
-                                                // Afficher la vue d'abonnement Pro
-                                                proSubscriptionNavigationId = UUID()
-                                            } else {
-                                                // Afficher la vue d'abonnement Client
-                                                clientSubscriptionNavigationId = UUID()
-                                            }
+                                            // Rediriger vers la page de sélection d'abonnement avec tous les plans
+                                            subscriptionNavigationId = UUID()
                                         }
                                     }
                                 }) {
@@ -543,23 +484,8 @@ struct SignUpView: View {
         .onTapGesture {
             hideKeyboard()
         }
-        .navigationDestination(item: $clientSubscriptionNavigationId) { _ in
-            ClientSubscriptionView(userType: $viewModel.userType, onComplete: {
-                clientSubscriptionNavigationId = nil
-                // Rediriger vers le profil avec l'abonnement actif
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    appState.selectedTab = .profile
-                }
-            })
-        }
-        .navigationDestination(item: $proSubscriptionNavigationId) { _ in
-            ProSubscriptionView(userType: $viewModel.userType, onComplete: {
-                proSubscriptionNavigationId = nil
-                // Rediriger vers le profil avec l'abonnement actif
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    appState.selectedTab = .profile
-                }
-            })
+        .navigationDestination(item: $subscriptionNavigationId) { _ in
+            StripePaymentView(filterCategory: nil)
         }
     }
 }

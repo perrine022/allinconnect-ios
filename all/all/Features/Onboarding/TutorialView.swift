@@ -14,7 +14,7 @@ struct TutorialView: View {
     
     var body: some View {
         ZStack {
-            // Background sombre
+            // Background noir pour la zone en dessous du bouton
             Color.black
                 .ignoresSafeArea()
             
@@ -31,7 +31,7 @@ struct TutorialView: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 60)
                 
-                // Contenu du tutoriel
+                // Contenu du tutoriel (images avec plus de hauteur visible)
                 TabView(selection: $viewModel.currentPage) {
                     // Écran 1: Page d'accueil avec logo
                     TutorialWelcomePage()
@@ -51,8 +51,9 @@ struct TutorialView: View {
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .indexViewStyle(.page(backgroundDisplayMode: .never))
+                .frame(maxHeight: .infinity)
                 
-                // Boutons de navigation
+                // Zone noire avec boutons de navigation
                 VStack(spacing: 12) {
                     // Bouton Suivant
                     Button(action: {
@@ -75,7 +76,7 @@ struct TutorialView: View {
                             .cornerRadius(12)
                     }
                     .padding(.horizontal, 20)
-                    .padding(.top, 30) // Ajout d'espace entre l'image et le bouton
+                    .padding(.top, 30)
                     
                     // Bouton Passer
                     Button(action: {
@@ -88,6 +89,7 @@ struct TutorialView: View {
                     }
                     .padding(.bottom, 20)
                 }
+                .background(Color.black)
             }
         }
     }
@@ -97,11 +99,15 @@ struct TutorialView: View {
 struct TutorialWelcomePage: View {
     var body: some View {
         // Image en plein écran avec les deux femmes et le téléphone
-        Image("TutorialFirstPageImage")
-            .resizable()
-            .scaledToFill()
-            .ignoresSafeArea(.all)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        VStack {
+            Spacer()
+            Image("TutorialFirstPageImage")
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: .infinity)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black)
     }
 }
 
@@ -109,11 +115,15 @@ struct TutorialWelcomePage: View {
 struct TutorialSecondPage: View {
     var body: some View {
         // Image promotionnelle "Toujours en avance sur les bonnes affaires"
-        Image("TutorialSecondPageImage")
-            .resizable()
-            .scaledToFill()
-            .ignoresSafeArea(.all)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        VStack {
+            Spacer()
+            Image("TutorialSecondPageImage")
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: .infinity)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black)
     }
 }
 
@@ -121,11 +131,15 @@ struct TutorialSecondPage: View {
 struct TutorialThirdPage: View {
     var body: some View {
         // Image promotionnelle Club10 "-10% chez tous les membres du club 10"
-        Image("TutorialThirdPageImage")
-            .resizable()
-            .scaledToFill()
-            .ignoresSafeArea(.all)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        VStack {
+            Spacer()
+            Image("TutorialThirdPageImage")
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: .infinity)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black)
     }
 }
 
@@ -133,11 +147,15 @@ struct TutorialThirdPage: View {
 struct TutorialFourthPage: View {
     var body: some View {
         // Image promotionnelle (dernière page du tutoriel)
-        Image("TutorialFourthPageImage")
-            .resizable()
-            .scaledToFill()
-            .ignoresSafeArea(.all)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        VStack {
+            Spacer()
+            Image("TutorialFourthPageImage")
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: .infinity)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black)
     }
 }
 

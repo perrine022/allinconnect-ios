@@ -13,6 +13,7 @@ struct ProInfoView: View {
     @StateObject private var viewModel = ProSubscriptionViewModel()
     @State private var showStripePayment = false
     @State private var isProcessingPayment = false
+    @State private var stripePaymentNavigationId: UUID?
     
     var body: some View {
         GeometryReader { geometry in
@@ -95,9 +96,8 @@ struct ProInfoView: View {
                             
                             // Bouton S'abonner
                             Button(action: {
-                                // Rediriger directement vers l'onglet "Ma carte"
-                                dismiss()
-                                appState.selectedTab = .card
+                                // Naviguer vers la page de sélection d'abonnement PRO
+                                stripePaymentNavigationId = UUID()
                             }) {
                                 Text("S'abonner")
                                     .font(.system(size: 18, weight: .bold))
@@ -136,6 +136,9 @@ struct ProInfoView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .navigationDestination(item: $stripePaymentNavigationId) { _ in
+            StripePaymentView(filterCategory: "PROFESSIONAL")
+        }
     }
 }
 

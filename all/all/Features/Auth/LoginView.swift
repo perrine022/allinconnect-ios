@@ -148,20 +148,6 @@ struct LoginView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 8)
                     
-                    // Mot de passe oublié
-                    HStack {
-                        Spacer()
-                        Button(action: {
-                            showForgotPassword = true
-                        }) {
-                            Text("Mot de passe oublié ?")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.red)
-                        }
-                        Spacer()
-                    }
-                    .padding(.top, 8)
-                    
                     // Ligne de séparation
                     HStack {
                         Rectangle()
@@ -185,6 +171,20 @@ struct LoginView: View {
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 12)
+                    
+                    // Mot de passe oublié
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            showForgotPassword = true
+                        }) {
+                            Text("Mot de passe oublié ?")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.red)
+                        }
+                        Spacer()
+                    }
+                    .padding(.top, 8)
                     
                     Spacer()
                         .frame(height: 100)
