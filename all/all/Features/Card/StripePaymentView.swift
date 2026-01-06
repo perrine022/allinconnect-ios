@@ -225,6 +225,9 @@ struct StripePaymentView: View {
         .alert("🎉 Félicitations !", isPresented: $viewModel.showSuccessMessage) {
             Button("OK", role: .cancel) {
                 viewModel.showSuccessMessage = false
+                dismiss()
+                // Notifier pour naviguer vers l'onglet "Ma Carte" et recharger les données
+                NotificationCenter.default.post(name: NSNotification.Name("NavigateToCardAfterPayment"), object: nil)
             }
         } message: {
             Text("Votre abonnement a été activé avec succès. Vous êtes maintenant Premium !")

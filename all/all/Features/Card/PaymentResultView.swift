@@ -10,6 +10,7 @@ import SwiftUI
 struct PaymentResultView: View {
     let status: PaymentResultStatus
     let planPrice: String? // Prix du plan choisi (ex: "9,99€ / mois")
+    let onDismiss: (() -> Void)? // Callback appelé quand l'utilisateur ferme la popup
     @Environment(\.dismiss) private var dismiss
     
     enum PaymentResultStatus {
@@ -18,9 +19,10 @@ struct PaymentResultView: View {
         case pending
     }
     
-    init(status: PaymentResultStatus, planPrice: String? = nil) {
+    init(status: PaymentResultStatus, planPrice: String? = nil, onDismiss: (() -> Void)? = nil) {
         self.status = status
         self.planPrice = planPrice
+        self.onDismiss = onDismiss
     }
     
     var body: some View {
@@ -72,6 +74,8 @@ struct PaymentResultView: View {
                 
                 // Bouton
                 Button(action: {
+                    // Appeler le callback si fourni
+                    onDismiss?()
                     dismiss()
                 }) {
                     Text("Fermer")

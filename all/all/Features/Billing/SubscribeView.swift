@@ -213,7 +213,12 @@ struct SubscribeView: View {
         .sheet(isPresented: $showPaymentSuccess) {
             PaymentResultView(
                 status: .success,
-                planPrice: monthlyPlan?.priceLabel
+                planPrice: monthlyPlan?.priceLabel,
+                onDismiss: {
+                    dismiss()
+                    // Notifier pour naviguer vers l'onglet "Ma Carte" et recharger les données
+                    NotificationCenter.default.post(name: NSNotification.Name("NavigateToCardAfterPayment"), object: nil)
+                }
             )
         }
         .onAppear {

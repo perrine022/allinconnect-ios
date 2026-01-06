@@ -18,6 +18,7 @@ struct CardView: View {
     @State private var paymentResultPlanPrice: String? = nil // Prix du plan choisi pour l'affichage
     @State private var showWalletView: Bool = false
     @State private var showReferralsView: Bool = false
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         ZStack {
@@ -345,9 +346,22 @@ struct CardView: View {
             paymentResultPlanPrice = nil
             showPaymentResult = true
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ReloadCardData"))) { _ in
+            // Recharger les données de la carte quand on reçoit cette notification
+            viewModel.loadData()
+        }
         .sheet(isPresented: $showPaymentResult) {
             if let status = paymentResultStatus {
-                PaymentResultView(status: status, planPrice: paymentResultPlanPrice)
+                PaymentResultView(
+                    status: status,
+                    planPrice: paymentResultPlanPrice,
+                    onDismiss: {
+                        // Naviguer vers l'onglet "Ma Carte" et recharger les données
+                        appState.navigateToTab(.card, dismiss: { dismiss() })
+                        // Recharger les données de la carte
+                        viewModel.loadData()
+                    }
+                )
             }
         }
     }
