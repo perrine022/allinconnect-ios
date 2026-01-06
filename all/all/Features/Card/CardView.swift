@@ -29,13 +29,13 @@ struct CardView: View {
                 VStack(spacing: 0) {
                     // Titre en haut
                     HStack {
+                        Spacer()
                         Text("Ma Carte")
                             .font(.system(size: 28, weight: .bold))
                             .foregroundColor(.white)
                         Spacer()
                     }
-                    .padding(.leading, 24)
-                    .padding(.trailing, 20)
+                    .padding(.horizontal, 24)
                     .padding(.top, 2)
                     .padding(.bottom, 16)
         
@@ -148,7 +148,7 @@ struct CardView: View {
                         .frame(maxWidth: .infinity)
                         .cornerRadius(20)
                         .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 4)
-                        .padding(.horizontal, 24)
+                        .padding(.horizontal, 28)
                         .padding(.top, 0)
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
                         .animation(.easeInOut(duration: 0.3), value: viewModel.hasLoadedOnce)
@@ -236,7 +236,7 @@ struct CardView: View {
                                 )
                             }
                         }
-                        .padding(.horizontal, 24)
+                        .padding(.horizontal, 28)
                         .padding(.top, 24)
                         
                         // Section lien de parrainage
@@ -289,7 +289,7 @@ struct CardView: View {
                             RoundedRectangle(cornerRadius: 18)
                                 .stroke(Color.white.opacity(0.15), lineWidth: 1)
                         )
-                        .padding(.horizontal, 24)
+                        .padding(.horizontal, 28)
                         .padding(.top, 24)
                         
                         // Espace pour le footer

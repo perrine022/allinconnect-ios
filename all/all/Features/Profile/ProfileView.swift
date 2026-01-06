@@ -916,16 +916,16 @@ struct EditProfileView: View {
                                 HStack {
                                     if viewModel.isLoading {
                                         ProgressView()
-                                            .progressViewStyle(CircularProgressViewStyle(tint: .black))
+                                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                     } else {
                                         Text("Enregistrer")
                                             .font(.system(size: 16, weight: .semibold))
                                     }
                                 }
-                                .foregroundColor(.black)
+                                .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
-                                .background((viewModel.isValid && !viewModel.isLoading) ? Color.appDarkRedButton : Color.gray.opacity(0.5))
+                                .background((viewModel.isValid && !viewModel.isLoading) ? Color.red : Color.gray.opacity(0.5))
                                 .cornerRadius(12)
                             }
                             .disabled(!viewModel.isValid || viewModel.isLoading)
