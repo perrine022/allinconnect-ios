@@ -18,17 +18,30 @@ class BillingViewModel: ObservableObject {
     @Published var subscriptionStatus: String? // "ACTIVE", "PAST_DUE", "CANCELED", etc.
     @Published var currentPeriodEnd: Date?
     
+    // Détails de l'abonnement
+    @Published var stripeSubscriptionId: String?
+    @Published var planName: String?
+    @Published var lastFour: String?
+    @Published var cardBrand: String?
+    
     // Cache optionnel (la source de vérité reste le backend)
     private let premiumCacheKey = "premium_enabled_cache"
     
     private let billingAPIService: BillingAPIService
+    private let profileAPIService: ProfileAPIService
     
-    init(billingAPIService: BillingAPIService? = nil) {
+    init(billingAPIService: BillingAPIService? = nil, profileAPIService: ProfileAPIService? = nil) {
         print("[BillingViewModel] init() - Début")
         if let billingAPIService = billingAPIService {
             self.billingAPIService = billingAPIService
         } else {
             self.billingAPIService = BillingAPIService()
+        }
+        
+        if let profileAPIService = profileAPIService {
+            self.profileAPIService = profileAPIService
+        } else {
+            self.profileAPIService = ProfileAPIService()
         }
         
         // Charger le cache optionnel au démarrage
@@ -37,6 +50,8 @@ class BillingViewModel: ObservableObject {
         // Charger le statut depuis le backend
         Task {
             await loadSubscriptionStatus()
+            // Charger les détails après le statut (en parallèle si possible)
+            await loadSubscriptionDetails()
         }
         print("[BillingViewModel] init() - Fin")
     }
@@ -68,6 +83,53 @@ class BillingViewModel: ObservableObject {
             isLoading = false
             errorMessage = "Erreur lors du chargement du statut: \(error.localizedDescription)"
             print("[BillingViewModel] loadSubscriptionStatus() - Erreur: \(error.localizedDescription)")
+        }
+    }
+    
+    // MARK: - Load Subscription Details
+    func loadSubscriptionDetails() async {
+        print("[BillingViewModel] loadSubscriptionDetails() - Début")
+        // Ne pas mettre isLoading à true ici pour ne pas bloquer l'UI
+        do {
+            // Récupérer l'ID utilisateur
+            let userId = try await profileAPIService.getCurrentUserId()
+            
+            // Charger les détails de l'abonnement
+            let details = try await billingAPIService.getSubscriptionDetails(userId: userId)
+            
+            // Mettre à jour les propriétés
+            stripeSubscriptionId = details.stripeSubscriptionId
+            planName = details.planName
+            lastFour = details.lastFour
+            cardBrand = details.cardBrand
+            
+            // Mettre à jour le statut et premiumEnabled si disponibles
+            if let status = details.status {
+                subscriptionStatus = status
+            }
+            premiumEnabled = details.premiumEnabled
+            
+            // Parser la date de fin de période si disponible
+            if let periodEndString = details.currentPeriodEnd {
+                let formatter = ISO8601DateFormatter()
+                formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds, .withTimeZone]
+                currentPeriodEnd = formatter.date(from: periodEndString)
+            }
+            
+            print("[BillingViewModel] loadSubscriptionDetails() - Succès")
+            print("   - planName: \(planName ?? "nil")")
+            print("   - status: \(subscriptionStatus ?? "nil")")
+            print("   - lastFour: \(lastFour ?? "nil")")
+            print("   - cardBrand: \(cardBrand ?? "nil")")
+        } catch {
+            print("[BillingViewModel] loadSubscriptionDetails() - Erreur: \(error.localizedDescription)")
+            // Ne pas afficher d'erreur si l'utilisateur n'a pas d'abonnement (404)
+            if !error.localizedDescription.contains("404") && !error.localizedDescription.contains("Not Found") {
+                // Ne pas écraser l'erreur existante si elle est déjà définie
+                if errorMessage == nil {
+                    errorMessage = "Erreur lors du chargement des détails: \(error.localizedDescription)"
+                }
+            }
         }
     }
     

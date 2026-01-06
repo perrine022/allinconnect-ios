@@ -52,10 +52,10 @@ class ChangePasswordViewModel: ObservableObject {
         Task {
             do {
                 // Créer la requête de changement de mot de passe
+                // Note: confirmationPassword est validé côté client mais n'est pas envoyé au backend
                 let changePasswordRequest = ChangePasswordRequest(
-                    currentPassword: oldPassword,
-                    newPassword: newPassword,
-                    confirmationPassword: confirmPassword
+                    oldPassword: oldPassword,
+                    newPassword: newPassword
                 )
                 
                 // Appeler l'API

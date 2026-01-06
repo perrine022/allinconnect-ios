@@ -52,6 +52,18 @@ struct ManageSubscriptionView: View {
                                 .foregroundColor(viewModel.premiumEnabled ? .green : .gray)
                         }
                         
+                        if let planName = viewModel.planName {
+                            HStack {
+                                Text("Plan")
+                                    .font(.system(size: 14, weight: .regular))
+                                    .foregroundColor(.white.opacity(0.7))
+                                Spacer()
+                                Text(planName)
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.white)
+                            }
+                        }
+                        
                         if let status = viewModel.subscriptionStatus {
                             HStack {
                                 Text("Statut détaillé")
@@ -73,6 +85,23 @@ struct ManageSubscriptionView: View {
                                 Text(formatDate(periodEnd))
                                     .font(.system(size: 14, weight: .semibold))
                                     .foregroundColor(.white)
+                            }
+                        }
+                        
+                        if let lastFour = viewModel.lastFour, let cardBrand = viewModel.cardBrand {
+                            HStack {
+                                Text("Carte")
+                                    .font(.system(size: 14, weight: .regular))
+                                    .foregroundColor(.white.opacity(0.7))
+                                Spacer()
+                                HStack(spacing: 4) {
+                                    Text(cardBrand.capitalized)
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundColor(.white.opacity(0.8))
+                                    Text("•••• \(lastFour)")
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundColor(.white)
+                                }
                             }
                         }
                     }
@@ -166,6 +195,7 @@ struct ManageSubscriptionView: View {
                     // Recharger le statut après fermeture du portail
                     Task {
                         await viewModel.loadSubscriptionStatus()
+                        await viewModel.loadSubscriptionDetails()
                     }
                 }
                 .ignoresSafeArea()
@@ -174,6 +204,7 @@ struct ManageSubscriptionView: View {
         .onAppear {
             Task {
                 await viewModel.loadSubscriptionStatus()
+                await viewModel.loadSubscriptionDetails()
             }
         }
     }

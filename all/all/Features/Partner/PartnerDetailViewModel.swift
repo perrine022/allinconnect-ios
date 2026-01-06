@@ -249,6 +249,7 @@ class PartnerDetailViewModel: ObservableObject {
                     discount: partner.discount,
                     imageName: partner.imageName,
                     headerImageName: partner.headerImageName,
+                    establishmentImageUrl: partner.establishmentImageUrl,
                     isFavorite: true,
                     apiId: partner.apiId
                 )
@@ -281,6 +282,7 @@ class PartnerDetailViewModel: ObservableObject {
                 discount: partner.discount,
                 imageName: partner.imageName,
                 headerImageName: partner.headerImageName,
+                establishmentImageUrl: partner.establishmentImageUrl,
                 isFavorite: !partner.isFavorite,
                 apiId: partner.apiId
             )
@@ -312,6 +314,7 @@ class PartnerDetailViewModel: ObservableObject {
             discount: partner.discount,
             imageName: partner.imageName,
             headerImageName: partner.headerImageName,
+            establishmentImageUrl: partner.establishmentImageUrl,
             isFavorite: !partner.isFavorite,
             apiId: partner.apiId
         )
@@ -349,6 +352,7 @@ class PartnerDetailViewModel: ObservableObject {
                     discount: partner.discount,
                     imageName: partner.imageName,
                     headerImageName: partner.headerImageName,
+                    establishmentImageUrl: partner.establishmentImageUrl,
                     isFavorite: previousFavoriteState,
                     apiId: partner.apiId
                 )

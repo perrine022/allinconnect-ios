@@ -17,6 +17,7 @@ struct CardView: View {
     @State private var paymentResultStatus: PaymentResultView.PaymentResultStatus? = nil
     @State private var paymentResultPlanPrice: String? = nil // Prix du plan choisi pour l'affichage
     @State private var showWalletView: Bool = false
+    @State private var showReferralsView: Bool = false
     
     var body: some View {
         ZStack {
@@ -33,7 +34,8 @@ struct CardView: View {
                             .foregroundColor(.white)
                         Spacer()
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.leading, 24)
+                    .padding(.trailing, 20)
                     .padding(.top, 2)
                     .padding(.bottom, 16)
         
@@ -175,7 +177,7 @@ struct CardView: View {
                                             }
                                         }
                                         
-                                        VStack(alignment: .leading, spacing: 4) {
+                                        VStack(alignment: .center, spacing: 4) {
                                             Text("\(Int(viewModel.savings))€")
                                                 .font(.system(size: 24, weight: .bold))
                                                 .foregroundColor(.white)
@@ -184,7 +186,7 @@ struct CardView: View {
                                                 .font(.system(size: 13, weight: .medium))
                                                 .foregroundColor(.gray.opacity(0.9))
                                         }
-                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .frame(maxWidth: .infinity)
                                     }
                                     .padding(16)
                                     .frame(maxWidth: .infinity)
@@ -200,12 +202,17 @@ struct CardView: View {
                                 }
                                 .buttonStyle(PlainButtonStyle())
                                 
-                                StatCard(
-                                    icon: "person.2.fill",
-                                    value: "\(viewModel.referrals)",
-                                    label: "Parrainages",
-                                    iconColor: .red
-                                )
+                                Button(action: {
+                                    showReferralsView = true
+                                }) {
+                                    StatCard(
+                                        icon: "person.2.fill",
+                                        value: "\(viewModel.referrals)",
+                                        label: "Parrainages",
+                                        iconColor: .red
+                                    )
+                                }
+                                .buttonStyle(PlainButtonStyle())
                             }
                             
                             HStack(spacing: 10) {
@@ -229,7 +236,7 @@ struct CardView: View {
                                 )
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, 24)
                         .padding(.top, 24)
                         
                         // Section lien de parrainage
@@ -282,7 +289,7 @@ struct CardView: View {
                             RoundedRectangle(cornerRadius: 18)
                                 .stroke(Color.white.opacity(0.15), lineWidth: 1)
                         )
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, 24)
                         .padding(.top, 24)
                         
                         // Espace pour le footer
@@ -304,6 +311,9 @@ struct CardView: View {
         }
         .navigationDestination(isPresented: $showWalletView) {
             WalletView()
+        }
+        .navigationDestination(isPresented: $showReferralsView) {
+            ReferralsView()
         }
         .overlay {
             if showAddSavingsPopup {

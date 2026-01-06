@@ -308,6 +308,34 @@ class BillingAPIService: ObservableObject {
             throw error
         }
     }
+    
+    // MARK: - Get Subscription Details
+    /// Récupère les détails de l'abonnement pour un utilisateur
+    /// Endpoint: GET /api/v1/billing/subscription/{userId}
+    /// Authentification: Requise (Bearer Token)
+    func getSubscriptionDetails(userId: String) async throws -> SubscriptionDetailsResponse {
+        print("[BillingAPIService] getSubscriptionDetails() - Début")
+        print("[BillingAPIService] Endpoint: GET /api/v1/billing/subscription/\(userId)")
+        do {
+            let response: SubscriptionDetailsResponse = try await apiService.request(
+                endpoint: "/billing/subscription/\(userId)",
+                method: .get,
+                parameters: nil,
+                headers: nil
+            )
+            print("[BillingAPIService] getSubscriptionDetails() - Succès")
+            print("   - stripeSubscriptionId: \(response.stripeSubscriptionId ?? "nil")")
+            print("   - status: \(response.status ?? "nil")")
+            print("   - premiumEnabled: \(response.premiumEnabled)")
+            print("   - planName: \(response.planName ?? "nil")")
+            print("   - lastFour: \(response.lastFour ?? "nil")")
+            print("   - cardBrand: \(response.cardBrand ?? "nil")")
+            return response
+        } catch {
+            print("[BillingAPIService] getSubscriptionDetails() - Erreur: \(error.localizedDescription)")
+            throw error
+        }
+    }
 }
 
 // MARK: - Cancel Subscription Response
@@ -320,6 +348,27 @@ struct CancelSubscriptionResponse: Codable {
         case id
         case status
         case canceledAt = "canceled_at"
+    }
+}
+
+// MARK: - Subscription Details Response
+struct SubscriptionDetailsResponse: Codable {
+    let stripeSubscriptionId: String?
+    let status: String? // "ACTIVE", "PAST_DUE", "CANCELLED", etc.
+    let currentPeriodEnd: String? // ISO 8601 date string
+    let premiumEnabled: Bool
+    let lastFour: String? // Les 4 derniers chiffres de la carte
+    let cardBrand: String? // "visa", "mastercard", etc.
+    let planName: String? // Nom du plan d'abonnement
+    
+    enum CodingKeys: String, CodingKey {
+        case stripeSubscriptionId
+        case status
+        case currentPeriodEnd
+        case premiumEnabled
+        case lastFour
+        case cardBrand
+        case planName
     }
 }
 

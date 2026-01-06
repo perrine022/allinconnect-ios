@@ -135,7 +135,7 @@ struct PartnerDetailView: View {
                                     }
                                 }
                                 .padding(.horizontal, 20)
-                                .padding(.top, 8)
+                                .padding(.top, max(geometry.safeAreaInsets.top, 44) + 8)
                             }
                             .frame(height: 200)
                             

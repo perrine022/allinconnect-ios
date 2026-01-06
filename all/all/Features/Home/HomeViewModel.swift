@@ -334,6 +334,7 @@ class HomeViewModel: ObservableObject {
                     discount: updatedPartner.discount,
                     imageName: updatedPartner.imageName,
                     headerImageName: updatedPartner.headerImageName,
+                    establishmentImageUrl: updatedPartner.establishmentImageUrl,
                     isFavorite: !updatedPartner.isFavorite,
                     apiId: updatedPartner.apiId
                 )

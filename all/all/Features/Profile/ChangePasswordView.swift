@@ -166,16 +166,16 @@ struct ChangePasswordView: View {
                                 HStack {
                                     if viewModel.isLoading {
                                         ProgressView()
-                                            .progressViewStyle(CircularProgressViewStyle(tint: .black))
+                                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                     } else {
                                         Text("Valider")
                                             .font(.system(size: 16, weight: .semibold))
                                     }
                                 }
-                                .foregroundColor(.black)
+                                .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
-                                .background((viewModel.isValid && !viewModel.isLoading) ? Color.appGold : Color.gray.opacity(0.5))
+                                .background((viewModel.isValid && !viewModel.isLoading) ? Color.red : Color.gray.opacity(0.5))
                                 .cornerRadius(12)
                             }
                             .disabled(!viewModel.isValid || viewModel.isLoading)

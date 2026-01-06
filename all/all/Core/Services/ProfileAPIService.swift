@@ -52,14 +52,12 @@ struct UpdateProfileRequest: Codable {
 
 // MARK: - Change Password Request
 struct ChangePasswordRequest: Codable {
-    let currentPassword: String
+    let oldPassword: String
     let newPassword: String
-    let confirmationPassword: String
     
     enum CodingKeys: String, CodingKey {
-        case currentPassword = "currentPassword"
+        case oldPassword = "oldPassword"
         case newPassword = "newPassword"
-        case confirmationPassword = "confirmationPassword"
     }
 }
 
@@ -326,6 +324,9 @@ class ProfileAPIService: ObservableObject {
     
     // MARK: - Update Profile
     func updateProfile(_ request: UpdateProfileRequest) async throws {
+        print("[ProfileAPIService] updateProfile() - Début")
+        print("[ProfileAPIService] Endpoint: PUT /api/v1/users/profile")
+        
         // Encoder la requête en JSON
         let encoder = JSONEncoder()
         let jsonData = try encoder.encode(request)
@@ -342,14 +343,30 @@ class ProfileAPIService: ObservableObject {
             return value
         }
         
+        print("[ProfileAPIService] Paramètres envoyés:")
+        print("   - firstName: \(request.firstName ?? "nil")")
+        print("   - lastName: \(request.lastName ?? "nil")")
+        print("   - email: \(request.email ?? "nil")")
+        print("   - address: \(request.address ?? "nil")")
+        print("   - city: \(request.city ?? "nil")")
+        print("   - birthDate: \(request.birthDate ?? "nil")")
+        print("   - latitude: \(request.latitude?.description ?? "nil")")
+        print("   - longitude: \(request.longitude?.description ?? "nil")")
+        
         // La réponse peut être vide (200 OK)
         struct EmptyResponse: Codable {}
-        let _: EmptyResponse = try await apiService.request(
-            endpoint: "/users/profile",
-            method: .put,
-            parameters: cleanedParameters,
-            headers: nil
-        )
+        do {
+            let _: EmptyResponse = try await apiService.request(
+                endpoint: "/users/profile",
+                method: .put,
+                parameters: cleanedParameters,
+                headers: nil
+            )
+            print("[ProfileAPIService] updateProfile() - Succès")
+        } catch {
+            print("[ProfileAPIService] updateProfile() - Erreur: \(error.localizedDescription)")
+            throw error
+        }
     }
     
     // MARK: - Update Profile with Image (Multipart)
@@ -395,6 +412,9 @@ class ProfileAPIService: ObservableObject {
     
     // MARK: - Change Password
     func changePassword(_ request: ChangePasswordRequest) async throws {
+        print("[ProfileAPIService] changePassword() - Début")
+        print("[ProfileAPIService] Endpoint: POST /api/v1/users/change-password")
+        
         // Encoder la requête en JSON
         let encoder = JSONEncoder()
         let jsonData = try encoder.encode(request)
@@ -403,14 +423,24 @@ class ProfileAPIService: ObservableObject {
             throw APIError.invalidResponse
         }
         
+        print("[ProfileAPIService] Paramètres envoyés:")
+        print("   - oldPassword: [masqué pour sécurité]")
+        print("   - newPassword: [masqué pour sécurité]")
+        
         // La réponse peut être vide (200 OK)
         struct EmptyResponse: Codable {}
-        let _: EmptyResponse = try await apiService.request(
-            endpoint: "/users/change-password",
-            method: .post,
-            parameters: parameters,
-            headers: nil
-        )
+        do {
+            let _: EmptyResponse = try await apiService.request(
+                endpoint: "/users/change-password",
+                method: .post,
+                parameters: parameters,
+                headers: nil
+            )
+            print("[ProfileAPIService] changePassword() - Succès")
+        } catch {
+            print("[ProfileAPIService] changePassword() - Erreur: \(error.localizedDescription)")
+            throw error
+        }
     }
     
     // MARK: - Get User Light (Profile Light)
@@ -440,6 +470,47 @@ class ProfileAPIService: ObservableObject {
             throw APIError.invalidResponse
         }
         return String(id)
+    }
+    
+    // MARK: - Get Referrals
+    /// Récupère la liste des filleuls de l'utilisateur actuel
+    /// Endpoint: GET /api/v1/users/referrals
+    /// Authentification: Requise (Bearer Token)
+    func getReferrals() async throws -> [ReferralResponse] {
+        print("[ProfileAPIService] getReferrals() - Début")
+        print("[ProfileAPIService] Endpoint: GET /api/v1/users/referrals")
+        do {
+            let response: [ReferralResponse] = try await apiService.request(
+                endpoint: "/users/referrals",
+                method: .get,
+                parameters: nil,
+                headers: nil
+            )
+            print("[ProfileAPIService] getReferrals() - Succès: \(response.count) filleuls")
+            return response
+        } catch {
+            print("[ProfileAPIService] getReferrals() - Erreur: \(error.localizedDescription)")
+            throw error
+        }
+    }
+}
+
+// MARK: - Referral Response Model
+struct ReferralResponse: Codable, Identifiable {
+    let id: Int
+    let firstName: String
+    let lastName: String
+    let email: String
+    let subscriptionDate: String? // ISO 8601 date string ou null
+    let rewardPaid: Bool
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case firstName
+        case lastName
+        case email
+        case subscriptionDate
+        case rewardPaid
     }
 }
 
