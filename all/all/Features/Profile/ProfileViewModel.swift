@@ -315,7 +315,6 @@ class ProfileViewModel: ObservableObject {
     func loadSubscriptionData(forceRefresh: Bool = false) async {
         // Charger depuis le cache d'abord si disponible et pas de rafraîchissement forcé
         if !forceRefresh, let cachedProfile = cacheService.getProfile() {
-            print("[ProfileViewModel] Chargement depuis le cache")
             user = User(
                 firstName: cachedProfile.firstName,
                 lastName: cachedProfile.lastName,

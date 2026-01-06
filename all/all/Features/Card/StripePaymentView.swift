@@ -21,6 +21,92 @@ struct StripePaymentView: View {
     var showFamilyCardPromotion: Bool = false // Afficher le message "Pensez à la carte famille !" uniquement depuis "Obtenir ma carte"
     
     var body: some View {
+        StripePaymentContentView(
+            viewModel: viewModel,
+            filterCategory: filterCategory,
+            showFamilyCardPromotion: showFamilyCardPromotion
+        )
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                NavigationButton(icon: "arrow.left", action: { dismiss() })
+            }
+        }
+        .onAppear {
+            viewModel.loadPlans(filterCategory: filterCategory)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("StripePaymentReturned"))) { notification in
+            // Gérer le retour depuis Stripe via Universal Link
+            if let userInfo = notification.userInfo,
+               let status = userInfo["status"] as? String {
+                if status == "success" {
+                    // Le paiement a réussi, vérifier le statut
+                    Task { @MainActor in
+                        await PaymentStatusManager.shared.checkPaymentStatus()
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showSafari) {
+            if let paymentURL = viewModel.paymentURL {
+                SafariView(
+                    url: paymentURL,
+                    onDismiss: {
+                        // Quand l'utilisateur ferme Safari manuellement, vérifier le statut
+                        viewModel.handlePaymentReturn()
+                    }
+                )
+            }
+        }
+        .sheet(isPresented: $viewModel.showPaymentSheet) {
+            // Payment Sheet Stripe (Étape B)
+            // Le clientSecret peut être soit un PaymentIntent (pi_...) soit un SetupIntent (seti_...)
+            // Utilise intentType du backend si disponible, sinon détection auto par préfixe
+            if let clientSecret = viewModel.paymentIntentClientSecret {
+                StripeSubscriptionPaymentSheetView(
+                    clientSecret: clientSecret,
+                    intentType: viewModel.intentType, // Utilise intentType du backend
+                    onPaymentResult: { success, error in
+                        Task { @MainActor in
+                            await viewModel.handlePaymentSheetResult(success: success, error: error)
+                        }
+                    },
+                    customerId: viewModel.customerId,
+                    ephemeralKeySecret: viewModel.ephemeralKeySecret,
+                    publishableKey: viewModel.publishableKey
+                )
+            }
+        }
+        .sheet(isPresented: $viewModel.isActivating) {
+            ActivationInProgressView()
+        }
+        .alert("🎉 Félicitations !", isPresented: $viewModel.showSuccessMessage) {
+            Button("OK", role: .cancel) {
+                // Annuler le task de masquage automatique si l'utilisateur ferme manuellement
+                viewModel.cancelAutoHideTask()
+                viewModel.showSuccessMessage = false
+                dismiss()
+                // Notifier pour naviguer vers l'onglet "Ma Carte" et recharger les données
+                NotificationCenter.default.post(name: NSNotification.Name("NavigateToCardAfterPayment"), object: nil)
+                // Forcer le rechargement des données de la carte depuis le backend
+                NotificationCenter.default.post(name: NSNotification.Name("ForceReloadCardData"), object: nil)
+            }
+        } message: {
+            Text("Votre abonnement a été activé avec succès. Vous êtes maintenant Premium !")
+        }
+    }
+}
+
+// Vue séparée pour simplifier le type-checking du compilateur
+private struct StripePaymentContentView: View {
+    @ObservedObject var viewModel: StripePaymentViewModel
+    let filterCategory: String?
+    let showFamilyCardPromotion: Bool
+    
+    var body: some View {
         ZStack {
             // Background avec gradient : sombre en haut vers rouge en bas
             AppGradient.main
@@ -165,73 +251,6 @@ struct StripePaymentView: View {
                 }
             }
         }
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
-        .toolbarBackground(.hidden, for: .navigationBar)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                NavigationButton(icon: "arrow.left", action: { dismiss() })
-            }
-        }
-        .onAppear {
-            viewModel.loadPlans(filterCategory: filterCategory)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("StripePaymentReturned"))) { notification in
-            // Gérer le retour depuis Stripe via Universal Link
-            if let userInfo = notification.userInfo,
-               let status = userInfo["status"] as? String {
-                if status == "success" {
-                    // Le paiement a réussi, vérifier le statut
-                    Task { @MainActor in
-                        await PaymentStatusManager.shared.checkPaymentStatus()
-                    }
-                }
-            }
-        }
-        .sheet(isPresented: $showSafari) {
-            if let paymentURL = viewModel.paymentURL {
-                SafariView(
-                    url: paymentURL,
-                    onDismiss: {
-                        // Quand l'utilisateur ferme Safari manuellement, vérifier le statut
-                        viewModel.handlePaymentReturn()
-                    }
-                )
-            }
-        }
-        .sheet(isPresented: $viewModel.showPaymentSheet) {
-            // Payment Sheet Stripe (Étape B)
-            // Le clientSecret peut être soit un PaymentIntent (pi_...) soit un SetupIntent (seti_...)
-            // Utilise intentType du backend si disponible, sinon détection auto par préfixe
-            if let clientSecret = viewModel.paymentIntentClientSecret {
-                StripeSubscriptionPaymentSheetView(
-                    clientSecret: clientSecret,
-                    intentType: viewModel.intentType, // Utilise intentType du backend
-                    onPaymentResult: { success, error in
-                        Task { @MainActor in
-                            await viewModel.handlePaymentSheetResult(success: success, error: error)
-                        }
-                    },
-                    customerId: viewModel.customerId,
-                    ephemeralKeySecret: viewModel.ephemeralKeySecret,
-                    publishableKey: viewModel.publishableKey
-                )
-            }
-        }
-        .sheet(isPresented: $viewModel.isActivating) {
-            ActivationInProgressView()
-        }
-        .alert("🎉 Félicitations !", isPresented: $viewModel.showSuccessMessage) {
-            Button("OK", role: .cancel) {
-                viewModel.showSuccessMessage = false
-                dismiss()
-                // Notifier pour naviguer vers l'onglet "Ma Carte" et recharger les données
-                NotificationCenter.default.post(name: NSNotification.Name("NavigateToCardAfterPayment"), object: nil)
-            }
-        } message: {
-            Text("Votre abonnement a été activé avec succès. Vous êtes maintenant Premium !")
-        }
     }
 }
 
@@ -372,6 +391,13 @@ class StripePaymentViewModel: ObservableObject {
     @Published var currentPaymentIntentId: String? = nil // Pour vérifier le statut si nécessaire
     @Published var showSuccessMessage: Bool = false
     @Published var isActivating: Bool = false // État pour l'écran "Activation en cours"
+    private var autoHideTask: Task<Void, Never>? // Task pour masquer automatiquement l'alert
+    
+    // Méthode publique pour annuler la tâche de masquage automatique
+    func cancelAutoHideTask() {
+        autoHideTask?.cancel()
+        autoHideTask = nil
+    }
     
     private let subscriptionsAPIService: SubscriptionsAPIService
     private let paymentAPIService = PaymentAPIService() // Pour les paiements one-shot
@@ -693,14 +719,20 @@ class StripePaymentViewModel: ObservableObject {
                     userInfo: planPrice != nil ? ["planPrice": planPrice!] : nil
                 )
                 NotificationCenter.default.post(name: NSNotification.Name("SubscriptionUpdated"), object: nil)
+                // Forcer le rechargement des données de la carte depuis le backend
+                NotificationCenter.default.post(name: NSNotification.Name("ForceReloadCardData"), object: nil)
                 print("   ✅ Notification 'PaymentSuccess' envoyée avec planPrice: \(planPrice ?? "nil")")
                 print("   ✅ Notification 'SubscriptionUpdated' envoyée")
+                print("   ✅ Notification 'ForceReloadCardData' envoyée pour forcer le rechargement")
                 
-                // Masquer le message après 3 secondes
-                Task { @MainActor in
+                // Masquer le message après 3 secondes (seulement si l'utilisateur ne l'a pas déjà fermé)
+                autoHideTask = Task { @MainActor in
                     try? await Task.sleep(nanoseconds: 3_000_000_000)
-                    showSuccessMessage = false
-                    print("   → Message de succès masqué")
+                    // Vérifier que l'alert est toujours affichée avant de la fermer
+                    if showSuccessMessage {
+                        showSuccessMessage = false
+                        print("   → Message de succès masqué automatiquement")
+                    }
                 }
             } else {
                 // Le statut n'a pas été confirmé après tous les retries

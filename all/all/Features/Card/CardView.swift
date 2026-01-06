@@ -338,8 +338,8 @@ struct CardView: View {
                 paymentResultPlanPrice = nil
             }
             showPaymentResult = true
-            // Recharger les données de la carte
-            viewModel.loadData()
+            // Forcer le rechargement complet des données de la carte depuis le backend
+            viewModel.loadData(forceRefresh: true)
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("PaymentFailed"))) { _ in
             paymentResultStatus = .failed
@@ -349,6 +349,11 @@ struct CardView: View {
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ReloadCardData"))) { _ in
             // Recharger les données de la carte quand on reçoit cette notification
             viewModel.loadData()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ForceReloadCardData"))) { _ in
+            // Forcer le rechargement complet des données de la carte depuis le backend
+            print("💳 [MA CARTE] ForceReloadCardData reçu - Rechargement forcé des données")
+            viewModel.loadData(forceRefresh: true)
         }
         .sheet(isPresented: $showPaymentResult) {
             if let status = paymentResultStatus {

@@ -324,9 +324,6 @@ class ProfileAPIService: ObservableObject {
     
     // MARK: - Update Profile
     func updateProfile(_ request: UpdateProfileRequest) async throws {
-        print("[ProfileAPIService] updateProfile() - Début")
-        print("[ProfileAPIService] Endpoint: PUT /api/v1/users/profile")
-        
         // Encoder la requête en JSON
         let encoder = JSONEncoder()
         let jsonData = try encoder.encode(request)
@@ -343,30 +340,14 @@ class ProfileAPIService: ObservableObject {
             return value
         }
         
-        print("[ProfileAPIService] Paramètres envoyés:")
-        print("   - firstName: \(request.firstName ?? "nil")")
-        print("   - lastName: \(request.lastName ?? "nil")")
-        print("   - email: \(request.email ?? "nil")")
-        print("   - address: \(request.address ?? "nil")")
-        print("   - city: \(request.city ?? "nil")")
-        print("   - birthDate: \(request.birthDate ?? "nil")")
-        print("   - latitude: \(request.latitude?.description ?? "nil")")
-        print("   - longitude: \(request.longitude?.description ?? "nil")")
-        
         // La réponse peut être vide (200 OK)
         struct EmptyResponse: Codable {}
-        do {
-            let _: EmptyResponse = try await apiService.request(
-                endpoint: "/users/profile",
-                method: .put,
-                parameters: cleanedParameters,
-                headers: nil
-            )
-            print("[ProfileAPIService] updateProfile() - Succès")
-        } catch {
-            print("[ProfileAPIService] updateProfile() - Erreur: \(error.localizedDescription)")
-            throw error
-        }
+        let _: EmptyResponse = try await apiService.request(
+            endpoint: "/users/profile",
+            method: .put,
+            parameters: cleanedParameters,
+            headers: nil
+        )
     }
     
     // MARK: - Update Profile with Image (Multipart)

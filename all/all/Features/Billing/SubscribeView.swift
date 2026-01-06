@@ -218,6 +218,8 @@ struct SubscribeView: View {
                     dismiss()
                     // Notifier pour naviguer vers l'onglet "Ma Carte" et recharger les données
                     NotificationCenter.default.post(name: NSNotification.Name("NavigateToCardAfterPayment"), object: nil)
+                    // Forcer le rechargement des données de la carte depuis le backend
+                    NotificationCenter.default.post(name: NSNotification.Name("ForceReloadCardData"), object: nil)
                 }
             )
         }

@@ -66,6 +66,8 @@ class PaymentStatusManager: ObservableObject {
                     // Note: Le prix du plan sera passé depuis StripePaymentView si disponible
                     NotificationCenter.default.post(name: NSNotification.Name("PaymentSuccess"), object: nil)
                     NotificationCenter.default.post(name: NSNotification.Name("SubscriptionUpdated"), object: nil)
+                    // Forcer le rechargement des données de la carte depuis le backend
+                    NotificationCenter.default.post(name: NSNotification.Name("ForceReloadCardData"), object: nil)
                     print("🔍 [STATUS] ───────────────────────────────────────────────────")
                     print("✅ [STATUS] Statut premium CONFIRMÉ après \(attempt + 1) tentative(s)")
                     print("   - premiumEnabled: \(userMe.premiumEnabled ?? false)")

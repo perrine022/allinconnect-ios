@@ -401,7 +401,20 @@ struct ProfileView: View {
                                         }
                                     }
                                     
-                                    if !viewModel.club10Amount.isEmpty {
+                                    // Pour les pros, afficher un message indiquant que c'est lié à l'abonnement pro
+                                    if viewModel.user.userType == .pro {
+                                        HStack {
+                                            Text("Abonnement:")
+                                                .font(.system(size: 13, weight: .regular))
+                                                .foregroundColor(.gray.opacity(0.9))
+                                            
+                                            Spacer()
+                                            
+                                            Text("Lié à votre abonnement pro")
+                                                .font(.system(size: 13, weight: .semibold))
+                                                .foregroundColor(isFamilyCardNonOwner ? .black : .white)
+                                        }
+                                    } else if !viewModel.club10Amount.isEmpty {
                                         HStack {
                                             Text("Montant:")
                                                 .font(.system(size: 13, weight: .regular))
@@ -431,8 +444,8 @@ struct ProfileView: View {
                         .padding(.horizontal, 20)
                         .padding(.bottom, 8)
                         
-                        // Bloc "Mes offres" (uniquement pour carte professionnelle)
-                        if viewModel.cardType == "PROFESSIONAL" {
+                        // Bloc "Mes offres" (uniquement pour carte professionnelle et dans l'espace pro)
+                        if viewModel.cardType == "PROFESSIONAL" && viewModel.currentSpace == .pro {
                             VStack(alignment: .leading, spacing: 16) {
                                 HStack {
                                     Image(systemName: "tag.fill")
@@ -639,8 +652,8 @@ struct ProfileView: View {
                                 .padding(.leading, 54)
                         }
                         
-                        // Options CLUB10 (espace client uniquement)
-                        if viewModel.currentSpace == .client {
+                        // Options CLUB10 (espace client uniquement, sauf pour les pros)
+                        if viewModel.currentSpace == .client && viewModel.user.userType != .pro {
                             ProfileMenuRow(
                                 icon: "creditcard.fill",
                                 title: "Gérer mon abonnement",

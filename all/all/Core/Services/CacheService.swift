@@ -42,7 +42,6 @@ class CacheService {
         
         if let encoded = try? JSONEncoder().encode(entry) {
             userDefaults.set(encoded, forKey: "\(cachePrefix)\(key)")
-            print("[CacheService] Données sauvegardées en cache pour la clé: \(key)")
         }
     }
     
@@ -50,17 +49,14 @@ class CacheService {
     func get<T: Codable>(_ type: T.Type, forKey key: String) -> T? {
         guard let data = userDefaults.data(forKey: "\(cachePrefix)\(key)"),
               let entry = try? JSONDecoder().decode(CacheEntry<T>.self, from: data) else {
-            print("[CacheService] Aucune donnée en cache pour la clé: \(key)")
             return nil
         }
         
         if entry.isExpired {
-            print("[CacheService] Cache expiré pour la clé: \(key)")
             remove(forKey: key)
             return nil
         }
         
-        print("[CacheService] Données récupérées depuis le cache pour la clé: \(key)")
         return entry.data
     }
     
@@ -86,14 +82,12 @@ class CacheService {
     /// Supprimer des données du cache
     func remove(forKey key: String) {
         userDefaults.removeObject(forKey: "\(cachePrefix)\(key)")
-        print("[CacheService] Cache supprimé pour la clé: \(key)")
     }
     
     /// Vider tout le cache
     func clearAll() {
         let keys = userDefaults.dictionaryRepresentation().keys.filter { $0.hasPrefix(cachePrefix) }
         keys.forEach { userDefaults.removeObject(forKey: $0) }
-        print("[CacheService] Tout le cache a été vidé")
     }
     
     // MARK: - Specific Cache Methods

@@ -260,6 +260,14 @@ struct ManageEstablishmentView: View {
                             
                             // Bouton Enregistrer
                             Button(action: {
+                                print("🏢 [GÉRER ÉTABLISSEMENT] =========================================")
+                                print("🏢 [GÉRER ÉTABLISSEMENT] Bouton 'Enregistrer les modifications' cliqué")
+                                print("🏢 [GÉRER ÉTABLISSEMENT] État avant appel:")
+                                print("   - isValid: \(viewModel.isValid)")
+                                print("   - hasChanges: \(viewModel.hasChanges)")
+                                print("   - isLoading: \(viewModel.isLoading)")
+                                print("   - isLoadingData: \(viewModel.isLoadingData)")
+                                print("🏢 [GÉRER ÉTABLISSEMENT] =========================================")
                                 viewModel.saveEstablishment()
                                 // Ne pas fermer automatiquement, attendre le succès
                                 if viewModel.successMessage != nil {
@@ -545,17 +553,34 @@ class ManageEstablishmentViewModel: ObservableObject {
     }
     
     func saveEstablishment() {
+        print("═══════════════════════════════════════════════════════════")
+        print("🏢 [GÉRER ÉTABLISSEMENT] saveEstablishment() - Début")
+        print("═══════════════════════════════════════════════════════════")
+        print("🏢 [GÉRER ÉTABLISSEMENT] isValid: \(isValid)")
+        print("🏢 [GÉRER ÉTABLISSEMENT] hasChanges: \(hasChanges)")
+        print("🏢 [GÉRER ÉTABLISSEMENT] isLoading: \(isLoading)")
+        print("🏢 [GÉRER ÉTABLISSEMENT] isLoadingData: \(isLoadingData)")
+        
         guard isValid else {
+            print("🏢 [GÉRER ÉTABLISSEMENT] ❌ Validation échouée - Champs manquants")
             errorMessage = "Veuillez remplir tous les champs obligatoires"
             return
         }
         
+        guard hasChanges else {
+            print("🏢 [GÉRER ÉTABLISSEMENT] ❌ Aucune modification détectée")
+            errorMessage = "Aucune modification à enregistrer"
+            return
+        }
+        
+        print("🏢 [GÉRER ÉTABLISSEMENT] ✅ Validation OK, début de l'appel API")
         isLoading = true
         errorMessage = nil
         successMessage = nil
         
         Task {
             do {
+                print("🏢 [GÉRER ÉTABLISSEMENT] Création de la requête de mise à jour...")
                 // Créer la requête de mise à jour (champs établissement uniquement)
                 let updateRequest = UpdateProfileRequest(
                     firstName: nil, // Pas de modification du prénom ici
@@ -583,12 +608,17 @@ class ManageEstablishmentViewModel: ObservableObject {
                 }
                 
                 // Appeler l'API avec ou sans image
+                print("🏢 [GÉRER ÉTABLISSEMENT] Appel API...")
+                print("🏢 [GÉRER ÉTABLISSEMENT] Image fournie: \(imageData != nil)")
                 if imageData != nil {
+                    print("🏢 [GÉRER ÉTABLISSEMENT] Appel: updateProfileWithImage()")
                     try await profileAPIService.updateProfileWithImage(updateRequest, imageData: imageData)
                 } else {
+                    print("🏢 [GÉRER ÉTABLISSEMENT] Appel: updateProfile()")
                     try await profileAPIService.updateProfile(updateRequest)
                 }
                 
+                print("🏢 [GÉRER ÉTABLISSEMENT] ✅ Appel API réussi")
                 isLoading = false
                 successMessage = "Fiche établissement mise à jour avec succès"
                 
@@ -606,11 +636,19 @@ class ManageEstablishmentViewModel: ObservableObject {
                     self.successMessage = nil
                 }
             } catch {
+                print("═══════════════════════════════════════════════════════════")
+                print("🏢 [GÉRER ÉTABLISSEMENT] ❌ ERREUR lors de la mise à jour")
+                print("═══════════════════════════════════════════════════════════")
+                print("🏢 [GÉRER ÉTABLISSEMENT] Type d'erreur: \(type(of: error))")
+                print("🏢 [GÉRER ÉTABLISSEMENT] Message: \(error.localizedDescription)")
                 isLoading = false
                 errorMessage = error.localizedDescription
                 print("Erreur lors de la mise à jour de la fiche établissement: \(error)")
             }
         }
+        print("═══════════════════════════════════════════════════════════")
+        print("🏢 [GÉRER ÉTABLISSEMENT] saveEstablishment() - Fin")
+        print("═══════════════════════════════════════════════════════════")
     }
 }
 

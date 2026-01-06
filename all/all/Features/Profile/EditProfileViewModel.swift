@@ -296,9 +296,7 @@ class EditProfileViewModel: ObservableObject {
     }
     
     func saveProfile() {
-        print("[EditProfileViewModel] saveProfile() - Début")
         guard isValid else {
-            print("[EditProfileViewModel] saveProfile() - Validation échouée")
             errorMessage = "Veuillez remplir tous les champs obligatoires correctement"
             return
         }
@@ -309,13 +307,6 @@ class EditProfileViewModel: ObservableObject {
         
         Task {
             do {
-                print("[EditProfileViewModel] saveProfile() - Préparation des données")
-                print("   - firstName: \(firstName)")
-                print("   - lastName: \(lastName)")
-                print("   - email: \(email)")
-                print("   - address: \(address)")
-                print("   - city: \(city)")
-                
                 // Formater la date de naissance au format YYYY-MM-DD (optionnelle)
                 let birthDateString: String?
                 if !birthDay.isEmpty || !birthMonth.isEmpty || !birthYear.isEmpty {
@@ -325,7 +316,6 @@ class EditProfileViewModel: ObservableObject {
                         return
                     }
                     birthDateString = formatted
-                    print("   - birthDate: \(birthDateString ?? "nil")")
                 } else {
                     birthDateString = nil
                 }
@@ -350,10 +340,8 @@ class EditProfileViewModel: ObservableObject {
                     category: nil
                 )
                 
-                print("[EditProfileViewModel] saveProfile() - Appel de l'API updateProfile()")
                 // Appeler l'API
                 try await profileAPIService.updateProfile(updateRequest)
-                print("[EditProfileViewModel] saveProfile() - API appelée avec succès")
                 
                 // Sauvegarder dans UserDefaults
                 UserDefaults.standard.set(firstName.trimmingCharacters(in: .whitespaces), forKey: "user_first_name")
@@ -370,7 +358,6 @@ class EditProfileViewModel: ObservableObject {
                 
                 isLoading = false
                 successMessage = "Profil mis à jour avec succès"
-                print("[EditProfileViewModel] saveProfile() - Succès: Profil mis à jour")
                 
                 // Effacer le message de succès après 3 secondes
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
@@ -379,11 +366,6 @@ class EditProfileViewModel: ObservableObject {
             } catch {
                 isLoading = false
                 errorMessage = error.localizedDescription
-                print("[EditProfileViewModel] saveProfile() - Erreur: \(error.localizedDescription)")
-                print("[EditProfileViewModel] saveProfile() - Type d'erreur: \(type(of: error))")
-                if let apiError = error as? APIError {
-                    print("[EditProfileViewModel] saveProfile() - APIError: \(apiError)")
-                }
             }
         }
     }

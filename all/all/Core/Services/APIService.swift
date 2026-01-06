@@ -10,8 +10,8 @@ import Combine
 
 // MARK: - API Configuration
 struct APIConfig {
-    static let baseURL = "https://allinconnect-back-1.onrender.com/api/v1" // Production
-    // static let baseURL = "http://127.0.0.1:8080/api/v1" // Local
+    // static let baseURL = "https://allinconnect-back-1.onrender.com/api/v1" // Production
+    static let baseURL = "http://127.0.0.1:8080/api/v1" // Local
     
     static var defaultHeaders: [String: String] {
         var headers = [
@@ -172,9 +172,10 @@ class APIService: APIServiceProtocol, ObservableObject {
             request.setValue(value, forHTTPHeaderField: key)
         }
         
-        // Log pour debug : vérifier que le token est bien envoyé
+        // Log pour debug : vérifier que le token est bien envoyé (masqué pour la sécurité)
         if let authHeader = request.value(forHTTPHeaderField: "Authorization") {
-            print("[APIService] Authorization header: \(authHeader.prefix(20))...")
+            // Masquer complètement le token, ne montrer que "Bearer ..."
+            print("[APIService] Authorization header: Bearer ...")
         } else {
             print("[APIService] Aucun token d'authentification trouvé")
         }
