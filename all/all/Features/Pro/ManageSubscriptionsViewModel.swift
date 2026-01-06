@@ -141,14 +141,15 @@ class ManageSubscriptionsViewModel: ObservableObject {
             if hasActiveSubscription {
                 // Trouver le plan correspondant au planName
                 if let planName = subscriptionDetails.planName {
-                    currentSubscriptionPlan = availablePlans.first(where: { plan in
+                    let plans = availablePlans
+                    currentSubscriptionPlan = plans.first { plan in
                         plan.title == planName || plan.name == planName
-                    })
+                    }
                     
                     // Si pas trouvé par nom, essayer de trouver par catégorie et durée
                     if currentSubscriptionPlan == nil {
                         // Essayer de trouver un plan mensuel par défaut
-                        currentSubscriptionPlan = availablePlans.first(where: { $0.duration == "MONTHLY" })
+                        currentSubscriptionPlan = plans.first { $0.duration == "MONTHLY" }
                     }
                 } else {
                     // Si pas de planName, prendre le premier plan disponible
