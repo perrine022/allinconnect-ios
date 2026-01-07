@@ -42,7 +42,11 @@ class PartnersListViewModel: ObservableObject {
         partnersAPIService: PartnersAPIService? = nil,
         favoritesAPIService: FavoritesAPIService? = nil,
         dataService: MockDataService = MockDataService.shared,
-        locationService: LocationService? = nil
+        locationService: LocationService? = nil,
+        initialCityText: String = "",
+        initialSelectedSector: String = "",
+        initialSearchRadius: Double = 10.0,
+        initialOnlyClub10: Bool = false
     ) {
         // Créer les services dans un contexte MainActor
         if let partnersAPIService = partnersAPIService {
@@ -60,6 +64,13 @@ class PartnersListViewModel: ObservableObject {
         self.dataService = dataService
         // Accéder à LocationService.shared dans un contexte MainActor
         self.locationService = locationService ?? LocationService.shared
+        
+        // Initialiser avec les paramètres de recherche si fournis
+        self.cityText = initialCityText
+        self.selectedSector = initialSelectedSector
+        self.searchRadius = initialSearchRadius
+        self.onlyClub10 = initialOnlyClub10
+        
         loadPartners()
     }
     

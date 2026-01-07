@@ -101,28 +101,14 @@ struct CardView: View {
                             // Overlay avec texte en noir
                             VStack(alignment: .leading, spacing: 10) {
                                 Spacer()
+                                    .frame(height: 20) // Réduire l'espace pour remonter le contenu
                                 
-                                // Badge "Carte familiale" si type FAMILY ou CLIENT_FAMILY
-                                if viewModel.cardType == "FAMILY" || viewModel.cardType == "CLIENT_FAMILY" {
-                                    Text("Carte familiale")
-                                        .font(.system(size: 11, weight: .semibold))
-                                        .foregroundColor(.black)
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 5)
-                                        .background(Color.white.opacity(0.9))
-                                        .cornerRadius(6)
-                                }
-                                
-                                // Nom et prénom utilisateur avec fond blanc
+                                // Nom et prénom utilisateur sans fond blanc
                                 Text(viewModel.user.fullName)
                                     .font(.system(size: 20, weight: .bold))
                                     .foregroundColor(.black)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(Color.white.opacity(0.9))
-                                    .cornerRadius(6)
                                 
-                                // Date de validité
+                                // Date de validité sans fond blanc
                                 if let expirationDate = viewModel.cardExpirationDate {
                                     HStack(spacing: 4) {
                                         Text("Valide jusqu'au")
@@ -132,10 +118,6 @@ struct CardView: View {
                                             .font(.system(size: 11, weight: .bold))
                                             .foregroundColor(.black)
                                     }
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 5)
-                                    .background(Color.white.opacity(0.9))
-                                    .cornerRadius(6)
                                 }
                                 
                                 // Bouton "Gérer ma famille" si carte familiale et si l'utilisateur est propriétaire
@@ -163,8 +145,8 @@ struct CardView: View {
                             .padding(16)
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
                             
-                            // Badge "Actif" en haut à droite
-                            VStack {
+                            // Badge "Actif" et "Carte familiale" en haut à droite
+                            VStack(alignment: .trailing, spacing: 8) {
                                 HStack {
                                     Spacer()
                                     Text("Actif")
@@ -176,6 +158,19 @@ struct CardView: View {
                                         .cornerRadius(8)
                                         .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
                                 }
+                                
+                                // Badge "Carte familiale" si type FAMILY ou CLIENT_FAMILY (sans fond blanc)
+                                if viewModel.cardType == "FAMILY" || viewModel.cardType == "CLIENT_FAMILY" {
+                                    HStack {
+                                        Spacer()
+                                        Text("Carte familiale")
+                                            .font(.system(size: 11, weight: .semibold))
+                                            .foregroundColor(.black)
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 5)
+                                    }
+                                }
+                                
                                 Spacer()
                             }
                             .padding(16)

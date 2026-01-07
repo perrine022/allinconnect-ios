@@ -9,12 +9,36 @@ import SwiftUI
 import CoreLocation
 
 struct PartnersListView: View {
-    @StateObject private var viewModel = PartnersListViewModel()
+    let initialCityText: String
+    let initialSelectedSector: String
+    let initialSearchRadius: Double
+    let initialOnlyClub10: Bool
+    
+    @StateObject private var viewModel: PartnersListViewModel
     @EnvironmentObject private var locationService: LocationService
     @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) private var dismiss
     @State private var selectedPartner: Partner?
     @State private var showLocationPermission = false
+    
+    init(
+        initialCityText: String = "",
+        initialSelectedSector: String = "",
+        initialSearchRadius: Double = 10.0,
+        initialOnlyClub10: Bool = false
+    ) {
+        self.initialCityText = initialCityText
+        self.initialSelectedSector = initialSelectedSector
+        self.initialSearchRadius = initialSearchRadius
+        self.initialOnlyClub10 = initialOnlyClub10
+        
+        _viewModel = StateObject(wrappedValue: PartnersListViewModel(
+            initialCityText: initialCityText,
+            initialSelectedSector: initialSelectedSector,
+            initialSearchRadius: initialSearchRadius,
+            initialOnlyClub10: initialOnlyClub10
+        ))
+    }
     
     var body: some View {
         GeometryReader { geometry in

@@ -64,10 +64,11 @@ struct HomeView: View {
                                 }
                             
                             Button(action: {}) {
-                                Image("AppLogo")
+                                Image("SearchIcon")
                                     .resizable()
-                                    .scaledToFit()
+                                    .scaledToFill()
                                     .frame(width: 24, height: 24)
+                                    .clipShape(Circle())
                             }
                         }
                         .padding(.horizontal, 16)
@@ -165,9 +166,9 @@ struct HomeView: View {
                             .buttonStyle(PlainButtonStyle())
                             .transition(.opacity.combined(with: .move(edge: .top)))
                             
-                            // Bouton Rechercher
+                            // Bouton Rechercher - navigue vers la page Nos partenaires avec les filtres
                             Button(action: {
-                                viewModel.searchProfessionals()
+                                partnersListNavigationId = UUID()
                             }) {
                                 HStack {
                                     Spacer()
@@ -402,9 +403,9 @@ struct HomeView: View {
                             }
                             .frame(maxWidth: .infinity)
                         } else {
-                            VStack(spacing: 12) {
+                            VStack(spacing: 16) {
                                 ForEach(viewModel.featuredPartners) { partner in
-                                    PartnerCard(
+                                    ModernPartnerCard(
                                         partner: partner,
                                         onFavoriteToggle: {
                                             viewModel.togglePartnerFavorite(for: partner)
@@ -415,44 +416,80 @@ struct HomeView: View {
                                     )
                                 }
                                 
-                                // Bouton "Voir tout"
+                                // Bouton "Voir tout" avec design neuromarketing
                                 Button(action: {
                                     partnersListNavigationId = UUID()
                                 }) {
-                                    HStack {
-                                        Spacer()
-                                        Text("Voir tout")
-                                            .font(.system(size: 16, weight: .semibold))
+                                    HStack(spacing: 10) {
+                                        Text("Découvrir tous les partenaires")
+                                            .font(.system(size: 16, weight: .bold))
                                             .foregroundColor(.white)
-                                        Image(systemName: "chevron.right")
-                                            .font(.system(size: 14, weight: .semibold))
-                                            .foregroundColor(.white)
-                                        Spacer()
+                                        
+                                        ZStack {
+                                            Circle()
+                                                .fill(Color.white.opacity(0.3))
+                                                .frame(width: 32, height: 32)
+                                            
+                                            Image(systemName: "arrow.right")
+                                                .font(.system(size: 14, weight: .bold))
+                                                .foregroundColor(.white)
+                                        }
                                     }
-                                    .padding(.vertical, 14)
-                                    .background(Color.red.opacity(0.9))
-                                    .cornerRadius(10)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                Color.red,
+                                                Color.red.opacity(0.85)
+                                            ]),
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
+                                    .cornerRadius(14)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 14)
+                                            .stroke(
+                                                LinearGradient(
+                                                    gradient: Gradient(colors: [
+                                                        Color.white.opacity(0.4),
+                                                        Color.white.opacity(0.1)
+                                                    ]),
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                ),
+                                                lineWidth: 1.5
+                                            )
+                                    )
+                                    .shadow(color: Color.red.opacity(0.4), radius: 12, x: 0, y: 6)
+                                    .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
                                 }
-                                .padding(.top, 8)
+                                .padding(.top, 12)
+                                .buttonStyle(PlainButtonStyle())
                             }
                             .padding(.horizontal, 20)
                         }
                     }
                     .padding(.top, 24)
                     
-                    // Carte Pro - pour les professionnels
-                    ProCard(onLearnMore: {
-                        proInfoNavigationId = UUID()
-                    })
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+                    // Carte Pro - pour les professionnels (uniquement si statut UNKNOWN)
+                    if viewModel.isUserUnknown {
+                        ProCard(onLearnMore: {
+                            proInfoNavigationId = UUID()
+                        })
+                        .padding(.horizontal, 20)
+                        .padding(.top, 16)
+                    }
                     
-                    // Carte CLUB10 - à la fin
-                    Club10Card(onLearnMore: {
-                        digitalCardInfoNavigationId = UUID()
-                    })
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+                    // Carte CLUB10 - à la fin (uniquement si statut UNKNOWN)
+                    if viewModel.isUserUnknown {
+                        Club10Card(onLearnMore: {
+                            digitalCardInfoNavigationId = UUID()
+                        })
+                        .padding(.horizontal, 20)
+                        .padding(.top, 16)
+                    }
                     
                     // Bouton "L'app qui pense à toi" - en bas de la page
                     Button(action: {}) {
@@ -529,11 +566,202 @@ struct HomeView: View {
             ProInfoView()
         }
         .navigationDestination(item: $partnersListNavigationId) { _ in
-            PartnersListView()
+            PartnersListView(
+                initialCityText: viewModel.cityText,
+                initialSelectedSector: viewModel.selectedSector,
+                initialSearchRadius: viewModel.searchRadius,
+                initialOnlyClub10: viewModel.onlyClub10
+            )
         }
     }
 }
 
+// Carte partenaire moderne pour la page d'accueil
+struct ModernPartnerCard: View {
+    let partner: Partner
+    let onFavoriteToggle: () -> Void
+    let onTap: () -> Void
+    
+    var body: some View {
+        Button(action: onTap) {
+            ZStack(alignment: .topTrailing) {
+                // Fond avec gradient moderne et contour visible - plus marqué
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.appDarkRed1,
+                                Color.appDarkRed2,
+                                Color.red.opacity(0.9)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.white.opacity(0.4), lineWidth: 2)
+                    )
+                    .shadow(color: Color.red.opacity(0.3), radius: 10, x: 0, y: 5)
+                    .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
+                
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack(alignment: .top, spacing: 12) {
+                        // Image de l'établissement avec style moderne
+                        Group {
+                            if let imageUrl = ImageURLHelper.buildImageURL(from: partner.establishmentImageUrl),
+                               let url = URL(string: imageUrl) {
+                                AsyncImage(url: url) { phase in
+                                    switch phase {
+                                    case .empty:
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .fill(Color.white.opacity(0.15))
+                                            Image(systemName: partner.imageName)
+                                                .resizable()
+                                                .scaledToFit()
+                                                .foregroundColor(.white.opacity(0.5))
+                                                .frame(width: 30, height: 30)
+                                        }
+                                    case .success(let image):
+                                        image
+                                            .resizable()
+                                            .scaledToFill()
+                                    case .failure:
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .fill(Color.white.opacity(0.15))
+                                            Image(systemName: partner.imageName)
+                                                .resizable()
+                                                .scaledToFit()
+                                                .foregroundColor(.white.opacity(0.5))
+                                                .frame(width: 30, height: 30)
+                                        }
+                                    @unknown default:
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .fill(Color.white.opacity(0.15))
+                                            Image(systemName: partner.imageName)
+                                                .resizable()
+                                                .scaledToFit()
+                                                .foregroundColor(.white.opacity(0.5))
+                                                .frame(width: 30, height: 30)
+                                        }
+                                    }
+                                }
+                            } else {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color.white.opacity(0.15))
+                                    Image(systemName: partner.imageName)
+                                        .resizable()
+                                        .scaledToFit()
+                                        .foregroundColor(.white.opacity(0.5))
+                                        .frame(width: 30, height: 30)
+                                }
+                            }
+                        }
+                        .frame(width: 70, height: 70)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.white.opacity(0.25), lineWidth: 1)
+                        )
+                        
+                        VStack(alignment: .leading, spacing: 6) {
+                            // Nom avec texte plus petit
+                            Text(partner.name)
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.white)
+                                .lineLimit(2)
+                                .multilineTextAlignment(.leading)
+                            
+                            // Catégorie avec badge moderne plus petit
+                            HStack(spacing: 4) {
+                                Image(systemName: "tag.fill")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.white.opacity(0.7))
+                                Text(partner.category)
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(.white.opacity(0.85))
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.white.opacity(0.15))
+                            .cornerRadius(6)
+                            
+                            // Localisation plus petite
+                            HStack(spacing: 4) {
+                                Image(systemName: "mappin.circle.fill")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.white.opacity(0.7))
+                                Text("\(partner.city)")
+                                    .font(.system(size: 11, weight: .regular))
+                                    .foregroundColor(.white.opacity(0.8))
+                            }
+                            
+                            // Note avec style moderne plus petit
+                            HStack(spacing: 4) {
+                                Image(systemName: "star.fill")
+                                    .foregroundColor(.appGold)
+                                    .font(.system(size: 11))
+                                Text(String(format: "%.1f", partner.rating))
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(.white)
+                                Text("(\(partner.reviewCount))")
+                                    .font(.system(size: 11, weight: .regular))
+                                    .foregroundColor(.white.opacity(0.65))
+                            }
+                        }
+                        
+                        Spacer()
+                    }
+                    .padding(14)
+                }
+                
+                // Badge de réduction en haut à droite plus petit
+                if let discount = partner.discount {
+                    VStack {
+                        Text("-\(discount)%")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 5)
+                            .background(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [Color.green, Color.green.opacity(0.8)]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .cornerRadius(8)
+                            .shadow(color: Color.black.opacity(0.25), radius: 3, x: 0, y: 2)
+                    }
+                    .padding(12)
+                }
+                
+                // Bouton favori en bas à droite plus petit
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Button(action: onFavoriteToggle) {
+                            Image(systemName: partner.isFavorite ? "heart.fill" : "heart")
+                                .foregroundColor(partner.isFavorite ? .red : .white.opacity(0.75))
+                                .font(.system(size: 18))
+                                .padding(8)
+                                .background(Color.white.opacity(0.15))
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    .padding(12)
+                }
+            }
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
 
 #Preview {
     NavigationStack {

@@ -21,6 +21,7 @@ class HomeViewModel: ObservableObject {
     @Published var isLoadingPartners: Bool = false
     @Published var offersError: String? = nil
     @Published var offersAPIError: APIError? = nil // Pour détecter les erreurs 500
+    @Published var isUserUnknown: Bool = false // Statut utilisateur UNKNOWN
     
     // Search fields
     @Published var cityText: String = ""
@@ -95,6 +96,22 @@ class HomeViewModel: ObservableObject {
         self.categories = dataService.getCategories()
         self.cities = dataService.getCities()
         loadData()
+        checkUserStatus()
+    }
+    
+    // Vérifier le statut utilisateur (UNKNOWN ou non)
+    func checkUserStatus() {
+        Task { @MainActor in
+            do {
+                let userLight = try await profileAPIService.getUserLight()
+                let userTypeString = userLight.userType ?? ""
+                isUserUnknown = userTypeString == "UNKNOWN" || userTypeString.isEmpty
+            } catch {
+                print("Erreur lors de la vérification du statut utilisateur: \(error.localizedDescription)")
+                // En cas d'erreur, considérer comme UNKNOWN pour afficher les cartes
+                isUserUnknown = true
+            }
+        }
     }
     
     func loadData() {
@@ -397,6 +414,32 @@ class HomeViewModel: ObservableObject {
                     filteredPartners[filteredIndex] = partners[index]
                 }
             }
+            
+            // Mettre à jour aussi les featuredPartners (pour la page d'accueil)
+            if let featuredIndex = featuredPartners.firstIndex(where: { $0.id == partner.id }) {
+                let updatedFeaturedPartner = featuredPartners[featuredIndex]
+                featuredPartners[featuredIndex] = Partner(
+                    id: updatedFeaturedPartner.id,
+                    name: updatedFeaturedPartner.name,
+                    category: updatedFeaturedPartner.category,
+                    address: updatedFeaturedPartner.address,
+                    city: updatedFeaturedPartner.city,
+                    postalCode: updatedFeaturedPartner.postalCode,
+                    phone: updatedFeaturedPartner.phone,
+                    email: updatedFeaturedPartner.email,
+                    website: updatedFeaturedPartner.website,
+                    instagram: updatedFeaturedPartner.instagram,
+                    description: updatedFeaturedPartner.description,
+                    rating: updatedFeaturedPartner.rating,
+                    reviewCount: updatedFeaturedPartner.reviewCount,
+                    discount: updatedFeaturedPartner.discount,
+                    imageName: updatedFeaturedPartner.imageName,
+                    headerImageName: updatedFeaturedPartner.headerImageName,
+                    establishmentImageUrl: updatedFeaturedPartner.establishmentImageUrl,
+                    isFavorite: !updatedFeaturedPartner.isFavorite,
+                    apiId: updatedFeaturedPartner.apiId
+                )
+            }
             return
         }
         
@@ -410,7 +453,7 @@ class HomeViewModel: ObservableObject {
                     try await favoritesAPIService.addFavorite(professionalId: apiId)
                 }
                 
-                // Mettre à jour l'état local
+                // Mettre à jour l'état local pour partners et filteredPartners
                 if let index = partners.firstIndex(where: { $0.id == partner.id }) {
                     let updatedPartner = partners[index]
                     partners[index] = Partner(
@@ -436,6 +479,32 @@ class HomeViewModel: ObservableObject {
                     if let filteredIndex = filteredPartners.firstIndex(where: { $0.id == partner.id }) {
                         filteredPartners[filteredIndex] = partners[index]
                     }
+                }
+                
+                // Mettre à jour aussi les featuredPartners (pour la page d'accueil)
+                if let featuredIndex = featuredPartners.firstIndex(where: { $0.id == partner.id }) {
+                    let updatedFeaturedPartner = featuredPartners[featuredIndex]
+                    featuredPartners[featuredIndex] = Partner(
+                        id: updatedFeaturedPartner.id,
+                        name: updatedFeaturedPartner.name,
+                        category: updatedFeaturedPartner.category,
+                        address: updatedFeaturedPartner.address,
+                        city: updatedFeaturedPartner.city,
+                        postalCode: updatedFeaturedPartner.postalCode,
+                        phone: updatedFeaturedPartner.phone,
+                        email: updatedFeaturedPartner.email,
+                        website: updatedFeaturedPartner.website,
+                        instagram: updatedFeaturedPartner.instagram,
+                        description: updatedFeaturedPartner.description,
+                        rating: updatedFeaturedPartner.rating,
+                        reviewCount: updatedFeaturedPartner.reviewCount,
+                        discount: updatedFeaturedPartner.discount,
+                        imageName: updatedFeaturedPartner.imageName,
+                        headerImageName: updatedFeaturedPartner.headerImageName,
+                        establishmentImageUrl: updatedFeaturedPartner.establishmentImageUrl,
+                        isFavorite: !updatedFeaturedPartner.isFavorite,
+                        apiId: updatedFeaturedPartner.apiId
+                    )
                 }
             } catch {
                 print("Erreur lors de la modification du favori: \(error)")
