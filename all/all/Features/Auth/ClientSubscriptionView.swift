@@ -49,7 +49,7 @@ struct ClientSubscriptionView: View {
                             
                             // Texte explicatif
                             VStack(spacing: 8) {
-                                Text("Pour accéder à tous les avantages de la plateforme, vous devez souscrire à un abonnement CLUB10.")
+                                Text("Pour accéder à tous les avantages de la plateforme, tu dois souscrire à un abonnement CLUB10.")
                                     .font(.system(size: 15, weight: .regular))
                                     .foregroundColor(.white.opacity(0.9))
                                     .multilineTextAlignment(.center)

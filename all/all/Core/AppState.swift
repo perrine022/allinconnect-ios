@@ -13,6 +13,11 @@ class AppState: ObservableObject {
     @Published var selectedTab: TabItem = .home
     
     func navigateToTab(_ tab: TabItem, dismiss: (() -> Void)? = nil) {
+        // Si on reclique sur l'onglet actif, scroller vers le haut
+        if selectedTab == tab {
+            NotificationCenter.default.post(name: NSNotification.Name("ScrollToTop"), object: nil, userInfo: ["tab": tab])
+        }
+        
         // Toujours mettre à jour le selectedTab
         selectedTab = tab
         // Notifier toutes les vues qu'elles doivent se fermer pour revenir au TabBarView

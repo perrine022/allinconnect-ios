@@ -27,71 +27,21 @@ struct HomeView: View {
     @State private var digitalCardInfoNavigationId: UUID?
     @State private var proInfoNavigationId: UUID?
     @State private var partnersListNavigationId: UUID?
+    @State private var isSearchExpanded: Bool = false
+    @FocusState private var isSearchFieldFocused: Bool
     var body: some View {
         ZStack {
             // Background avec gradient : identique partout dans l'app
             AppGradient.main
                 .ignoresSafeArea(edges: .top)
             
-            ScrollView {
-                VStack(spacing: 0) {
-                    // Logo en premier
+            ScrollViewReader { proxy in
+                ScrollView {
                     VStack(spacing: 0) {
-                        Image("AppLogo")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(maxWidth: 120, maxHeight: 48)
-                            .padding(.top, 12)
-                            .padding(.bottom, 20)
-                    }
-                    
-                    // Bouton "L'app qui pense à toi"
-                    Button(action: {}) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "star.fill")
-                                .foregroundColor(.appGold)
-                                .font(.system(size: 14))
-                            
-                            Text("L'app qui pense à toi")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.white)
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.red, lineWidth: 1.5)
-                        )
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 6)
-                    .padding(.bottom, 20)
-
-                    // Titre principal
-                    VStack(spacing: 8) {
-                        (Text("Trouve ton partenaire ")
-                            .foregroundColor(.white) +
-                         Text("ALL IN")
-                            .foregroundColor(.red) +
-                         Text(" près de\nchez toi")
-                            .foregroundColor(.white))
-                            .font(.system(size: 20, weight: .bold))
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(4)
-                        
-                        Text("Et profite de 10% chez tous les membres du CLUB10")
-                            .font(.system(size: 16, weight: .regular))
-                            .foregroundColor(.white.opacity(0.8))
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
-                    .padding(.bottom, 24)
-                    
-                    // Champs de recherche - Design compact et épuré
-                    VStack(spacing: 6) {
-                        // Champ Ville, nom, activité
-                        HStack(spacing: 10) {
+                        // Champs de recherche - Design compact et épuré
+                        VStack(spacing: 6) {
+                            // Champ Ville, nom, activité - toujours visible - ID pour scroll vers le haut
+                            HStack(spacing: 10) {
                             Image(systemName: "magnifyingglass")
                                 .foregroundColor(.gray.opacity(0.6))
                                 .font(.system(size: 13))
@@ -101,14 +51,23 @@ struct HomeView: View {
                                 .font(.system(size: 14))
                                 .autocorrectionDisabled()
                                 .textInputAutocapitalization(.never)
+                                .focused($isSearchFieldFocused)
+                                .onChange(of: isSearchFieldFocused) { _, newValue in
+                                    if newValue {
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                            isSearchExpanded = true
+                                        }
+                                    }
+                                }
                                 .onChange(of: viewModel.cityText) { _, _ in
                                     viewModel.searchProfessionals()
                                 }
                             
                             Button(action: {}) {
-                                Image(systemName: "mappin.circle.fill")
-                                    .foregroundColor(.red)
-                                    .font(.system(size: 16))
+                                Image("AppLogo")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 24, height: 24)
                             }
                         }
                         .padding(.horizontal, 16)
@@ -116,106 +75,137 @@ struct HomeView: View {
                         .background(Color.white)
                         .cornerRadius(14)
                         .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+                        .onTapGesture {
+                            // Forcer le focus sur le champ pour déclencher l'expansion
+                            isSearchFieldFocused = true
+                        }
                         
-                        // Menu déroulant Secteur
-                        CustomSectorPicker(
-                            sectors: viewModel.sectors,
-                            selectedSector: $viewModel.selectedSector,
-                            onSelectionChange: {
-                                viewModel.searchProfessionals()
-                            }
-                        )
-                        
-                        // Slider Rayon de recherche
-                        HStack(spacing: 8) {
-                            Text("0")
-                                .font(.system(size: 11, weight: .regular))
-                                .foregroundColor(.gray.opacity(0.6))
-                                .frame(width: 20)
-                            
-                            Slider(value: $viewModel.searchRadius, in: 0...50, step: 5)
-                                .tint(.red)
-                                .onChange(of: viewModel.searchRadius) { _, _ in
+                        // Autres champs - masqués par défaut, déroulés au clic
+                        if isSearchExpanded {
+                            // Menu déroulant Secteur
+                            CustomSectorPicker(
+                                sectors: viewModel.sectors,
+                                selectedSector: $viewModel.selectedSector,
+                                onSelectionChange: {
                                     viewModel.searchProfessionals()
                                 }
+                            )
+                            .transition(.opacity.combined(with: .move(edge: .top)))
                             
-                            Text("50")
-                                .font(.system(size: 11, weight: .regular))
-                                .foregroundColor(.gray.opacity(0.6))
-                                .frame(width: 20)
-                            
-                            Text(viewModel.searchRadius == 0 ? "Désactivé" : "\(Int(viewModel.searchRadius)) km")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(viewModel.searchRadius == 0 ? .gray.opacity(0.7) : .red)
-                                .frame(minWidth: 60, alignment: .trailing)
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .background(Color.white)
-                        .cornerRadius(14)
-                        .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
-                        
-                        // Checkbox CLUB10
-                        Button(action: {
-                            withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
-                                viewModel.onlyClub10.toggle()
-                                viewModel.searchProfessionals()
-                            }
-                        }) {
-                            HStack(spacing: 10) {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 3)
-                                        .fill(viewModel.onlyClub10 ? Color.green : Color.clear)
-                                        .frame(width: 16, height: 16)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 3)
-                                                .stroke(Color.green, lineWidth: 1.5)
-                                        )
-                                    
-                                    if viewModel.onlyClub10 {
-                                        Image(systemName: "checkmark")
-                                            .foregroundColor(.white)
-                                            .font(.system(size: 10, weight: .bold))
+                            // Slider Rayon de recherche
+                            HStack(spacing: 8) {
+                                Text("0")
+                                    .font(.system(size: 11, weight: .regular))
+                                    .foregroundColor(.gray.opacity(0.6))
+                                    .frame(width: 20)
+                                
+                                Slider(value: $viewModel.searchRadius, in: 0...50, step: 5)
+                                    .tint(.red)
+                                    .onChange(of: viewModel.searchRadius) { _, _ in
+                                        viewModel.searchProfessionals()
                                     }
-                                }
                                 
-                                Image(systemName: "star.fill")
-                                    .foregroundColor(.appGold)
-                                    .font(.system(size: 13))
+                                Text("50")
+                                    .font(.system(size: 11, weight: .regular))
+                                    .foregroundColor(.gray.opacity(0.6))
+                                    .frame(width: 20)
                                 
-                                Text("Uniquement les membres CLUB10")
-                                    .font(.system(size: 13, weight: .medium))
-                                    .foregroundColor(.green)
-                                
-                                Spacer()
+                                Text(viewModel.searchRadius == 0 ? "Désactivé" : "\(Int(viewModel.searchRadius)) km")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(viewModel.searchRadius == 0 ? .gray.opacity(0.7) : .red)
+                                    .frame(minWidth: 60, alignment: .trailing)
                             }
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
-                            .background(Color(red: 0.85, green: 0.95, blue: 0.85)) // Vert clair/pastel
+                            .background(Color.white)
                             .cornerRadius(14)
                             .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        
-                        // Bouton Rechercher
-                        Button(action: {
-                            viewModel.searchProfessionals()
-                        }) {
-                            HStack {
-                                Spacer()
-                                Text("Rechercher")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
-                                Spacer()
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                            
+                            // Checkbox CLUB10
+                            Button(action: {
+                                withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+                                    viewModel.onlyClub10.toggle()
+                                    viewModel.searchProfessionals()
+                                }
+                            }) {
+                                HStack(spacing: 10) {
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 3)
+                                            .fill(viewModel.onlyClub10 ? Color.green : Color.clear)
+                                            .frame(width: 16, height: 16)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 3)
+                                                    .stroke(Color.green, lineWidth: 1.5)
+                                            )
+                                        
+                                        if viewModel.onlyClub10 {
+                                            Image(systemName: "checkmark")
+                                                .foregroundColor(.white)
+                                                .font(.system(size: 10, weight: .bold))
+                                        }
+                                    }
+                                    
+                                    Image(systemName: "star.fill")
+                                        .foregroundColor(.appGold)
+                                        .font(.system(size: 13))
+                                    
+                                    Text("Uniquement les membres CLUB10")
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundColor(.green)
+                                    
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 12)
+                                .background(Color(red: 0.85, green: 0.95, blue: 0.85)) // Vert clair/pastel
+                                .cornerRadius(14)
+                                .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
                             }
-                            .padding(.vertical, 14)
-                            .background(Color.red)
-                            .cornerRadius(10)
+                            .buttonStyle(PlainButtonStyle())
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                            
+                            // Bouton Rechercher
+                            Button(action: {
+                                viewModel.searchProfessionals()
+                            }) {
+                                HStack {
+                                    Spacer()
+                                    Text("Rechercher")
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(.white)
+                                    Spacer()
+                                }
+                                .padding(.vertical, 14)
+                                .background(Color.red)
+                                .cornerRadius(10)
+                            }
+                            .transition(.opacity.combined(with: .move(edge: .top)))
                         }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
+                        .padding(.bottom, 12)
+                        .id("top")
+                    
+                    // Titre principal - plus petit, juste sous le filtre
+                    VStack(spacing: 4) {
+                        (Text("Trouve ton partenaire ")
+                            .foregroundColor(.white) +
+                         Text("ALL IN")
+                            .foregroundColor(.red) +
+                         Text(" près de chez toi")
+                            .foregroundColor(.white))
+                            .font(.system(size: 14, weight: .semibold))
+                            .multilineTextAlignment(.center)
+                        
+                        Text("Et profite de 10% chez tous les membres du CLUB10")
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundColor(.white.opacity(0.7))
+                            .multilineTextAlignment(.center)
                     }
                     .padding(.horizontal, 20)
-                    .padding(.top, 16)
-                    .padding(.bottom, 24)
+                    .padding(.bottom, 16)
                     
                     // Section "Nos partenaires" - affichée seulement après recherche
                     if viewModel.hasSearched {
@@ -379,6 +369,77 @@ struct HomeView: View {
                     }
                     .padding(.top, viewModel.hasSearched ? 24 : 16)
                     
+                    // Section "Les partenaires"
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            HStack(spacing: 6) {
+                                Text("Les partenaires")
+                                    .font(.system(size: 20, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                            
+                            Spacer()
+                        }
+                        .padding(.horizontal, 20)
+                        
+                        // Affichage vertical des partenaires (4 max)
+                        if viewModel.isLoadingPartners {
+                            HStack {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                Text("Chargement des partenaires...")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.white.opacity(0.7))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 20)
+                        } else if viewModel.featuredPartners.isEmpty {
+                            VStack(spacing: 8) {
+                                Text("Aucun partenaire disponible pour le moment")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .padding(.vertical, 20)
+                            }
+                            .frame(maxWidth: .infinity)
+                        } else {
+                            VStack(spacing: 12) {
+                                ForEach(viewModel.featuredPartners) { partner in
+                                    PartnerCard(
+                                        partner: partner,
+                                        onFavoriteToggle: {
+                                            viewModel.togglePartnerFavorite(for: partner)
+                                        },
+                                        onTap: {
+                                            selectedPartner = partner
+                                        }
+                                    )
+                                }
+                                
+                                // Bouton "Voir tout"
+                                Button(action: {
+                                    partnersListNavigationId = UUID()
+                                }) {
+                                    HStack {
+                                        Spacer()
+                                        Text("Voir tout")
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundColor(.white)
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 14, weight: .semibold))
+                                            .foregroundColor(.white)
+                                        Spacer()
+                                    }
+                                    .padding(.vertical, 14)
+                                    .background(Color.red.opacity(0.9))
+                                    .cornerRadius(10)
+                                }
+                                .padding(.top, 8)
+                            }
+                            .padding(.horizontal, 20)
+                        }
+                    }
+                    .padding(.top, 24)
+                    
                     // Carte Pro - pour les professionnels
                     ProCard(onLearnMore: {
                         proInfoNavigationId = UUID()
@@ -392,10 +453,39 @@ struct HomeView: View {
                     })
                     .padding(.horizontal, 20)
                     .padding(.top, 16)
+                    
+                    // Bouton "L'app qui pense à toi" - en bas de la page
+                    Button(action: {}) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "star.fill")
+                                .foregroundColor(.appGold)
+                                .font(.system(size: 14))
+                            
+                            Text("L'app qui pense à toi")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.white)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.red, lineWidth: 1.5)
+                        )
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 24)
                     .padding(.bottom, 100) // Espace pour le footer
+                    }
+                }
+                .scrollDismissesKeyboard(.interactively)
+                .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ScrollToTop"))) { notification in
+                    if let tab = notification.userInfo?["tab"] as? TabItem, tab == .home {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            proxy.scrollTo("top", anchor: .top)
+                        }
+                    }
                 }
             }
-            .scrollDismissesKeyboard(.interactively)
         }
         .onTapGesture {
             hideKeyboard()
@@ -403,6 +493,8 @@ struct HomeView: View {
         .task {
             // Charger les 4 premières offres réelles depuis l'API au démarrage
             viewModel.loadOffersByCity()
+            // Charger les 5 premiers partenaires pour la page d'accueil
+            viewModel.loadFeaturedPartners()
         }
         .onAppear {
             // Demander la permission de localisation si pas encore demandée

@@ -96,17 +96,19 @@ struct ProfileView: View {
                     AppGradient.main
                     .ignoresSafeArea()
                     
-                    ScrollView {
-                        VStack(spacing: 24) {
-                    // Titre
-                    HStack {
-                        Text("Profil")
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(.white)
-                        Spacer()
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
+                    ScrollViewReader { proxy in
+                        ScrollView {
+                            VStack(spacing: 24) {
+                        // Titre - ID pour scroll vers le haut
+                        HStack {
+                            Text("Profil")
+                                .font(.system(size: 28, weight: .bold))
+                                .foregroundColor(.white)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
+                        .id("top")
                     
                     // Indicateur de chargement initial - selon guidelines Apple
                     if viewModel.isLoadingInitialData && !viewModel.hasLoadedOnce {
@@ -753,6 +755,14 @@ struct ProfileView: View {
                         .frame(height: 100)
                         }
                     }
+                    .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ScrollToTop"))) { notification in
+                        if let tab = notification.userInfo?["tab"] as? TabItem, tab == .profile {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                proxy.scrollTo("top", anchor: .top)
+                            }
+                        }
+                    }
+                    }
                 }
             
             // Footer Bar - toujours visible
@@ -767,11 +777,11 @@ struct ProfileView: View {
             }
             .ignoresSafeArea(edges: .bottom)
         }
-        }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
+    }
     }
 }
 

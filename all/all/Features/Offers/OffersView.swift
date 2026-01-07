@@ -21,17 +21,19 @@ struct OffersView: View {
             AppGradient.main
                 .ignoresSafeArea()
             
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Titre
-                    HStack {
-                        Text("Offres & Événements")
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(.white)
-                        Spacer()
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Titre - ID pour scroll vers le haut
+                        HStack {
+                            Text("Offres & Événements")
+                                .font(.system(size: 28, weight: .bold))
+                                .foregroundColor(.white)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
+                        .id("top")
                     
                     // Pastilles de filtre par type
                     HStack(spacing: 12) {
@@ -383,6 +385,14 @@ struct OffersView: View {
                     
                     Spacer()
                         .frame(height: 100) // Espace pour le footer
+                    }
+                }
+                .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ScrollToTop"))) { notification in
+                    if let tab = notification.userInfo?["tab"] as? TabItem, tab == .offers {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            proxy.scrollTo("top", anchor: .top)
+                        }
+                    }
                 }
             }
         }

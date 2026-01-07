@@ -14,9 +14,11 @@ class HomeViewModel: ObservableObject {
     @Published var professionals: [Professional] = []
     @Published var offers: [Offer] = []
     @Published var partners: [Partner] = []
+    @Published var featuredPartners: [Partner] = [] // Les 5 premiers partenaires pour la page d'accueil
     @Published var filteredProfessionals: [Professional] = []
     @Published var filteredPartners: [Partner] = []
     @Published var isLoadingOffers: Bool = false
+    @Published var isLoadingPartners: Bool = false
     @Published var offersError: String? = nil
     @Published var offersAPIError: APIError? = nil // Pour détecter les erreurs 500
     
@@ -242,12 +244,35 @@ class HomeViewModel: ObservableObject {
                     partners = dataService.getPartners()
                     applyFilters()
                 } else {
-                    // Autre type d'erreur
-                    print("Erreur lors du chargement des partenaires: \(error)")
-                    // En cas d'erreur, utiliser les données mockées en fallback
-                    partners = dataService.getPartners()
-                    applyFilters()
+                    print("Erreur lors du chargement des partenaires: \(error.localizedDescription)")
+                    partners = []
                 }
+            }
+        }
+    }
+    
+    // Charger les 4 premiers partenaires pour la page d'accueil
+    func loadFeaturedPartners() {
+        Task { @MainActor in
+            isLoadingPartners = true
+            do {
+                // Récupérer tous les professionnels depuis l'API
+                let professionalsResponse = try await partnersAPIService.getAllProfessionals()
+                
+                // Convertir en modèles Partner
+                let allPartners = professionalsResponse.map { $0.toPartner() }
+                
+                // Prendre les 4 premiers partenaires
+                featuredPartners = Array(allPartners.prefix(4))
+                
+                // Synchroniser les favoris depuis l'API pour les partenaires affichés
+                await syncFavorites()
+                
+                isLoadingPartners = false
+            } catch {
+                isLoadingPartners = false
+                print("Erreur lors du chargement des partenaires: \(error.localizedDescription)")
+                featuredPartners = []
             }
         }
     }
@@ -265,6 +290,36 @@ class HomeViewModel: ObservableObject {
                     if partners[index].isFavorite != isFavorite {
                         let partner = partners[index]
                         partners[index] = Partner(
+                            id: partner.id,
+                            name: partner.name,
+                            category: partner.category,
+                            address: partner.address,
+                            city: partner.city,
+                            postalCode: partner.postalCode,
+                            phone: partner.phone,
+                            email: partner.email,
+                            website: partner.website,
+                            instagram: partner.instagram,
+                            description: partner.description,
+                            rating: partner.rating,
+                            reviewCount: partner.reviewCount,
+                            discount: partner.discount,
+                            imageName: partner.imageName,
+                            headerImageName: partner.headerImageName,
+                            isFavorite: isFavorite,
+                            apiId: partner.apiId
+                        )
+                    }
+                }
+            }
+            
+            // Mettre à jour aussi les featuredPartners
+            for index in featuredPartners.indices {
+                if let apiId = featuredPartners[index].apiId {
+                    let isFavorite = favoriteIds.contains(apiId)
+                    if featuredPartners[index].isFavorite != isFavorite {
+                        let partner = featuredPartners[index]
+                        featuredPartners[index] = Partner(
                             id: partner.id,
                             name: partner.name,
                             category: partner.category,

@@ -29,7 +29,7 @@ struct CardSubscriptionView: View {
                     .font(.system(size: 14, weight: .regular))
                     .foregroundColor(.white.opacity(0.9))
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, 40)
                 
                 // Liste des avantages
                 VStack(spacing: 10) {
@@ -61,7 +61,7 @@ struct CardSubscriptionView: View {
                         description: "Ne rate plus aucune offre"
                     )
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 40)
                 .padding(.top, 12)
                 
                 // Bouton S'abonner
@@ -76,7 +76,7 @@ struct CardSubscriptionView: View {
                         .background(Color.appRed)
                         .cornerRadius(12)
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 40)
                 .padding(.top, 16)
                 
                 Spacer()
@@ -150,7 +150,7 @@ struct WhyCardDigitalView: View {
                     Text("Pourquoi ma carte digitale ?")
                         .font(.system(size: 28, weight: .bold))
                         .foregroundColor(.white)
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, 40)
                         .padding(.top, 20)
                     
                     // Contenu
@@ -158,34 +158,34 @@ struct WhyCardDigitalView: View {
                         CardInfoSection(
                             icon: "creditcard.fill",
                             title: "Carte digitale sécurisée",
-                            description: "Votre carte est stockée de manière sécurisée dans votre téléphone. Plus besoin de transporter une carte physique."
+                            description: "Ta carte est stockée de manière sécurisée dans ton téléphone. Plus besoin de transporter une carte physique."
                         )
                         
                         CardInfoSection(
                             icon: "star.fill",
                             title: "Avantages exclusifs",
-                            description: "Accédez à des réductions et offres spéciales réservées aux membres CLUB10."
+                            description: "Accède à des réductions et offres spéciales réservées aux membres CLUB10."
                         )
                         
                         CardInfoSection(
                             icon: "bell.fill",
                             title: "Notifications personnalisées",
-                            description: "Recevez des alertes sur les nouvelles offres et promotions près de chez vous."
+                            description: "Reçois des alertes sur les nouvelles offres et promotions près de chez toi."
                         )
                         
                         CardInfoSection(
                             icon: "wallet.pass.fill",
                             title: "Intégration Wallet",
-                            description: "Ajoutez votre carte à Apple Wallet ou Google Pay pour un accès rapide."
+                            description: "Ajoute ta carte à Apple Wallet ou Google Pay pour un accès rapide."
                         )
                         
                         CardInfoSection(
                             icon: "person.2.fill",
                             title: "Programme de parrainage",
-                            description: "Gagnez 50% du premier mois de chaque personne que vous parrainez."
+                            description: "Gagne 50% du premier mois de chaque personne que tu parraines."
                         )
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, 40)
                     
                     Spacer()
                         .frame(height: 100)

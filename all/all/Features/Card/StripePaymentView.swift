@@ -113,7 +113,7 @@ struct StripePaymentView: View {
                 }
             }
         } message: {
-            Text("Votre abonnement a été activé avec succès. Vous êtes maintenant Premium !")
+            Text("Ton abonnement a été activé avec succès. Tu es maintenant Premium !")
         }
     }
 }
@@ -134,11 +134,11 @@ private struct StripePaymentContentView: View {
                 VStack(spacing: 24) {
                     // Titre
                     VStack(spacing: 8) {
-                        Text("Choisissez votre abonnement")
+                        Text("Choisis ton abonnement")
                             .font(.system(size: 28, weight: .bold))
                             .foregroundColor(.white)
                         
-                        Text("Sélectionnez le plan qui vous convient")
+                        Text("Sélectionne le plan qui te convient")
                             .font(.system(size: 16, weight: .regular))
                             .foregroundColor(.white.opacity(0.8))
                     }
@@ -157,7 +157,7 @@ private struct StripePaymentContentView: View {
                                     .font(.system(size: 16, weight: .bold))
                                     .foregroundColor(.white)
                                 
-                                Text("Avec votre abonnement Pro, vous bénéficiez aussi de tous les avantages de la carte digitale")
+                                Text("Avec ton abonnement Pro, tu bénéficies aussi de tous les avantages de la carte digitale")
                                     .font(.system(size: 13, weight: .regular))
                                     .foregroundColor(.white.opacity(0.9))
                             }
@@ -182,11 +182,11 @@ private struct StripePaymentContentView: View {
                                 .font(.system(size: 20))
                             
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("Pensez à la carte famille !")
+                                Text("Pense à la carte famille !")
                                     .font(.system(size: 16, weight: .bold))
                                     .foregroundColor(.white)
                                 
-                                Text("Partagez les avantages avec jusqu'à 4 membres de votre famille")
+                                Text("Partage les avantages avec jusqu'à 4 membres de ta famille")
                                     .font(.system(size: 13, weight: .regular))
                                     .foregroundColor(.white.opacity(0.9))
                             }
@@ -653,7 +653,7 @@ class StripePaymentViewModel: ObservableObject {
                     print("❌ [PAIEMENT] Erreur 401 - Non autorisé")
                     if let reason = reason {
                         print("   - Raison: \(reason)")
-                        errorMessage = apiError.errorDescription ?? "Erreur d'authentification. Veuillez vous reconnecter."
+                        errorMessage = apiError.errorDescription ?? "Erreur d'authentification. Veuille te reconnecter."
                         
                         if reason == "Token expired" || reason == "User not found" || reason == "Invalid token" {
                             print("⚠️ [PAIEMENT] Token invalide/expiré - Déconnexion forcée dans 2 secondes")
@@ -663,11 +663,11 @@ class StripePaymentViewModel: ObservableObject {
                             }
                         }
                     } else {
-                        errorMessage = "Erreur d'authentification. Veuillez vous reconnecter."
+                        errorMessage = "Erreur d'authentification. Veuille te reconnecter."
                     }
                 case .networkError:
                     print("❌ [PAIEMENT] Erreur réseau")
-                    errorMessage = "Erreur de connexion. Vérifiez votre connexion internet."
+                    errorMessage = "Erreur de connexion. Vérifie ta connexion internet."
                 case .invalidResponse:
                     print("❌ [PAIEMENT] Réponse invalide du serveur")
                     errorMessage = "Réponse invalide du serveur. Veuillez réessayer."
@@ -776,7 +776,7 @@ class StripePaymentViewModel: ObservableObject {
                 print("   ✅ Paiement validé par Stripe")
                 print("   ⚠️ Statut premium non confirmé après 3 tentatives")
                 print("   → Le webhook peut prendre plus de temps")
-                errorMessage = "Paiement réussi, mais la vérification du statut prend plus de temps que prévu. Veuillez rafraîchir votre profil dans quelques instants."
+                errorMessage = "Paiement réussi, mais la vérification du statut prend plus de temps que prévu. Rafraîchis ton profil dans quelques instants."
             }
         } else {
             // Le paiement a échoué ou a été annulé
@@ -824,7 +824,7 @@ struct ActivationInProgressView: View {
                         .foregroundColor(.white.opacity(0.9))
                         .multilineTextAlignment(.center)
                     
-                    Text("Nous vérifions l'activation de votre abonnement avec le serveur.")
+                    Text("Nous vérifions l'activation de ton abonnement avec le serveur.")
                         .font(.system(size: 14, weight: .regular))
                         .foregroundColor(.white.opacity(0.7))
                         .multilineTextAlignment(.center)

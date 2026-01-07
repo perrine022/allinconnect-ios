@@ -26,19 +26,21 @@ struct CardView: View {
             AppGradient.main
                 .ignoresSafeArea()
             
-            ScrollView {
-                VStack(spacing: 0) {
-                    // Titre en haut
-                    HStack {
-                        Spacer()
-                        Text("Ma Carte")
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(.white)
-                        Spacer()
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.top, 2)
-                    .padding(.bottom, 16)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(spacing: 0) {
+                        // Titre en haut - ID pour scroll vers le haut
+                        HStack {
+                            Spacer()
+                            Text("Ma Carte")
+                                .font(.system(size: 28, weight: .bold))
+                                .foregroundColor(.white)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 96)
+                        .padding(.top, 2)
+                        .padding(.bottom, 16)
+                        .id("top")
         
                     
                     // États de chargement et d'erreur - selon guidelines Apple
@@ -69,7 +71,7 @@ struct CardView: View {
                                 .font(.system(size: 14))
                                 .foregroundColor(.gray)
                                 .multilineTextAlignment(.center)
-                                .padding(.horizontal)
+                                .padding(.horizontal, 96)
                             
                             Button(action: {
                                 viewModel.loadData()
@@ -120,6 +122,22 @@ struct CardView: View {
                                     .background(Color.white.opacity(0.9))
                                     .cornerRadius(6)
                                 
+                                // Date de validité
+                                if let expirationDate = viewModel.cardExpirationDate {
+                                    HStack(spacing: 4) {
+                                        Text("Valide jusqu'au")
+                                            .font(.system(size: 11, weight: .medium))
+                                            .foregroundColor(.black.opacity(0.8))
+                                        Text(viewModel.formattedExpirationDate)
+                                            .font(.system(size: 11, weight: .bold))
+                                            .foregroundColor(.black)
+                                    }
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 5)
+                                    .background(Color.white.opacity(0.9))
+                                    .cornerRadius(6)
+                                }
+                                
                                 // Bouton "Gérer ma famille" si carte familiale et si l'utilisateur est propriétaire
                                 if (viewModel.cardType == "FAMILY" || viewModel.cardType == "CLIENT_FAMILY") && viewModel.isCardOwner {
                                     Button(action: {
@@ -144,12 +162,29 @@ struct CardView: View {
                             }
                             .padding(16)
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                            
+                            // Badge "Actif" en haut à droite
+                            VStack {
+                                HStack {
+                                    Spacer()
+                                    Text("Actif")
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 5)
+                                        .background(Color.green)
+                                        .cornerRadius(8)
+                                        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+                                }
+                                Spacer()
+                            }
+                            .padding(16)
                         }
                         .frame(height: 220) // Format carte de crédit (ratio ~2:1)
                         .frame(maxWidth: .infinity)
                         .cornerRadius(20)
                         .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 4)
-                        .padding(.horizontal, 28)
+                        .padding(.horizontal, 112)
                         .padding(.top, 0)
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
                         .animation(.easeInOut(duration: 0.3), value: viewModel.hasLoadedOnce)
@@ -237,7 +272,7 @@ struct CardView: View {
                                 )
                             }
                         }
-                        .padding(.horizontal, 28)
+                        .padding(.horizontal, 112)
                         .padding(.top, 24)
                         
                         // Section lien de parrainage
@@ -290,7 +325,7 @@ struct CardView: View {
                             RoundedRectangle(cornerRadius: 18)
                                 .stroke(Color.white.opacity(0.15), lineWidth: 1)
                         )
-                        .padding(.horizontal, 28)
+                        .padding(.horizontal, 112)
                         .padding(.top, 24)
                         
                         // Espace pour le footer
@@ -300,6 +335,14 @@ struct CardView: View {
                         // Vue d'abonnement si pas de carte ou carte inactive (seulement après chargement)
                         CardSubscriptionView()
                             .padding(.top, 20)
+                    }
+                    }
+                }
+                .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ScrollToTop"))) { notification in
+                    if let tab = notification.userInfo?["tab"] as? TabItem, tab == .card {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            proxy.scrollTo("top", anchor: .top)
+                        }
                     }
                 }
             }

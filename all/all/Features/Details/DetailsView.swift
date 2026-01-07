@@ -192,7 +192,7 @@ struct DetailsView: View {
                                 ) {
                                     Text(description)
                                         .font(.system(size: 16, weight: .regular))
-                                        .foregroundColor(.appTextSecondary)
+                                        .foregroundColor(.white)
                                         .lineSpacing(6)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }

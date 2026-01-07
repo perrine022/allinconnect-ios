@@ -49,7 +49,7 @@ struct ProSubscriptionView: View {
                             .padding(.horizontal, 20)
                             
                             // Texte explicatif
-                            Text("Pour accéder à tous les avantages de la plateforme, vous devez souscrire à un abonnement Pro.")
+                            Text("Pour accéder à tous les avantages de la plateforme, tu dois souscrire à un abonnement Pro.")
                                 .font(.system(size: 14, weight: .regular))
                                 .foregroundColor(.white.opacity(0.9))
                                 .multilineTextAlignment(.center)
