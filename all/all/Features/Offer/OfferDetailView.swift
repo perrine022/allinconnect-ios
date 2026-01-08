@@ -237,30 +237,99 @@ struct OfferDetailView: View {
                                 .cornerRadius(12)
                                 .padding(.horizontal, 20)
                                 
-                                // Bouton voir le partenaire
-                                if let partner = viewModel.partner {
+                                // Bouton voir le partenaire - toujours affiché si l'offre a un businessName ou un professionnel associé
+                                if !offer.businessName.isEmpty || viewModel.professionalId != nil || offer.partnerId != nil {
                                     Button(action: {
-                                        selectedPartner = partner
-                                    }) {
-                                        HStack(spacing: 12) {
-                                            Image(systemName: "building.2.fill")
-                                                .font(.system(size: 18))
-                                            
-                                            Text("Voir le partenaire")
-                                                .font(.system(size: 16, weight: .semibold))
+                                        print("═══════════════════════════════════════════════════════════")
+                                        print("🔘 [OFFER DETAIL] Bouton 'Voir le partenaire' cliqué")
+                                        print("═══════════════════════════════════════════════════════════")
+                                        print("🔘 [OFFER DETAIL] 📋 État actuel:")
+                                        print("   - Partner chargé: \(viewModel.partner != nil ? "OUI" : "NON")")
+                                        print("   - ProfessionalId disponible: \(viewModel.professionalId != nil ? "OUI (\(viewModel.professionalId!))" : "NON")")
+                                        print("   - Offer partnerId: \(offer.partnerId?.uuidString ?? "nil")")
+                                        print("   - Offer apiId: \(offer.apiId != nil ? "\(offer.apiId!)" : "nil")")
+                                        print("   - Offer businessName: \(offer.businessName)")
+                                        
+                                        // Si le partenaire est déjà chargé, naviguer directement
+                                        if let partner = viewModel.partner {
+                                            print("🔘 [OFFER DETAIL] ✅ Partenaire déjà chargé - Navigation directe")
+                                            print("   - Partner ID: \(partner.id)")
+                                            print("   - Partner apiId: \(partner.apiId != nil ? "\(partner.apiId!)" : "nil")")
+                                            selectedPartner = partner
+                                        } else if let professionalId = viewModel.professionalId {
+                                            print("🔘 [OFFER DETAIL] ✅ ProfessionalId disponible - Création Partner temporaire")
+                                            print("   - ProfessionalId: \(professionalId)")
+                                            // Si on a un professionalId, créer un Partner temporaire avec l'apiId
+                                            // PartnerDetailView chargera les détails depuis l'API
+                                            let tempPartner = Partner(
+                                                id: UUID(),
+                                                name: offer.businessName,
+                                                category: "",
+                                                address: "",
+                                                city: "",
+                                                postalCode: "",
+                                                phone: nil,
+                                                email: nil,
+                                                website: nil,
+                                                instagram: nil,
+                                                description: nil,
+                                                rating: 0,
+                                                reviewCount: 0,
+                                                discount: nil,
+                                                imageName: "person.circle.fill",
+                                                headerImageName: "person.circle.fill",
+                                                establishmentImageUrl: nil,
+                                                isFavorite: false,
+                                                apiId: professionalId
+                                            )
+                                            print("🔘 [OFFER DETAIL] 📤 Navigation vers PartnerDetailView avec apiId: \(professionalId)")
+                                            selectedPartner = tempPartner
+                                        } else if let partnerId = offer.partnerId,
+                                                  let partner = MockDataService.shared.getPartnerById(id: partnerId) {
+                                            print("🔘 [OFFER DETAIL] ✅ PartnerId mocké trouvé - Navigation avec mock")
+                                            print("   - PartnerId: \(partnerId)")
+                                            // Fallback vers MockDataService
+                                            selectedPartner = partner
+                                        } else if let offerApiId = offer.apiId {
+                                            print("🔘 [OFFER DETAIL] ⏳ Récupération du professionalId depuis l'API...")
+                                            print("   - Offer apiId: \(offerApiId)")
+                                            // Si on a un apiId d'offre mais pas de professionalId, récupérer uniquement le professionalId
+                                            // sans recharger toute l'offre pour éviter le re-render
+                                            Task { @MainActor in
+                                                if let professionalId = await viewModel.getProfessionalId(offerId: offerApiId) {
+                                                    print("🔘 [OFFER DETAIL] ✅ ProfessionalId récupéré: \(professionalId)")
+                                                    // Créer un Partner temporaire avec l'apiId
+                                                    let tempPartner = Partner(
+                                                        id: UUID(),
+                                                        name: offer.businessName,
+                                                        category: "",
+                                                        address: "",
+                                                        city: "",
+                                                        postalCode: "",
+                                                        phone: nil,
+                                                        email: nil,
+                                                        website: nil,
+                                                        instagram: nil,
+                                                        description: nil,
+                                                        rating: 0,
+                                                        reviewCount: 0,
+                                                        discount: nil,
+                                                        imageName: "person.circle.fill",
+                                                        headerImageName: "person.circle.fill",
+                                                        establishmentImageUrl: nil,
+                                                        isFavorite: false,
+                                                        apiId: professionalId
+                                                    )
+                                                    print("🔘 [OFFER DETAIL] 📤 Navigation vers PartnerDetailView avec apiId: \(professionalId)")
+                                                    selectedPartner = tempPartner
+                                                } else {
+                                                    print("🔘 [OFFER DETAIL] ❌ Impossible de récupérer le professionalId")
+                                                }
+                                            }
+                                        } else {
+                                            print("🔘 [OFFER DETAIL] ❌ Aucune information disponible pour naviguer vers le partenaire")
                                         }
-                                        .foregroundColor(.white)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 14)
-                                        .background(Color.red)
-                                        .cornerRadius(12)
-                                    }
-                                    .padding(.horizontal, 20)
-                                } else if let partnerId = offer.partnerId,
-                                          let partner = MockDataService.shared.getPartnerById(id: partnerId) {
-                                    // Fallback vers MockDataService si le partenaire n'est pas chargé depuis l'API
-                                    Button(action: {
-                                        selectedPartner = partner
+                                        print("═══════════════════════════════════════════════════════════")
                                     }) {
                                         HStack(spacing: 12) {
                                             Image(systemName: "building.2.fill")

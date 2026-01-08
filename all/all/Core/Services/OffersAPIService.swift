@@ -66,7 +66,11 @@ struct OfferResponse: Codable, Identifiable {
     let endDate: String?
     let featured: Bool?
     let status: String?
-    let professional: ProfessionalResponse?
+    let professional: ProfessionalResponse? // Ancien format (pour compatibilité)
+    let professionalId: Int? // Nouveau format - ID du professionnel directement
+    let professionalName: String? // Nom du professionnel
+    let city: String? // Ville
+    let category: String? // Catégorie (ex: "BIEN_ETRE")
     let type: String? // "OFFRE" ou "EVENEMENT"
     let imageUrl: String?
     
@@ -80,6 +84,10 @@ struct OfferResponse: Codable, Identifiable {
         case featured
         case status
         case professional
+        case professionalId = "professionalId"
+        case professionalName = "professionalName"
+        case city
+        case category
         case type
         case imageUrl = "imageUrl"
     }
@@ -459,12 +467,16 @@ extension OfferResponse {
         let offerUUID = UUID(uuidString: String(format: "%08x-0000-0000-0000-%012x", id, id)) ?? UUID()
         
         // Déterminer le nom de l'entreprise depuis le professionnel
-        let businessName = professional?.firstName ?? "Entreprise"
+        // Priorité : professionalName (nouveau format) > professional.firstName + lastName (ancien format)
         let fullBusinessName: String
-        if let prof = professional, let firstName = prof.firstName, let lastName = prof.lastName {
+        if let professionalName = professionalName, !professionalName.isEmpty {
+            fullBusinessName = professionalName
+        } else if let prof = professional, let firstName = prof.firstName, let lastName = prof.lastName {
             fullBusinessName = "\(firstName) \(lastName)"
+        } else if let prof = professional, let firstName = prof.firstName {
+            fullBusinessName = firstName
         } else {
-            fullBusinessName = businessName
+            fullBusinessName = "Entreprise"
         }
         
         // Fonction helper pour formater une date ISO en format français
@@ -544,9 +556,14 @@ extension OfferResponse {
         let isClub10 = featured ?? false
         
         // Convertir l'ID du professionnel en UUID si disponible
-        let partnerId: UUID? = professional.flatMap { prof in
-            guard let profId = prof.id else { return nil }
-            return UUID(uuidString: String(format: "%08x-0000-0000-0000-%012x", profId, profId))
+        // Priorité : professionalId (nouveau format) > professional.id (ancien format)
+        let partnerId: UUID?
+        if let directProfessionalId = professionalId {
+            partnerId = UUID(uuidString: String(format: "%08x-0000-0000-0000-%012x", directProfessionalId, directProfessionalId))
+        } else if let prof = professional, let profId = prof.id {
+            partnerId = UUID(uuidString: String(format: "%08x-0000-0000-0000-%012x", profId, profId))
+        } else {
+            partnerId = nil
         }
         
         // Déterminer l'image par défaut selon l'activité/catégorie du professionnel

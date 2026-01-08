@@ -37,7 +37,7 @@ struct CardView: View {
                                 .foregroundColor(.white)
                             Spacer()
                         }
-                        .padding(.horizontal, 96)
+                        .padding(.horizontal, 80)
                         .padding(.top, 2)
                         .padding(.bottom, 16)
                         .id("top")
@@ -71,7 +71,7 @@ struct CardView: View {
                                 .font(.system(size: 14))
                                 .foregroundColor(.gray)
                                 .multilineTextAlignment(.center)
-                                .padding(.horizontal, 96)
+                                .padding(.horizontal, 80)
                             
                             Button(action: {
                                 viewModel.loadData()
@@ -101,26 +101,29 @@ struct CardView: View {
                             // Overlay avec texte en noir
                             VStack(alignment: .leading, spacing: 10) {
                                 Spacer()
-                                    .frame(height: 20) // Réduire l'espace pour remonter le contenu
+                                    .frame(height: 40) // Descendre le contenu d'une ligne
                                 
-                                // Nom et prénom utilisateur sans fond blanc
+                                // Nom et prénom utilisateur en blanc
                                 Text(viewModel.user.fullName)
                                     .font(.system(size: 20, weight: .bold))
-                                    .foregroundColor(.black)
+                                    .foregroundColor(.white)
+                                    .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
                                 
-                                // Date de validité sans fond blanc
+                                // Date de validité en blanc et plus gras
                                 if let expirationDate = viewModel.cardExpirationDate {
                                     HStack(spacing: 4) {
                                         Text("Valide jusqu'au")
-                                            .font(.system(size: 11, weight: .medium))
-                                            .foregroundColor(.black.opacity(0.8))
+                                            .font(.system(size: 13, weight: .bold))
+                                            .foregroundColor(.white)
                                         Text(viewModel.formattedExpirationDate)
-                                            .font(.system(size: 11, weight: .bold))
-                                            .foregroundColor(.black)
+                                            .font(.system(size: 13, weight: .bold))
+                                            .foregroundColor(.white)
                                     }
                                 }
                                 
-                                // Bouton "Gérer ma famille" si carte familiale et si l'utilisateur est propriétaire
+                                Spacer()
+                                
+                                // Bouton "Gérer ma famille" si carte familiale et si l'utilisateur est propriétaire - en bas
                                 if (viewModel.cardType == "FAMILY" || viewModel.cardType == "CLIENT_FAMILY") && viewModel.isCardOwner {
                                     Button(action: {
                                         showFamilyManagement = true
@@ -139,39 +142,38 @@ struct CardView: View {
                                         .background(Color.white.opacity(0.9))
                                         .cornerRadius(8)
                                     }
-                                    .padding(.top, 4)
                                 }
                             }
                             .padding(16)
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
                             
-                            // Badge "Actif" et "Carte familiale" en haut à droite
+                            // Badge "Carte familiale" et "Actif" en haut à droite
                             VStack(alignment: .trailing, spacing: 8) {
-                                HStack {
-                                    Spacer()
-                                    Text("Actif")
-                                        .font(.system(size: 12, weight: .bold))
-                                        .foregroundColor(.white)
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 5)
-                                        .background(Color.green)
-                                        .cornerRadius(8)
-                                        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
-                                }
-                                
-                                // Badge "Carte familiale" si type FAMILY ou CLIENT_FAMILY (sans fond blanc)
+                                // Badge "Carte familiale" en haut - texte en blanc, plus gras
                                 if viewModel.cardType == "FAMILY" || viewModel.cardType == "CLIENT_FAMILY" {
                                     HStack {
                                         Spacer()
                                         Text("Carte familiale")
-                                            .font(.system(size: 11, weight: .semibold))
-                                            .foregroundColor(.black)
-                                            .padding(.horizontal, 10)
-                                            .padding(.vertical, 5)
+                                            .font(.system(size: 13, weight: .bold))
+                                            .foregroundColor(.white)
+                                            .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
                                     }
                                 }
                                 
                                 Spacer()
+                                
+                                // Badge "Actif" en bas de la colonne, avant le bouton "Gérer ma famille" - en vert
+                                HStack {
+                                    Spacer()
+                                    Text("Actif")
+                                        .font(.system(size: 13, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(Color.green)
+                                        .cornerRadius(8)
+                                        .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
+                                }
                             }
                             .padding(16)
                         }
@@ -179,7 +181,7 @@ struct CardView: View {
                         .frame(maxWidth: .infinity)
                         .cornerRadius(20)
                         .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 4)
-                        .padding(.horizontal, 112)
+                        .padding(.horizontal, 100)
                         .padding(.top, 0)
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
                         .animation(.easeInOut(duration: 0.3), value: viewModel.hasLoadedOnce)
@@ -267,7 +269,7 @@ struct CardView: View {
                                 )
                             }
                         }
-                        .padding(.horizontal, 112)
+                        .padding(.horizontal, 100)
                         .padding(.top, 24)
                         
                         // Section lien de parrainage
@@ -320,7 +322,7 @@ struct CardView: View {
                             RoundedRectangle(cornerRadius: 18)
                                 .stroke(Color.white.opacity(0.15), lineWidth: 1)
                         )
-                        .padding(.horizontal, 112)
+                        .padding(.horizontal, 100)
                         .padding(.top, 24)
                         
                         // Espace pour le footer

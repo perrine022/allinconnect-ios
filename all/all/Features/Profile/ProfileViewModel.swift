@@ -239,26 +239,87 @@ class ProfileViewModel: ObservableObject {
         isLoadingFavorites = true
         favoritesError = nil
         
+        // Sauvegarder l'état précédent pour pouvoir le restaurer en cas d'erreur
+        let previousFavoriteState = partner.isFavorite
+        
+        // Mettre à jour immédiatement l'état visuel pour un feedback instantané
+        if let index = favoritePartners.firstIndex(where: { $0.id == partner.id }) {
+            let updatedPartner = favoritePartners[index]
+            favoritePartners[index] = Partner(
+                id: updatedPartner.id,
+                name: updatedPartner.name,
+                category: updatedPartner.category,
+                address: updatedPartner.address,
+                city: updatedPartner.city,
+                postalCode: updatedPartner.postalCode,
+                phone: updatedPartner.phone,
+                email: updatedPartner.email,
+                website: updatedPartner.website,
+                instagram: updatedPartner.instagram,
+                description: updatedPartner.description,
+                rating: updatedPartner.rating,
+                reviewCount: updatedPartner.reviewCount,
+                discount: updatedPartner.discount,
+                imageName: updatedPartner.imageName,
+                headerImageName: updatedPartner.headerImageName,
+                establishmentImageUrl: updatedPartner.establishmentImageUrl,
+                isFavorite: !updatedPartner.isFavorite,
+                apiId: updatedPartner.apiId
+            )
+        }
+        
         Task {
             do {
-                if partner.isFavorite {
+                if previousFavoriteState {
                     // Retirer des favoris
                     print("🗑️ Retrait du favori avec ID: \(apiId)")
                     try await favoritesAPIService.removeFavorite(professionalId: apiId)
+                    
+                    // Retirer de la liste favoritePartners après succès API
+                    favoritePartners.removeAll { $0.id == partner.id }
                 } else {
                     // Ajouter aux favoris
                     print("➕ Ajout du favori avec ID: \(apiId)")
                     try await favoritesAPIService.addFavorite(professionalId: apiId)
+                    
+                    // Recharger les favoris pour avoir les données complètes
+                    try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconde
+                    await loadFavorites()
                 }
                 
-                // Recharger les favoris depuis l'API après un court délai
-                print("✅ Favori modifié avec succès, rechargement...")
-                // Attendre un peu pour que le backend traite la requête
-                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconde
-                await loadFavorites()
+                isLoadingFavorites = false
             } catch {
                 isLoadingFavorites = false
                 print("❌ Erreur lors de la modification du favori: \(error)")
+                
+                // Restaurer l'état précédent en cas d'erreur
+                if let index = favoritePartners.firstIndex(where: { $0.id == partner.id }) {
+                    let updatedPartner = favoritePartners[index]
+                    favoritePartners[index] = Partner(
+                        id: updatedPartner.id,
+                        name: updatedPartner.name,
+                        category: updatedPartner.category,
+                        address: updatedPartner.address,
+                        city: updatedPartner.city,
+                        postalCode: updatedPartner.postalCode,
+                        phone: updatedPartner.phone,
+                        email: updatedPartner.email,
+                        website: updatedPartner.website,
+                        instagram: updatedPartner.instagram,
+                        description: updatedPartner.description,
+                        rating: updatedPartner.rating,
+                        reviewCount: updatedPartner.reviewCount,
+                        discount: updatedPartner.discount,
+                        imageName: updatedPartner.imageName,
+                        headerImageName: updatedPartner.headerImageName,
+                        establishmentImageUrl: updatedPartner.establishmentImageUrl,
+                        isFavorite: previousFavoriteState,
+                        apiId: updatedPartner.apiId
+                    )
+                } else if !previousFavoriteState {
+                    // Si on essayait d'ajouter et que ça a échoué, retirer de la liste
+                    favoritePartners.removeAll { $0.id == partner.id }
+                }
                 
                 // Afficher un message d'erreur user-friendly
                 if let apiError = error as? APIError {

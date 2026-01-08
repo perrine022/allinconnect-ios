@@ -42,7 +42,7 @@ struct AddSavingsPopupView: View {
                     // En-tête avec titre et bouton fermer
                     HStack {
                         Text(editingEntry == nil ? "Ajouter une économie" : "Modifier l'économie")
-                            .font(.system(size: 24, weight: .bold))
+                            .font(.system(size: 22, weight: .bold))
                             .foregroundColor(.white)
                         
                         Spacer()
@@ -61,24 +61,24 @@ struct AddSavingsPopupView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 8)
                 }
-                .padding(.bottom, 24)
+                .padding(.bottom, 20)
                 
-                // Contenu scrollable
+                // Contenu scrollable avec largeur limitée
                 ScrollView {
-                    VStack(spacing: 24) {
+                    VStack(spacing: 20) {
                         // Formulaire
-                        VStack(spacing: 20) {
+                        VStack(spacing: 16) {
                             // Montant
-                            VStack(alignment: .leading, spacing: 10) {
+                            VStack(alignment: .leading, spacing: 8) {
                                 Text("Montant (€)")
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(.system(size: 14, weight: .semibold))
                                     .foregroundColor(.white)
                                 
                                 HStack {
                                     TextField("0.00", text: $amount)
                                         .keyboardType(.decimalPad)
                                         .foregroundColor(.black)
-                                        .font(.system(size: 18, weight: .medium))
+                                        .font(.system(size: 16, weight: .medium))
                                         .focused($focusedField, equals: .amount)
                                         .onChange(of: amount) { oldValue, newValue in
                                             // Valider que ce sont uniquement des chiffres et des points
@@ -89,22 +89,22 @@ struct AddSavingsPopupView: View {
                                         }
                                     
                                     Text("€")
-                                        .font(.system(size: 18, weight: .semibold))
+                                        .font(.system(size: 16, weight: .semibold))
                                         .foregroundColor(.gray)
                                 }
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 16)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 14)
                                 .background(Color.white)
-                                .cornerRadius(12)
+                                .cornerRadius(10)
                             }
                             
                             // Date
-                            VStack(alignment: .leading, spacing: 10) {
+                            VStack(alignment: .leading, spacing: 8) {
                                 Text("Date")
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(.system(size: 14, weight: .semibold))
                                     .foregroundColor(.white)
                                 
-                                TextField("", text: $date, prompt: Text("JJ/MM/AAAA (ex: 25/12/2025)").foregroundColor(.gray.opacity(0.6)))
+                                TextField("", text: $date, prompt: Text("JJ/MM/AAAA").foregroundColor(.gray.opacity(0.6)))
                                     .keyboardType(.numbersAndPunctuation)
                                     .foregroundColor(.black)
                                     .font(.system(size: 16))
@@ -127,26 +127,26 @@ struct AddSavingsPopupView: View {
                                         
                                         date = formatted
                                     }
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 16)
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 14)
                                     .background(Color.white)
-                                    .cornerRadius(12)
+                                    .cornerRadius(10)
                             }
                             
                             // Magasin
-                            VStack(alignment: .leading, spacing: 10) {
+                            VStack(alignment: .leading, spacing: 8) {
                                 Text("Magasin")
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(.system(size: 14, weight: .semibold))
                                     .foregroundColor(.white)
                                 
                                 TextField("Nom du magasin", text: $store)
                                     .foregroundColor(.black)
                                     .font(.system(size: 16))
                                     .focused($focusedField, equals: .store)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 16)
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 14)
                                     .background(Color.white)
-                                    .cornerRadius(12)
+                                    .cornerRadius(10)
                             }
                         }
                         .padding(.horizontal, 20)
@@ -154,13 +154,13 @@ struct AddSavingsPopupView: View {
                         // Message d'erreur
                         if let errorMessage = errorMessage {
                             Text(errorMessage)
-                                .font(.system(size: 14, weight: .medium))
+                                .font(.system(size: 13, weight: .medium))
                                 .foregroundColor(.red)
-                                .padding(.horizontal, 20)
-                                .padding(.vertical, 12)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 10)
                                 .frame(maxWidth: .infinity)
                                 .background(Color.red.opacity(0.1))
-                                .cornerRadius(10)
+                                .cornerRadius(8)
                                 .padding(.horizontal, 20)
                         }
                         
@@ -195,18 +195,18 @@ struct AddSavingsPopupView: View {
                             isPresented = false
                         }) {
                             Text(editingEntry == nil ? "Ajouter" : "Modifier")
-                                .font(.system(size: 17, weight: .bold))
+                                .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
+                                .padding(.vertical, 14)
                                 .background(isValid ? Color.red : Color.gray.opacity(0.5))
-                                .cornerRadius(12)
+                                .cornerRadius(10)
                         }
                         .disabled(!isValid)
                         .padding(.horizontal, 20)
-                        .padding(.top, 8)
+                        .padding(.top, 4)
                     }
-                    .padding(.bottom, 24)
+                    .padding(.bottom, 20)
                 }
             }
         }

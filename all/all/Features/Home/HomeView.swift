@@ -436,7 +436,7 @@ struct HomeView: View {
                                         }
                                     }
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 12)
+                                    .padding(.vertical, 10)
                                     .background(
                                         LinearGradient(
                                             gradient: Gradient(colors: [
@@ -473,23 +473,19 @@ struct HomeView: View {
                     }
                     .padding(.top, 24)
                     
-                    // Carte Pro - pour les professionnels (uniquement si statut UNKNOWN)
-                    if viewModel.isUserUnknown {
-                        ProCard(onLearnMore: {
-                            proInfoNavigationId = UUID()
-                        })
-                        .padding(.horizontal, 20)
-                        .padding(.top, 16)
-                    }
+                    // Carte Pro - pour les professionnels (toujours affichée)
+                    ProCard(onLearnMore: {
+                        proInfoNavigationId = UUID()
+                    })
+                    .padding(.horizontal, 20)
+                    .padding(.top, 16)
                     
-                    // Carte CLUB10 - à la fin (uniquement si statut UNKNOWN)
-                    if viewModel.isUserUnknown {
-                        Club10Card(onLearnMore: {
-                            digitalCardInfoNavigationId = UUID()
-                        })
-                        .padding(.horizontal, 20)
-                        .padding(.top, 16)
-                    }
+                    // Carte CLUB10 - à la fin (toujours affichée)
+                    Club10Card(onLearnMore: {
+                        digitalCardInfoNavigationId = UUID()
+                    })
+                    .padding(.horizontal, 20)
+                    .padding(.top, 16)
                     
                     // Bouton "L'app qui pense à toi" - en bas de la page
                     Button(action: {}) {
@@ -585,7 +581,7 @@ struct ModernPartnerCard: View {
     var body: some View {
         Button(action: onTap) {
             ZStack(alignment: .topTrailing) {
-                // Fond avec gradient moderne et contour visible - plus marqué
+                // Fond avec gradient moderne et contour visible - plus marqué (rouge vers la gauche)
                 RoundedRectangle(cornerRadius: 16)
                     .fill(
                         LinearGradient(
@@ -594,8 +590,8 @@ struct ModernPartnerCard: View {
                                 Color.appDarkRed2,
                                 Color.red.opacity(0.9)
                             ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                            startPoint: .topTrailing,
+                            endPoint: .bottomLeading
                         )
                     )
                     .overlay(
