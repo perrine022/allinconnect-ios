@@ -21,6 +21,14 @@ class CardViewModel: ObservableObject {
     @Published var referralCode: String = ""
     @Published var referralLink: String = ""
     
+    // URL pour le QR code de parrainage
+    var referralQRCodeURL: String {
+        guard !referralCode.isEmpty else {
+            return "https://allinconnect-form.vercel.app/"
+        }
+        return "https://allinconnect-form.vercel.app/?code=\(referralCode)"
+    }
+    
     // Données depuis l'API
     @Published var isMember: Bool = false
     @Published var cardNumber: String? = nil

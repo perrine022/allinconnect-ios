@@ -272,47 +272,32 @@ struct CardView: View {
                         .padding(.horizontal, 100)
                         .padding(.top, 24)
                         
-                        // Section lien de parrainage
-                        VStack(alignment: .leading, spacing: 12) {
+                        // Section QR code de parrainage
+                        VStack(alignment: .center, spacing: 16) {
                             HStack(spacing: 8) {
-                                Image(systemName: "square.and.arrow.up")
+                                Image(systemName: "qrcode")
                                     .foregroundColor(.red)
                                     .font(.system(size: 16))
                                 
-                                Text("Lien de parrainage")
+                                Text("Code de parrainage")
                                     .font(.system(size: 17, weight: .bold))
                                     .foregroundColor(.white)
                             }
                             
-                            HStack(spacing: 12) {
-                                Text(viewModel.referralLink)
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(.white.opacity(0.9))
-                                
-                                Spacer()
-                                
-                                Button(action: {
-                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                                        viewModel.copyReferralLink()
-                                    }
-                                }) {
-                                    Image(systemName: "doc.on.doc")
-                                        .foregroundColor(.red)
-                                        .font(.system(size: 16))
-                                }
-                            }
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 11)
-                            .background(Color.appDarkRed2.opacity(0.7))
-                            .cornerRadius(10)
+                            // QR Code centré
+                            QRCodeView(urlString: viewModel.referralQRCodeURL, size: 200)
+                                .padding(20)
+                                .background(Color.white)
+                                .cornerRadius(12)
                             
                             Text("Gagnez 50% de la 1ère mensualité de chaque filleul !")
                                 .font(.system(size: 12, weight: .regular))
                                 .foregroundColor(.gray.opacity(0.9))
                                 .lineSpacing(2)
+                                .multilineTextAlignment(.center)
                         }
                         .padding(18)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(maxWidth: .infinity, alignment: .center)
                         .background(
                             RoundedRectangle(cornerRadius: 18)
                                 .fill(Color.appDarkRed1.opacity(0.85))
@@ -322,7 +307,7 @@ struct CardView: View {
                             RoundedRectangle(cornerRadius: 18)
                                 .stroke(Color.white.opacity(0.15), lineWidth: 1)
                         )
-                        .padding(.horizontal, 100)
+                        .padding(.horizontal, 20)
                         .padding(.top, 24)
                         
                         // Espace pour le footer

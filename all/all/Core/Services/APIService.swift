@@ -27,30 +27,6 @@ struct APIConfig {
     }
 }
 
-// MARK: - Auth Token Manager
-class AuthTokenManager {
-    static let shared = AuthTokenManager()
-    private let tokenKey = "auth_token"
-    
-    private init() {}
-    
-    func saveToken(_ token: String) {
-        UserDefaults.standard.set(token, forKey: tokenKey)
-    }
-    
-    func getToken() -> String? {
-        return UserDefaults.standard.string(forKey: tokenKey)
-    }
-    
-    func removeToken() {
-        UserDefaults.standard.removeObject(forKey: tokenKey)
-    }
-    
-    func hasToken() -> Bool {
-        return getToken() != nil
-    }
-}
-
 // MARK: - API Error
 enum APIError: LocalizedError {
     case invalidURL
@@ -173,7 +149,7 @@ class APIService: APIServiceProtocol, ObservableObject {
         }
         
         // Log pour debug : vérifier que le token est bien envoyé (masqué pour la sécurité)
-        if let authHeader = request.value(forHTTPHeaderField: "Authorization") {
+        if request.value(forHTTPHeaderField: "Authorization") != nil {
             // Masquer complètement le token, ne montrer que "Bearer ..."
             print("[APIService] Authorization header: Bearer ...")
         } else {
