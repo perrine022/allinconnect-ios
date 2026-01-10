@@ -45,6 +45,9 @@ struct NotificationPreferencesView: View {
                                         title: "Nouvelles offres",
                                         isOn: $viewModel.newOffers
                                     )
+                                    .onChange(of: viewModel.newOffers) { oldValue, newValue in
+                                        print("🔔 [TOGGLE] Nouvelles offres changé: \(oldValue) → \(newValue)")
+                                    }
                                     
                                     Divider()
                                         .background(Color.white.opacity(0.1))
@@ -54,6 +57,9 @@ struct NotificationPreferencesView: View {
                                         title: "Nouvel indépendant dans mon secteur",
                                         isOn: $viewModel.newIndependent
                                     )
+                                    .onChange(of: viewModel.newIndependent) { oldValue, newValue in
+                                        print("🔔 [TOGGLE] Nouvel indépendant changé: \(oldValue) → \(newValue)")
+                                    }
                                     
                                     Divider()
                                         .background(Color.white.opacity(0.1))
@@ -63,6 +69,9 @@ struct NotificationPreferencesView: View {
                                         title: "Événements locaux",
                                         isOn: $viewModel.localEvents
                                     )
+                                    .onChange(of: viewModel.localEvents) { oldValue, newValue in
+                                        print("🔔 [TOGGLE] Événements locaux changé: \(oldValue) → \(newValue)")
+                                    }
                                     
                                     Divider()
                                         .background(Color.white.opacity(0.1))
@@ -88,6 +97,9 @@ struct NotificationPreferencesView: View {
                                             step: 1
                                         )
                                         .tint(.red)
+                                        .onChange(of: viewModel.notificationRadius) { oldValue, newValue in
+                                            print("🔔 [TOGGLE] Rayon de notification changé: \(Int(oldValue)) km → \(Int(newValue)) km")
+                                        }
                                         
                                         HStack {
                                             Text("5 km")
@@ -122,11 +134,15 @@ struct NotificationPreferencesView: View {
                                 
                                 VStack(spacing: 0) {
                                     ForEach(Array(viewModel.categories.enumerated()), id: \.element.key) { index, category in
+                                        let binding = bindingForCategory(category.key)
                                         CategoryToggleRow(
                                             emoji: category.emoji,
                                             title: category.title,
-                                            isOn: bindingForCategory(category.key)
+                                            isOn: binding
                                         )
+                                        .onChange(of: binding.wrappedValue) { oldValue, newValue in
+                                            print("🔔 [TOGGLE] Catégorie '\(category.title)' (\(category.key)) changé: \(oldValue) → \(newValue)")
+                                        }
                                         
                                         if index < viewModel.categories.count - 1 {
                                             Divider()
@@ -159,9 +175,9 @@ struct NotificationPreferencesView: View {
                                     .padding(.horizontal, 20)
                             }
                             
-                            // Bouton de sauvegarde
+                            // Bouton de sauvegarde manuel (optionnel, car sauvegarde automatique activée)
                             Button(action: {
-                                viewModel.savePreferences()
+                                viewModel.savePreferences(showSuccessMessage: true)
                             }) {
                                 HStack {
                                     if viewModel.isSaving {
@@ -169,18 +185,25 @@ struct NotificationPreferencesView: View {
                                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                             .padding(.trailing, 8)
                                     }
-                                    Text(viewModel.isSaving ? "Sauvegarde..." : "Sauvegarder les préférences")
+                                    Text(viewModel.isSaving ? "Sauvegarde..." : "Forcer la sauvegarde")
                                         .font(.system(size: 16, weight: .semibold))
                                         .foregroundColor(.white)
                                 }
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 16)
-                                .background(viewModel.isSaving ? Color.gray : Color.red)
+                                .background(viewModel.isSaving ? Color.gray : Color.red.opacity(0.7))
                                 .cornerRadius(12)
                             }
                             .disabled(viewModel.isSaving)
                             .padding(.horizontal, 20)
                             .padding(.top, 8)
+                            
+                            // Message informatif
+                            Text("Les préférences sont sauvegardées automatiquement")
+                                .font(.system(size: 12, weight: .regular))
+                                .foregroundColor(.gray.opacity(0.8))
+                                .padding(.horizontal, 20)
+                                .padding(.top, 4)
                             
                             Spacer()
                                 .frame(height: 100)

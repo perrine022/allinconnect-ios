@@ -216,6 +216,7 @@ class SignUpViewModel: ObservableObject {
                     password: password,
                     address: nil, // Peut être ajouté plus tard
                     city: city,
+                    postalCode: postalCode.trimmingCharacters(in: .whitespaces).isEmpty ? nil : postalCode.trimmingCharacters(in: .whitespaces),
                     birthDate: birthDateString,
                     userType: nil, // Ne pas envoyer userType - le backend mettra UNKNOWN par défaut
                     subscriptionType: .free, // Par défaut FREE

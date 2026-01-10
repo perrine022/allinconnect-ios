@@ -321,12 +321,15 @@ class EditProfileViewModel: ObservableObject {
                 }
                 
                 // Créer la requête de mise à jour
+                // Note: city est utilisé pour stocker le code postal dans UserDefaults
+                // Le backend utilisera automatiquement le postalCode du profil si disponible
                 let updateRequest = UpdateProfileRequest(
                     firstName: firstName.trimmingCharacters(in: .whitespaces),
                     lastName: lastName.trimmingCharacters(in: .whitespaces),
                     email: email.trimmingCharacters(in: .whitespaces).lowercased(),
                     address: address.trimmingCharacters(in: .whitespaces).isEmpty ? nil : address.trimmingCharacters(in: .whitespaces),
                     city: city.trimmingCharacters(in: .whitespaces).isEmpty ? nil : city.trimmingCharacters(in: .whitespaces),
+                    postalCode: city.trimmingCharacters(in: .whitespaces).isEmpty ? nil : city.trimmingCharacters(in: .whitespaces), // Utiliser city comme postalCode pour l'instant
                     birthDate: birthDateString,
                     latitude: latitude,
                     longitude: longitude,

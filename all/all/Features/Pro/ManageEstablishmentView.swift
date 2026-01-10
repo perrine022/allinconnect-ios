@@ -592,6 +592,7 @@ class ManageEstablishmentViewModel: ObservableObject {
                     email: nil, // Pas de modification de l'email ici
                     address: address.trimmingCharacters(in: .whitespaces),
                     city: city.trimmingCharacters(in: .whitespaces),
+                    postalCode: postalCode.trimmingCharacters(in: .whitespaces).isEmpty ? nil : postalCode.trimmingCharacters(in: .whitespaces),
                     birthDate: nil, // Pas de modification de la date de naissance ici
                     latitude: latitude,
                     longitude: longitude,

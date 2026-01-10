@@ -16,6 +16,7 @@ struct UpdateProfileRequest: Codable {
     let email: String?
     let address: String?
     let city: String?
+    let postalCode: String?
     let birthDate: String? // Format YYYY-MM-DD
     let latitude: Double?
     let longitude: Double?
@@ -36,6 +37,7 @@ struct UpdateProfileRequest: Codable {
         case email
         case address
         case city
+        case postalCode = "postalCode"
         case birthDate = "birthDate"
         case latitude
         case longitude
