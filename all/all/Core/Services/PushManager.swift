@@ -102,9 +102,9 @@ class PushManager: NSObject {
             return
         }
         
-        // Déterminer l'environnement (DEVELOPMENT pour debug, PRODUCTION pour release)
+        // Déterminer l'environnement (SANDBOX pour debug, PRODUCTION pour release)
         #if DEBUG
-        let environment = "DEVELOPMENT"
+        let environment = "SANDBOX"
         #else
         let environment = "PRODUCTION"
         #endif

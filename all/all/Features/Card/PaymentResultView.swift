@@ -128,11 +128,11 @@ struct PaymentResultView: View {
     private var statusMessage: String {
         switch status {
         case .success:
-            return "Votre abonnement a été activé avec succès. Vous pouvez maintenant profiter de tous les avantages !"
+            return "Ton abonnement a été activé avec succès. Tu peux maintenant profiter de tous les avantages !"
         case .failed:
-            return "Le paiement n'a pas pu être effectué. Veuillez réessayer ou contacter le support."
+            return "Le paiement n'a pas pu être effectué. Réessaye ou contacte le support."
         case .pending:
-            return "Vérification du paiement en cours. Veuillez patienter..."
+            return "Vérification du paiement en cours. Patient un peu..."
         }
     }
 }

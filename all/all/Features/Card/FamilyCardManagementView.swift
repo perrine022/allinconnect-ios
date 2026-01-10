@@ -34,7 +34,7 @@ struct FamilyCardManagementView: View {
                             .padding(.top, 20)
                             
                             // Description
-                            Text("Vous pouvez ajouter jusqu'à 4 membres pour votre carte famille (5 personnes au total avec le propriétaire). Les membres existants et les invitations en attente sont affichés ci-dessous.")
+                            Text("Tu peux ajouter jusqu'à 4 membres pour ta carte famille (5 personnes au total avec le propriétaire). Les membres existants et les invitations en attente sont affichés ci-dessous.")
                                 .font(.system(size: 14, weight: .regular))
                                 .foregroundColor(.white.opacity(0.8))
                                 .padding(.horizontal, 20)

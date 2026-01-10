@@ -75,6 +75,14 @@ struct ProInfoView: View {
                                         title: "Accès au CLUB10",
                                         description: "Mis en avant toute l'année"
                                     )
+                                    
+                                    // Carte digitale incluse
+                                    ProBenefitCard(
+                                        icon: "creditcard.fill",
+                                        iconColor: .red,
+                                        title: "Carte digitale incluse",
+                                        description: "Bénéficie de tous les avantages de la carte digitale"
+                                    )
                                 }
                             }
                             .padding(.horizontal, 20)

@@ -64,7 +64,7 @@ struct HomeView: View {
                                 }
                             
                             Button(action: {}) {
-                                Image("SearchIcon")
+                                Image("search")
                                     .resizable()
                                     .scaledToFill()
                                     .frame(width: 24, height: 24)
@@ -535,6 +535,22 @@ struct HomeView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     showLocationPermission = true
                 }
+            }
+        }
+        .onChange(of: locationService.authorizationStatus) { _, newStatus in
+            // Recharger les offres et partenaires quand la permission est acceptée
+            if newStatus == .authorizedWhenInUse || newStatus == .authorizedAlways {
+                if viewModel.searchRadius > 0 {
+                    viewModel.loadOffersByCity()
+                    viewModel.loadPartners()
+                }
+            }
+        }
+        .onChange(of: locationService.currentLocation) { _, newLocation in
+            // Recharger les offres et partenaires quand la localisation est disponible et que le rayon est activé
+            if newLocation != nil && viewModel.searchRadius > 0 {
+                viewModel.loadOffersByCity()
+                viewModel.loadPartners()
             }
         }
         .sheet(isPresented: $showLocationPermission) {

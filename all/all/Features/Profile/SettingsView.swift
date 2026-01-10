@@ -17,6 +17,8 @@ struct SettingsView: View {
         case helpSupport = "Aide & Support"
         case terms = "Conditions générales"
         case privacyPolicy = "Politique de confidentialité"
+        case legalNotice = "Mentions légales"
+        case salesTerms = "Conditions générales de vente"
         
         var id: String { rawValue }
         
@@ -25,6 +27,8 @@ struct SettingsView: View {
             case .helpSupport: return "questionmark.circle.fill"
             case .terms: return "doc.text.fill"
             case .privacyPolicy: return "shield.fill"
+            case .legalNotice: return "info.circle.fill"
+            case .salesTerms: return "doc.text.magnifyingglass"
             }
         }
     }
@@ -51,7 +55,7 @@ struct SettingsView: View {
                             
                             // Sections
                             VStack(spacing: 0) {
-                                ForEach([SettingsSection.helpSupport, .terms, .privacyPolicy], id: \.id) { section in
+                                ForEach([SettingsSection.helpSupport, .terms, .privacyPolicy, .legalNotice, .salesTerms], id: \.id) { section in
                                     Button(action: {
                                         selectedSection = section
                                     }) {
@@ -79,7 +83,7 @@ struct SettingsView: View {
                                     .buttonStyle(PlainButtonStyle())
                                     .frame(maxWidth: .infinity)
                                     
-                                    if section != .privacyPolicy {
+                                    if section != .salesTerms {
                                         Divider()
                                             .background(Color.white.opacity(0.1))
                                             .padding(.leading, 54)
@@ -161,9 +165,13 @@ struct SettingsView: View {
             case .helpSupport:
                 HelpSupportView()
             case .terms:
-                TermsView(isPrivacyPolicy: false)
+                TermsView(viewType: .terms)
             case .privacyPolicy:
-                TermsView(isPrivacyPolicy: true)
+                TermsView(viewType: .privacyPolicy)
+            case .legalNotice:
+                TermsView(viewType: .legalNotice)
+            case .salesTerms:
+                TermsView(viewType: .salesTerms)
             }
         }
         .navigationDestination(item: $changePasswordNavigationId) { _ in

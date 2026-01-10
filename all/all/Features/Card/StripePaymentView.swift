@@ -18,7 +18,7 @@ struct StripePaymentView: View {
     // Paramètre optionnel pour afficher des messages informatifs selon le contexte
     // Note: Ne filtre plus les plans - tous les plans sont affichés
     var filterCategory: String? = nil // "PROFESSIONAL", "INDIVIDUAL", "FAMILY", ou "CLIENT" (INDIVIDUAL + FAMILY)
-    var showFamilyCardPromotion: Bool = false // Afficher le message "Pensez à la carte famille !" uniquement depuis "Obtenir ma carte"
+    var showFamilyCardPromotion: Bool = false // Afficher le message "Pense à la carte famille !" uniquement depuis "Obtenir ma carte"
     
     var body: some View {
         StripePaymentContentView(
@@ -186,7 +186,7 @@ private struct StripePaymentContentView: View {
                                     .font(.system(size: 16, weight: .bold))
                                     .foregroundColor(.white)
                                 
-                                Text("Partage les avantages avec jusqu'à 4 membres de ta famille")
+                                Text("Jusqu'à 4 proches à qui faire plaisir")
                                     .font(.system(size: 13, weight: .regular))
                                     .foregroundColor(.white.opacity(0.9))
                             }
@@ -290,6 +290,12 @@ struct PlanCard: View {
                         Text(plan.formattedPrice)
                             .font(.system(size: 32, weight: .bold))
                             .foregroundColor(.red)
+                        
+                        if plan.isAnnual {
+                            Text("2 mois offerts 🎉")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(.appGold)
+                        }
                     }
                     
                     Spacer()
@@ -342,7 +348,7 @@ struct PlanCard: View {
                             .font(.system(size: 14, weight: .regular))
                             .foregroundColor(.white.opacity(0.9))
                         if showFamilyCardPromotion {
-                            Text("• Pensez à la carte famille !")
+                            Text("• Pense à la carte famille !")
                                 .font(.system(size: 13, weight: .medium))
                                 .foregroundColor(.red.opacity(0.9))
                                 .italic()
@@ -553,7 +559,7 @@ class StripePaymentViewModel: ObservableObject {
             print("═══════════════════════════════════════════════════════════")
             print("❌ [ABONNEMENT] ERREUR: Le plan n'a pas de stripePriceId")
             print("═══════════════════════════════════════════════════════════")
-            errorMessage = "Erreur: Le plan sélectionné n'a pas d'ID Stripe valide. Veuillez réessayer."
+            errorMessage = "Erreur: Le plan sélectionné n'a pas d'ID Stripe valide. Réessaye plus tard."
             isProcessingPayment = false
             return
         }
@@ -670,14 +676,14 @@ class StripePaymentViewModel: ObservableObject {
                     errorMessage = "Erreur de connexion. Vérifie ta connexion internet."
                 case .invalidResponse:
                     print("❌ [PAIEMENT] Réponse invalide du serveur")
-                    errorMessage = "Réponse invalide du serveur. Veuillez réessayer."
+                    errorMessage = "Réponse invalide du serveur. Réessaye plus tard."
                 default:
                     print("❌ [PAIEMENT] Autre erreur API")
-                    errorMessage = "Erreur lors de l'initialisation du paiement. Veuillez réessayer."
+                    errorMessage = "Erreur lors de l'initialisation du paiement. Réessaye plus tard."
                 }
             } else {
                 print("❌ [PAIEMENT] Erreur inconnue")
-                errorMessage = "Erreur lors de l'initialisation du paiement. Veuillez réessayer."
+                errorMessage = "Erreur lors de l'initialisation du paiement. Réessaye plus tard."
             }
             print("═══════════════════════════════════════════════════════════")
             isProcessingPayment = false

@@ -51,7 +51,7 @@ struct CardView: View {
                                 .progressViewStyle(CircularProgressViewStyle(tint: .red))
                                 .scaleEffect(1.5)
                             
-                            Text("Chargement de votre carte...")
+                            Text("Chargement de ta carte...")
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(.white.opacity(0.9))
                         }

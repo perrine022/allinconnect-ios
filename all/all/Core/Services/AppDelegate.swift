@@ -150,9 +150,22 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         var navigationData: [String: Any] = [:]
         
         // Pour une nouvelle offre ou un événement
-        if let offerId = userInfo["offerId"] as? String {
-            navigationData["offerId"] = offerId
-            print("[AppDelegate] Notification pour offre/événement: \(offerId)")
+        // Le backend peut envoyer offerId comme Int ou String
+        if let offerIdInt = userInfo["offerId"] as? Int {
+            navigationData["offerId"] = String(offerIdInt)
+            print("[AppDelegate] Notification pour offre/événement: \(offerIdInt)")
+            
+            // Vérifier si c'est un événement
+            if let type = userInfo["type"] as? String, type == "EVENT" {
+                navigationData["type"] = "EVENT"
+                print("[AppDelegate] Type: Événement local")
+            } else {
+                navigationData["type"] = "OFFER"
+                print("[AppDelegate] Type: Offre")
+            }
+        } else if let offerIdString = userInfo["offerId"] as? String {
+            navigationData["offerId"] = offerIdString
+            print("[AppDelegate] Notification pour offre/événement: \(offerIdString)")
             
             // Vérifier si c'est un événement
             if let type = userInfo["type"] as? String, type == "EVENT" {
@@ -165,9 +178,13 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         }
         
         // Pour un nouvel établissement
-        if let professionalId = userInfo["professionalId"] as? String {
-            navigationData["professionalId"] = professionalId
-            print("[AppDelegate] Notification pour professionnel: \(professionalId)")
+        // Le backend peut envoyer professionalId comme Int ou String
+        if let professionalIdInt = userInfo["professionalId"] as? Int {
+            navigationData["professionalId"] = String(professionalIdInt)
+            print("[AppDelegate] Notification pour professionnel: \(professionalIdInt)")
+        } else if let professionalIdString = userInfo["professionalId"] as? String {
+            navigationData["professionalId"] = professionalIdString
+            print("[AppDelegate] Notification pour professionnel: \(professionalIdString)")
         }
         
         // Poster une notification pour déclencher la navigation

@@ -407,6 +407,20 @@ struct OffersView: View {
                 }
             }
         }
+        .onChange(of: locationService.authorizationStatus) { _, newStatus in
+            // Recharger les offres quand la permission est acceptée
+            if newStatus == .authorizedWhenInUse || newStatus == .authorizedAlways {
+                if viewModel.searchRadius > 0 {
+                    viewModel.loadOffers(forceRefresh: true)
+                }
+            }
+        }
+        .onChange(of: locationService.currentLocation) { _, newLocation in
+            // Recharger les offres quand la localisation est disponible et que le rayon est activé
+            if newLocation != nil && viewModel.searchRadius > 0 {
+                viewModel.loadOffers(forceRefresh: true)
+            }
+        }
         .sheet(isPresented: $showLocationPermission) {
             LocationPermissionView(locationService: locationService) {
                 showLocationPermission = false

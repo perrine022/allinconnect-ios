@@ -18,22 +18,32 @@ struct QRCodeView: View {
     }
     
     var body: some View {
-        if let qrCodeImage = generateQRCode(from: urlString) {
-            Image(uiImage: qrCodeImage)
-                .interpolation(.none)
-                .resizable()
-                .scaledToFit()
-                .frame(width: size, height: size)
-        } else {
-            // Fallback si la génération échoue
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.gray.opacity(0.3))
-                .frame(width: size, height: size)
-                .overlay(
-                    Image(systemName: "qrcode")
-                        .font(.system(size: size * 0.3))
-                        .foregroundColor(.gray)
-                )
+        VStack(spacing: 12) {
+            if let qrCodeImage = generateQRCode(from: urlString) {
+                Image(uiImage: qrCodeImage)
+                    .interpolation(.none)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: size, height: size)
+            } else {
+                // Fallback si la génération échoue
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: size, height: size)
+                    .overlay(
+                        Image(systemName: "qrcode")
+                            .font(.system(size: size * 0.3))
+                            .foregroundColor(.gray)
+                    )
+            }
+            
+            // Lien URL en dessous du QR code
+            Text(urlString)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.primary)
+                .textSelection(.enabled)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 8)
         }
     }
     

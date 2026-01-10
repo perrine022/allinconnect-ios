@@ -133,14 +133,24 @@ class HomeViewModel: ObservableObject {
                 print("[HomeViewModel] Filtre: type=OFFRE (uniquement les offres, pas les événements)")
                 print("═══════════════════════════════════════════════════════════")
                 
-                // Utiliser la même logique que OffersViewModel : utiliser cityText s'il est rempli
-                // Ne pas utiliser getUserMe() qui nécessite une authentification
+                // Déterminer les paramètres de recherche
                 var city: String? = nil
-                if !cityText.isEmpty {
+                var latitude: Double? = nil
+                var longitude: Double? = nil
+                var radius: Double? = nil
+                
+                // Si le rayon de recherche est activé et qu'on a la localisation, utiliser la géolocalisation
+                if searchRadius > 0, let location = locationService.currentLocation {
+                    latitude = location.coordinate.latitude
+                    longitude = location.coordinate.longitude
+                    radius = searchRadius
+                    print("[HomeViewModel] 📍 Utilisation de la géolocalisation: lat=\(latitude!), lon=\(longitude!), radius=\(radius!) km")
+                } else if !cityText.isEmpty {
+                    // Sinon, utiliser la ville si spécifiée (seulement si pas de recherche par rayon)
                     city = cityText
                     print("[HomeViewModel] 📍 Utilisation de la ville depuis cityText: \(cityText)")
                 } else {
-                    print("[HomeViewModel] 📍 Aucune ville spécifiée, chargement de toutes les offres")
+                    print("[HomeViewModel] 📍 Aucune ville ou géolocalisation spécifiée, chargement de toutes les offres")
                 }
                 
                 // Utiliser exactement le même appel API que OffersViewModel
@@ -150,7 +160,10 @@ class HomeViewModel: ObservableObject {
                     professionalId: nil,
                     type: "OFFRE", // Filtrer uniquement les offres (pas les événements)
                     startDate: nil,
-                    endDate: nil
+                    endDate: nil,
+                    latitude: latitude,
+                    longitude: longitude,
+                    radius: radius
                 )
                 
                 print("[HomeViewModel] ✅ \(offersResponse.count) offres récupérées depuis l'API (type=OFFRE)")

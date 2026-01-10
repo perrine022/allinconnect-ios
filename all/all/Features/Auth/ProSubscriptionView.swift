@@ -105,7 +105,7 @@ struct ProSubscriptionView: View {
                                                 }
                                                 
                                                 if plan.isAnnual {
-                                                    Text("Économisez avec l'abonnement annuel 🎉")
+                                                    Text("2 mois offerts 🎉")
                                                         .font(.system(size: 12, weight: .medium))
                                                         .foregroundColor(.black.opacity(0.7))
                                                 }
@@ -157,6 +157,14 @@ struct ProSubscriptionView: View {
                                         iconColor: .appGold,
                                         title: "Accès au CLUB10",
                                         description: "Mis en avant toute l'année"
+                                    )
+                                    
+                                    // Carte digitale incluse
+                                    ProBenefitCard(
+                                        icon: "creditcard.fill",
+                                        iconColor: .red,
+                                        title: "Carte digitale incluse",
+                                        description: "Bénéficie de tous les avantages de la carte digitale"
                                     )
                                 }
                             }

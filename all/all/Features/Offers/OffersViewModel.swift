@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import CoreLocation
 
 @MainActor
 class OffersViewModel: ObservableObject {
@@ -50,10 +51,12 @@ class OffersViewModel: ObservableObject {
     private let offersAPIService: OffersAPIService
     private let dataService: MockDataService // Gardé pour les partenaires
     private let cacheService = CacheService.shared
+    private let locationService: LocationService
     
     init(
         offersAPIService: OffersAPIService? = nil,
-        dataService: MockDataService = MockDataService.shared
+        dataService: MockDataService = MockDataService.shared,
+        locationService: LocationService? = nil
     ) {
         // Créer le service dans un contexte MainActor
         if let offersAPIService = offersAPIService {
@@ -62,6 +65,8 @@ class OffersViewModel: ObservableObject {
             self.offersAPIService = OffersAPIService()
         }
         self.dataService = dataService
+        // Accéder à LocationService.shared dans un contexte MainActor
+        self.locationService = locationService ?? LocationService.shared
         loadOffers()
     }
     
@@ -89,10 +94,20 @@ class OffersViewModel: ObservableObject {
                 // Déterminer les paramètres de filtrage
                 var city: String? = nil
                 var category: OfferCategory? = nil
+                var latitude: Double? = nil
+                var longitude: Double? = nil
+                var radius: Double? = nil
                 
-                // Si une ville est spécifiée dans cityText, l'utiliser
-                if !cityText.isEmpty {
+                // Si le rayon de recherche est activé et qu'on a la localisation, utiliser la géolocalisation
+                if searchRadius > 0, let location = locationService.currentLocation {
+                    latitude = location.coordinate.latitude
+                    longitude = location.coordinate.longitude
+                    radius = searchRadius
+                    print("[OffersViewModel] 📍 Utilisation de la géolocalisation: lat=\(latitude!), lon=\(longitude!), radius=\(radius!) km")
+                } else if !cityText.isEmpty {
+                    // Sinon, utiliser la ville si spécifiée (seulement si pas de recherche par rayon)
                     city = cityText
+                    print("[OffersViewModel] 📍 Utilisation de la ville: \(cityText)")
                 }
                 
                 // Convertir le secteur sélectionné en catégorie API
@@ -124,7 +139,10 @@ class OffersViewModel: ObservableObject {
                     professionalId: nil,
                     type: apiType,
                     startDate: startDateString,
-                    endDate: endDateString
+                    endDate: endDateString,
+                    latitude: latitude,
+                    longitude: longitude,
+                    radius: radius
                 )
                 
                 // Convertir les réponses en modèles Offer
@@ -161,8 +179,17 @@ class OffersViewModel: ObservableObject {
             // Déterminer les paramètres de filtrage
             var city: String? = nil
             var category: OfferCategory? = nil
+            var latitude: Double? = nil
+            var longitude: Double? = nil
+            var radius: Double? = nil
             
-            if !cityText.isEmpty {
+            // Si le rayon de recherche est activé et qu'on a la localisation, utiliser la géolocalisation
+            if searchRadius > 0, let location = locationService.currentLocation {
+                latitude = location.coordinate.latitude
+                longitude = location.coordinate.longitude
+                radius = searchRadius
+            } else if !cityText.isEmpty {
+                // Sinon, utiliser la ville si spécifiée
                 city = cityText
             }
             
@@ -192,7 +219,10 @@ class OffersViewModel: ObservableObject {
                 professionalId: nil,
                 type: apiType,
                 startDate: startDateString,
-                endDate: endDateString
+                endDate: endDateString,
+                latitude: latitude,
+                longitude: longitude,
+                radius: radius
             )
             
             let refreshedOffers = offersResponse.map { $0.toOffer() }

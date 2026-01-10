@@ -169,19 +169,27 @@ struct HelpSupportView: View {
 struct FAQView: View {
     @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) private var dismiss
-    @State private var expandedQuestion: Int? = nil
+    @State private var expandedQuestion: String? = nil
     
-    let faqItems: [(question: String, answer: String)] = [
-        ("Comment devenir partenaire ALL IN Connect ?", "Pour devenir partenaire, vous devez créer un compte professionnel depuis l'application. Rendez-vous dans votre profil, section 'Espace Pro' et suivez les étapes d'inscription. Un commercial vous contactera sous 48h pour finaliser votre adhésion."),
-        ("Quels sont les avantages pour mon établissement ?", "En tant que partenaire, vous bénéficiez d'une visibilité accrue auprès de notre communauté, d'un système de gestion d'offres intégré, d'analyses de performance et d'un accès au réseau CLUB10 pour développer votre clientèle."),
-        ("Comment créer et gérer mes offres ?", "Dans votre espace Pro, accédez à 'Mes offres' puis cliquez sur 'Créer une offre'. Vous pouvez définir le titre, la description, la réduction, la durée de validité et une image. Modifiez ou supprimez vos offres à tout moment."),
-        ("Comment fonctionne le système de réduction CLUB10 ?", "Les membres CLUB10 bénéficient automatiquement de 10% de réduction chez tous les partenaires. La réduction est appliquée directement lors du paiement. Vous recevez le montant complet, la différence étant prise en charge par ALL IN Connect."),
-        ("Quels sont les frais d'adhésion pour les partenaires ?", "L'adhésion est mensuelle avec un engagement minimum. Les tarifs varient selon votre secteur d'activité et votre localisation. Contactez-nous pour obtenir un devis personnalisé adapté à votre établissement."),
-        ("Comment gérer les informations de mon établissement ?", "Dans votre profil Pro, accédez à 'Gérer mon établissement' pour modifier vos coordonnées, votre adresse, vos horaires, votre description et votre photo. Les modifications sont visibles immédiatement sur votre fiche partenaire."),
-        ("Comment voir les statistiques de mon établissement ?", "Les statistiques (vues, clics, appels, favoris) sont disponibles dans votre espace Pro. Ces données vous permettent de suivre la performance de votre présence sur la plateforme."),
-        ("Puis-je proposer des offres spéciales à mes clients ?", "Oui, vous pouvez créer des offres ponctuelles ou récurrentes. Les offres peuvent être limitées dans le temps, avec un nombre de places disponibles, ou permanentes. Vous avez un contrôle total sur vos promotions."),
-        ("Comment les clients me contactent-ils ?", "Les clients peuvent vous appeler directement depuis votre fiche, vous envoyer un email, visiter votre site web ou vous suivre sur Instagram. Tous ces moyens de contact sont intégrés dans votre profil partenaire."),
-        ("Que faire en cas de problème technique ?", "Si vous rencontrez un problème, utilisez la section 'Signaler un problème' dans Aide & Support. Notre équipe technique répond sous 24h. Vous pouvez aussi nous appeler au 04 78 00 00 00 ou nous écrire à support@allinconnect.fr.")
+    // FAQ pour les utilisateurs finaux
+    let userFAQItems: [(question: String, answer: String)] = [
+        ("Qu'est-ce qu'ALL IN Connect ?", "ALL IN Connect est une application qui regroupe les bons plans locaux, les professionnels, les offres et événements près de chez vous. Grâce à la carte PASS Club 10, vous bénéficiez de réductions chez tous les professionnels membres."),
+        ("Comment télécharger et utiliser l'application ?", "Téléchargez l'application depuis l'App Store ou Google Play, créez un compte gratuit et commencez à explorer les professionnels et les offres près de chez vous."),
+        ("Qu'est-ce que la carte PASS Club 10 ?", "C'est une carte personnelle sur votre téléphone qui vous offre 10 % de réduction chez tous les professionnels membres du Club 10."),
+        ("Combien coûte la carte PASS ?", "Le prix est indiqué lors de l'achat dans l'application. Le paiement est sécurisé via Stripe."),
+        ("Puis-je annuler ou me faire rembourser ma carte PASS Club10 ?", "Non, la carte digitale est un service numérique accessible immédiatement. Conformément au Code de la consommation, il n'y a pas de droit de rétractation après activation."),
+        ("Comment utiliser ma carte chez un professionnel ?", "Montrez simplement votre carte dans l'application avant le paiement pour bénéficier de la réduction."),
+        ("Puis-je parrainer mes amis ?", "Oui ! Partagez votre lien de parrainage depuis l'application et gagnez une cagnotte à utiliser chez les pros du réseau quand quelqu'un s'inscrit grâce à vous."),
+        ("Puis-je gérer mes notifications ?", "Oui, vous pouvez activer ou désactiver les notifications depuis les paramètres de l'application.")
+    ]
+    
+    // FAQ pour les professionnels
+    let proFAQItems: [(question: String, answer: String)] = [
+        ("Comment fonctionne l'abonnement professionnel ?", "L'abonnement vous permet de publier votre fiche établissement, vos offres et événements, et d'être visible auprès des utilisateurs de l'application.\n• Mensuel : 14,99 € / mois\n• Annuel : 149,99 € / an"),
+        ("Comment publier une offre ou un événement ?", "Depuis votre profil dans l'application, cliquez sur \"Publier une offre\" ou \"Ajouter un événement\", définissez la période de validité et confirmez."),
+        ("Puis-je supprimer ou modifier une offre après publication ?", "Oui, vous pouvez modifier ou supprimer vos offres à tout moment depuis votre espace pro."),
+        ("Comment résilier mon abonnement ?", "Vous pouvez résilier votre abonnement depuis votre compte dans l'application. L'accès prendra fin à la fin de la période en cours. Aucun remboursement n'est possible pour la période déjà payée."),
+        ("Comment contacter le support ?", "Pour toute question, envoyez un email à contact@allinconnect.fr depuis votre compte ou utilisez le formulaire de contact dans l'application.")
     ]
     
     var body: some View {
@@ -200,10 +208,10 @@ struct FAQView: View {
                     .ignoresSafeArea()
                     
                     ScrollView {
-                        VStack(spacing: 16) {
+                        VStack(spacing: 20) {
                             // Titre
                             HStack {
-                                Text("FAQ")
+                                Text("FAQ – ALL IN Connect")
                                     .font(.system(size: 28, weight: .bold))
                                     .foregroundColor(.white)
                                 Spacer()
@@ -211,16 +219,44 @@ struct FAQView: View {
                             .padding(.horizontal, 20)
                             .padding(.top, 20)
                             
-                            // Questions
-                            VStack(spacing: 12) {
-                                ForEach(Array(faqItems.enumerated()), id: \.offset) { index, item in
+                            // Section Utilisateurs finaux
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Pour les utilisateurs finaux / détenteurs de la carte digitale")
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundColor(.appGold)
+                                    .padding(.horizontal, 20)
+                                
+                                ForEach(userFAQItems, id: \.question) { item in
                                     FAQItem(
                                         question: item.question,
                                         answer: item.answer,
-                                        isExpanded: expandedQuestion == index,
+                                        isExpanded: expandedQuestion == item.question,
                                         onToggle: {
                                             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                                expandedQuestion = expandedQuestion == index ? nil : index
+                                                expandedQuestion = expandedQuestion == item.question ? nil : item.question
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                            
+                            // Section Professionnels
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Pour les professionnels")
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundColor(.appGold)
+                                    .padding(.horizontal, 20)
+                                    .padding(.top, 8)
+                                
+                                ForEach(proFAQItems, id: \.question) { item in
+                                    FAQItem(
+                                        question: item.question,
+                                        answer: item.answer,
+                                        isExpanded: expandedQuestion == item.question,
+                                        onToggle: {
+                                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                                expandedQuestion = expandedQuestion == item.question ? nil : item.question
                                             }
                                         }
                                     )

@@ -101,6 +101,10 @@ struct ClientSubscriptionView: View {
                                                                 Text("(engagement 6 mois)")
                                                                     .font(.system(size: 12, weight: .regular))
                                                                     .foregroundColor(.white.opacity(0.6))
+                                                            } else if plan.isAnnual {
+                                                                Text("2 mois offerts 🎉")
+                                                                    .font(.system(size: 12, weight: .semibold))
+                                                                    .foregroundColor(.appGold)
                                                             }
                                                         }
                                                     }

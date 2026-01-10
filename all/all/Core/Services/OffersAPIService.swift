@@ -157,10 +157,13 @@ class OffersAPIService: ObservableObject {
         professionalId: Int? = nil,
         type: String? = nil, // "OFFRE" ou "EVENEMENT" pour filtrer
         startDate: String? = nil, // Format ISO 8601: YYYY-MM-DDTHH:mm:ss
-        endDate: String? = nil // Format ISO 8601: YYYY-MM-DDTHH:mm:ss
+        endDate: String? = nil, // Format ISO 8601: YYYY-MM-DDTHH:mm:ss
+        latitude: Double? = nil,
+        longitude: Double? = nil,
+        radius: Double? = nil
     ) async throws -> [OfferResponse] {
         print("📡 [API] 📞 Appel GET /api/v1/offers (endpoint public)")
-        print("📡 [API] Paramètres: city=\(city ?? "nil"), type=\(type ?? "nil"), category=\(category?.rawValue ?? "nil")")
+        print("📡 [API] Paramètres: city=\(city ?? "nil"), type=\(type ?? "nil"), category=\(category?.rawValue ?? "nil"), lat=\(latitude?.description ?? "nil"), lon=\(longitude?.description ?? "nil"), radius=\(radius?.description ?? "nil")")
         
         var parameters: [String: Any] = [:]
         
@@ -186,6 +189,13 @@ class OffersAPIService: ObservableObject {
         
         if let endDate = endDate {
             parameters["endDate"] = endDate
+        }
+        
+        // Paramètres pour la recherche par rayon (obligatoires ensemble)
+        if let latitude = latitude, let longitude = longitude, let radius = radius {
+            parameters["lat"] = latitude
+            parameters["lon"] = longitude
+            parameters["radius"] = radius
         }
         
         do {
