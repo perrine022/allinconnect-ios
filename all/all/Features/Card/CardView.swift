@@ -103,21 +103,46 @@ struct CardView: View {
                                 Spacer()
                                     .frame(height: 40) // Descendre le contenu d'une ligne
                                 
-                                // Nom et prénom utilisateur en blanc
-                                Text(viewModel.user.fullName)
-                                    .font(.system(size: 20, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
+                                // Nom et "Carte familiale" sur la même ligne
+                                HStack(alignment: .center, spacing: 8) {
+                                    // Nom et prénom utilisateur en blanc
+                                    Text(viewModel.user.fullName)
+                                        .font(.system(size: 20, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
+                                    
+                                    // "Carte familiale" sur la même ligne que le nom
+                                    if viewModel.cardType == "FAMILY" || viewModel.cardType == "CLIENT_FAMILY" {
+                                        Text("Carte familiale")
+                                            .font(.system(size: 13, weight: .bold))
+                                            .foregroundColor(.white)
+                                            .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
+                                    }
+                                    
+                                    Spacer()
+                                }
                                 
-                                // Date de validité en blanc et plus gras
+                                // Date de validité et "Actif" en dessous
                                 if let expirationDate = viewModel.cardExpirationDate {
-                                    HStack(spacing: 4) {
-                                        Text("Valide jusqu'au")
+                                    HStack(alignment: .center, spacing: 8) {
+                                        HStack(spacing: 4) {
+                                            Text("Valide jusqu'au")
+                                                .font(.system(size: 13, weight: .bold))
+                                                .foregroundColor(.white)
+                                            Text(viewModel.formattedExpirationDate)
+                                                .font(.system(size: 13, weight: .bold))
+                                                .foregroundColor(.white)
+                                        }
+                                        
+                                        // Badge "Actif" juste en dessous de "Valide jusqu'au"
+                                        Text("Actif")
                                             .font(.system(size: 13, weight: .bold))
                                             .foregroundColor(.white)
-                                        Text(viewModel.formattedExpirationDate)
-                                            .font(.system(size: 13, weight: .bold))
-                                            .foregroundColor(.white)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 6)
+                                            .background(Color.green)
+                                            .cornerRadius(8)
+                                            .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
                                     }
                                 }
                                 
@@ -146,36 +171,6 @@ struct CardView: View {
                             }
                             .padding(16)
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-                            
-                            // Badge "Carte familiale" et "Actif" en haut à droite
-                            VStack(alignment: .trailing, spacing: 8) {
-                                // Badge "Carte familiale" en haut - texte en blanc, plus gras
-                                if viewModel.cardType == "FAMILY" || viewModel.cardType == "CLIENT_FAMILY" {
-                                    HStack {
-                                        Spacer()
-                                        Text("Carte familiale")
-                                            .font(.system(size: 13, weight: .bold))
-                                            .foregroundColor(.white)
-                                            .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
-                                    }
-                                }
-                                
-                                Spacer()
-                                
-                                // Badge "Actif" en bas de la colonne, avant le bouton "Gérer ma famille" - en vert
-                                HStack {
-                                    Spacer()
-                                    Text("Actif")
-                                        .font(.system(size: 13, weight: .bold))
-                                        .foregroundColor(.white)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
-                                        .background(Color.green)
-                                        .cornerRadius(8)
-                                        .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
-                                }
-                            }
-                            .padding(16)
                         }
                         .frame(height: 220) // Format carte de crédit (ratio ~2:1)
                         .frame(maxWidth: .infinity)
@@ -310,6 +305,11 @@ struct CardView: View {
                         .padding(.horizontal, 20)
                         .padding(.top, 24)
                         
+                        // Lien URL en dehors de la carte, juste en dessous
+                        ReferralLinkView(urlString: viewModel.referralQRCodeURL)
+                            .padding(.horizontal, 20)
+                            .padding(.top, 16)
+                        
                         // Espace pour le footer
                         Spacer()
                             .frame(height: 100)
@@ -392,6 +392,64 @@ struct CardView: View {
                         viewModel.loadData()
                     }
                 )
+            }
+        }
+    }
+}
+
+// Composant pour afficher le lien de parrainage avec bouton de copie
+struct ReferralLinkView: View {
+    let urlString: String
+    @State private var showCopiedMessage = false
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            // Champ de texte avec le lien
+            Text(urlString)
+                .font(.system(size: 13, weight: .regular))
+                .foregroundColor(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.white.opacity(0.1))
+                .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                )
+                .lineLimit(1)
+                .truncationMode(.tail)
+            
+            // Bouton de copie
+            Button(action: {
+                copyToClipboard()
+            }) {
+                HStack(spacing: 4) {
+                    Image(systemName: showCopiedMessage ? "checkmark.circle.fill" : "doc.on.doc")
+                        .font(.system(size: 14, weight: .medium))
+                    if showCopiedMessage {
+                        Text("Copié")
+                            .font(.system(size: 12, weight: .medium))
+                    }
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, showCopiedMessage ? 12 : 10)
+                .padding(.vertical, 10)
+                .background(showCopiedMessage ? Color.green : Color.red)
+                .cornerRadius(8)
+            }
+            .animation(.easeInOut(duration: 0.2), value: showCopiedMessage)
+        }
+    }
+    
+    private func copyToClipboard() {
+        UIPasteboard.general.string = urlString
+        showCopiedMessage = true
+        
+        // Réinitialiser le message après 2 secondes
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            withAnimation {
+                showCopiedMessage = false
             }
         }
     }

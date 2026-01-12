@@ -14,7 +14,7 @@ struct CustomSectorPicker: View {
     @State private var isExpanded: Bool = false
     
     var filteredSectors: [String] {
-        sectors.filter { !$0.isEmpty }
+        sectors // Afficher tous les secteurs, y compris "Tous les secteurs"
     }
     
     var body: some View {
@@ -30,9 +30,9 @@ struct CustomSectorPicker: View {
                         .foregroundColor(.gray.opacity(0.6))
                         .font(.system(size: 13))
                     
-                    Text(selectedSector.isEmpty ? "Secteur..." : selectedSector)
+                    Text(selectedSector.isEmpty || selectedSector == "Tous les secteurs" ? "Secteur..." : selectedSector)
                         .font(.system(size: 14))
-                        .foregroundColor(selectedSector.isEmpty ? .gray.opacity(0.6) : .black)
+                        .foregroundColor(selectedSector.isEmpty || selectedSector == "Tous les secteurs" ? .gray.opacity(0.6) : .black)
                     
                     Spacer()
                     
@@ -54,8 +54,8 @@ struct CustomSectorPicker: View {
                 VStack(spacing: 0) {
                     ForEach(Array(filteredSectors.enumerated()), id: \.element) { index, sector in
                         Button(action: {
-                            // Si on clique sur le secteur déjà sélectionné, le décocher
-                            if selectedSector == sector {
+                            // Si on clique sur "Tous les secteurs" ou le secteur déjà sélectionné, réinitialiser
+                            if sector == "Tous les secteurs" || selectedSector == sector {
                                 selectedSector = ""
                             } else {
                                 selectedSector = sector
@@ -77,7 +77,8 @@ struct CustomSectorPicker: View {
                                 
                                 Spacer()
                                 
-                                if selectedSector == sector {
+                                // Afficher la coche si le secteur est sélectionné, ou si "Tous les secteurs" est affiché et aucun secteur n'est sélectionné
+                                if selectedSector == sector || (sector == "Tous les secteurs" && selectedSector.isEmpty) {
                                     Image(systemName: "checkmark")
                                         .foregroundColor(.red)
                                         .font(.system(size: 12, weight: .semibold))
@@ -85,7 +86,7 @@ struct CustomSectorPicker: View {
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 9)
-                            .background(selectedSector == sector ? Color.gray.opacity(0.1) : Color.white)
+                            .background((selectedSector == sector || (sector == "Tous les secteurs" && selectedSector.isEmpty)) ? Color.gray.opacity(0.1) : Color.white)
                         }
                         .buttonStyle(PlainButtonStyle())
                         
@@ -112,7 +113,7 @@ struct CustomSectorPicker: View {
         
         VStack {
             CustomSectorPicker(
-                sectors: ["", "Santé & bien être", "Beauté & Esthétique", "Food & plaisirs gourmands"],
+                sectors: ["Tous les secteurs", "Santé & bien être", "Beauté & Esthétique", "Food & plaisirs gourmands"],
                 selectedSector: .constant(""),
                 onSelectionChange: {}
             )

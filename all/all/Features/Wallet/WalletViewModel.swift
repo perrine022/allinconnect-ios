@@ -121,7 +121,7 @@ class WalletViewModel: ObservableObject {
     
     // Secteurs disponibles
     let sectors: [String] = [
-        "",
+        "Tous les secteurs",
         "Santé & bien être",
         "Beauté & Esthétique",
         "Food & plaisirs gourmands",
@@ -280,7 +280,7 @@ class WalletViewModel: ObservableObject {
         }
         
         // Filtre par secteur
-        if !selectedSector.isEmpty {
+        if !selectedSector.isEmpty && selectedSector != "Tous les secteurs" {
             filtered = filtered.filter { partner in
                 partner.category.localizedCaseInsensitiveContains(selectedSector)
             }

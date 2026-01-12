@@ -32,7 +32,7 @@ class HomeViewModel: ObservableObject {
     
     // Secteurs disponibles
     let sectors: [String] = [
-        "",
+        "Tous les secteurs",
         "Santé & bien être",
         "Beauté & Esthétique",
         "Food & plaisirs gourmands",
@@ -238,7 +238,7 @@ class HomeViewModel: ObservableObject {
                     let longitude = location.coordinate.longitude
                     
                     // Convertir le secteur sélectionné en catégorie API
-                    let category: OfferCategory? = selectedSector.isEmpty ? nil : mapSectorToCategory(selectedSector)
+                    let category: OfferCategory? = (selectedSector.isEmpty || selectedSector == "Tous les secteurs") ? nil : mapSectorToCategory(selectedSector)
                     
                     // Recherche par rayon avec filtres optionnels
                     professionalsResponse = try await partnersAPIService.searchProfessionals(
@@ -595,7 +595,7 @@ class HomeViewModel: ObservableObject {
         }
         
         // Filtre par secteur
-        if !selectedSector.isEmpty {
+        if !selectedSector.isEmpty && selectedSector != "Tous les secteurs" {
             filtered = filtered.filter { professional in
                 professional.category.localizedCaseInsensitiveContains(selectedSector)
             }
@@ -634,7 +634,7 @@ class HomeViewModel: ObservableObject {
         }
         
         // Filtre par secteur avec mapping intelligent
-        if !selectedSector.isEmpty {
+        if !selectedSector.isEmpty && selectedSector != "Tous les secteurs" {
             filteredPartnersList = filteredPartnersList.filter { partner in
                 matchesSector(partnerCategory: partner.category, selectedSector: selectedSector)
             }

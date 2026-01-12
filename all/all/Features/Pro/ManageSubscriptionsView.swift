@@ -174,8 +174,12 @@ struct ManageSubscriptionsView: View {
                                 .padding(.top, 8)
                             }
                             
-                            // Bouton Résilier (uniquement si l'utilisateur a un abonnement actif)
-                            if viewModel.currentSubscriptionPlan != nil {
+                            // Bouton Résilier (uniquement si l'utilisateur a un abonnement actif et non résilié)
+                            // Vérifier que l'abonnement n'est pas déjà résilié
+                            let isSubscriptionCancelled = viewModel.subscriptionStatus == "CANCELLED" || 
+                                                          viewModel.subscriptionStatus == "CANCELED"
+                            
+                            if viewModel.currentSubscriptionPlan != nil && !isSubscriptionCancelled {
                                 Button(action: {
                                     showCancelAlert = true
                                 }) {
@@ -248,13 +252,18 @@ struct ManageSubscriptionsView: View {
         }
         .alert("Résilier l'abonnement", isPresented: $showCancelAlert) {
             Button("Annuler", role: .cancel) { }
-            Button("Résilier", role: .destructive) {
+            Button("À la fin de la période", role: .none) {
                 Task {
-                    await viewModel.cancelSubscription()
+                    await viewModel.cancelSubscription(atPeriodEnd: true)
+                }
+            }
+            Button("Immédiatement", role: .destructive) {
+                Task {
+                    await viewModel.cancelSubscription(atPeriodEnd: false)
                 }
             }
         } message: {
-            Text("Êtes-vous sûr de vouloir résilier votre abonnement ? Vous perdrez l'accès à toutes les fonctionnalités Pro.")
+            Text("Choisissez le type de résiliation :\n\n• À la fin de la période : Vous gardez l'accès jusqu'à la fin de la période payée.\n• Immédiatement : L'accès sera coupé tout de suite.")
         }
         .sheet(isPresented: $viewModel.showShareSheet) {
             if let fileURL = viewModel.downloadedInvoiceURL {

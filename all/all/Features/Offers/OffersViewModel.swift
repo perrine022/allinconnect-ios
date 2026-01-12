@@ -39,7 +39,7 @@ class OffersViewModel: ObservableObject {
     
     // Secteurs disponibles
     let sectors: [String] = [
-        "",
+        "Tous les secteurs",
         "Santé & bien être",
         "Beauté & Esthétique",
         "Food & plaisirs gourmands",
@@ -111,7 +111,7 @@ class OffersViewModel: ObservableObject {
                 }
                 
                 // Convertir le secteur sélectionné en catégorie API
-                if !selectedSector.isEmpty {
+                if !selectedSector.isEmpty && selectedSector != "Tous les secteurs" {
                     category = mapSectorToCategory(selectedSector)
                 }
                 

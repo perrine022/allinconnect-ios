@@ -450,6 +450,67 @@ class SubscriptionsAPIService: ObservableObject {
             throw error
         }
     }
+    
+    // MARK: - Cancel Subscription
+    /// Annule un abonnement
+    /// Endpoint: POST /api/v1/subscriptions/cancel?atPeriodEnd={true|false}
+    /// - Parameter atPeriodEnd: true pour résilier à la fin de la période, false pour résilier immédiatement
+    func cancelSubscription(atPeriodEnd: Bool = true) async throws {
+        print("═══════════════════════════════════════════════════════════")
+        print("💳 [SUBSCRIPTIONS] cancelSubscription() - Début")
+        print("═══════════════════════════════════════════════════════════")
+        print("💳 [SUBSCRIPTIONS] Endpoint: POST /api/v1/subscriptions/cancel")
+        print("💳 [SUBSCRIPTIONS] atPeriodEnd: \(atPeriodEnd)")
+        
+        // Construire l'URL avec le paramètre query
+        var urlComponents = URLComponents(string: "\(APIConfig.baseURL)/subscriptions/cancel")
+        urlComponents?.queryItems = [
+            URLQueryItem(name: "atPeriodEnd", value: String(atPeriodEnd))
+        ]
+        
+        guard let url = urlComponents?.url else {
+            throw APIError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        
+        // Ajouter le token d'authentification
+        if let authToken = AuthTokenManager.shared.getToken() {
+            request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        } else {
+            throw APIError.unauthorized(reason: "Token manquant")
+        }
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw APIError.invalidResponse
+            }
+            
+            if httpResponse.statusCode == 200 {
+                print("💳 [SUBSCRIPTIONS] ✅ Abonnement résilié avec succès")
+                print("   - Type: \(atPeriodEnd ? "À la fin de la période" : "Immédiat")")
+                print("═══════════════════════════════════════════════════════════")
+            } else if httpResponse.statusCode == 401 {
+                throw APIError.unauthorized(reason: "Token invalide")
+            } else {
+                let errorMessage = String(data: data, encoding: .utf8) ?? "Unknown error"
+                throw APIError.httpError(statusCode: httpResponse.statusCode, message: errorMessage)
+            }
+        } catch let error as APIError {
+            print("💳 [SUBSCRIPTIONS] ❌ Erreur API: \(error)")
+            print("═══════════════════════════════════════════════════════════")
+            throw error
+        } catch {
+            print("💳 [SUBSCRIPTIONS] ❌ Erreur lors de la résiliation: \(error.localizedDescription)")
+            print("═══════════════════════════════════════════════════════════")
+            throw APIError.networkError(error)
+        }
+    }
 }
 
 // MARK: - Payment Intent Response

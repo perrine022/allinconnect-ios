@@ -400,9 +400,8 @@ struct PartnerDetailView: View {
                                         
                                         Spacer()
                                         
-                                        // Afficher le bouton seulement si l'utilisateur est connecté avec statut CLIENT ou PRO
-                                        // et n'a pas déjà laissé un avis
-                                        if canLeaveRating && !viewModel.hasUserRated {
+                                        // Afficher le bouton si l'utilisateur est connecté avec statut CLIENT ou PRO
+                                        if canLeaveRating {
                                             Button(action: {
                                                 showRatingPopup = true
                                             }) {

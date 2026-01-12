@@ -37,6 +37,9 @@ class ManageSubscriptionsViewModel: ObservableObject {
     // Stocker le subscriptionId pour l'annulation
     @Published var currentSubscriptionId: String? = nil
     
+    // Stocker le statut de l'abonnement
+    @Published var subscriptionStatus: String? = nil
+    
     init(
         profileAPIService: ProfileAPIService? = nil,
         subscriptionsAPIService: SubscriptionsAPIService? = nil,
@@ -103,6 +106,9 @@ class ManageSubscriptionsViewModel: ObservableObject {
             print("   - premiumEnabled: \(subscriptionDetails.premiumEnabled)")
             print("   - planName: \(subscriptionDetails.planName ?? "nil")")
             print("   - currentPeriodEnd: \(subscriptionDetails.currentPeriodEnd ?? "nil")")
+            
+            // Stocker le statut de l'abonnement
+            subscriptionStatus = subscriptionDetails.status
             
             // Vérifier si l'utilisateur a un abonnement actif
             let hasActiveSubscription = subscriptionDetails.premiumEnabled && 
@@ -232,19 +238,23 @@ class ManageSubscriptionsViewModel: ObservableObject {
         }
     }
     
-    func cancelSubscription() async {
-        guard let subscriptionId = currentSubscriptionId else {
-            errorMessage = "Impossible de trouver l'ID de l'abonnement. Veuillez contacter le support."
-            print("[ManageSubscriptionsViewModel] ❌ subscriptionId manquant pour l'annulation")
-            return
-        }
-        
+    func cancelSubscription(atPeriodEnd: Bool = true) async {
         isLoading = true
         errorMessage = nil
         
+        print("═══════════════════════════════════════════════════════════")
+        print("💳 [GÉRER ABONNEMENT] cancelSubscription() - Début")
+        print("💳 [GÉRER ABONNEMENT] atPeriodEnd: \(atPeriodEnd)")
+        print("═══════════════════════════════════════════════════════════")
+        
         do {
-            // Appeler l'endpoint d'annulation via BillingViewModel
-            try await billingViewModel.cancelSubscription(subscriptionId: subscriptionId)
+            // Appeler le nouvel endpoint de résiliation
+            try await subscriptionsAPIService.cancelSubscription(atPeriodEnd: atPeriodEnd)
+            
+            print("💳 [GÉRER ABONNEMENT] ✅ Résiliation réussie")
+            
+            // Attendre un court délai pour que le backend traite la résiliation
+            try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 seconde
             
             // Recharger les données pour voir le nouveau statut
             await loadSubscriptionData()
@@ -253,10 +263,27 @@ class ManageSubscriptionsViewModel: ObservableObject {
             NotificationCenter.default.post(name: NSNotification.Name("SubscriptionUpdated"), object: nil)
             
             isLoading = false
+            
+            // Afficher un message de succès
+            if atPeriodEnd {
+                billingViewModel.successMessage = "Votre abonnement sera résilié à la fin de la période payée. Vous gardez l'accès jusqu'à cette date."
+            } else {
+                billingViewModel.successMessage = "Votre abonnement a été résilié avec succès."
+            }
+            
+            // Effacer le message après 5 secondes
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                self.billingViewModel.successMessage = nil
+            }
+            
+            print("═══════════════════════════════════════════════════════════")
+            print("💳 [GÉRER ABONNEMENT] cancelSubscription() - Fin")
+            print("═══════════════════════════════════════════════════════════")
         } catch {
             isLoading = false
-            errorMessage = "Erreur lors de l'annulation de l'abonnement: \(error.localizedDescription)"
-            print("[ManageSubscriptionsViewModel] ❌ Erreur lors de l'annulation: \(error.localizedDescription)")
+            errorMessage = "Erreur lors de la résiliation de l'abonnement: \(error.localizedDescription)"
+            print("[ManageSubscriptionsViewModel] ❌ Erreur lors de la résiliation: \(error.localizedDescription)")
+            print("═══════════════════════════════════════════════════════════")
         }
     }
     

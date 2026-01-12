@@ -24,7 +24,7 @@ class PartnersListViewModel: ObservableObject {
     
     // Secteurs disponibles
     let sectors: [String] = [
-        "",
+        "Tous les secteurs",
         "Santé & bien être",
         "Beauté & Esthétique",
         "Food & plaisirs gourmands",
@@ -100,7 +100,7 @@ class PartnersListViewModel: ObservableObject {
                 }
                 
                 // Convertir le secteur sélectionné en catégorie API
-                if !selectedSector.isEmpty {
+                if !selectedSector.isEmpty && selectedSector != "Tous les secteurs" {
                     category = mapSectorToCategory(selectedSector)
                 }
                 
@@ -359,7 +359,7 @@ class PartnersListViewModel: ObservableObject {
         }
         
         // Filtre par secteur avec mapping intelligent
-        if !selectedSector.isEmpty {
+        if !selectedSector.isEmpty && selectedSector != "Tous les secteurs" {
             filtered = filtered.filter { partner in
                 matchesSector(partnerCategory: partner.category, selectedSector: selectedSector)
             }
