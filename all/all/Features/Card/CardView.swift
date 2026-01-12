@@ -111,15 +111,15 @@ struct CardView: View {
                                         .foregroundColor(.white)
                                         .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
                                     
-                                    // "Carte familiale" sur la même ligne que le nom
+                                    Spacer()
+                                    
+                                    // "Carte familiale" aligné à droite
                                     if viewModel.cardType == "FAMILY" || viewModel.cardType == "CLIENT_FAMILY" {
                                         Text("Carte familiale")
                                             .font(.system(size: 13, weight: .bold))
                                             .foregroundColor(.white)
                                             .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
                                     }
-                                    
-                                    Spacer()
                                 }
                                 
                                 // Date de validité et "Actif" en dessous
@@ -134,7 +134,9 @@ struct CardView: View {
                                                 .foregroundColor(.white)
                                         }
                                         
-                                        // Badge "Actif" juste en dessous de "Valide jusqu'au"
+                                        Spacer()
+                                        
+                                        // Badge "Actif" aligné à droite
                                         Text("Actif")
                                             .font(.system(size: 13, weight: .bold))
                                             .foregroundColor(.white)
@@ -279,9 +281,9 @@ struct CardView: View {
                                     .foregroundColor(.white)
                             }
                             
-                            // QR Code centré
-                            QRCodeView(urlString: viewModel.referralQRCodeURL, size: 200)
-                                .padding(20)
+                            // QR Code centré - taille réduite pour ne pas dépasser
+                            QRCodeView(urlString: viewModel.referralQRCodeURL, size: 180)
+                                .padding(16)
                                 .background(Color.white)
                                 .cornerRadius(12)
                             
@@ -290,6 +292,7 @@ struct CardView: View {
                                 .foregroundColor(.gray.opacity(0.9))
                                 .lineSpacing(2)
                                 .multilineTextAlignment(.center)
+                                .padding(.horizontal, 8)
                         }
                         .padding(18)
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -302,12 +305,12 @@ struct CardView: View {
                             RoundedRectangle(cornerRadius: 18)
                                 .stroke(Color.white.opacity(0.15), lineWidth: 1)
                         )
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, 100)
                         .padding(.top, 24)
                         
                         // Lien URL en dehors de la carte, juste en dessous
                         ReferralLinkView(urlString: viewModel.referralQRCodeURL)
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, 100)
                             .padding(.top, 16)
                         
                         // Espace pour le footer
@@ -403,43 +406,50 @@ struct ReferralLinkView: View {
     @State private var showCopiedMessage = false
     
     var body: some View {
-        HStack(spacing: 8) {
-            // Champ de texte avec le lien
-            Text(urlString)
-                .font(.system(size: 13, weight: .regular))
-                .foregroundColor(.white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-                .frame(maxWidth: .infinity, alignment: .leading)
+        GeometryReader { geometry in
+            HStack(spacing: 8) {
+                // Zone scrollable pour l'URL (permet de faire défiler si trop longue)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    Text(urlString)
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundColor(.white)
+                        .textSelection(.enabled)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .frame(minWidth: geometry.size.width - 80) // Largeur minimale pour permettre le scroll
+                }
                 .background(Color.white.opacity(0.1))
                 .cornerRadius(8)
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(Color.white.opacity(0.2), lineWidth: 1)
                 )
-                .lineLimit(1)
-                .truncationMode(.tail)
-            
-            // Bouton de copie
-            Button(action: {
-                copyToClipboard()
-            }) {
-                HStack(spacing: 4) {
-                    Image(systemName: showCopiedMessage ? "checkmark.circle.fill" : "doc.on.doc")
-                        .font(.system(size: 14, weight: .medium))
-                    if showCopiedMessage {
-                        Text("Copié")
-                            .font(.system(size: 12, weight: .medium))
+                .frame(height: 40) // Hauteur fixe
+                
+                // Bouton de copie (toujours visible, taille fixe)
+                Button(action: {
+                    copyToClipboard()
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: showCopiedMessage ? "checkmark.circle.fill" : "doc.on.doc")
+                            .font(.system(size: 14, weight: .medium))
+                        if showCopiedMessage {
+                            Text("Copié")
+                                .font(.system(size: 12, weight: .medium))
+                        }
                     }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, showCopiedMessage ? 12 : 10)
+                    .padding(.vertical, 10)
+                    .frame(height: 40) // Même hauteur que le champ URL
+                    .background(showCopiedMessage ? Color.green : Color.red)
+                    .cornerRadius(8)
                 }
-                .foregroundColor(.white)
-                .padding(.horizontal, showCopiedMessage ? 12 : 10)
-                .padding(.vertical, 10)
-                .background(showCopiedMessage ? Color.green : Color.red)
-                .cornerRadius(8)
+                .fixedSize(horizontal: true, vertical: false) // Taille fixe horizontalement
+                .animation(.easeInOut(duration: 0.2), value: showCopiedMessage)
             }
-            .animation(.easeInOut(duration: 0.2), value: showCopiedMessage)
         }
+        .frame(height: 40) // Hauteur fixe pour le GeometryReader
     }
     
     private func copyToClipboard() {

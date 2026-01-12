@@ -67,12 +67,12 @@ struct HomeView: View {
                                 Image("search")
                                     .resizable()
                                     .scaledToFill()
-                                    .frame(width: 24, height: 24)
+                                    .frame(width: 44, height: 44)
                                     .clipShape(Circle())
                             }
                         }
                         .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
+                        .padding(.vertical, 6)
                         .background(Color.white)
                         .cornerRadius(14)
                         .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
