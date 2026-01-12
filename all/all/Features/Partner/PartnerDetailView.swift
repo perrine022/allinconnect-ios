@@ -37,7 +37,7 @@ struct PartnerDetailView: View {
                     ScrollView {
                         VStack(spacing: 0) {
                             // Header avec fond rouge foncé et image d'établissement
-                            ZStack(alignment: .topLeading) {
+                            ZStack {
                                 // Fond rouge foncé
                                 Color.appDarkRed2
                                     .frame(height: 200)
@@ -77,25 +77,25 @@ struct PartnerDetailView: View {
                                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                                 .clipped()
                                 
-                                // Boutons de navigation
-                                HStack {
-                                    Button(action: {
-                                        dismiss()
-                                    }) {
-                                        ZStack {
-                                            Circle()
-                                                .fill(Color.black.opacity(0.6))
-                                                .frame(width: 40, height: 40)
-                                            
-                                            Image(systemName: "arrow.left")
-                                                .foregroundColor(.white)
-                                                .font(.system(size: 16, weight: .semibold))
+                                // Boutons de navigation - positionnés en haut, proches des bords
+                                VStack {
+                                    HStack {
+                                        Button(action: {
+                                            dismiss()
+                                        }) {
+                                            ZStack {
+                                                Circle()
+                                                    .fill(Color.black.opacity(0.8))
+                                                    .frame(width: 44, height: 44)
+                                                
+                                                Image(systemName: "arrow.left")
+                                                    .foregroundColor(.white)
+                                                    .font(.system(size: 18, weight: .semibold))
+                                            }
                                         }
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    HStack(spacing: 12) {
+                                        
+                                        Spacer()
+                                        
                                         Button(action: {
                                             withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                                                 viewModel.toggleFavorite()
@@ -103,8 +103,8 @@ struct PartnerDetailView: View {
                                         }) {
                                             ZStack {
                                                 Circle()
-                                                    .fill(Color.black.opacity(0.6))
-                                                    .frame(width: 40, height: 40)
+                                                    .fill(Color.black.opacity(0.8))
+                                                    .frame(width: 44, height: 44)
                                                 
                                                 if viewModel.isTogglingFavorite {
                                                     ProgressView()
@@ -113,29 +113,17 @@ struct PartnerDetailView: View {
                                                 } else {
                                                     Image(systemName: viewModel.partner.isFavorite ? "heart.fill" : "heart")
                                                         .foregroundColor(viewModel.partner.isFavorite ? .red : .white)
-                                                        .font(.system(size: 16, weight: .semibold))
+                                                        .font(.system(size: 18, weight: .semibold))
                                                 }
                                             }
                                         }
                                         .disabled(viewModel.isTogglingFavorite)
-                                        
-                                        Button(action: {
-                                            // Action de partage
-                                        }) {
-                                            ZStack {
-                                                Circle()
-                                                    .fill(Color.black.opacity(0.6))
-                                                    .frame(width: 40, height: 40)
-                                                
-                                                Image(systemName: "square.and.arrow.up")
-                                                    .foregroundColor(.white)
-                                                    .font(.system(size: 16, weight: .semibold))
-                                            }
-                                        }
                                     }
+                                    .padding(.horizontal, 16)
+                                    .padding(.top, max(geometry.safeAreaInsets.top, 8) + 100)
+                                    
+                                    Spacer()
                                 }
-                                .padding(.horizontal, 20)
-                                .padding(.top, max(geometry.safeAreaInsets.top, 44) + 8)
                             }
                             .frame(height: 200)
                             

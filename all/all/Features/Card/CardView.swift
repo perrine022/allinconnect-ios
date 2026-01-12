@@ -20,27 +20,34 @@ struct CardView: View {
     @State private var showReferralsView: Bool = false
     @Environment(\.dismiss) private var dismiss
     
+    // Fonction pour calculer le padding horizontal responsive
+    private func horizontalPadding(for width: CGFloat) -> CGFloat {
+        // Padding réduit de 16 points pour que les blocs soient plus larges
+        return 16
+    }
+    
     var body: some View {
-        ZStack {
-            // Background avec gradient : sombre en haut vers rouge en bas
-            AppGradient.main
-                .ignoresSafeArea()
-            
-            ScrollViewReader { proxy in
-                ScrollView {
-                    VStack(spacing: 0) {
-                        // Titre en haut - ID pour scroll vers le haut
-                        HStack {
-                            Spacer()
-                            Text("Ma Carte")
-                                .font(.system(size: 28, weight: .bold))
-                                .foregroundColor(.white)
-                            Spacer()
-                        }
-                        .padding(.horizontal, 80)
-                        .padding(.top, 2)
-                        .padding(.bottom, 16)
-                        .id("top")
+        GeometryReader { geometry in
+            ZStack {
+                // Background avec gradient : sombre en haut vers rouge en bas
+                AppGradient.main
+                    .ignoresSafeArea()
+                
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            // Titre en haut - ID pour scroll vers le haut
+                            HStack {
+                                Spacer()
+                                Text("Ma Carte")
+                                    .font(.system(size: 28, weight: .bold))
+                                    .foregroundColor(.white)
+                                Spacer()
+                            }
+                            .padding(.horizontal, horizontalPadding(for: geometry.size.width))
+                            .padding(.top, 2)
+                            .padding(.bottom, 16)
+                            .id("top")
         
                     
                     // États de chargement et d'erreur - selon guidelines Apple
@@ -71,7 +78,7 @@ struct CardView: View {
                                 .font(.system(size: 14))
                                 .foregroundColor(.gray)
                                 .multilineTextAlignment(.center)
-                                .padding(.horizontal, 80)
+                                .padding(.horizontal, horizontalPadding(for: geometry.size.width))
                             
                             Button(action: {
                                 viewModel.loadData()
@@ -152,33 +159,40 @@ struct CardView: View {
                                 
                                 // Bouton "Gérer ma famille" si carte familiale et si l'utilisateur est propriétaire - en bas
                                 if (viewModel.cardType == "FAMILY" || viewModel.cardType == "CLIENT_FAMILY") && viewModel.isCardOwner {
-                                    Button(action: {
-                                        showFamilyManagement = true
-                                    }) {
-                                        HStack(spacing: 6) {
-                                            Image(systemName: "person.2.fill")
-                                                .foregroundColor(.black)
-                                                .font(.system(size: 13))
-                                            
-                                            Text("Gérer ma famille")
-                                                .font(.system(size: 13, weight: .semibold))
-                                                .foregroundColor(.black)
+                                    HStack {
+                                        Spacer()
+                                        
+                                        Button(action: {
+                                            showFamilyManagement = true
+                                        }) {
+                                            HStack(spacing: 6) {
+                                                Image(systemName: "person.2.fill")
+                                                    .foregroundColor(.black)
+                                                    .font(.system(size: 13))
+                                                
+                                                Text("Gérer ma famille")
+                                                    .font(.system(size: 13, weight: .semibold))
+                                                    .foregroundColor(.black)
+                                            }
+                                            .padding(.horizontal, 20)
+                                            .padding(.vertical, 10)
+                                            .background(Color.white.opacity(0.9))
+                                            .cornerRadius(8)
                                         }
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 10)
-                                        .background(Color.white.opacity(0.9))
-                                        .cornerRadius(8)
+                                        
+                                        Spacer()
                                     }
                                 }
                             }
-                            .padding(16)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 16)
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
                         }
                         .frame(height: 220) // Format carte de crédit (ratio ~2:1)
-                        .frame(maxWidth: .infinity)
+                        .frame(maxWidth: geometry.size.width - (horizontalPadding(for: geometry.size.width) * 2))
                         .cornerRadius(20)
                         .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 4)
-                        .padding(.horizontal, 100)
+                        .padding(.horizontal, horizontalPadding(for: geometry.size.width))
                         .padding(.top, 0)
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
                         .animation(.easeInOut(duration: 0.3), value: viewModel.hasLoadedOnce)
@@ -266,7 +280,8 @@ struct CardView: View {
                                 )
                             }
                         }
-                        .padding(.horizontal, 100)
+                        .frame(maxWidth: geometry.size.width - (horizontalPadding(for: geometry.size.width) * 2))
+                        .padding(.horizontal, horizontalPadding(for: geometry.size.width))
                         .padding(.top, 24)
                         
                         // Section QR code de parrainage
@@ -295,7 +310,7 @@ struct CardView: View {
                                 .padding(.horizontal, 8)
                         }
                         .padding(18)
-                        .frame(maxWidth: .infinity, alignment: .center)
+                        .frame(maxWidth: geometry.size.width - (horizontalPadding(for: geometry.size.width) * 2), alignment: .center)
                         .background(
                             RoundedRectangle(cornerRadius: 18)
                                 .fill(Color.appDarkRed1.opacity(0.85))
@@ -305,12 +320,13 @@ struct CardView: View {
                             RoundedRectangle(cornerRadius: 18)
                                 .stroke(Color.white.opacity(0.15), lineWidth: 1)
                         )
-                        .padding(.horizontal, 100)
+                        .padding(.horizontal, horizontalPadding(for: geometry.size.width))
                         .padding(.top, 24)
                         
                         // Lien URL en dehors de la carte, juste en dessous
                         ReferralLinkView(urlString: viewModel.referralQRCodeURL)
-                            .padding(.horizontal, 100)
+                            .frame(maxWidth: geometry.size.width - (horizontalPadding(for: geometry.size.width) * 2))
+                            .padding(.horizontal, horizontalPadding(for: geometry.size.width))
                             .padding(.top, 16)
                         
                         // Espace pour le footer
@@ -330,6 +346,7 @@ struct CardView: View {
                         }
                     }
                 }
+            }
             }
         }
         .navigationDestination(isPresented: $showSavingsList) {

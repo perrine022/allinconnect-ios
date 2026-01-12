@@ -792,7 +792,7 @@ struct EditProfileView: View {
     @FocusState private var focusedField: Field?
     
     enum Field: Hashable {
-        case firstName, lastName, email, address, city
+        case firstName, lastName, email, address, city, postalCode
     }
     
     var body: some View {
@@ -829,18 +829,6 @@ struct EditProfileView: View {
                                     .scaleEffect(1.5)
                                     .padding(.vertical, 20)
                             }
-                            
-                            // Avatar
-                            ZStack {
-                                Circle()
-                                    .fill(Color.appDarkRedButton)
-                                    .frame(width: 100, height: 100)
-                                
-                                Text(String(viewModel.firstName.prefix(1)).uppercased())
-                                    .font(.system(size: 48, weight: .bold))
-                                    .foregroundColor(.black)
-                            }
-                            .padding(.top, 8)
                             
                             // Messages d'erreur et de succès
                             if let errorMessage = viewModel.errorMessage {
@@ -925,6 +913,21 @@ struct EditProfileView: View {
                                 )
                                 .focused($focusedField, equals: .city)
                                 .onChange(of: viewModel.city) { _, _ in
+                                    Task { @MainActor in
+                                        viewModel.checkForChanges()
+                                    }
+                                }
+                                
+                                // Code postal
+                                SignUpInputField(
+                                    title: "Code postal",
+                                    text: $viewModel.postalCode,
+                                    placeholder: "Ex: 75001",
+                                    keyboardType: .numberPad,
+                                    isFocused: focusedField == .postalCode
+                                )
+                                .focused($focusedField, equals: .postalCode)
+                                .onChange(of: viewModel.postalCode) { _, _ in
                                     Task { @MainActor in
                                         viewModel.checkForChanges()
                                     }

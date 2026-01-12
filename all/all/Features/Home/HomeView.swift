@@ -192,12 +192,14 @@ struct HomeView: View {
                     // Titre principal - plus petit, juste sous le filtre
                     VStack(spacing: 4) {
                         (Text("Trouve ton partenaire ")
-                            .foregroundColor(.white) +
+                            .foregroundColor(.white)
+                            .font(.system(size: 14, weight: .semibold)) +
                          Text("ALL IN")
-                            .foregroundColor(.red) +
+                            .foregroundColor(.red)
+                            .font(.system(size: 14, weight: .semibold)) +
                          Text(" près de chez toi")
-                            .foregroundColor(.white))
-                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white)
+                            .font(.system(size: 14, weight: .semibold)))
                             .multilineTextAlignment(.center)
                         
                         Text("Et profite de 10% chez tous les membres du CLUB10")

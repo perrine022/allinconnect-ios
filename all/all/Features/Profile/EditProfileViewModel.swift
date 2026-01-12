@@ -16,6 +16,7 @@ class EditProfileViewModel: ObservableObject {
     @Published var email: String = ""
     @Published var address: String = ""
     @Published var city: String = ""
+    @Published var postalCode: String = ""
     @Published var birthDay: String = ""
     @Published var birthMonth: String = ""
     @Published var birthYear: String = ""
@@ -34,6 +35,7 @@ class EditProfileViewModel: ObservableObject {
     private var initialEmail: String = ""
     private var initialAddress: String = ""
     private var initialCity: String = ""
+    private var initialPostalCode: String = ""
     private var initialBirthDay: String = ""
     private var initialBirthMonth: String = ""
     private var initialBirthYear: String = ""
@@ -69,7 +71,8 @@ class EditProfileViewModel: ObservableObject {
         firstName = UserDefaults.standard.string(forKey: "user_first_name") ?? ""
         lastName = UserDefaults.standard.string(forKey: "user_last_name") ?? ""
         email = UserDefaults.standard.string(forKey: "user_email") ?? ""
-        city = UserDefaults.standard.string(forKey: "user_postal_code") ?? ""
+        city = UserDefaults.standard.string(forKey: "user_city") ?? ""
+        postalCode = UserDefaults.standard.string(forKey: "user_postal_code") ?? ""
         address = "" // Pas stocké actuellement
         
         // Charger la date de naissance si disponible
@@ -100,6 +103,7 @@ class EditProfileViewModel: ObservableObject {
         initialEmail = email
         initialAddress = address
         initialCity = city
+        initialPostalCode = postalCode
         initialBirthDay = birthDay
         initialBirthMonth = birthMonth
         initialBirthYear = birthYear
@@ -111,6 +115,7 @@ class EditProfileViewModel: ObservableObject {
                      email != initialEmail ||
                      address != initialAddress ||
                      city != initialCity ||
+                     postalCode != initialPostalCode ||
                      birthDay != initialBirthDay ||
                      birthMonth != initialBirthMonth ||
                      birthYear != initialBirthYear
@@ -120,15 +125,26 @@ class EditProfileViewModel: ObservableObject {
         isLoading = true
         
         do {
-            // Charger les données light depuis l'API
-            let userLight = try await profileAPIService.getUserLight()
+            // Charger les données complètes depuis l'API
+            let userMe = try await profileAPIService.getUserMe()
             
             // Préremplir les champs disponibles
-            firstName = userLight.firstName
-            lastName = userLight.lastName
+            firstName = userMe.firstName
+            lastName = userMe.lastName
             
-            // Les autres champs (email, address, city, birthDate) ne sont pas dans /users/me/light
-            // On garde les valeurs de UserDefaults si elles existent
+            // Charger les autres champs depuis l'API si disponibles
+            if let emailFromAPI = userMe.email, !emailFromAPI.isEmpty {
+                email = emailFromAPI
+            }
+            if let addressFromAPI = userMe.address, !addressFromAPI.isEmpty {
+                address = addressFromAPI
+            }
+            if let cityFromAPI = userMe.city, !cityFromAPI.isEmpty {
+                city = cityFromAPI
+            }
+            if let postalCodeFromAPI = userMe.postalCode, !postalCodeFromAPI.isEmpty {
+                postalCode = postalCodeFromAPI
+            }
             
             // Sauvegarder les nouvelles valeurs initiales après chargement API
             saveInitialValues()
@@ -321,15 +337,13 @@ class EditProfileViewModel: ObservableObject {
                 }
                 
                 // Créer la requête de mise à jour
-                // Note: city est utilisé pour stocker le code postal dans UserDefaults
-                // Le backend utilisera automatiquement le postalCode du profil si disponible
                 let updateRequest = UpdateProfileRequest(
                     firstName: firstName.trimmingCharacters(in: .whitespaces),
                     lastName: lastName.trimmingCharacters(in: .whitespaces),
                     email: email.trimmingCharacters(in: .whitespaces).lowercased(),
                     address: address.trimmingCharacters(in: .whitespaces).isEmpty ? nil : address.trimmingCharacters(in: .whitespaces),
                     city: city.trimmingCharacters(in: .whitespaces).isEmpty ? nil : city.trimmingCharacters(in: .whitespaces),
-                    postalCode: city.trimmingCharacters(in: .whitespaces).isEmpty ? nil : city.trimmingCharacters(in: .whitespaces), // Utiliser city comme postalCode pour l'instant
+                    postalCode: postalCode.trimmingCharacters(in: .whitespaces).isEmpty ? nil : postalCode.trimmingCharacters(in: .whitespaces),
                     birthDate: birthDateString,
                     latitude: latitude,
                     longitude: longitude,
@@ -350,7 +364,8 @@ class EditProfileViewModel: ObservableObject {
                 UserDefaults.standard.set(firstName.trimmingCharacters(in: .whitespaces), forKey: "user_first_name")
                 UserDefaults.standard.set(lastName.trimmingCharacters(in: .whitespaces), forKey: "user_last_name")
                 UserDefaults.standard.set(email.trimmingCharacters(in: .whitespaces).lowercased(), forKey: "user_email")
-                UserDefaults.standard.set(city.trimmingCharacters(in: .whitespaces), forKey: "user_postal_code")
+                UserDefaults.standard.set(city.trimmingCharacters(in: .whitespaces), forKey: "user_city")
+                UserDefaults.standard.set(postalCode.trimmingCharacters(in: .whitespaces), forKey: "user_postal_code")
                 if let birthDateString = birthDateString {
                     UserDefaults.standard.set(birthDateString, forKey: "user_birth_date")
                 }

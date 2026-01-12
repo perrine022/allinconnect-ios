@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import MessageUI
 
 enum TermsViewType {
     case terms
@@ -18,6 +19,10 @@ struct TermsView: View {
     @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) private var dismiss
     let viewType: TermsViewType
+    @State private var contactName: String = ""
+    @State private var contactEmail: String = ""
+    @State private var contactMessage: String = ""
+    @State private var showMailComposer = false
     
     init(viewType: TermsViewType = .terms) {
         self.viewType = viewType
@@ -47,10 +52,7 @@ struct TermsView: View {
                             
                             // Contenu
                             VStack(alignment: .leading, spacing: 20) {
-                                Text(getContent())
-                                    .font(.system(size: 15, weight: .regular))
-                                    .foregroundColor(.white.opacity(0.9))
-                                    .lineSpacing(6)
+                                formattedContent()
                             }
                             .padding(20)
                             .background(Color.appDarkRed1.opacity(0.8))
@@ -60,6 +62,12 @@ struct TermsView: View {
                                     .stroke(Color.white.opacity(0.1), lineWidth: 1)
                             )
                             .padding(.horizontal, 20)
+                            
+                            // Formulaire de contact pour les mentions légales
+                            if viewType == .legalNotice {
+                                contactFormView()
+                                    .padding(.horizontal, 20)
+                            }
                             
                             Spacer()
                                 .frame(height: 100)
@@ -84,6 +92,19 @@ struct TermsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .sheet(isPresented: $showMailComposer) {
+            MailComposeView(
+                recipients: ["contact@allinconnect.fr"],
+                subject: "Contact depuis l'application ALL IN Connect",
+                messageBody: """
+                Nom: \(contactName)
+                Email: \(contactEmail)
+                
+                Message:
+                \(contactMessage)
+                """
+            )
+        }
     }
     
     func getTitle() -> String {
@@ -368,6 +389,174 @@ struct TermsView: View {
             
             Les utilisateurs seront informés des modifications lors de leur prochaine utilisation de l'Application. L'utilisation continue de l'Application vaut acceptation des CGU mises à jour.
             """
+        }
+    }
+    
+    @ViewBuilder
+    private func formattedContent() -> some View {
+        let content = getContent()
+        let lines = content.components(separatedBy: "\n")
+        
+        VStack(alignment: .leading, spacing: 12) {
+            ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
+                let trimmedLine = line.trimmingCharacters(in: .whitespaces)
+                
+                if trimmedLine.isEmpty {
+                    Text("")
+                        .font(.system(size: 15, weight: .regular))
+                } else if isTitle(line: trimmedLine) {
+                    Text(trimmedLine)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(.white.opacity(0.95))
+                        .padding(.top, index > 0 ? 8 : 0)
+                } else {
+                    Text(trimmedLine)
+                        .font(.system(size: 15, weight: .regular))
+                        .foregroundColor(.white.opacity(0.9))
+                }
+            }
+        }
+        .lineSpacing(6)
+    }
+    
+    private func isTitle(line: String) -> Bool {
+        // Détecte les titres : lignes qui commencent par un numéro, "Article", ou des titres de section
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        
+        // Titres qui commencent par "Article"
+        if trimmed.hasPrefix("Article") {
+            return true
+        }
+        
+        // Titres qui commencent par un numéro suivi d'un point (ex: "1. ", "2. ")
+        if trimmed.range(of: "^\\d+\\.", options: .regularExpression) != nil {
+            return true
+        }
+        
+        // Titres de section courts (moins de 60 caractères) qui commencent par une majuscule
+        // et ne sont pas des listes (pas de "•", pas de "-" en début, pas de ":")
+        if trimmed.count < 60 && 
+           trimmed.count > 3 &&
+           trimmed.first?.isUppercase == true &&
+           !trimmed.hasPrefix("•") &&
+           !trimmed.hasPrefix("-") &&
+           !trimmed.hasPrefix("ALL IN") &&
+           !trimmed.contains(":") &&
+           !trimmed.contains("http") {
+            // Vérifier que ce n'est pas une phrase complète (pas de point final sauf si c'est un titre court)
+            let hasEndingPunctuation = trimmed.hasSuffix(".") || trimmed.hasSuffix(":") || trimmed.hasSuffix(",")
+            if !hasEndingPunctuation || trimmed.count < 30 {
+                return true
+            }
+        }
+        
+        return false
+    }
+    
+    @ViewBuilder
+    private func contactFormView() -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Moyen de contact")
+                .font(.system(size: 18, weight: .bold))
+                .foregroundColor(.white)
+                .padding(.bottom, 8)
+            
+            VStack(alignment: .leading, spacing: 12) {
+                TextField("Votre nom", text: $contactName)
+                    .textFieldStyle(ContactTextFieldStyle())
+                
+                TextField("Votre email", text: $contactEmail)
+                    .textFieldStyle(ContactTextFieldStyle())
+                    .keyboardType(.emailAddress)
+                    .autocapitalization(.none)
+                
+                TextField("Votre message", text: $contactMessage, axis: .vertical)
+                    .textFieldStyle(ContactTextFieldStyle())
+                    .lineLimit(5...10)
+            }
+            
+            Button(action: {
+                if MFMailComposeViewController.canSendMail() {
+                    showMailComposer = true
+                } else {
+                    // Fallback : ouvrir l'app mail avec mailto
+                    let subject = "Contact depuis l'application ALL IN Connect"
+                    let body = """
+                    Nom: \(contactName)
+                    Email: \(contactEmail)
+                    
+                    Message:
+                    \(contactMessage)
+                    """
+                    let encodedSubject = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+                    let encodedBody = body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+                    if let url = URL(string: "mailto:contact@allinconnect.fr?subject=\(encodedSubject)&body=\(encodedBody)") {
+                        UIApplication.shared.open(url)
+                    }
+                }
+            }) {
+                HStack {
+                    Spacer()
+                    Text("Envoyer")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                    Spacer()
+                }
+                .padding(.vertical, 14)
+                .background(Color.red)
+                .cornerRadius(10)
+            }
+            .disabled(contactName.isEmpty || contactEmail.isEmpty || contactMessage.isEmpty)
+            .opacity(contactName.isEmpty || contactEmail.isEmpty || contactMessage.isEmpty ? 0.6 : 1.0)
+        }
+        .padding(20)
+        .background(Color.appDarkRed1.opacity(0.8))
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+        )
+    }
+}
+
+struct ContactTextFieldStyle: TextFieldStyle {
+    func _body(configuration: TextField<Self._Label>) -> some View {
+        configuration
+            .padding(.horizontal, 12)
+            .padding(.vertical, 12)
+            .background(Color.white.opacity(0.1))
+            .cornerRadius(8)
+            .foregroundColor(.white)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
+            )
+    }
+}
+
+struct MailComposeView: UIViewControllerRepresentable {
+    let recipients: [String]
+    let subject: String
+    let messageBody: String
+    
+    func makeUIViewController(context: Context) -> MFMailComposeViewController {
+        let composer = MFMailComposeViewController()
+        composer.mailComposeDelegate = context.coordinator
+        composer.setToRecipients(recipients)
+        composer.setSubject(subject)
+        composer.setMessageBody(messageBody, isHTML: false)
+        return composer
+    }
+    
+    func updateUIViewController(_ uiViewController: MFMailComposeViewController, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+    
+    class Coordinator: NSObject, MFMailComposeViewControllerDelegate {
+        func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
+            controller.dismiss(animated: true)
         }
     }
 }

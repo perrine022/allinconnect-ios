@@ -44,6 +44,8 @@ struct AddSavingsPopupView: View {
                         Text(editingEntry == nil ? "Ajouter une économie" : "Modifier l'économie")
                             .font(.system(size: 22, weight: .bold))
                             .foregroundColor(.white)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                         
                         Spacer()
                         
@@ -60,6 +62,7 @@ struct AddSavingsPopupView: View {
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 8)
+                    .frame(maxWidth: .infinity)
                 }
                 .padding(.bottom, 20)
                 
@@ -87,10 +90,12 @@ struct AddSavingsPopupView: View {
                                                 amount = filtered
                                             }
                                         }
+                                        .frame(maxWidth: .infinity)
                                     
                                     Text("€")
                                         .font(.system(size: 16, weight: .semibold))
                                         .foregroundColor(.gray)
+                                        .frame(width: 20)
                                 }
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 14)
@@ -131,6 +136,7 @@ struct AddSavingsPopupView: View {
                                     .padding(.vertical, 14)
                                     .background(Color.white)
                                     .cornerRadius(10)
+                                    .frame(maxWidth: .infinity)
                             }
                             
                             // Magasin
@@ -147,9 +153,11 @@ struct AddSavingsPopupView: View {
                                     .padding(.vertical, 14)
                                     .background(Color.white)
                                     .cornerRadius(10)
+                                    .frame(maxWidth: .infinity)
                             }
                         }
                         .padding(.horizontal, 20)
+                        .frame(maxWidth: .infinity)
                         
                         // Message d'erreur
                         if let errorMessage = errorMessage {
@@ -162,6 +170,7 @@ struct AddSavingsPopupView: View {
                                 .background(Color.red.opacity(0.1))
                                 .cornerRadius(8)
                                 .padding(.horizontal, 20)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                         
                         // Bouton sauvegarder
@@ -205,10 +214,15 @@ struct AddSavingsPopupView: View {
                         .disabled(!isValid)
                         .padding(.horizontal, 20)
                         .padding(.top, 4)
+                        .frame(maxWidth: .infinity)
                     }
                     .padding(.bottom, 20)
+                    .frame(maxWidth: .infinity)
                 }
             }
+        }
+        .safeAreaInset(edge: .bottom) {
+            Color.clear.frame(height: 0)
         }
         .onTapGesture {
             hideKeyboard()
