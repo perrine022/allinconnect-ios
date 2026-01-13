@@ -131,27 +131,41 @@ struct CardView: View {
                                 
                                 // Date de validité et "Actif" en dessous
                                 if let expirationDate = viewModel.cardExpirationDate {
-                                    HStack(alignment: .center, spacing: 8) {
-                                        HStack(spacing: 4) {
-                                            Text("Valide jusqu'au")
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        HStack(alignment: .center, spacing: 8) {
+                                            HStack(spacing: 4) {
+                                                Text("Valide jusqu'au")
+                                                    .font(.system(size: 13, weight: .bold))
+                                                    .foregroundColor(.white)
+                                                Text(viewModel.formattedExpirationDate)
+                                                    .font(.system(size: 13, weight: .bold))
+                                                    .foregroundColor(.white)
+                                            }
+                                            
+                                            Spacer()
+                                            
+                                            // Badge "Actif" aligné à droite
+                                            Text("Actif")
                                                 .font(.system(size: 13, weight: .bold))
                                                 .foregroundColor(.white)
-                                            Text(viewModel.formattedExpirationDate)
-                                                .font(.system(size: 13, weight: .bold))
-                                                .foregroundColor(.white)
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 6)
+                                                .background(Color.green)
+                                                .cornerRadius(8)
+                                                .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
                                         }
                                         
-                                        Spacer()
-                                        
-                                        // Badge "Actif" aligné à droite
-                                        Text("Actif")
-                                            .font(.system(size: 13, weight: .bold))
-                                            .foregroundColor(.white)
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 6)
-                                            .background(Color.green)
-                                            .cornerRadius(8)
-                                            .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
+                                        // Période de validité de l'abonnement
+                                        if !viewModel.subscriptionValidUntil.isEmpty {
+                                            HStack(spacing: 4) {
+                                                Text("Abonnement valable jusqu'au")
+                                                    .font(.system(size: 11, weight: .medium))
+                                                    .foregroundColor(.white.opacity(0.9))
+                                                Text(viewModel.subscriptionValidUntil)
+                                                    .font(.system(size: 11, weight: .bold))
+                                                    .foregroundColor(.white)
+                                            }
+                                        }
                                     }
                                 }
                                 
@@ -406,12 +420,13 @@ struct CardView: View {
                     status: status,
                     planPrice: paymentResultPlanPrice,
                     onDismiss: {
-                        // Naviguer vers l'onglet "Ma Carte" et recharger les données
-                        appState.navigateToTab(.card, dismiss: { dismiss() })
-                        // Recharger les données de la carte
+                        // Naviguer vers l'accueil
+                        appState.navigateToTab(.home)
+                        // Recharger les données de la carte en arrière-plan
                         viewModel.loadData()
                     }
                 )
+                .environmentObject(appState)
             }
         }
     }

@@ -60,15 +60,36 @@ struct CreateOfferView: View {
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(.white.opacity(0.9))
                             
-                            TextEditor(text: $viewModel.description)
-                                .focused($focusedField, equals: .description)
-                                .foregroundColor(.black)
-                                .font(.system(size: 16))
-                                .frame(minHeight: 100)
-                                .padding(12)
-                                .background(Color.white)
-                                .cornerRadius(10)
-                                .scrollContentBackground(.hidden)
+                            ZStack(alignment: .topLeading) {
+                                // Placeholder si description est vide
+                                if viewModel.description.isEmpty {
+                                    Text("Décrivez votre offre...")
+                                        .foregroundColor(.gray.opacity(0.6))
+                                        .font(.system(size: 16))
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 20)
+                                        .allowsHitTesting(false)
+                                }
+                                
+                                TextEditor(text: $viewModel.description)
+                                    .focused($focusedField, equals: .description)
+                                    .foregroundColor(.black)
+                                    .font(.system(size: 16))
+                                    .frame(minHeight: 100)
+                                    .padding(8)
+                                    .background(Color.white)
+                                    .cornerRadius(10)
+                                    .scrollContentBackground(.hidden)
+                            }
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                // Forcer le focus sur le TextEditor
+                                focusedField = .description
+                                // Petit délai pour s'assurer que le focus est bien appliqué
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    focusedField = .description
+                                }
+                            }
                         }
                         
                         // Sélection d'image
@@ -173,12 +194,15 @@ struct CreateOfferView: View {
                             }
                         }
                         .onChange(of: viewModel.selectedImageItem) { oldValue, newValue in
+                            // Réinitialiser le focus quand on sélectionne une image
+                            focusedField = nil
                             Task {
                                 if let newValue = newValue {
                                     if let data = try? await newValue.loadTransferable(type: Data.self),
                                        let uiImage = UIImage(data: data) {
                                         await MainActor.run {
-                                            viewModel.selectedImage = uiImage
+                                            viewModel.imageToCrop = uiImage
+                                            viewModel.showImageCrop = true
                                         }
                                     }
                                 } else {
@@ -186,6 +210,16 @@ struct CreateOfferView: View {
                                         viewModel.selectedImage = nil
                                     }
                                 }
+                            }
+                        }
+                        .sheet(isPresented: $viewModel.showImageCrop) {
+                            if let imageToCrop = viewModel.imageToCrop {
+                                ImageCropSheet(
+                                    isPresented: $viewModel.showImageCrop,
+                                    image: imageToCrop,
+                                    cropSize: CGSize(width: 400, height: 400),
+                                    croppedImage: $viewModel.selectedImage
+                                )
                             }
                         }
                         
@@ -390,6 +424,8 @@ struct CreateOfferView: View {
             }
         }
         .onTapGesture {
+            // Réinitialiser le focus quand on tape ailleurs
+            focusedField = nil
             hideKeyboard()
         }
         .navigationTitle("")

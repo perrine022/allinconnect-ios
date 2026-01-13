@@ -25,6 +25,8 @@ class CreateOfferViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var selectedImage: UIImage? = nil
     @Published var selectedImageItem: PhotosPickerItem? = nil
+    @Published var showImageCrop: Bool = false
+    @Published var imageToCrop: UIImage? = nil
     
     private let offersAPIService: OffersAPIService
     

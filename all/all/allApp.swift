@@ -17,7 +17,7 @@ struct allApp: App {
     
     var body: some Scene {
         WindowGroup {
-            AppContentView(
+            AnimatedSplashView(
                 hasSeenTutorial: $hasSeenTutorial,
                 isLoggedIn: $isLoggedIn,
                 locationService: locationService

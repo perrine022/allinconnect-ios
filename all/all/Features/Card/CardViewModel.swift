@@ -37,6 +37,10 @@ class CardViewModel: ObservableObject {
     @Published var cardExpirationDate: Date? = nil
     @Published var isCardOwner: Bool = false
     
+    // Informations d'abonnement
+    @Published var subscriptionNextPaymentDate: String = ""
+    @Published var subscriptionValidUntil: String = ""
+    
     @Published var isLoading: Bool = true // Commencer en état de chargement
     @Published var hasLoadedOnce: Bool = false // Pour savoir si on a déjà chargé une fois
     @Published var errorMessage: String?
@@ -45,6 +49,7 @@ class CardViewModel: ObservableObject {
     private let favoritesAPIService: FavoritesAPIService
     private let savingsAPIService: SavingsAPIService
     private let subscriptionsAPIService: SubscriptionsAPIService
+    private let billingAPIService: BillingAPIService
     private let dataService: MockDataService // Gardé pour les favoris en fallback
     private var cancellables = Set<AnyCancellable>()
     
@@ -53,6 +58,7 @@ class CardViewModel: ObservableObject {
         favoritesAPIService: FavoritesAPIService? = nil,
         savingsAPIService: SavingsAPIService? = nil,
         subscriptionsAPIService: SubscriptionsAPIService? = nil,
+        billingAPIService: BillingAPIService? = nil,
         dataService: MockDataService = MockDataService.shared
     ) {
         // Créer les services dans un contexte MainActor
@@ -78,6 +84,12 @@ class CardViewModel: ObservableObject {
             self.subscriptionsAPIService = subscriptionsAPIService
         } else {
             self.subscriptionsAPIService = SubscriptionsAPIService()
+        }
+        
+        if let billingAPIService = billingAPIService {
+            self.billingAPIService = billingAPIService
+        } else {
+            self.billingAPIService = BillingAPIService()
         }
         
         self.dataService = dataService
@@ -824,6 +836,36 @@ class CardViewModel: ObservableObject {
         formatter.dateFormat = "dd/MM/yyyy"
         formatter.locale = Locale(identifier: "fr_FR")
         return formatter.string(from: expirationDate)
+    }
+    
+    // MARK: - Subscription Info
+    func loadSubscriptionInfo() async {
+        do {
+            let userId = try await profileAPIService.getCurrentUserId()
+            let subscriptionDetails = try await billingAPIService.getSubscriptionDetails(userId: userId)
+            
+            // Formater les dates depuis currentPeriodEnd
+            if let periodEndString = subscriptionDetails.currentPeriodEnd {
+                let formatter = ISO8601DateFormatter()
+                formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds, .withTimeZone]
+                
+                if let date = formatter.date(from: periodEndString) {
+                    let displayFormatter = DateFormatter()
+                    displayFormatter.dateFormat = "dd/MM/yyyy"
+                    displayFormatter.locale = Locale(identifier: "fr_FR")
+                    
+                    subscriptionNextPaymentDate = displayFormatter.string(from: date)
+                    
+                    // Calculer la date d'engagement (1 an après)
+                    if let commitmentDate = Calendar.current.date(byAdding: .year, value: 1, to: date) {
+                        subscriptionValidUntil = displayFormatter.string(from: commitmentDate)
+                    }
+                }
+            }
+        } catch {
+            print("💳 [MA CARTE] Erreur lors du chargement des informations d'abonnement: \(error)")
+            // Ne pas bloquer l'affichage de la carte si l'erreur survient
+        }
     }
 }
 

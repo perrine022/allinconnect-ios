@@ -17,7 +17,11 @@ struct ManageEstablishmentView: View {
     @FocusState private var focusedField: Field?
     
     enum Field: Hashable {
-        case name, description, address, city, postalCode, phone, email, website, instagram, openingHours
+        case name, description, address, city, postalCode, phone, email, website, instagram
+    }
+    
+    private func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
     
     var body: some View {
@@ -39,6 +43,34 @@ struct ManageEstablishmentView: View {
                             }
                             .padding(.horizontal, 20)
                             .padding(.top, 20)
+                            
+                            // Message si la fiche est vide
+                            if !viewModel.isLoadingData && viewModel.isEstablishmentEmpty {
+                                VStack(spacing: 12) {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "exclamationmark.circle.fill")
+                                            .foregroundColor(.red)
+                                            .font(.system(size: 20))
+                                        
+                                        Text("Votre fiche établissement est vide")
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundColor(.white)
+                                    }
+                                    
+                                    Text("Remplissez les informations ci-dessous pour que votre établissement soit visible par les utilisateurs.")
+                                        .font(.system(size: 14, weight: .regular))
+                                        .foregroundColor(.white.opacity(0.8))
+                                        .multilineTextAlignment(.center)
+                                }
+                                .padding(16)
+                                .background(Color.red.opacity(0.2))
+                                .cornerRadius(12)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.red.opacity(0.5), lineWidth: 1)
+                                )
+                                .padding(.horizontal, 20)
+                            }
                             
                             // Indicateur de chargement des données
                             if viewModel.isLoadingData {
@@ -142,18 +174,26 @@ struct ManageEstablishmentView: View {
                                         .font(.system(size: 14, weight: .medium))
                                         .foregroundColor(.white.opacity(0.9))
                                     
-                                    TextEditor(text: $viewModel.description)
-                                        .frame(height: 80)
-                                        .padding(10)
-                                        .background(focusedField == .description ? Color.white.opacity(0.95) : Color.white)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 10)
-                                                .stroke(focusedField == .description ? Color.appGold : Color.clear, lineWidth: 2)
-                                        )
-                                        .cornerRadius(10)
-                                        .foregroundColor(.black)
-                                        .accentColor(.appGold)
-                                        .focused($focusedField, equals: .description)
+                                    ZStack(alignment: .topLeading) {
+                                        // Background blanc fixe pour éviter le carré noir
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .fill(Color.white)
+                                            .frame(height: 80)
+                                        
+                                        TextEditor(text: $viewModel.description)
+                                            .frame(height: 80)
+                                            .padding(8)
+                                            .background(Color.clear)
+                                            .scrollContentBackground(.hidden)
+                                            .foregroundColor(.black)
+                                            .font(.system(size: 15))
+                                            .accentColor(.appGold)
+                                            .focused($focusedField, equals: .description)
+                                    }
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(focusedField == .description ? Color.appGold : Color.clear, lineWidth: 2)
+                                    )
                                 }
                                 .padding(.horizontal, 20)
                                 
@@ -228,15 +268,6 @@ struct ManageEstablishmentView: View {
                                 .focused($focusedField, equals: .instagram)
                                 .keyboardType(.URL)
                                 .autocapitalization(.none)
-                                
-                                // Horaires d'ouverture
-                                InputField(
-                                    title: "Horaires d'ouverture",
-                                    text: $viewModel.openingHours,
-                                    placeholder: "Ex: Lun-Ven: 9h-19h, Sam: 9h-18h",
-                                    isFocused: focusedField == .openingHours
-                                )
-                                .focused($focusedField, equals: .openingHours)
                             }
                             .disabled(viewModel.isLoadingData)
                             .opacity(viewModel.isLoadingData ? 0.5 : 1.0)
@@ -342,6 +373,16 @@ struct ManageEstablishmentView: View {
                 }
             }
         }
+        .sheet(isPresented: $viewModel.showImageCrop) {
+            if let imageToCrop = viewModel.imageToCrop {
+                ImageCropSheet(
+                    isPresented: $viewModel.showImageCrop,
+                    image: imageToCrop,
+                    cropSize: CGSize(width: 400, height: 400),
+                    croppedImage: $viewModel.selectedImage
+                )
+            }
+        }
     }
 }
 
@@ -387,7 +428,6 @@ class ManageEstablishmentViewModel: ObservableObject {
     @Published var email: String = ""
     @Published var website: String = ""
     @Published var instagram: String = ""
-    @Published var openingHours: String = ""
     @Published var latitude: Double? = nil
     @Published var longitude: Double? = nil
     @Published var profession: String? = nil
@@ -400,6 +440,8 @@ class ManageEstablishmentViewModel: ObservableObject {
     @Published var selectedImage: UIImage? = nil
     @Published var selectedImageItem: PhotosPickerItem? = nil
     @Published var establishmentImageUrl: String? = nil
+    @Published var showImageCrop: Bool = false
+    @Published var imageToCrop: UIImage? = nil
     
     // Valeurs initiales pour détecter les modifications
     private var initialName: String = ""
@@ -411,7 +453,6 @@ class ManageEstablishmentViewModel: ObservableObject {
     private var initialEmail: String = ""
     private var initialWebsite: String = ""
     private var initialInstagram: String = ""
-    private var initialOpeningHours: String = ""
     private var initialLatitude: Double? = nil
     private var initialLongitude: Double? = nil
     private var initialProfession: String? = nil
@@ -449,7 +490,8 @@ class ManageEstablishmentViewModel: ObservableObject {
                     if let data = try? await item.loadTransferable(type: Data.self),
                        let image = UIImage(data: data) {
                         await MainActor.run {
-                            self?.selectedImage = image
+                            self?.imageToCrop = image
+                            self?.showImageCrop = true
                         }
                     }
                 }
@@ -478,7 +520,6 @@ class ManageEstablishmentViewModel: ObservableObject {
                 email = userMe.email ?? ""
                 website = userMe.website ?? ""
                 instagram = userMe.instagram ?? ""
-                openingHours = userMe.openingHours ?? ""
                 latitude = userMe.latitude
                 longitude = userMe.longitude
                 profession = userMe.profession
@@ -511,7 +552,6 @@ class ManageEstablishmentViewModel: ObservableObject {
         initialEmail = email
         initialWebsite = website
         initialInstagram = instagram
-        initialOpeningHours = openingHours
         initialLatitude = latitude
         initialLongitude = longitude
         initialProfession = profession
@@ -531,8 +571,7 @@ class ManageEstablishmentViewModel: ObservableObject {
                          phone.trimmingCharacters(in: .whitespaces) != initialPhone.trimmingCharacters(in: .whitespaces) ||
                          email.trimmingCharacters(in: .whitespaces) != initialEmail.trimmingCharacters(in: .whitespaces) ||
                          website.trimmingCharacters(in: .whitespaces) != initialWebsite.trimmingCharacters(in: .whitespaces) ||
-                         instagram.trimmingCharacters(in: .whitespaces) != initialInstagram.trimmingCharacters(in: .whitespaces) ||
-                         openingHours.trimmingCharacters(in: .whitespaces) != initialOpeningHours.trimmingCharacters(in: .whitespaces)
+                         instagram.trimmingCharacters(in: .whitespaces) != initialInstagram.trimmingCharacters(in: .whitespaces)
         
         // Vérifier les modifications de localisation
         let locationChanged = latitude != initialLatitude || longitude != initialLongitude
@@ -544,6 +583,16 @@ class ManageEstablishmentViewModel: ObservableObject {
         let imageChanged = selectedImage != nil
         
         return textChanged || locationChanged || professionChanged || imageChanged
+    }
+    
+    var isEstablishmentEmpty: Bool {
+        name.trimmingCharacters(in: .whitespaces).isEmpty ||
+        description.trimmingCharacters(in: .whitespaces).isEmpty ||
+        address.trimmingCharacters(in: .whitespaces).isEmpty ||
+        city.trimmingCharacters(in: .whitespaces).isEmpty ||
+        postalCode.trimmingCharacters(in: .whitespaces).isEmpty ||
+        phone.trimmingCharacters(in: .whitespaces).isEmpty ||
+        email.trimmingCharacters(in: .whitespaces).isEmpty
     }
     
     var isValid: Bool {
@@ -601,7 +650,7 @@ class ManageEstablishmentViewModel: ObservableObject {
                     phoneNumber: phone.trimmingCharacters(in: .whitespaces),
                     website: website.trimmingCharacters(in: .whitespaces).isEmpty ? nil : website.trimmingCharacters(in: .whitespaces),
                     instagram: instagram.trimmingCharacters(in: .whitespaces).isEmpty ? nil : instagram.trimmingCharacters(in: .whitespaces),
-                    openingHours: openingHours.trimmingCharacters(in: .whitespaces).isEmpty ? nil : openingHours.trimmingCharacters(in: .whitespaces),
+                    openingHours: nil,
                     profession: profession?.trimmingCharacters(in: .whitespaces),
                     category: category
                 )
