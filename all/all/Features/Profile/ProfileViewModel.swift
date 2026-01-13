@@ -60,6 +60,9 @@ class ProfileViewModel: ObservableObject {
     @Published var isLoadingInitialData: Bool = true
     @Published var hasLoadedOnce: Bool = false // Pour savoir si on a déjà chargé une fois
     
+    // État de l'établissement (pour afficher la pastille rouge)
+    @Published var isEstablishmentEmpty: Bool = false // True si l'établissement est vide (pro qui vient de s'inscrire)
+    
     private let favoritesAPIService: FavoritesAPIService
     private let partnersAPIService: PartnersAPIService
     private let profileAPIService: ProfileAPIService
@@ -469,6 +472,37 @@ class ProfileViewModel: ObservableObject {
             cardType = userLight.card?.type
             hasActiveClub10Subscription = userLight.isCardActive ?? false
             
+            // Vérifier si l'établissement est vide (pour les pros)
+            // UserLightResponse n'a pas les champs de l'établissement, il faut utiliser getUserMe()
+            if apiUserType == .pro {
+                do {
+                    let userMe = try await profileAPIService.getUserMe()
+                    let establishmentName = userMe.establishmentName?.trimmingCharacters(in: .whitespaces) ?? ""
+                    let establishmentDescription = userMe.establishmentDescription?.trimmingCharacters(in: .whitespaces) ?? ""
+                    let address = userMe.address?.trimmingCharacters(in: .whitespaces) ?? ""
+                    let city = userMe.city?.trimmingCharacters(in: .whitespaces) ?? ""
+                    let postalCode = userMe.postalCode?.trimmingCharacters(in: .whitespaces) ?? ""
+                    let phoneNumber = userMe.phoneNumber?.trimmingCharacters(in: .whitespaces) ?? ""
+                    let email = userMe.email?.trimmingCharacters(in: .whitespaces) ?? ""
+                    
+                    isEstablishmentEmpty = establishmentName.isEmpty ||
+                                          establishmentDescription.isEmpty ||
+                                          address.isEmpty ||
+                                          city.isEmpty ||
+                                          postalCode.isEmpty ||
+                                          phoneNumber.isEmpty ||
+                                          email.isEmpty
+                    
+                    print("[ProfileViewModel] 🏢 Établissement vide: \(isEstablishmentEmpty)")
+                } catch {
+                    print("[ProfileViewModel] ⚠️ Erreur lors de la vérification de l'établissement: \(error)")
+                    // En cas d'erreur, on considère que l'établissement n'est pas vide pour éviter d'afficher le badge par erreur
+                    isEstablishmentEmpty = false
+                }
+            } else {
+                isEstablishmentEmpty = false
+            }
+            
             // Mettre à jour les dates d'abonnement
             if let renewalDate = userLight.renewalDate {
                 let dateFormatter = DateFormatter()
@@ -534,6 +568,36 @@ class ProfileViewModel: ObservableObject {
                     await loadCardOwner()
                 }
                 await loadFamilyCardEmails()
+                
+                // Vérifier si l'établissement est vide (pour les pros) depuis userMe
+                if apiUserType == .pro {
+                    do {
+                        let userMe = try await profileAPIService.getUserMe()
+                        let establishmentName = userMe.establishmentName?.trimmingCharacters(in: .whitespaces) ?? ""
+                        let establishmentDescription = userMe.establishmentDescription?.trimmingCharacters(in: .whitespaces) ?? ""
+                        let address = userMe.address?.trimmingCharacters(in: .whitespaces) ?? ""
+                        let city = userMe.city?.trimmingCharacters(in: .whitespaces) ?? ""
+                        let postalCode = userMe.postalCode?.trimmingCharacters(in: .whitespaces) ?? ""
+                        let phoneNumber = userMe.phoneNumber?.trimmingCharacters(in: .whitespaces) ?? ""
+                        let email = userMe.email?.trimmingCharacters(in: .whitespaces) ?? ""
+                        
+                        isEstablishmentEmpty = establishmentName.isEmpty ||
+                                              establishmentDescription.isEmpty ||
+                                              address.isEmpty ||
+                                              city.isEmpty ||
+                                              postalCode.isEmpty ||
+                                              phoneNumber.isEmpty ||
+                                              email.isEmpty
+                        
+                        print("[ProfileViewModel] 🏢 Établissement vide (depuis getUserMe): \(isEstablishmentEmpty)")
+                    } catch {
+                        print("[ProfileViewModel] ⚠️ Erreur lors de la vérification de l'établissement: \(error)")
+                        // En cas d'erreur, on considère que l'établissement n'est pas vide pour éviter d'afficher le badge par erreur
+                        isEstablishmentEmpty = false
+                    }
+                } else {
+                    isEstablishmentEmpty = false
+                }
             }
         } catch {
             print("Erreur lors du chargement des données d'abonnement: \(error)")
@@ -743,6 +807,7 @@ class ProfileViewModel: ObservableObject {
         isCardOwner = false
         familyCardEmails = []
         subscriptionPlan = nil
+        isEstablishmentEmpty = false
         
         // Réinitialiser l'utilisateur avec des valeurs par défaut
         self.user = User(

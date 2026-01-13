@@ -185,8 +185,24 @@ class ManageSubscriptionsViewModel: ObservableObject {
                         displayFormatter.dateFormat = "dd/MM/yyyy"
                         nextPaymentDate = displayFormatter.string(from: date)
                         
-                        // Calculer la date d'engagement (1 an après)
-                        if let commitmentDate = Calendar.current.date(byAdding: .year, value: 1, to: date) {
+                        // Calculer la date d'engagement
+                        // Pour les plans mensuels PRO : 6 mois d'engagement
+                        // Pour les plans annuels : 1 an d'engagement
+                        let commitmentDate: Date?
+                        if let currentPlan = currentSubscriptionPlan {
+                            if currentPlan.isMonthly {
+                                // Engagement 6 mois pour les abonnements mensuels
+                                commitmentDate = Calendar.current.date(byAdding: .month, value: 6, to: date)
+                            } else {
+                                // Engagement 1 an pour les abonnements annuels
+                                commitmentDate = Calendar.current.date(byAdding: .year, value: 1, to: date)
+                            }
+                        } else {
+                            // Par défaut, 1 an si on ne connaît pas le plan
+                            commitmentDate = Calendar.current.date(byAdding: .year, value: 1, to: date)
+                        }
+                        
+                        if let commitmentDate = commitmentDate {
                             commitmentUntil = displayFormatter.string(from: commitmentDate)
                         }
                     }

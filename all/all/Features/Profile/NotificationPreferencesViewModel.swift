@@ -37,7 +37,7 @@ class NotificationPreferencesViewModel: ObservableObject {
     }
     
     // Distance pour les offres et événements locaux (en km)
-    @Published var notificationRadius: Double = 10.0 {
+    @Published var notificationRadius: Double = 15.0 {
         didSet {
             print("🔔 [VIEWMODEL] notificationRadius changé: \(Int(oldValue)) km → \(Int(notificationRadius)) km")
             if !isApplyingPreferences {

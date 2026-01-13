@@ -14,6 +14,8 @@ struct OffersView: View {
     @State private var selectedPartner: Partner?
     @State private var selectedOffer: Offer?
     @State private var showLocationPermission = false
+    @State private var lastLoadedLocation: CLLocation? = nil
+    @State private var hasLoadedWithLocation: Bool = false
     
     var body: some View {
         ZStack {
@@ -408,17 +410,32 @@ struct OffersView: View {
             }
         }
         .onChange(of: locationService.authorizationStatus) { _, newStatus in
-            // Recharger les offres quand la permission est acceptée
+            // Recharger les offres quand la permission est acceptée (une seule fois)
             if newStatus == .authorizedWhenInUse || newStatus == .authorizedAlways {
-                if viewModel.searchRadius > 0 {
+                if viewModel.searchRadius > 0 && !hasLoadedWithLocation {
+                    hasLoadedWithLocation = true
                     viewModel.loadOffers(forceRefresh: true)
                 }
             }
         }
         .onChange(of: locationService.currentLocation) { _, newLocation in
-            // Recharger les offres quand la localisation est disponible et que le rayon est activé
-            if newLocation != nil && viewModel.searchRadius > 0 {
-                viewModel.loadOffers(forceRefresh: true)
+            // Recharger uniquement si la localisation a vraiment changé significativement (plus de 500m)
+            guard let newLocation = newLocation, viewModel.searchRadius > 0 else { return }
+            
+            if let lastLocation = lastLoadedLocation {
+                let distance = newLocation.distance(from: lastLocation)
+                // Ne recharger que si la distance est significative (plus de 500 mètres)
+                if distance > 500 {
+                    lastLoadedLocation = newLocation
+                    viewModel.loadOffers(forceRefresh: true)
+                }
+            } else {
+                // Première localisation disponible
+                lastLoadedLocation = newLocation
+                if !hasLoadedWithLocation {
+                    hasLoadedWithLocation = true
+                    viewModel.loadOffers(forceRefresh: true)
+                }
             }
         }
         .sheet(isPresented: $showLocationPermission) {

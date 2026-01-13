@@ -16,6 +16,7 @@ struct CardView: View {
     @State private var showPaymentResult: Bool = false
     @State private var paymentResultStatus: PaymentResultView.PaymentResultStatus? = nil
     @State private var paymentResultPlanPrice: String? = nil // Prix du plan choisi pour l'affichage
+    @State private var paymentResultPlanCategory: String? = nil // Catégorie du plan pour la redirection
     @State private var showWalletView: Bool = false
     @State private var showReferralsView: Bool = false
     @Environment(\.dismiss) private var dismiss
@@ -96,6 +97,8 @@ struct CardView: View {
                         .padding(.vertical, 50)
                     } else if viewModel.hasLoadedOnce && viewModel.cardNumber != nil && viewModel.isCardActive {
                         // Afficher la carte si elle existe et est active - Format carte de crédit avec image en plein écran
+                        // DEBUG: Log pour vérifier les valeurs
+                        let _ = print("💳 [CARDVIEW] Affichage carte - cardNumber: \(viewModel.cardNumber ?? "nil"), isCardActive: \(viewModel.isCardActive), cardType: \(viewModel.cardType ?? "nil")")
                         ZStack {
                             // Image "MEMBRE DU CLUB10" en plein écran de la carte
                             Image("VIPCardImage")
@@ -387,14 +390,17 @@ struct CardView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("PaymentSuccess"))) { notification in
             paymentResultStatus = .success
-            // Récupérer le prix du plan depuis userInfo si disponible
-            if let userInfo = notification.userInfo,
-               let planPrice = userInfo["planPrice"] as? String {
-                paymentResultPlanPrice = planPrice
+            // Récupérer le prix et la catégorie du plan depuis userInfo si disponible
+            if let userInfo = notification.userInfo {
+                if let planPrice = userInfo["planPrice"] as? String {
+                    paymentResultPlanPrice = planPrice
+                }
+                if let planCategory = userInfo["planCategory"] as? String {
+                    paymentResultPlanCategory = planCategory
+                }
             } else {
-                // Essayer de récupérer depuis le plan sélectionné dans StripePaymentView
-                // Pour l'instant, on utilise une valeur par défaut ou nil
                 paymentResultPlanPrice = nil
+                paymentResultPlanCategory = nil
             }
             showPaymentResult = true
             // Forcer le rechargement complet des données de la carte depuis le backend
@@ -403,6 +409,7 @@ struct CardView: View {
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("PaymentFailed"))) { _ in
             paymentResultStatus = .failed
             paymentResultPlanPrice = nil
+            paymentResultPlanCategory = nil
             showPaymentResult = true
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ReloadCardData"))) { _ in
@@ -414,14 +421,21 @@ struct CardView: View {
             print("💳 [MA CARTE] ForceReloadCardData reçu - Rechargement forcé des données")
             viewModel.loadData(forceRefresh: true)
         }
+        .onAppear {
+            // Forcer le rechargement des données de la carte quand la vue apparaît
+            // pour s'assurer que isCardActive et cardType sont à jour
+            print("💳 [CARDVIEW] onAppear - Rechargement des données de la carte")
+            viewModel.loadData(forceRefresh: true)
+        }
         .sheet(isPresented: $showPaymentResult) {
             if let status = paymentResultStatus {
                 PaymentResultView(
                     status: status,
                     planPrice: paymentResultPlanPrice,
+                    planCategory: paymentResultPlanCategory,
                     onDismiss: {
-                        // Naviguer vers l'accueil
-                        appState.navigateToTab(.home)
+                        // La navigation est gérée dans PaymentResultView selon le type d'utilisateur
+                        // (pro -> ManageEstablishmentView, client -> accueil)
                         // Recharger les données de la carte en arrière-plan
                         viewModel.loadData()
                     }

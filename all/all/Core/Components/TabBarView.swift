@@ -28,6 +28,7 @@ struct TabBarView: View {
     @State private var isLoggedIn = LoginViewModel.isLoggedIn()
     @State private var pushNotificationOfferId: Int?
     @State private var pushNotificationProfessionalId: Int?
+    @StateObject private var profileAPIService = ProfileAPIService()
     
     var body: some View {
         Group {
@@ -64,7 +65,10 @@ struct TabBarView: View {
                             // Footer Bar réutilisable - toujours visible au-dessus
                             VStack {
                                 Spacer()
-                                FooterBar(selectedTab: $appState.selectedTab) { tab in
+                                FooterBar(
+                                    selectedTab: $appState.selectedTab,
+                                    showProfileBadge: appState.showProfileBadge
+                                ) { tab in
                                     appState.navigateToTab(tab)
                                 }
                                 .frame(width: geometry.size.width)
@@ -90,6 +94,14 @@ struct TabBarView: View {
                     NotificationCenter.default.post(name: NSNotification.Name("ReloadCardData"), object: nil)
                     print("📍 [TabBarView] Navigation effectuée vers l'onglet 'Ma Carte'")
                 }
+                .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("NavigateToHomeAfterPayment"))) { _ in
+                    // Naviguer vers l'onglet "Accueil" après un paiement réussi
+                    print("📍 [TabBarView] Notification 'NavigateToHomeAfterPayment' reçue - Navigation vers Accueil")
+                    appState.selectedTab = .home
+                    // Notifier pour recharger les données de la carte en arrière-plan
+                    NotificationCenter.default.post(name: NSNotification.Name("ReloadCardData"), object: nil)
+                    print("📍 [TabBarView] Navigation effectuée vers l'onglet 'Accueil'")
+                }
                 .navigationDestination(item: $pushNotificationOfferId) { offerId in
                     OfferDetailView(offerId: offerId)
                 }
@@ -101,9 +113,34 @@ struct TabBarView: View {
                     // Enregistrer le token push au démarrage si l'utilisateur est connecté
                     Task { @MainActor in
                         await PushManager.shared.registerTokenAfterLogin()
+                        await checkEstablishmentStatus()
+                    }
+                }
+                .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("EstablishmentUpdated"))) { _ in
+                    Task { @MainActor in
+                        await checkEstablishmentStatus()
                     }
                 }
             }
+        }
+    }
+    
+    private func checkEstablishmentStatus() async {
+        do {
+            let userMe = try await profileAPIService.getUserMe()
+            // Vérifier si l'utilisateur est PRO et si sa fiche établissement est vide
+            let isPro = userMe.userType == "PROFESSIONAL" || userMe.userType == "PRO"
+            let isEstablishmentEmpty = (userMe.establishmentName?.trimmingCharacters(in: .whitespaces).isEmpty ?? true) ||
+                                       (userMe.establishmentDescription?.trimmingCharacters(in: .whitespaces).isEmpty ?? true) ||
+                                       (userMe.address?.trimmingCharacters(in: .whitespaces).isEmpty ?? true) ||
+                                       (userMe.city?.trimmingCharacters(in: .whitespaces).isEmpty ?? true) ||
+                                       (userMe.postalCode?.trimmingCharacters(in: .whitespaces).isEmpty ?? true) ||
+                                       (userMe.phoneNumber?.trimmingCharacters(in: .whitespaces).isEmpty ?? true) ||
+                                       (userMe.email?.trimmingCharacters(in: .whitespaces).isEmpty ?? true)
+            
+            appState.showProfileBadge = isPro && isEstablishmentEmpty
+        } catch {
+            appState.showProfileBadge = false
         }
     }
     

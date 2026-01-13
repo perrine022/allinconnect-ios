@@ -11,6 +11,7 @@ import Combine
 @MainActor
 class AppState: ObservableObject {
     @Published var selectedTab: TabItem = .home
+    @Published var showProfileBadge: Bool = false
     
     func navigateToTab(_ tab: TabItem, dismiss: (() -> Void)? = nil) {
         // Si on reclique sur l'onglet actif, scroller vers le haut

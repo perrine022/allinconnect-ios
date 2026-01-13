@@ -63,12 +63,6 @@ struct TermsView: View {
                             )
                             .padding(.horizontal, 20)
                             
-                            // Formulaire de contact pour les mentions légales
-                            if viewType == .legalNotice {
-                                contactFormView()
-                                    .padding(.horizontal, 20)
-                            }
-                            
                             Spacer()
                                 .frame(height: 100)
                         }

@@ -10,6 +10,7 @@ import SwiftUI
 struct SubscribeView: View {
     @StateObject private var viewModel = BillingViewModel()
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var appState: AppState
     @State private var showPaymentSheet = false
     @State private var paymentSheetData: (customerId: String, ephemeralKey: String, clientSecret: String, intentType: String?, publishableKey: String?)?
     @State private var monthlyPlan: SubscriptionPlanResponse? // Plan mensuel récupéré depuis le backend
@@ -216,12 +217,13 @@ struct SubscribeView: View {
                 planPrice: monthlyPlan?.priceLabel,
                 onDismiss: {
                     dismiss()
-                    // Notifier pour naviguer vers l'onglet "Ma Carte" et recharger les données
-                    NotificationCenter.default.post(name: NSNotification.Name("NavigateToCardAfterPayment"), object: nil)
+                    // Notifier pour naviguer vers l'accueil
+                    NotificationCenter.default.post(name: NSNotification.Name("NavigateToHomeAfterPayment"), object: nil)
                     // Forcer le rechargement des données de la carte depuis le backend
                     NotificationCenter.default.post(name: NSNotification.Name("ForceReloadCardData"), object: nil)
                 }
             )
+            .environmentObject(appState)
         }
         .onAppear {
             Task {

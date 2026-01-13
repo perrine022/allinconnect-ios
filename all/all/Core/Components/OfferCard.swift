@@ -17,7 +17,7 @@ struct OfferCard: View {
                 // Image
                 ZStack(alignment: .topTrailing) {
                     OfferImage(offer: offer, contentMode: .fill)
-                        .frame(height: 150)
+                        .frame(height: 120)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                     
                     // Overlay gradient
@@ -110,7 +110,7 @@ struct OfferCard: View {
             )
         }
         .buttonStyle(PlainButtonStyle())
-        .frame(width: 280)
+        .frame(width: 240)
     }
 }
 

@@ -199,27 +199,45 @@ class CardViewModel: ObservableObject {
                 
                 // Déterminer si la carte est active : priorité à userMe.isCardActive, sinon vérifier si card existe
                 // Note: card peut être nil pour un nouvel utilisateur (normal, pas d'erreur)
+                let newIsCardActive: Bool
                 if let cardActive = userMe.isCardActive {
-                    isCardActive = cardActive
+                    newIsCardActive = cardActive
+                    print("💳 [MA CARTE] ✅ isCardActive depuis userMe.isCardActive: \(cardActive)")
                 } else if let card = userMe.card, !card.cardNumber.isEmpty {
                     // Si card existe avec cardNumber, la carte est active
-                    isCardActive = true
+                    newIsCardActive = true
+                    print("💳 [MA CARTE] ✅ isCardActive = true (card existe avec cardNumber)")
                 } else {
                     // Sinon, utiliser isCardActive de userLight
-                    isCardActive = userLight.isCardActive ?? false
+                    newIsCardActive = userLight.isCardActive ?? false
+                    print("💳 [MA CARTE] ✅ isCardActive depuis userLight: \(newIsCardActive)")
                 }
                 
                 // Récupérer cardNumber et cardType depuis userMe en priorité
                 // Si card est nil, c'est normal pour un nouvel utilisateur (pas encore de carte générée)
-                cardNumber = userMe.card?.cardNumber ?? userLight.card?.cardNumber
-                cardType = userMe.card?.type ?? userLight.card?.type
+                let newCardNumber = userMe.card?.cardNumber ?? userLight.card?.cardNumber
+                let newCardType = userMe.card?.type ?? userLight.card?.type
                 
-                // Log pour debug
-                if userMe.card == nil {
-                    print("[CardViewModel] ℹ️ card est nil (normal pour un nouvel utilisateur sans carte générée)")
+                // Mettre à jour les propriétés sur MainActor pour forcer le rafraîchissement de la vue
+                await MainActor.run {
+                    isCardActive = newIsCardActive
+                    cardNumber = newCardNumber
+                    cardType = newCardType
+                    
+                    // Log pour debug
+                    print("═══════════════════════════════════════════════════════════")
+                    print("💳 [MA CARTE] 📊 ÉTAT DE LA CARTE MIS À JOUR:")
+                    print("   - cardNumber: \(cardNumber ?? "nil")")
+                    print("   - isCardActive: \(isCardActive)")
+                    print("   - cardType: \(cardType ?? "nil")")
+                    print("   - userMe.card: \(userMe.card != nil ? "exists" : "nil")")
+                    print("   - userMe.isCardActive: \(userMe.isCardActive?.description ?? "nil")")
+                    if let card = userMe.card {
+                        print("   - card.cardNumber: \(card.cardNumber)")
+                        print("   - card.type: \(card.type ?? "nil")")
+                    }
+                    print("═══════════════════════════════════════════════════════════")
                 }
-                print("[CardViewModel] Carte chargée - cardNumber: \(cardNumber ?? "nil"), isCardActive: \(isCardActive), cardType: \(cardType ?? "nil")")
-                print("[CardViewModel] userMe.card: \(userMe.card != nil ? "exists" : "nil"), userMe.isCardActive: \(userMe.isCardActive?.description ?? "nil")")
                 
                 // Récupérer la date de validité (renewalDate)
                 if let renewalDateString = userLight.renewalDate {
@@ -463,26 +481,34 @@ class CardViewModel: ObservableObject {
             }
             
             // Mettre à jour les données (on est déjà sur MainActor car la classe est @MainActor)
-            user = User(
-                firstName: firstName,
-                lastName: lastName,
-                username: firstName.lowercased(),
-                bio: (userLight.isMember ?? false) ? "Membre CLUB10" : "",
-                profileImageName: "person.circle.fill",
-                publications: 0,
-                subscribers: 0,
-                subscriptions: 0
-            )
-            cardNumber = cardNumberValue
-            cardType = cardTypeValue
-            isCardActive = isCardActiveValue
-            isMember = userLight.isMember ?? false
-            referralCode = referralCodeValue
-            referralLink = referralLinkValue
-            referrals = userLight.referralCount ?? 0
-            wallet = userLight.walletBalance ?? 0.0
-            favoritesCount = userLight.favoriteCount ?? 0
-            savings = currentSavings
+            await MainActor.run {
+                user = User(
+                    firstName: firstName,
+                    lastName: lastName,
+                    username: firstName.lowercased(),
+                    bio: (userLight.isMember ?? false) ? "Membre CLUB10" : "",
+                    profileImageName: "person.circle.fill",
+                    publications: 0,
+                    subscribers: 0,
+                    subscriptions: 0
+                )
+                cardNumber = cardNumberValue
+                cardType = cardTypeValue
+                isCardActive = isCardActiveValue
+                isMember = userLight.isMember ?? false
+                referralCode = referralCodeValue
+                referralLink = referralLinkValue
+                referrals = userLight.referralCount ?? 0
+                wallet = userLight.walletBalance ?? 0.0
+                favoritesCount = userLight.favoriteCount ?? 0
+                savings = currentSavings
+                
+                // Log pour debug
+                print("💳 [MA CARTE] 🔄 REFRESH - ÉTAT DE LA CARTE MIS À JOUR:")
+                print("   - cardNumber: \(cardNumber ?? "nil")")
+                print("   - isCardActive: \(isCardActive)")
+                print("   - cardType: \(cardType ?? "nil")")
+            }
         } catch {
             print("💳 [MA CARTE] ❌ Erreur lors du rafraîchissement en arrière-plan")
             print("💳 [MA CARTE] Type: \(type(of: error))")
@@ -856,8 +882,43 @@ class CardViewModel: ObservableObject {
                     
                     subscriptionNextPaymentDate = displayFormatter.string(from: date)
                     
-                    // Calculer la date d'engagement (1 an après)
-                    if let commitmentDate = Calendar.current.date(byAdding: .year, value: 1, to: date) {
+                    // Calculer la date d'engagement selon le type de plan
+                    // Pour les plans mensuels PRO : 6 mois d'engagement
+                    // Pour les plans annuels : 1 an d'engagement
+                    let commitmentDate: Date?
+                    
+                    // Essayer de déterminer si c'est un plan mensuel ou annuel
+                    // En vérifiant le planName et en chargeant les plans disponibles
+                    do {
+                        let subscriptionsAPIService = SubscriptionsAPIService()
+                        let allPlans = try await subscriptionsAPIService.getPlans()
+                        
+                        // Trouver le plan correspondant au planName
+                        var currentPlan: SubscriptionPlanResponse? = nil
+                        if let planName = subscriptionDetails.planName {
+                            currentPlan = allPlans.first { $0.title == planName }
+                        }
+                        
+                        // Si on a trouvé le plan, utiliser sa durée
+                        if let plan = currentPlan {
+                            if plan.isMonthly {
+                                // Engagement 6 mois pour les abonnements mensuels
+                                commitmentDate = Calendar.current.date(byAdding: .month, value: 6, to: date)
+                            } else {
+                                // Engagement 1 an pour les abonnements annuels
+                                commitmentDate = Calendar.current.date(byAdding: .year, value: 1, to: date)
+                            }
+                        } else {
+                            // Si on ne trouve pas le plan, par défaut 1 an
+                            commitmentDate = Calendar.current.date(byAdding: .year, value: 1, to: date)
+                        }
+                    } catch {
+                        // En cas d'erreur, par défaut 1 an
+                        print("💳 [MA CARTE] Erreur lors du chargement des plans pour déterminer l'engagement: \(error)")
+                        commitmentDate = Calendar.current.date(byAdding: .year, value: 1, to: date)
+                    }
+                    
+                    if let commitmentDate = commitmentDate {
                         subscriptionValidUntil = displayFormatter.string(from: commitmentDate)
                     }
                 }

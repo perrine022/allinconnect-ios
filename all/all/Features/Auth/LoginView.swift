@@ -39,7 +39,7 @@ struct LoginView: View {
                         Image("AppLogo")
                             .resizable()
                             .scaledToFit()
-                            .frame(maxWidth: 112.5, maxHeight: 45)
+                            .frame(maxWidth: 180, maxHeight: 72)
                             .padding(.top, 40)
                             .padding(.bottom, 2)
                     }

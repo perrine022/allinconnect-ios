@@ -50,13 +50,13 @@ struct PartnerCard: View {
                             .foregroundColor(.gray.opacity(0.3))
                     }
                 }
-                .frame(width: 80, height: 80)
+                .frame(width: 70, height: 70)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 
                 VStack(alignment: .leading, spacing: 6) {
                     // Nom
                     Text(partner.name)
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.system(size: 14, weight: .bold))
                         .foregroundColor(.black)
                         .lineLimit(1)
                     

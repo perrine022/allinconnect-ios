@@ -10,13 +10,16 @@ import SwiftUI
 struct FooterBar: View {
     @Binding var selectedTab: TabItem
     let onTabSelected: (TabItem) -> Void
+    var showProfileBadge: Bool = false
     
     init(
         selectedTab: Binding<TabItem>,
-        onTabSelected: @escaping (TabItem) -> Void
+        onTabSelected: @escaping (TabItem) -> Void,
+        showProfileBadge: Bool = false
     ) {
         self._selectedTab = selectedTab
         self.onTabSelected = onTabSelected
+        self.showProfileBadge = showProfileBadge
     }
     
     var body: some View {
@@ -26,17 +29,27 @@ struct FooterBar: View {
                     selectedTab = tab
                     onTabSelected(tab)
                 }) {
-                    VStack(spacing: 4) {
-                        Image(systemName: tab.icon)
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundColor(selectedTab == tab ? .red : Color(red: 0.7, green: 0.7, blue: 0.7))
+                    ZStack(alignment: .topTrailing) {
+                        VStack(spacing: 4) {
+                            Image(systemName: tab.icon)
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundColor(selectedTab == tab ? .red : Color(red: 0.7, green: 0.7, blue: 0.7))
+                            
+                            Text(tab.rawValue)
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(selectedTab == tab ? .red : Color(red: 0.7, green: 0.7, blue: 0.7))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 6)
                         
-                        Text(tab.rawValue)
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(selectedTab == tab ? .red : Color(red: 0.7, green: 0.7, blue: 0.7))
+                        // Badge rouge sur l'onglet profil
+                        if tab == .profile && showProfileBadge {
+                            Circle()
+                                .fill(Color.red)
+                                .frame(width: 8, height: 8)
+                                .offset(x: 8, y: -2)
+                        }
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 6)
                 }
             }
         }

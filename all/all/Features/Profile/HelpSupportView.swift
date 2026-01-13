@@ -103,23 +103,11 @@ struct HelpSupportView: View {
                                 
                                 VStack(spacing: 12) {
                                     ContactRow(
-                                        icon: "phone.fill",
-                                        text: "04 78 00 00 00",
-                                        iconColor: .appGold,
-                                        action: {
-                                            let phoneNumber = "0478000000"
-                                            if let url = URL(string: "tel://\(phoneNumber)") {
-                                                UIApplication.shared.open(url)
-                                            }
-                                        }
-                                    )
-                                    
-                                    ContactRow(
                                         icon: "envelope.fill",
-                                        text: "support@allinconnect.fr",
+                                        text: "contact@allinconnect.fr",
                                         iconColor: .appGold,
                                         action: {
-                                            if let url = URL(string: "mailto:support@allinconnect.fr") {
+                                            if let url = URL(string: "mailto:contact@allinconnect.fr") {
                                                 UIApplication.shared.open(url)
                                             }
                                         }

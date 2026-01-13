@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BF5569032F165AFE00259E12 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = BF5569022F165AFE00259E12 /* Lottie */; };
 		BF8CBD2B2F041BFB00776451 /* StripePaymentSheet in Frameworks */ = {isa = PBXBuildFile; productRef = BF76E7622F03B4180045AF92 /* StripePaymentSheet */; };
 		BF8CBE3E2F04227D00776451 /* FirebaseAI in Frameworks */ = {isa = PBXBuildFile; productRef = BF8CBE3D2F04227D00776451 /* FirebaseAI */; };
 		BF8CBE402F04227D00776451 /* FirebaseAILogic in Frameworks */ = {isa = PBXBuildFile; productRef = BF8CBE3F2F04227D00776451 /* FirebaseAILogic */; };
@@ -95,6 +96,7 @@
 				BF8CBE562F04227D00776451 /* FirebaseFunctions in Frameworks */,
 				BF8CBE622F04227D00776451 /* FirebasePerformance in Frameworks */,
 				BF8CBE402F04227D00776451 /* FirebaseAILogic in Frameworks */,
+				BF5569032F165AFE00259E12 /* Lottie in Frameworks */,
 				BF8CBD2B2F041BFB00776451 /* StripePaymentSheet in Frameworks */,
 				BF8CBE422F04227D00776451 /* FirebaseAnalytics in Frameworks */,
 				BF8CBE442F04227D00776451 /* FirebaseAppCheck in Frameworks */,
@@ -194,6 +196,7 @@
 				BF8CBE612F04227D00776451 /* FirebasePerformance */,
 				BF8CBE632F04227D00776451 /* FirebaseStorage */,
 				BF8CBE652F04227D00776451 /* FirebaseStorageCombine-Community */,
+				BF5569022F165AFE00259E12 /* Lottie */,
 			);
 			productName = all;
 			productReference = BF76DDD52EFAFD3F0045AF92 /* all.app */;
@@ -280,6 +283,7 @@
 			packageReferences = (
 				BF76E7612F03B4180045AF92 /* XCRemoteSwiftPackageReference "stripe-ios" */,
 				BF8CBE3C2F04227D00776451 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				BF5569012F165AFE00259E12 /* XCRemoteSwiftPackageReference "lottie-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = BF76DDD62EFAFD3F0045AF92 /* Products */;
@@ -680,6 +684,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		BF5569012F165AFE00259E12 /* XCRemoteSwiftPackageReference "lottie-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/airbnb/lottie-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.6.0;
+			};
+		};
 		BF76E7612F03B4180045AF92 /* XCRemoteSwiftPackageReference "stripe-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/stripe/stripe-ios";
@@ -699,6 +711,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		BF5569022F165AFE00259E12 /* Lottie */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BF5569012F165AFE00259E12 /* XCRemoteSwiftPackageReference "lottie-ios" */;
+			productName = Lottie;
+		};
 		BF76E7622F03B4180045AF92 /* StripePaymentSheet */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = BF76E7612F03B4180045AF92 /* XCRemoteSwiftPackageReference "stripe-ios" */;

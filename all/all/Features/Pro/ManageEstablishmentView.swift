@@ -91,14 +91,17 @@ struct ManageEstablishmentView: View {
                                     matching: .images
                                 ) {
                                     ZStack {
-                                        // Afficher l'image sélectionnée ou l'image existante
+                                        // PRIORITÉ 1: Toujours afficher l'image croppée si elle existe
+                                        // C'est cette image croppée qui sera envoyée au backend
                                         if let selectedImage = viewModel.selectedImage {
                                             Image(uiImage: selectedImage)
                                                 .resizable()
                                                 .scaledToFill()
                                                 .frame(height: 150)
                                                 .clipped()
+                                                .cornerRadius(12)
                                         } else if let imageUrl = viewModel.establishmentImageUrl, let url = URL(string: imageUrl) {
+                                            // PRIORITÉ 2: Afficher l'image existante depuis le serveur seulement si pas d'image croppée
                                             AsyncImage(url: url) { phase in
                                                 switch phase {
                                                 case .empty:
@@ -120,7 +123,9 @@ struct ManageEstablishmentView: View {
                                             }
                                             .frame(height: 150)
                                             .clipped()
+                                            .cornerRadius(12)
                                         } else {
+                                            // PRIORITÉ 3: Afficher le placeholder si aucune image
                                             RoundedRectangle(cornerRadius: 12)
                                                 .fill(Color.appDarkRed1.opacity(0.6))
                                                 .frame(height: 150)
@@ -437,11 +442,11 @@ class ManageEstablishmentViewModel: ObservableObject {
     @Published var isLoadingData: Bool = false
     @Published var errorMessage: String?
     @Published var successMessage: String?
-    @Published var selectedImage: UIImage? = nil
-    @Published var selectedImageItem: PhotosPickerItem? = nil
-    @Published var establishmentImageUrl: String? = nil
-    @Published var showImageCrop: Bool = false
-    @Published var imageToCrop: UIImage? = nil
+    @Published var selectedImage: UIImage? = nil // Image CROPPÉE - c'est cette image qui est affichée et envoyée au backend
+    @Published var selectedImageItem: PhotosPickerItem? = nil // Item sélectionné depuis PhotosPicker
+    @Published var establishmentImageUrl: String? = nil // URL de l'image existante depuis le serveur
+    @Published var showImageCrop: Bool = false // Afficher le sheet de crop
+    @Published var imageToCrop: UIImage? = nil // Image originale avant crop (utilisée pour le crop sheet)
     
     // Valeurs initiales pour détecter les modifications
     private var initialName: String = ""
@@ -655,20 +660,25 @@ class ManageEstablishmentViewModel: ObservableObject {
                     category: category
                 )
                 
-                // Convertir l'image en Data si elle existe
+                // IMPORTANT: Convertir UNIQUEMENT l'image croppée en Data pour l'envoi au backend
+                // selectedImage contient toujours l'image croppée (pas l'image originale)
                 var imageData: Data? = nil
                 if let selectedImage = selectedImage {
+                    // Utiliser l'image croppée (selectedImage) pour l'envoi au backend
+                    // Compression à 0.8 pour un bon équilibre qualité/taille
                     imageData = selectedImage.jpegData(compressionQuality: 0.8)
+                    print("🏢 [GÉRER ÉTABLISSEMENT] ✅ Image croppée convertie en Data pour envoi au backend")
+                    print("🏢 [GÉRER ÉTABLISSEMENT] Taille de l'image: \(imageData?.count ?? 0) bytes")
                 }
                 
                 // Appeler l'API avec ou sans image
                 print("🏢 [GÉRER ÉTABLISSEMENT] Appel API...")
-                print("🏢 [GÉRER ÉTABLISSEMENT] Image fournie: \(imageData != nil)")
-                if imageData != nil {
-                    print("🏢 [GÉRER ÉTABLISSEMENT] Appel: updateProfileWithImage()")
+                print("🏢 [GÉRER ÉTABLISSEMENT] Image croppée fournie: \(imageData != nil)")
+                if let imageData = imageData {
+                    print("🏢 [GÉRER ÉTABLISSEMENT] Appel: updateProfileWithImage() avec image croppée")
                     try await profileAPIService.updateProfileWithImage(updateRequest, imageData: imageData)
                 } else {
-                    print("🏢 [GÉRER ÉTABLISSEMENT] Appel: updateProfile()")
+                    print("🏢 [GÉRER ÉTABLISSEMENT] Appel: updateProfile() sans image")
                     try await profileAPIService.updateProfile(updateRequest)
                 }
                 
@@ -677,6 +687,7 @@ class ManageEstablishmentViewModel: ObservableObject {
                 successMessage = "Fiche établissement mise à jour avec succès"
                 
                 // Réinitialiser l'image sélectionnée après sauvegarde
+                // L'image croppée a été envoyée, on peut la réinitialiser
                 selectedImage = nil
                 
                 // Recharger les données depuis l'API pour s'assurer qu'on a les dernières valeurs

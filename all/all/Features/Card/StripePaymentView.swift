@@ -12,6 +12,7 @@ import Combine
 
 struct StripePaymentView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = StripePaymentViewModel()
     @State private var showSafari = false
     
@@ -83,37 +84,23 @@ struct StripePaymentView: View {
         .sheet(isPresented: $viewModel.isActivating) {
             ActivationInProgressView()
         }
-        .alert("🎉 Félicitations !", isPresented: $viewModel.showSuccessMessage) {
-            Button("OK", role: .cancel) {
-                // Annuler le task de masquage automatique si l'utilisateur ferme manuellement
-                viewModel.cancelAutoHideTask()
-                
-                // Fermer l'alert d'abord de manière asynchrone pour éviter les conflits
-                Task.detached { @MainActor [weak viewModel] in
-                    viewModel?.showSuccessMessage = false
-                    
-                    // Attendre un court délai pour que l'alert soit complètement fermé
-                    try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconde
-                    
-                    // Notifier pour naviguer vers l'onglet "Ma Carte" et recharger les données
-                    // Envoyer plusieurs fois pour s'assurer que la notification est reçue
-                    NotificationCenter.default.post(name: NSNotification.Name("NavigateToCardAfterPayment"), object: nil)
+        .sheet(isPresented: $viewModel.showSuccessMessage) {
+            PaymentResultView(
+                status: .success,
+                planPrice: viewModel.selectedPlan?.priceLabel,
+                planCategory: viewModel.selectedPlan?.category,
+                onDismiss: {
+                    // La navigation est gérée dans PaymentResultView selon le type d'utilisateur
+                    // (pro -> ManageEstablishmentView, client -> accueil)
+                    // Forcer le rechargement des données de la carte
                     NotificationCenter.default.post(name: NSNotification.Name("ForceReloadCardData"), object: nil)
-                    
-                    // Attendre un peu plus pour laisser le temps à TabBarView de traiter la notification
-                    try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconde
-                    
-                    // Envoyer à nouveau pour être sûr
-                    NotificationCenter.default.post(name: NSNotification.Name("NavigateToCardAfterPayment"), object: nil)
-                    
-                    // Fermer la vue
-                    await MainActor.run {
+                    // Fermer la vue après un court délai
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                         dismiss()
                     }
                 }
-            }
-        } message: {
-            Text("Ton abonnement a été activé avec succès. Tu es maintenant Premium !")
+            )
+            .environmentObject(appState)
         }
     }
 }
@@ -325,6 +312,12 @@ struct PlanCard: View {
                         Text("• Carte digitale pour chaque membre")
                             .font(.system(size: 14, weight: .regular))
                             .foregroundColor(.white.opacity(0.9))
+                        // Engagement de 6 mois pour les plans mensuels
+                        if plan.isMonthly {
+                            Text("• Engagement de 6 mois")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.appGold)
+                        }
                     }
                 } else if plan.category == "PROFESSIONAL" {
                     VStack(alignment: .leading, spacing: 8) {
@@ -338,6 +331,12 @@ struct PlanCard: View {
                             .font(.system(size: 14, weight: .regular))
                             .foregroundColor(.red)
                             .fontWeight(.semibold)
+                        // Engagement de 6 mois pour les plans mensuels
+                        if plan.isMonthly {
+                            Text("• Engagement de 6 mois")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.appGold)
+                        }
                     }
                 } else {
                     VStack(alignment: .leading, spacing: 8) {
@@ -347,6 +346,12 @@ struct PlanCard: View {
                         Text("• Carte digitale personnelle")
                             .font(.system(size: 14, weight: .regular))
                             .foregroundColor(.white.opacity(0.9))
+                        // Engagement de 6 mois pour les plans mensuels
+                        if plan.isMonthly {
+                            Text("• Engagement de 6 mois")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.appGold)
+                        }
                         if showFamilyCardPromotion {
                             Text("• Pense à la carte famille !")
                                 .font(.system(size: 13, weight: .medium))
@@ -415,13 +420,6 @@ class StripePaymentViewModel: ObservableObject {
     @Published var currentPaymentIntentId: String? = nil // Pour vérifier le statut si nécessaire
     @Published var showSuccessMessage: Bool = false
     @Published var isActivating: Bool = false // État pour l'écran "Activation en cours"
-    private var autoHideTask: Task<Void, Never>? // Task pour masquer automatiquement l'alert
-    
-    // Méthode publique pour annuler la tâche de masquage automatique
-    func cancelAutoHideTask() {
-        autoHideTask?.cancel()
-        autoHideTask = nil
-    }
     
     private let subscriptionsAPIService: SubscriptionsAPIService
     private let paymentAPIService = PaymentAPIService() // Pour les paiements one-shot
@@ -735,45 +733,33 @@ class StripePaymentViewModel: ObservableObject {
                 
                 // Récupérer le prix du plan choisi pour l'afficher dans PaymentResultView
                 let planPrice = selectedPlan?.priceLabel
+                let planCategory = selectedPlan?.category
                 
-                // Notifier les autres parties de l'app avec le prix du plan
+                // Notifier les autres parties de l'app avec le prix et la catégorie du plan
+                var userInfo: [String: Any] = [:]
+                if let planPrice = planPrice {
+                    userInfo["planPrice"] = planPrice
+                }
+                if let planCategory = planCategory {
+                    userInfo["planCategory"] = planCategory
+                }
                 NotificationCenter.default.post(
                     name: NSNotification.Name("PaymentSuccess"),
                     object: nil,
-                    userInfo: planPrice != nil ? ["planPrice": planPrice!] : nil
+                    userInfo: userInfo.isEmpty ? nil : userInfo
                 )
                 NotificationCenter.default.post(name: NSNotification.Name("SubscriptionUpdated"), object: nil)
                 // Forcer le rechargement des données de la carte depuis le backend
                 NotificationCenter.default.post(name: NSNotification.Name("ForceReloadCardData"), object: nil)
-                // Naviguer vers l'onglet "Ma Carte" après un paiement réussi
-                // Envoyer immédiatement pour que la navigation se fasse même si l'alert n'est pas encore fermé
-                print("   📍 Envoi de la notification 'NavigateToCardAfterPayment' pour rediriger vers Ma Carte...")
-                NotificationCenter.default.post(name: NSNotification.Name("NavigateToCardAfterPayment"), object: nil)
+                // Ne pas naviguer automatiquement - l'utilisateur doit cliquer sur "OK" dans l'alert
+                // La navigation vers l'accueil se fera quand l'utilisateur clique sur "OK"
                 print("   ✅ Notification 'PaymentSuccess' envoyée avec planPrice: \(planPrice ?? "nil")")
                 print("   ✅ Notification 'SubscriptionUpdated' envoyée")
                 print("   ✅ Notification 'ForceReloadCardData' envoyée pour forcer le rechargement")
-                print("   ✅ Notification 'NavigateToCardAfterPayment' envoyée pour rediriger vers Ma Carte")
+                print("   ✅ Message de succès affiché - en attente du clic utilisateur")
                 
-                // Envoyer à nouveau après un court délai pour s'assurer que TabBarView la reçoit
-                Task.detached {
-                    try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 seconde
-                    await MainActor.run {
-                        print("   📍 Envoi secondaire de 'NavigateToCardAfterPayment' pour garantir la navigation...")
-                        NotificationCenter.default.post(name: NSNotification.Name("NavigateToCardAfterPayment"), object: nil)
-                    }
-                }
-                
-                // Masquer le message après 3 secondes (seulement si l'utilisateur ne l'a pas déjà fermé)
-                // Utiliser Task.detached pour éviter "Publishing changes from within view updates"
-                autoHideTask = Task.detached { [weak self] in
-                    try? await Task.sleep(nanoseconds: 3_000_000_000)
-                    // Vérifier que l'alert est toujours affichée avant de la fermer
-                    await MainActor.run {
-                        guard let self = self, self.showSuccessMessage else { return }
-                        self.showSuccessMessage = false
-                        print("   → Message de succès masqué automatiquement")
-                    }
-                }
+                // NE PAS masquer automatiquement le message - l'utilisateur doit cliquer sur "OK"
+                // Le message restera affiché jusqu'à ce que l'utilisateur clique sur le bouton "OK"
             } else {
                 // Le statut n'a pas été confirmé après tous les retries
                 print("═══════════════════════════════════════════════════════════")

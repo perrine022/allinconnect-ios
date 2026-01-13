@@ -10,15 +10,26 @@ import SwiftUI
 struct ProfileMenuRow: View {
     let icon: String
     let title: String
+    var showBadge: Bool = false // Pastille rouge de notification
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
             HStack(spacing: 14) {
-                Image(systemName: icon)
-                    .foregroundColor(.white)
-                    .font(.system(size: 18))
-                    .frame(width: 24)
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: icon)
+                        .foregroundColor(.white)
+                        .font(.system(size: 18))
+                        .frame(width: 24)
+                    
+                    // Pastille rouge de notification
+                    if showBadge {
+                        Circle()
+                            .fill(Color.red)
+                            .frame(width: 8, height: 8)
+                            .offset(x: 6, y: -2)
+                    }
+                }
                 
                 Text(title)
                     .font(.system(size: 15, weight: .regular))

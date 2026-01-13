@@ -29,6 +29,8 @@ struct HomeView: View {
     @State private var partnersListNavigationId: UUID?
     @State private var isSearchExpanded: Bool = false
     @FocusState private var isSearchFieldFocused: Bool
+    @State private var lastLoadedLocation: CLLocation? = nil
+    @State private var hasLoadedWithLocation: Bool = false
     var body: some View {
         ZStack {
             // Background avec gradient : identique partout dans l'app
@@ -540,19 +542,35 @@ struct HomeView: View {
             }
         }
         .onChange(of: locationService.authorizationStatus) { _, newStatus in
-            // Recharger les offres et partenaires quand la permission est acceptée
+            // Recharger les offres et partenaires quand la permission est acceptée (une seule fois)
             if newStatus == .authorizedWhenInUse || newStatus == .authorizedAlways {
-                if viewModel.searchRadius > 0 {
+                if viewModel.searchRadius > 0 && !hasLoadedWithLocation {
+                    hasLoadedWithLocation = true
                     viewModel.loadOffersByCity()
                     viewModel.loadPartners()
                 }
             }
         }
         .onChange(of: locationService.currentLocation) { _, newLocation in
-            // Recharger les offres et partenaires quand la localisation est disponible et que le rayon est activé
-            if newLocation != nil && viewModel.searchRadius > 0 {
-                viewModel.loadOffersByCity()
-                viewModel.loadPartners()
+            // Recharger uniquement si la localisation a vraiment changé significativement (plus de 500m)
+            guard let newLocation = newLocation, viewModel.searchRadius > 0 else { return }
+            
+            if let lastLocation = lastLoadedLocation {
+                let distance = newLocation.distance(from: lastLocation)
+                // Ne recharger que si la distance est significative (plus de 500 mètres)
+                if distance > 500 {
+                    lastLoadedLocation = newLocation
+                    viewModel.loadOffersByCity()
+                    viewModel.loadPartners()
+                }
+            } else {
+                // Première localisation disponible
+                lastLoadedLocation = newLocation
+                if !hasLoadedWithLocation {
+                    hasLoadedWithLocation = true
+                    viewModel.loadOffersByCity()
+                    viewModel.loadPartners()
+                }
             }
         }
         .sheet(isPresented: $showLocationPermission) {
@@ -675,7 +693,7 @@ struct ModernPartnerCard: View {
                                 }
                             }
                         }
-                        .frame(width: 70, height: 70)
+                        .frame(width: 60, height: 60)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
@@ -685,7 +703,7 @@ struct ModernPartnerCard: View {
                         VStack(alignment: .leading, spacing: 6) {
                             // Nom avec texte plus petit
                             Text(partner.name)
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(.white)
                                 .lineLimit(2)
                                 .multilineTextAlignment(.leading)
