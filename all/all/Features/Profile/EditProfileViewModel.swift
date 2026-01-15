@@ -355,7 +355,8 @@ class EditProfileViewModel: ObservableObject {
                     openingHours: nil,
                     profession: nil,
                     category: nil,
-                    subCategory: nil
+                    subCategory: nil,
+                    isClub10: nil
                 )
                 
                 // Appeler l'API

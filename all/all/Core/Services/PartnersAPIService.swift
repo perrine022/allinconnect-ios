@@ -35,6 +35,7 @@ struct PartnerProfessionalResponse: Codable, Identifiable {
     let instagram: String?
     let openingHours: String?
     let distanceMeters: Double? // Distance en mètres depuis la position de l'utilisateur (si recherche géolocalisée)
+    let isClub10: Bool? // Indique si l'établissement fait partie du Club 10
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -62,6 +63,7 @@ struct PartnerProfessionalResponse: Codable, Identifiable {
         case instagram
         case openingHours = "openingHours"
         case distanceMeters = "distanceMeters"
+        case isClub10 = "club10" // Le backend envoie "club10" (sans "is")
     }
 }
 
@@ -140,20 +142,28 @@ class PartnersAPIService: ObservableObject {
         name: String? = nil,
         latitude: Double? = nil,
         longitude: Double? = nil,
-        radius: Double? = nil
+        radius: Double? = nil,
+        isClub10: Bool? = nil // Filtrer par Club 10 (true = uniquement Club 10, false = exclure Club 10, nil = tous)
     ) async throws -> [PartnerProfessionalResponse] {
+        print("═══════════════════════════════════════════════════════════")
+        print("🔍 [PartnersAPIService] searchProfessionals() - Début")
+        print("═══════════════════════════════════════════════════════════")
+        
         var parameters: [String: Any] = [:]
         
         if let city = city {
             parameters["city"] = city
+            print("🔍 [PartnersAPIService] Paramètre city: \(city)")
         }
         
         if let category = category {
             parameters["category"] = category.rawValue
+            print("🔍 [PartnersAPIService] Paramètre category: \(category.rawValue)")
         }
         
         if let name = name {
             parameters["name"] = name
+            print("🔍 [PartnersAPIService] Paramètre name: \(name)")
         }
         
         // Paramètres pour la recherche par rayon (obligatoires ensemble)
@@ -162,7 +172,18 @@ class PartnersAPIService: ObservableObject {
             parameters["lat"] = latitude
             parameters["lon"] = longitude
             parameters["radius"] = radius * 1000.0 // Conversion km → mètres
+            print("🔍 [PartnersAPIService] Paramètres géolocalisation: lat=\(latitude), lon=\(longitude), radius=\(radius * 1000.0)m")
         }
+        
+        // Paramètre pour filtrer par Club 10
+        if let isClub10 = isClub10 {
+            parameters["isClub10"] = isClub10
+            print("🔍 [PartnersAPIService] ⭐ Paramètre isClub10: \(isClub10)")
+        } else {
+            print("🔍 [PartnersAPIService] Paramètre isClub10: nil (pas de filtre Club 10)")
+        }
+        
+        print("🔍 [PartnersAPIService] Tous les paramètres: \(parameters)")
         
         do {
             let professionals: [PartnerProfessionalResponse] = try await apiService.request(
@@ -171,6 +192,20 @@ class PartnersAPIService: ObservableObject {
                 parameters: parameters.isEmpty ? nil : parameters,
                 headers: nil
             )
+            
+            print("🔍 [PartnersAPIService] ✅ Réponse reçue: \(professionals.count) partenaires")
+            
+            // Log détaillé pour chaque partenaire
+            for (index, professional) in professionals.enumerated() {
+                print("🔍 [PartnersAPIService] Partenaire \(index + 1):")
+                print("   - ID: \(professional.id)")
+                print("   - Nom: \(professional.firstName) \(professional.lastName)")
+                print("   - Établissement: \(professional.establishmentName ?? "N/A")")
+                print("   - isClub10 (décodé): \(professional.isClub10?.description ?? "nil")")
+            }
+            
+            print("═══════════════════════════════════════════════════════════")
+            
             return professionals
         } catch let error as APIError {
             // Gérer spécifiquement l'erreur de décodage pour les réponses corrompues
@@ -226,8 +261,8 @@ extension PartnerProfessionalResponse {
         let partnerCity = city ?? ""
         let postalCode = "" // Pas disponible dans l'API, on peut extraire depuis l'adresse si nécessaire
         
-        // Déterminer si c'est CLUB10 (basé sur subscriptionType PREMIUM)
-        let isClub10 = subscriptionType == "PREMIUM"
+        // Déterminer si c'est CLUB10 (utiliser le champ isClub10 depuis l'API)
+        let isClub10Value = isClub10 ?? false
         
         // Déterminer l'image par défaut selon la catégorie
         let defaultImage: String
@@ -257,7 +292,7 @@ extension PartnerProfessionalResponse {
             description: establishmentDescription ?? profession, // Utiliser establishmentDescription si disponible, sinon profession
             rating: 4.5, // Par défaut, peut être récupéré depuis un autre endpoint
             reviewCount: 0, // Par défaut, peut être récupéré depuis un autre endpoint
-            discount: isClub10 ? 10 : nil, // Réduction si CLUB10
+            discount: isClub10Value ? 10 : nil, // Réduction UNIQUEMENT si isClub10 == true
             imageName: defaultImage,
             headerImageName: defaultImage,
             establishmentImageUrl: imageUrl, // URL absolue de l'image depuis le backend

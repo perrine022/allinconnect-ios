@@ -36,7 +36,7 @@ struct LoginView: View {
                 VStack(spacing: 30) {
                     // Logo
                     VStack(spacing: 0) {
-                        Image("AppLogo")
+                        Image("LoginLogo")
                             .resizable()
                             .scaledToFit()
                             .frame(maxWidth: 180, maxHeight: 72)

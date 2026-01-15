@@ -418,6 +418,12 @@ struct OffersView: View {
                 }
             }
         }
+        .onAppear {
+            // Forcer un rafraîchissement depuis le backend à chaque fois qu'on ouvre la page
+            // pour s'assurer d'avoir les dernières offres (y compris celles créées récemment)
+            print("📋 [OffersView] onAppear - Rafraîchissement des offres depuis le backend")
+            viewModel.loadOffers(forceRefresh: true)
+        }
         .onChange(of: locationService.currentLocation) { _, newLocation in
             // Recharger uniquement si la localisation a vraiment changé significativement (plus de 500m)
             guard let newLocation = newLocation, viewModel.searchRadius > 0 else { return }

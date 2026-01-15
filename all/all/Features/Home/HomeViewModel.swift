@@ -163,7 +163,8 @@ class HomeViewModel: ObservableObject {
                     endDate: nil,
                     latitude: latitude,
                     longitude: longitude,
-                    radius: radius
+                    radius: radius,
+                    isClub10: onlyClub10 ? true : nil
                 )
                 
                 print("[HomeViewModel] ✅ \(offersResponse.count) offres récupérées depuis l'API (type=OFFRE)")
@@ -240,6 +241,12 @@ class HomeViewModel: ObservableObject {
                     // Convertir le secteur sélectionné en catégorie API
                     let category: OfferCategory? = (selectedSector.isEmpty || selectedSector == "Tous les secteurs") ? nil : mapSectorToCategory(selectedSector)
                     
+                    print("═══════════════════════════════════════════════════════════")
+                    print("🔍 [HomeViewModel] searchProfessionals() - Début")
+                    print("🔍 [HomeViewModel] onlyClub10: \(onlyClub10)")
+                    print("🔍 [HomeViewModel] isClub10 qui sera envoyé: \(onlyClub10 ? "true" : "nil")")
+                    print("═══════════════════════════════════════════════════════════")
+                    
                     // Recherche par rayon avec filtres optionnels
                     professionalsResponse = try await partnersAPIService.searchProfessionals(
                         city: nil,
@@ -247,15 +254,32 @@ class HomeViewModel: ObservableObject {
                         name: cityText.isEmpty ? nil : cityText,
                         latitude: latitude,
                         longitude: longitude,
-                        radius: searchRadius
+                        radius: searchRadius,
+                        isClub10: onlyClub10 ? true : nil
                     )
                 } else {
                     // Récupérer tous les professionnels depuis l'API
-                    professionalsResponse = try await partnersAPIService.getAllProfessionals()
+                    // Si onlyClub10 est activé, utiliser searchProfessionals pour pouvoir filtrer
+                    if onlyClub10 {
+                        professionalsResponse = try await partnersAPIService.searchProfessionals(
+                            city: nil,
+                            category: nil,
+                            name: nil,
+                            latitude: nil,
+                            longitude: nil,
+                            radius: nil,
+                            isClub10: true
+                        )
+                    } else {
+                        professionalsResponse = try await partnersAPIService.getAllProfessionals()
+                    }
                 }
                 
                 // Convertir en modèles Partner
                 partners = professionalsResponse.map { $0.toPartner() }
+                
+                print("🔍 [HomeViewModel] ✅ \(partners.count) partenaires chargés depuis l'API")
+                print("🔍 [HomeViewModel] Partenaires avec discount (Club 10): \(partners.filter { $0.discount != nil && $0.discount == 10 }.count)")
                 
                 // Synchroniser les favoris depuis l'API
                 await syncFavorites()

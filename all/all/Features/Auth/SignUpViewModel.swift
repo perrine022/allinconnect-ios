@@ -222,6 +222,7 @@ class SignUpViewModel: ObservableObject {
                     subscriptionType: .free, // Par défaut FREE
                     profession: nil, // Peut être ajouté plus tard
                     category: nil, // Peut être sélectionné plus tard pour les PRO
+                    subCategory: nil, // Peut être ajouté plus tard pour les PRO
                     referralCode: referralCode.trimmingCharacters(in: .whitespaces).isEmpty ? nil : referralCode.trimmingCharacters(in: .whitespaces)
                 )
                 

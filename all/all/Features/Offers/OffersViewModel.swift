@@ -128,9 +128,13 @@ class OffersViewModel: ObservableObject {
                     endDateString = endDate != nil ? formatDateToISO8601(endDate!, isStartOfDay: false) : nil
                 } else {
                     // Pour "actuelles", ne pas envoyer de dates (récupérer toutes les offres actives)
+                    // Le backend retourne automatiquement les offres en cours (statut ACTIVE et dates valides)
                     startDateString = nil
                     endDateString = nil
                 }
+                
+                print("📋 [OffersViewModel] Appel API getAllOffers() - Mode: \(offerTimeMode == .current ? "actuelles" : "à venir")")
+                print("📋 [OffersViewModel] Paramètres: type=\(apiType ?? "tous"), category=\(category?.rawValue ?? "tous"), isClub10=\(onlyClub10 ? "true" : "nil")")
                 
                 // Appeler l'API pour récupérer les offres
                 let offersResponse = try await offersAPIService.getAllOffers(
@@ -142,11 +146,14 @@ class OffersViewModel: ObservableObject {
                     endDate: endDateString,
                     latitude: latitude,
                     longitude: longitude,
-                    radius: radius
+                    radius: radius,
+                    isClub10: onlyClub10 ? true : nil
                 )
                 
                 // Convertir les réponses en modèles Offer
                 allOffers = offersResponse.map { $0.toOffer() }
+                
+                print("📋 [OffersViewModel] ✅ \(allOffers.count) offres récupérées depuis le backend")
                 
                 // Sauvegarder en cache
                 cacheService.saveOffers(allOffers)
@@ -222,7 +229,8 @@ class OffersViewModel: ObservableObject {
                 endDate: endDateString,
                 latitude: latitude,
                 longitude: longitude,
-                radius: radius
+                radius: radius,
+                isClub10: onlyClub10 ? true : nil
             )
             
             let refreshedOffers = offersResponse.map { $0.toOffer() }

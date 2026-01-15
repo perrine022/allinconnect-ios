@@ -34,6 +34,7 @@ struct RegistrationRequest: Codable {
     let subscriptionType: APISubscriptionType
     let profession: String?
     let category: OfferCategory?
+    let subCategory: String? // Sous-catégorie (saisie libre)
     let referralCode: String?
     
     enum CodingKeys: String, CodingKey {
@@ -49,6 +50,7 @@ struct RegistrationRequest: Codable {
         case subscriptionType = "subscriptionType"
         case profession
         case category
+        case subCategory = "subCategory"
         case referralCode = "referralCode"
     }
 }

@@ -17,7 +17,7 @@ struct ManageEstablishmentView: View {
     @FocusState private var focusedField: Field?
     
     enum Field: Hashable {
-        case name, description, address, city, postalCode, phone, email, website, instagram
+        case name, description, address, city, postalCode, phone, email, website, instagram, subCategory
     }
     
     private func hideKeyboard() {
@@ -292,12 +292,7 @@ struct ManageEstablishmentView: View {
                                                    let categoryEnum = OfferCategory(rawValue: categoryResponse.id) {
                                                     viewModel.category = categoryEnum
                                                     viewModel.selectedCategoryId = categoryResponse.id
-                                                    viewModel.availableSubCategories = categoryResponse.subCategories
-                                                    // Réinitialiser la sous-catégorie si elle n'est plus valide
-                                                    if let currentSubCategory = viewModel.subCategory,
-                                                       !categoryResponse.subCategories.contains(currentSubCategory) {
-                                                        viewModel.subCategory = nil
-                                                    }
+                                                    // Ne plus utiliser availableSubCategories - sous-catégorie en saisie libre
                                                 }
                                             }
                                         )) {
@@ -318,30 +313,18 @@ struct ManageEstablishmentView: View {
                                 }
                                 .padding(.horizontal, 20)
                                 
-                                // Sous-catégorie
-                                if !viewModel.availableSubCategories.isEmpty {
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        Text("Sous-catégorie")
-                                            .font(.system(size: 13, weight: .medium))
-                                            .foregroundColor(.white.opacity(0.9))
-                                        
-                                        Picker("Sous-catégorie", selection: $viewModel.subCategory) {
-                                            Text("Sélectionner une sous-catégorie")
-                                                .tag(nil as String?)
-                                            ForEach(viewModel.availableSubCategories, id: \.self) { subCategory in
-                                                Text(subCategory)
-                                                    .tag(subCategory as String?)
-                                            }
-                                        }
-                                        .pickerStyle(.menu)
-                                        .tint(.black)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .padding(12)
-                                        .background(Color.white)
-                                        .cornerRadius(10)
-                                    }
-                                    .padding(.horizontal, 20)
-                                }
+                                // Sous-catégorie (saisie libre)
+                                InputField(
+                                    title: "Sous-catégorie",
+                                    text: Binding(
+                                        get: { viewModel.subCategory ?? "" },
+                                        set: { viewModel.subCategory = $0.isEmpty ? nil : $0 }
+                                    ),
+                                    placeholder: "Ex: Coiffure, Restaurant, etc.",
+                                    isFocused: focusedField == .subCategory
+                                )
+                                .focused($focusedField, equals: .subCategory)
+                                .padding(.horizontal, 20)
                                 
                                 // Site web
                                 InputField(
@@ -364,6 +347,48 @@ struct ManageEstablishmentView: View {
                                 .focused($focusedField, equals: .instagram)
                                 .keyboardType(.URL)
                                 .autocapitalization(.none)
+                                
+                                // Checkbox Club 10
+                                Button(action: {
+                                    withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+                                        viewModel.isClub10.toggle()
+                                        print("🏢 [GÉRER ÉTABLISSEMENT] Checkbox Club 10 togglée - Nouvelle valeur: \(viewModel.isClub10)")
+                                    }
+                                }) {
+                                    HStack(spacing: 10) {
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 3)
+                                                .fill(viewModel.isClub10 ? Color.green : Color.clear)
+                                                .frame(width: 16, height: 16)
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 3)
+                                                        .stroke(Color.green, lineWidth: 1.5)
+                                                )
+                                            
+                                            if viewModel.isClub10 {
+                                                Image(systemName: "checkmark")
+                                                    .foregroundColor(.white)
+                                                    .font(.system(size: 10, weight: .bold))
+                                            }
+                                        }
+                                        
+                                        Image(systemName: "star.fill")
+                                            .foregroundColor(.appGold)
+                                            .font(.system(size: 13))
+                                        
+                                        Text("Club 10")
+                                            .font(.system(size: 13, weight: .medium))
+                                            .foregroundColor(.green)
+                                        
+                                        Spacer()
+                                    }
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 12)
+                                    .background(Color(red: 0.85, green: 0.95, blue: 0.85)) // Vert clair/pastel
+                                    .cornerRadius(8)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                .padding(.horizontal, 20)
                             }
                             .disabled(viewModel.isLoadingData)
                             .opacity(viewModel.isLoadingData ? 0.5 : 1.0)
@@ -529,6 +554,7 @@ class ManageEstablishmentViewModel: ObservableObject {
     @Published var profession: String? = nil
     @Published var category: OfferCategory? = nil
     @Published var subCategory: String? = nil // Sous-catégorie sélectionnée
+    @Published var isClub10: Bool = false // Indique si l'établissement fait partie du Club 10
     
     // Catégories et sous-catégories depuis l'API
     @Published var categoriesTree: [CategoryResponse] = []
@@ -561,6 +587,7 @@ class ManageEstablishmentViewModel: ObservableObject {
     private var initialProfession: String? = nil
     private var initialCategory: OfferCategory? = nil
     private var initialSubCategory: String? = nil
+    private var initialIsClub10: Bool = false
     private var initialImageUrl: String? = nil
     private var hasInitialImage: Bool = false
     
@@ -656,20 +683,18 @@ class ManageEstablishmentViewModel: ObservableObject {
                 category = userMe.category
                 subCategory = userMe.subCategory
                 
-                // Si une catégorie est chargée, mettre à jour les sous-catégories disponibles
+                // Charger isClub10 depuis l'API
+                let backendIsClub10 = userMe.isClub10 ?? false
+                isClub10 = backendIsClub10
+                print("🏢 [GÉRER ÉTABLISSEMENT] isClub10 chargé depuis l'API: \(backendIsClub10) (raw: \(userMe.isClub10?.description ?? "nil"))")
+                
+                // Si une catégorie est chargée, mettre à jour selectedCategoryId
+                // Note: Les sous-catégories sont maintenant en saisie libre, on ne les charge plus depuis l'API
                 if let category = category {
                     if let categoryResponse = categoriesTree.first(where: { $0.id == category.rawValue }) {
                         selectedCategoryId = categoryResponse.id
-                        availableSubCategories = categoryResponse.subCategories
-                        
-                        // Vérifier que la sous-catégorie actuelle est toujours valide
-                        if let currentSubCategory = subCategory,
-                           !categoryResponse.subCategories.contains(currentSubCategory) {
-                            subCategory = nil
-                        }
                     } else {
                         selectedCategoryId = category.rawValue
-                        availableSubCategories = []
                     }
                 }
                 
@@ -705,6 +730,7 @@ class ManageEstablishmentViewModel: ObservableObject {
         initialProfession = profession
         initialCategory = category
         initialSubCategory = subCategory
+        initialIsClub10 = isClub10
         initialImageUrl = establishmentImageUrl
         hasInitialImage = (establishmentImageUrl != nil)
     }
@@ -725,8 +751,8 @@ class ManageEstablishmentViewModel: ObservableObject {
         // Vérifier les modifications de localisation
         let locationChanged = latitude != initialLatitude || longitude != initialLongitude
         
-        // Vérifier les modifications de catégorie/sous-catégorie
-        let categoryChanged = category != initialCategory || subCategory != initialSubCategory
+        // Vérifier les modifications de catégorie/sous-catégorie/Club 10
+        let categoryChanged = category != initialCategory || subCategory != initialSubCategory || isClub10 != initialIsClub10
         
         // Vérifier si une nouvelle image a été sélectionnée
         let imageChanged = selectedImage != nil
@@ -798,6 +824,12 @@ class ManageEstablishmentViewModel: ObservableObject {
                 }
                 
                 // Créer la requête de mise à jour (champs établissement uniquement)
+                print("🏢 [GÉRER ÉTABLISSEMENT] ========================================")
+                print("🏢 [GÉRER ÉTABLISSEMENT] Valeur isClub10 dans ViewModel: \(isClub10)")
+                print("🏢 [GÉRER ÉTABLISSEMENT] Type: \(type(of: isClub10))")
+                
+                // IMPORTANT: Toujours inclure isClub10 dans la requête, même si false
+                // Le backend a besoin de cette valeur pour mettre à jour le statut
                 let updateRequest = UpdateProfileRequest(
                     firstName: nil, // Pas de modification du prénom ici
                     lastName: nil, // Pas de modification du nom ici
@@ -816,8 +848,11 @@ class ManageEstablishmentViewModel: ObservableObject {
                     openingHours: nil,
                     profession: subCategory?.trimmingCharacters(in: .whitespaces), // Utiliser subCategory comme profession pour compatibilité
                     category: categoryToSend, // ID technique de la catégorie (ex: "BEAUTE_ESTHETIQUE")
-                    subCategory: subCategory?.trimmingCharacters(in: .whitespaces) // Texte de la sous-catégorie (ex: "Coiffure")
+                    subCategory: subCategory?.trimmingCharacters(in: .whitespaces), // Texte de la sous-catégorie (ex: "Coiffure")
+                    isClub10: isClub10 // IMPORTANT: Toujours envoyer la valeur (true ou false)
                 )
+                print("🏢 [GÉRER ÉTABLISSEMENT] Valeur isClub10 dans updateRequest: \(updateRequest.isClub10?.description ?? "nil")")
+                print("🏢 [GÉRER ÉTABLISSEMENT] ========================================")
                 
                 // IMPORTANT: Convertir UNIQUEMENT l'image croppée en Data pour l'envoi au backend
                 // selectedImage contient toujours l'image croppée (pas l'image originale)

@@ -44,6 +44,7 @@ struct UpdateProfileRequest: Codable {
     let profession: String?
     let category: OfferCategory?
     let subCategory: String? // Sous-catégorie (ex: "Coiffure")
+    let isClub10: Bool? // Indique si l'établissement fait partie du Club 10
     
     enum CodingKeys: String, CodingKey {
         case firstName = "firstName"
@@ -64,6 +65,7 @@ struct UpdateProfileRequest: Codable {
         case profession
         case category
         case subCategory = "subCategory"
+        case isClub10 = "club10" // Le backend envoie "club10" (sans "is")
     }
 }
 
@@ -136,6 +138,7 @@ struct UserMeResponse: Codable {
     let profession: String?
     let category: OfferCategory?
     let subCategory: String? // Sous-catégorie (ex: "Coiffure")
+    let isClub10: Bool? // Indique si l'établissement fait partie du Club 10
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -163,6 +166,7 @@ struct UserMeResponse: Codable {
         case profession
         case category
         case subCategory = "subCategory"
+        case isClub10 = "club10" // Le backend envoie "club10" (sans "is")
     }
     
     // Initializer personnalisé pour gérer les valeurs optionnelles avec valeurs par défaut
@@ -194,6 +198,17 @@ struct UserMeResponse: Codable {
         profession = try container.decodeIfPresent(String.self, forKey: .profession)
         category = try container.decodeIfPresent(OfferCategory.self, forKey: .category)
         subCategory = try container.decodeIfPresent(String.self, forKey: .subCategory)
+        
+        // Décoder isClub10 - le backend envoie true/false
+        // Utiliser decodeIfPresent pour gérer le cas où le champ n'existe pas
+        isClub10 = try container.decodeIfPresent(Bool.self, forKey: .isClub10)
+        
+        // Log pour vérifier la valeur décodée
+        if let value = isClub10 {
+            print("🏢 [UserMeResponse] ✅ isClub10 décodé avec succès: \(value) (type: Bool)")
+        } else {
+            print("🏢 [UserMeResponse] ⚠️ isClub10 est nil (champ absent ou null dans la réponse)")
+        }
     }
 }
 
@@ -350,20 +365,75 @@ class ProfileAPIService: ObservableObject {
     
     // MARK: - Update Profile
     func updateProfile(_ request: UpdateProfileRequest) async throws {
-        // Encoder la requête en JSON
+        // Encoder la requête en JSON avec JSONEncoder
         let encoder = JSONEncoder()
-        let jsonData = try encoder.encode(request)
+        var jsonData = try encoder.encode(request)
         
-        guard let parameters = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
+        // Log pour déboguer isClub10
+        print("📡 [ProfileAPIService] updateProfile() - Après JSONEncoder.encode():")
+        print("   - isClub10 dans request: \(request.isClub10?.description ?? "nil")")
+        
+        // Vérifier si isClub10 est dans le JSON encodé
+        if let jsonString = String(data: jsonData, encoding: .utf8) {
+            print("📡 [ProfileAPIService] JSON après encode(): \(jsonString)")
+            if jsonString.contains("\"isClub10\"") {
+                print("   ✅ isClub10 est présent dans le JSON encodé")
+            } else {
+                print("   ⚠️ isClub10 n'est PAS présent dans le JSON encodé - on va le forcer")
+            }
+        }
+        
+        // Convertir en dictionnaire pour pouvoir forcer isClub10 si nécessaire
+        guard var parameters = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
             throw APIError.invalidResponse
         }
         
+        // FORCER l'inclusion de isClub10 avec la valeur correcte (Bool Swift)
+        // S'assurer que la valeur est toujours un Bool Swift, pas un NSNumber
+        if let isClub10Value = request.isClub10 {
+            parameters["isClub10"] = isClub10Value as Bool
+            print("📡 [ProfileAPIService] ✅ isClub10 FORCÉ dans parameters: \(isClub10Value) (type: Bool)")
+            
+            // Re-encoder le JSON avec la valeur forcée
+            jsonData = try JSONSerialization.data(withJSONObject: parameters, options: [])
+            
+            // Vérifier le JSON final
+            if let jsonString = String(data: jsonData, encoding: .utf8) {
+                print("📡 [ProfileAPIService] JSON final avec isClub10 forcé: \(jsonString)")
+            }
+        } else {
+            print("📡 [ProfileAPIService] ⚠️ isClub10 est nil dans request")
+        }
+        
         // Nettoyer les valeurs nil (NSNull dans JSON)
-        let cleanedParameters = parameters.compactMapValues { value -> Any? in
+        var cleanedParameters = parameters.compactMapValues { value -> Any? in
             if value is NSNull {
                 return nil
             }
+            // S'assurer que les booléens restent des booléens
+            if let boolValue = value as? Bool {
+                return boolValue
+            }
+            // Si c'est un NSNumber qui représente un booléen (0 ou 1), le convertir en Bool
+            if let numberValue = value as? NSNumber, numberValue == 0 || numberValue == 1 {
+                return numberValue.boolValue
+            }
             return value
+        }
+        
+        // Log après nettoyage
+        print("📡 [ProfileAPIService] updateProfile() - Paramètres après nettoyage:")
+        if let isClub10Value = cleanedParameters["isClub10"] {
+            print("   - isClub10 dans cleanedParameters: \(isClub10Value) (type: \(type(of: isClub10Value)))")
+        } else {
+            print("   - isClub10 dans cleanedParameters: nil ⚠️ PROBLÈME - La valeur n'est pas dans les paramètres!")
+        }
+        
+        // Log du JSON final qui sera envoyé
+        if let finalJsonData = try? JSONSerialization.data(withJSONObject: cleanedParameters, options: .prettyPrinted),
+           let jsonString = String(data: finalJsonData, encoding: .utf8) {
+            print("📡 [ProfileAPIService] JSON final qui sera envoyé au backend:")
+            print(jsonString)
         }
         
         // La réponse peut être vide (200 OK)
@@ -386,12 +456,41 @@ class ProfileAPIService: ObservableObject {
             throw APIError.invalidResponse
         }
         
+        // Log pour déboguer isClub10
+        print("📡 [ProfileAPIService] updateProfileWithImage() - Paramètres avant nettoyage:")
+        print("   - isClub10 dans request: \(request.isClub10?.description ?? "nil")")
+        if let isClub10Value = parameters["isClub10"] {
+            print("   - isClub10 dans parameters: \(isClub10Value)")
+        } else {
+            print("   - isClub10 dans parameters: nil")
+        }
+        
         // Nettoyer les valeurs nil (NSNull dans JSON)
-        let cleanedParameters = parameters.compactMapValues { value -> Any? in
+        // IMPORTANT: Ne pas filtrer les booléens false, ils doivent être envoyés
+        var cleanedParameters = parameters.compactMapValues { value -> Any? in
             if value is NSNull {
                 return nil
             }
             return value
+        }
+        
+        // FORCER l'inclusion de isClub10 même si JSONEncoder ne l'a pas inclus
+        // JSONEncoder peut omettre les valeurs optionnelles false, mais le backend en a besoin
+        // IMPORTANT: S'assurer que la valeur est bien un Bool Swift, pas un NSNumber
+        if let isClub10Value = request.isClub10 {
+            // Forcer la valeur comme Bool Swift pour éviter les problèmes de sérialisation
+            cleanedParameters["isClub10"] = Bool(isClub10Value)
+            print("📡 [ProfileAPIService] ✅ isClub10 FORCÉ dans cleanedParameters (multipart): \(Bool(isClub10Value)) (type: Bool)")
+        } else {
+            print("📡 [ProfileAPIService] ⚠️ isClub10 est nil dans request (multipart)")
+        }
+        
+        // Log après nettoyage
+        print("📡 [ProfileAPIService] updateProfileWithImage() - Paramètres après nettoyage:")
+        if let isClub10Value = cleanedParameters["isClub10"] {
+            print("   - isClub10 dans cleanedParameters: \(isClub10Value) (type: \(type(of: isClub10Value)))")
+        } else {
+            print("   - isClub10 dans cleanedParameters: nil ⚠️ PROBLÈME - La valeur n'est pas dans les paramètres!")
         }
         
         // Utiliser multipart si une image est fournie, sinon utiliser JSON classique
@@ -462,12 +561,23 @@ class ProfileAPIService: ObservableObject {
     
     // MARK: - Get Current User (Full)
     func getUserMe() async throws -> UserMeResponse {
-        return try await apiService.request(
+        print("═══════════════════════════════════════════════════════════")
+        print("🏢 [ProfileAPIService] getUserMe() - Début")
+        print("═══════════════════════════════════════════════════════════")
+        
+        let userMe: UserMeResponse = try await apiService.request(
             endpoint: "/users/me",
             method: .get,
             parameters: nil,
             headers: nil
         )
+        
+        print("🏢 [ProfileAPIService] getUserMe() - Réponse décodée:")
+        print("   - isClub10: \(userMe.isClub10?.description ?? "nil")")
+        print("   - Type de isClub10: \(type(of: userMe.isClub10))")
+        print("═══════════════════════════════════════════════════════════")
+        
+        return userMe
     }
     
     // MARK: - Get Current User ID

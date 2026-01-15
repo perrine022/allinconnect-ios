@@ -116,24 +116,55 @@ class PartnersListViewModel: ObservableObject {
                         name: cityText.isEmpty ? nil : cityText, // Utiliser cityText comme nom si pas vide
                         latitude: lat,
                         longitude: lon,
-                        radius: rad
+                        radius: rad,
+                        isClub10: onlyClub10 ? true : nil
                     )
                 } else if let city = city, let category = category {
                     // Recherche avec ville et catégorie
                     professionalsResponse = try await partnersAPIService.searchProfessionals(
                         city: city,
-                        category: category
+                        category: category,
+                        isClub10: onlyClub10 ? true : nil
                     )
                 } else if let city = city {
                     // Recherche par ville uniquement
-                    professionalsResponse = try await partnersAPIService.getProfessionalsByCity(city: city)
+                    // Si onlyClub10 est activé, utiliser searchProfessionals pour pouvoir filtrer
+                    if onlyClub10 {
+                        professionalsResponse = try await partnersAPIService.searchProfessionals(
+                            city: city,
+                            category: nil,
+                            name: nil,
+                            latitude: nil,
+                            longitude: nil,
+                            radius: nil,
+                            isClub10: true
+                        )
+                    } else {
+                        professionalsResponse = try await partnersAPIService.getProfessionalsByCity(city: city)
+                    }
                 } else {
                     // Récupérer tous les professionnels
-                    professionalsResponse = try await partnersAPIService.getAllProfessionals()
+                    // Si onlyClub10 est activé, utiliser searchProfessionals pour pouvoir filtrer
+                    if onlyClub10 {
+                        professionalsResponse = try await partnersAPIService.searchProfessionals(
+                            city: nil,
+                            category: nil,
+                            name: nil,
+                            latitude: nil,
+                            longitude: nil,
+                            radius: nil,
+                            isClub10: true
+                        )
+                    } else {
+                        professionalsResponse = try await partnersAPIService.getAllProfessionals()
+                    }
                 }
                 
                 // Convertir les réponses en modèles Partner
                 allPartners = professionalsResponse.map { $0.toPartner() }
+                
+                print("🔍 [PartnersListViewModel] ✅ \(allPartners.count) partenaires chargés depuis l'API")
+                print("🔍 [PartnersListViewModel] Partenaires avec discount (Club 10): \(allPartners.filter { $0.discount != nil && $0.discount == 10 }.count)")
                 
                 // Charger les favoris pour mettre à jour l'état isFavorite
                 await syncFavorites()

@@ -365,7 +365,7 @@ struct CardView: View {
                         .padding(.top, 24)
                         
                         // Lien URL en dehors de la carte, juste en dessous
-                        ReferralLinkView(urlString: viewModel.referralQRCodeURL)
+                        ReferralLinkView(urlString: viewModel.referralQRCodeURL, referralCode: viewModel.referralCode)
                             .frame(maxWidth: geometry.size.width - (horizontalPadding(for: geometry.size.width) * 2))
                             .padding(.horizontal, horizontalPadding(for: geometry.size.width))
                             .padding(.top, 16)
@@ -477,7 +477,7 @@ struct CardView: View {
         case "PROFESSIONAL":
             return "Carte professionnelle"
         case "CLIENT", "CLIENT_INDIVIDUAL":
-            return "Carte client"
+            return "Carte individuelle"
         default:
             return cardType
         }
@@ -487,14 +487,15 @@ struct CardView: View {
 // Composant pour afficher le lien de parrainage avec bouton de copie
 struct ReferralLinkView: View {
     let urlString: String
+    let referralCode: String
     @State private var showCopiedMessage = false
     
     var body: some View {
         GeometryReader { geometry in
             HStack(spacing: 8) {
-                // Zone scrollable pour l'URL (permet de faire défiler si trop longue)
+                // Zone scrollable pour le code (permet de faire défiler si trop long)
                 ScrollView(.horizontal, showsIndicators: false) {
-                    Text(urlString)
+                    Text(referralCode)
                         .font(.system(size: 13, weight: .regular))
                         .foregroundColor(.white)
                         .textSelection(.enabled)
@@ -537,7 +538,8 @@ struct ReferralLinkView: View {
     }
     
     private func copyToClipboard() {
-        UIPasteboard.general.string = urlString
+        // Copier uniquement le code de parrainage, sans l'URI
+        UIPasteboard.general.string = referralCode
         showCopiedMessage = true
         
         // Réinitialiser le message après 2 secondes

@@ -23,11 +23,12 @@ struct AnimatedSplashView: View {
             VStack {
                 Spacer()
                 
-                // Logo simple au centre - taille réelle
+                // Logo simple au centre - taille réduite
                 if let logoImage = UIImage(named: "logo") ?? UIImage(named: "AppIcon") {
                     Image(uiImage: logoImage)
                         .resizable()
                         .scaledToFit()
+                        .frame(maxWidth: 120, maxHeight: 120)
                 } else {
                     // Fallback avec logo textuel
                     VStack(spacing: 6) {

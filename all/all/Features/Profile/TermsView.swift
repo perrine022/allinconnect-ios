@@ -160,7 +160,7 @@ struct TermsView: View {
             6. Contact
             
             Pour toute question concernant vos données personnelles, contactez-nous à :
-            privacy@allinconnect.fr
+            contact@allinconnect.fr
             """
         case .legalNotice:
             return """

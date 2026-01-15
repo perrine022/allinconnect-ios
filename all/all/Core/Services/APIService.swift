@@ -10,8 +10,8 @@ import Combine
 
 // MARK: - API Configuration
 struct APIConfig {
-    // static let baseURL = "https://allinconnect-back-1.onrender.com/api/v1" // Production
-    static let baseURL = "http://127.0.0.1:8080/api/v1" // Local
+    static let baseURL = "https://allinconnect-back-1.onrender.com/api/v1" // Production
+    // static let baseURL = "http://127.0.0.1:8080/api/v1" // Local
     
     static var defaultHeaders: [String: String] {
         var headers = [
@@ -158,14 +158,81 @@ class APIService: APIServiceProtocol, ObservableObject {
         
         if method != .get, let parameters = parameters {
             do {
-                let cleanedParameters = parameters.compactMapValues { value -> Any? in
+                // Nettoyer les valeurs nil (NSNull)
+                var cleanedParameters = parameters.compactMapValues { value -> Any? in
                     if value is NSNull {
                         return nil
+                    }
+                    // IMPORTANT: S'assurer que les booléens restent des booléens et ne deviennent pas NSNumber
+                    // JSONSerialization peut convertir Bool en NSNumber, ce qui cause des problèmes
+                    if let boolValue = value as? Bool {
+                        return boolValue
+                    }
+                    // Si c'est un NSNumber qui représente un booléen (0 ou 1), le convertir en Bool
+                    if let numberValue = value as? NSNumber, numberValue == 0 || numberValue == 1 {
+                        return numberValue.boolValue
                     }
                     return value
                 }
                 
-                request.httpBody = try JSONSerialization.data(withJSONObject: cleanedParameters, options: [])
+                // Log pour vérifier isClub10 avant sérialisation
+                if let isClub10Value = cleanedParameters["isClub10"] {
+                    print("📡 [APIService] request() - isClub10 dans cleanedParameters avant sérialisation: \(isClub10Value) (type: \(type(of: isClub10Value)))")
+                    
+                    // Vérifier et corriger si c'est un NSNumber au lieu d'un Bool
+                    if let numberValue = isClub10Value as? NSNumber {
+                        print("📡 [APIService] ⚠️ isClub10 est un NSNumber (\(numberValue)) - conversion en Bool")
+                        cleanedParameters["isClub10"] = numberValue.boolValue
+                    } else if isClub10Value is Bool {
+                        print("📡 [APIService] ✅ isClub10 est bien un Bool")
+                    }
+                } else {
+                    print("📡 [APIService] request() - ⚠️ isClub10 n'est PAS dans cleanedParameters avant sérialisation!")
+                }
+                
+                var httpBodyData = try JSONSerialization.data(withJSONObject: cleanedParameters, options: [])
+                
+                // Log pour vérifier le JSON final dans httpBody
+                if var httpBodyString = String(data: httpBodyData, encoding: .utf8) {
+                    print("📡 [APIService] request() - httpBody JSON AVANT correction:")
+                    print(httpBodyString)
+                    
+                    // CORRECTION: JSONSerialization peut sérialiser les booléens comme 0/1 au lieu de true/false
+                    // Remplacer "isClub10":1 par "isClub10":true et "isClub10":0 par "isClub10":false
+                    if let isClub10Value = cleanedParameters["isClub10"] as? Bool {
+                        if isClub10Value {
+                            // Remplacer "isClub10":1 par "isClub10":true
+                            httpBodyString = httpBodyString.replacingOccurrences(of: "\"isClub10\":1", with: "\"isClub10\":true")
+                            httpBodyString = httpBodyString.replacingOccurrences(of: "\"isClub10\" : 1", with: "\"isClub10\":true")
+                        } else {
+                            // Remplacer "isClub10":0 par "isClub10":false
+                            httpBodyString = httpBodyString.replacingOccurrences(of: "\"isClub10\":0", with: "\"isClub10\":false")
+                            httpBodyString = httpBodyString.replacingOccurrences(of: "\"isClub10\" : 0", with: "\"isClub10\":false")
+                        }
+                        
+                        // Re-convertir en Data
+                        if let correctedData = httpBodyString.data(using: .utf8) {
+                            httpBodyData = correctedData
+                            print("📡 [APIService] ✅ JSON CORRIGÉ après remplacement:")
+                            print(httpBodyString)
+                        }
+                    }
+                    
+                    // Vérifier spécifiquement isClub10 dans le JSON string final
+                    if httpBodyString.contains("\"isClub10\":true") {
+                        print("📡 [APIService] ✅ isClub10 est présent avec la valeur 'true' dans le JSON string")
+                    } else if httpBodyString.contains("\"isClub10\":false") {
+                        print("📡 [APIService] ✅ isClub10 est présent avec la valeur 'false' dans le JSON string")
+                    } else if httpBodyString.contains("\"isClub10\":1") {
+                        print("📡 [APIService] ⚠️ PROBLÈME: isClub10 est toujours sérialisé comme '1' au lieu de 'true'!")
+                    } else if httpBodyString.contains("\"isClub10\":0") {
+                        print("📡 [APIService] ⚠️ PROBLÈME: isClub10 est toujours sérialisé comme '0' au lieu de 'false'!")
+                    } else {
+                        print("📡 [APIService] ⚠️ isClub10 n'est PAS dans le JSON string!")
+                    }
+                }
+                
+                request.httpBody = httpBodyData
             } catch {
                 throw APIError.networkError(error)
             }
@@ -224,7 +291,100 @@ class APIService: APIServiceProtocol, ObservableObject {
             
             // Si les données ne sont pas vides, décoder normalement
             do {
+                // Log de la réponse brute pour debug (spécifiquement pour /users/me et /users/professionals/search)
+                if endpoint.contains("/users/me") || endpoint.contains("/users/professionals/search") {
+                    if let jsonString = String(data: data, encoding: .utf8) {
+                        if endpoint.contains("/users/me") {
+                            print("═══════════════════════════════════════════════════════════")
+                            print("📥 [APIService] Réponse brute du backend pour /users/me:")
+                            print(jsonString)
+                            print("═══════════════════════════════════════════════════════════")
+                        } else if endpoint.contains("/users/professionals/search") {
+                            print("═══════════════════════════════════════════════════════════")
+                            print("📥 [APIService] Réponse brute du backend pour /users/professionals/search:")
+                            // Limiter l'affichage si la réponse est trop longue (tableau de partenaires)
+                            if jsonString.count > 2000 {
+                                print("📥 [APIService] Réponse trop longue (\(jsonString.count) caractères), affichage tronqué:")
+                                let truncated = String(jsonString.prefix(2000))
+                                print(truncated)
+                                print("... (tronqué)")
+                            } else {
+                                print(jsonString)
+                            }
+                            print("═══════════════════════════════════════════════════════════")
+                        }
+                        
+                        // Vérifier spécifiquement isClub10 dans la réponse brute AVANT décodage
+                        if endpoint.contains("/users/me") {
+                            if let jsonDict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                                print("📥 [APIService] Tous les clés dans la réponse: \(jsonDict.keys.sorted())")
+                                
+                                // Le backend envoie "club10" (sans "is"), pas "isClub10"
+                                if let isClub10Value = jsonDict["club10"] {
+                                    print("📥 [APIService] isClub10 dans la réponse brute (AVANT décodage): \(isClub10Value)")
+                                    print("📥 [APIService] Type de isClub10 (AVANT décodage): \(type(of: isClub10Value))")
+                                    
+                                    // JSONSerialization convertit true/false en NSNumber (__NSCFBoolean)
+                                    // C'est normal, mais on doit vérifier la valeur
+                                    if let boolValue = isClub10Value as? Bool {
+                                        print("📥 [APIService] ✅ isClub10 est un Bool Swift: \(boolValue)")
+                                    } else if let numberValue = isClub10Value as? NSNumber {
+                                        // NSNumber peut représenter un booléen (__NSCFBoolean)
+                                        let boolFromNumber = numberValue.boolValue
+                                        print("📥 [APIService] ⚠️ isClub10 est un NSNumber (\(numberValue)) - valeur booléenne: \(boolFromNumber)")
+                                        print("📥 [APIService] ⚠️ Le JSONDecoder devrait convertir cela correctement en Bool")
+                                    } else if let intValue = isClub10Value as? Int {
+                                        print("📥 [APIService] ⚠️ PROBLÈME: isClub10 est un Int (\(intValue)) au lieu d'un Bool!")
+                                    } else {
+                                        print("📥 [APIService] ⚠️ Type inattendu pour club10: \(type(of: isClub10Value))")
+                                    }
+                                } else {
+                                    print("📥 [APIService] ⚠️ club10 n'est PAS présent dans la réponse brute!")
+                                }
+                                
+                                // Vérifier aussi "isClub10" pour compatibilité (au cas où le backend change)
+                                if let isClub10ValueAlt = jsonDict["isClub10"] {
+                                    print("📥 [APIService] ⚠️ isClub10 (avec 'is') trouvé aussi: \(isClub10ValueAlt)")
+                                }
+                            }
+                        } else if endpoint.contains("/users/professionals/search") {
+                            // Pour la recherche de partenaires, la réponse est un tableau
+                            if let jsonArray = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] {
+                                print("📥 [APIService] Réponse est un tableau de \(jsonArray.count) partenaires")
+                                
+                                // Vérifier club10 pour chaque partenaire
+                                for (index, partnerDict) in jsonArray.enumerated() {
+                                    if let club10Value = partnerDict["club10"] {
+                                        let partnerName = partnerDict["establishmentName"] as? String ?? 
+                                                         "\(partnerDict["firstName"] as? String ?? "") \(partnerDict["lastName"] as? String ?? "")"
+                                        print("📥 [APIService] Partenaire \(index + 1) (\(partnerName)): club10 = \(club10Value) (type: \(type(of: club10Value)))")
+                                    } else {
+                                        let partnerName = partnerDict["establishmentName"] as? String ?? 
+                                                         "\(partnerDict["firstName"] as? String ?? "") \(partnerDict["lastName"] as? String ?? "")"
+                                        print("📥 [APIService] ⚠️ Partenaire \(index + 1) (\(partnerName)): club10 est absent ou null")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
                 let decoded = try decoder.decode(T.self, from: data)
+                
+                // Log spécifique pour UserMeResponse après décodage
+                if endpoint.contains("/users/me") {
+                    // Utiliser une approche avec reflection pour accéder à isClub10
+                    if let userMeDict = decoded as? [String: Any] {
+                        print("📥 [APIService] APRÈS décodage - Type décodé: \(type(of: decoded))")
+                    } else {
+                        // Essayer d'accéder à la propriété via Mirror
+                        let mirror = Mirror(reflecting: decoded)
+                        if let isClub10Property = mirror.children.first(where: { $0.label == "isClub10" }) {
+                            print("📥 [APIService] APRÈS décodage - isClub10 via Mirror: \(isClub10Property.value)")
+                        }
+                    }
+                }
+                
                 return decoded
             } catch {
                 throw APIError.decodingError(error)
@@ -279,6 +439,20 @@ class APIService: APIServiceProtocol, ObservableObject {
         // Convertir les données JSON en Data
         do {
             let jsonDataEncoded = try JSONSerialization.data(withJSONObject: jsonData, options: [])
+            
+            // Log pour déboguer isClub10 dans multipart
+            if let jsonString = String(data: jsonDataEncoded, encoding: .utf8) {
+                print("📡 [APIService] multipartRequest() - JSON envoyé dans '\(jsonFieldName)':")
+                print("   \(jsonString)")
+                if let jsonDict = try? JSONSerialization.jsonObject(with: jsonDataEncoded) as? [String: Any] {
+                    if let isClub10Value = jsonDict["isClub10"] {
+                        print("   - isClub10 dans JSON: \(isClub10Value)")
+                    } else {
+                        print("   - isClub10 dans JSON: nil")
+                    }
+                }
+            }
+            
             body.append(jsonDataEncoded)
         } catch {
             throw APIError.networkError(error)

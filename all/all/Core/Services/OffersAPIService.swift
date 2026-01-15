@@ -162,10 +162,11 @@ class OffersAPIService: ObservableObject {
         endDate: String? = nil, // Format ISO 8601: YYYY-MM-DDTHH:mm:ss
         latitude: Double? = nil,
         longitude: Double? = nil,
-        radius: Double? = nil
+        radius: Double? = nil,
+        isClub10: Bool? = nil // Filtrer par Club 10 (true = uniquement Club 10, false = exclure Club 10, nil = tous)
     ) async throws -> [OfferResponse] {
         print("📡 [API] 📞 Appel GET /api/v1/offers (endpoint public)")
-        print("📡 [API] Paramètres: city=\(city ?? "nil"), type=\(type ?? "nil"), category=\(category?.rawValue ?? "nil"), lat=\(latitude?.description ?? "nil"), lon=\(longitude?.description ?? "nil"), radius=\(radius?.description ?? "nil")")
+        print("📡 [API] Paramètres: city=\(city ?? "nil"), type=\(type ?? "nil"), category=\(category?.rawValue ?? "nil"), lat=\(latitude?.description ?? "nil"), lon=\(longitude?.description ?? "nil"), radius=\(radius?.description ?? "nil"), isClub10=\(isClub10?.description ?? "nil")")
         
         var parameters: [String: Any] = [:]
         
@@ -199,6 +200,11 @@ class OffersAPIService: ObservableObject {
             parameters["lat"] = latitude
             parameters["lon"] = longitude
             parameters["radius"] = radius * 1000.0 // Conversion km → mètres
+        }
+        
+        // Paramètre pour filtrer par Club 10
+        if let isClub10 = isClub10 {
+            parameters["isClub10"] = isClub10
         }
         
         do {
