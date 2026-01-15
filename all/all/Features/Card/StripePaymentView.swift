@@ -223,36 +223,80 @@ private struct StripePaymentContentView: View {
                             .padding(.horizontal, 20)
                     }
                     
-                    // Bouton Payer
-                    if let selectedPlan = viewModel.selectedPlan {
-                        Button(action: {
-                            // Utiliser le Payment Sheet Stripe (Étape A + B)
-                            Task { @MainActor in
-                                await viewModel.processPaymentWithStripeSheet(plan: selectedPlan)
-                            }
-                        }) {
-                            HStack {
-                                if viewModel.isProcessingPayment {
-                                    ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                } else {
-                                    Text("Payer \(selectedPlan.formattedPrice)")
-                                        .font(.system(size: 18, weight: .bold))
-                                }
-                            }
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(viewModel.isProcessingPayment ? Color.gray : Color.red)
-                            .cornerRadius(12)
-                        }
-                        .disabled(viewModel.isProcessingPayment)
-                        .padding(.horizontal, 20)
-                        .padding(.top, 8)
-                    }
-                    
+                    // Espace en bas pour le bouton fixe
                     Spacer()
                         .frame(height: 100)
+                }
+            }
+            
+            // Bouton Payer fixe en bas de l'écran
+            VStack {
+                Spacer()
+                
+                if let selectedPlan = viewModel.selectedPlan {
+                    Button(action: {
+                        // Utiliser le Payment Sheet Stripe (Étape A + B)
+                        Task { @MainActor in
+                            await viewModel.processPaymentWithStripeSheet(plan: selectedPlan)
+                        }
+                    }) {
+                        HStack {
+                            if viewModel.isProcessingPayment {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            } else {
+                                Text("Payer \(selectedPlan.formattedPrice)")
+                                    .font(.system(size: 18, weight: .bold))
+                            }
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(viewModel.isProcessingPayment ? Color.gray : Color.red)
+                        .cornerRadius(12)
+                    }
+                    .disabled(viewModel.isProcessingPayment)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 20)
+                    .background(
+                        // Fond avec gradient pour un effet de fade
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.clear,
+                                Color.black.opacity(0.3)
+                            ]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .frame(height: 120)
+                        .ignoresSafeArea(edges: .bottom)
+                    )
+                } else {
+                    // Bouton désactivé si aucun plan sélectionné
+                    Button(action: {}) {
+                        Text("Sélectionnez un plan")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.white.opacity(0.6))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color.gray.opacity(0.5))
+                            .cornerRadius(12)
+                    }
+                    .disabled(true)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 20)
+                    .background(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.clear,
+                                Color.black.opacity(0.3)
+                            ]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .frame(height: 120)
+                        .ignoresSafeArea(edges: .bottom)
+                    )
                 }
             }
         }

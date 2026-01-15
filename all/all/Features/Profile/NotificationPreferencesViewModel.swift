@@ -37,14 +37,17 @@ class NotificationPreferencesViewModel: ObservableObject {
     }
     
     // Distance pour les offres et événements locaux (en km)
+    // NOTE: Ce rayon peut être modifié localement par l'utilisateur pour les recherches
+    // La valeur initiale vient du backend, mais les modifications ne sont PAS sauvegardées automatiquement
+    // Lors d'une sauvegarde manuelle, on utilise toujours la valeur du backend (backendNotificationRadius)
     @Published var notificationRadius: Double = 15.0 {
         didSet {
-            print("🔔 [VIEWMODEL] notificationRadius changé: \(Int(oldValue)) km → \(Int(notificationRadius)) km")
-            if !isApplyingPreferences {
-                autoSavePreferences()
-            }
+            // Ne pas sauvegarder automatiquement au backend - utilisé uniquement localement
         }
     }
+    
+    // Valeur du rayon depuis le backend (ne doit jamais être modifiée)
+    private var backendNotificationRadius: Int = 15
     
     // Catégories (mêmes que sur la homepage)
     @Published var santeBienEtre: Bool = true {
@@ -191,6 +194,9 @@ class NotificationPreferencesViewModel: ObservableObject {
         newOffers = preferences.notifyNewOffers
         newIndependent = preferences.notifyNewProNearby
         localEvents = preferences.notifyLocalEvents
+        // Stocker la valeur du backend séparément
+        backendNotificationRadius = preferences.notificationRadius
+        // Utiliser la valeur du backend comme valeur initiale locale
         notificationRadius = Double(preferences.notificationRadius)
         
         // Réinitialiser toutes les catégories à false
@@ -278,11 +284,13 @@ class NotificationPreferencesViewModel: ObservableObject {
                 print("   - Rayon: \(Int(notificationRadius)) km")
                 print("   - Catégories sélectionnées: \(preferredCategories)")
                 
+                // Utiliser la valeur du backend au lieu de la valeur locale modifiée
+                // Le rayon local est utilisé uniquement pour les recherches, pas pour la sauvegarde
                 let request = NotificationPreferencesRequest(
                     notifyNewOffers: newOffers,
                     notifyNewProNearby: newIndependent,
                     notifyLocalEvents: localEvents,
-                    notificationRadius: Int(notificationRadius),
+                    notificationRadius: backendNotificationRadius, // Toujours utiliser la valeur du backend
                     preferredCategories: preferredCategories
                 )
                 

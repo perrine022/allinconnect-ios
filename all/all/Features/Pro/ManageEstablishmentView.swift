@@ -195,10 +195,6 @@ struct ManageEstablishmentView: View {
                                             .accentColor(.appGold)
                                             .focused($focusedField, equals: .description)
                                     }
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .stroke(focusedField == .description ? Color.appGold : Color.clear, lineWidth: 2)
-                                    )
                                 }
                                 .padding(.horizontal, 20)
                                 
@@ -228,7 +224,19 @@ struct ManageEstablishmentView: View {
                                         isFocused: focusedField == .postalCode
                                     )
                                     .focused($focusedField, equals: .postalCode)
+                                    .keyboardType(.numberPad)
                                     .frame(width: 120)
+                                    .onChange(of: viewModel.postalCode) { oldValue, newValue in
+                                        // Limiter à 5 chiffres maximum
+                                        if newValue.count > 5 {
+                                            viewModel.postalCode = String(newValue.prefix(5))
+                                        }
+                                        // Ne garder que les chiffres
+                                        let filtered = newValue.filter { $0.isNumber }
+                                        if filtered != newValue {
+                                            viewModel.postalCode = filtered
+                                        }
+                                    }
                                 }
                                 
                                 // Téléphone
@@ -240,6 +248,13 @@ struct ManageEstablishmentView: View {
                                 )
                                 .focused($focusedField, equals: .phone)
                                 .keyboardType(.phonePad)
+                                .onChange(of: viewModel.phone) { oldValue, newValue in
+                                    // Ne garder que les chiffres
+                                    let filtered = newValue.filter { $0.isNumber }
+                                    if filtered != newValue {
+                                        viewModel.phone = filtered
+                                    }
+                                }
                                 
                                 // Email
                                 InputField(
@@ -251,6 +266,82 @@ struct ManageEstablishmentView: View {
                                 .focused($focusedField, equals: .email)
                                 .keyboardType(.emailAddress)
                                 .autocapitalization(.none)
+                                
+                                // Catégorie (Activité)
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text("Activité")
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundColor(.white.opacity(0.9))
+                                    
+                                    if viewModel.isLoadingCategories || viewModel.categoriesTree.isEmpty {
+                                        HStack {
+                                            Text("Chargement...")
+                                                .foregroundColor(.gray.opacity(0.6))
+                                            Spacer()
+                                            ProgressView()
+                                                .progressViewStyle(CircularProgressViewStyle(tint: .gray))
+                                        }
+                                        .padding(12)
+                                        .background(Color.white)
+                                        .cornerRadius(10)
+                                    } else {
+                                        Picker("Activité", selection: Binding(
+                                            get: { viewModel.selectedCategoryId ?? "" },
+                                            set: { newId in
+                                                if let categoryResponse = viewModel.categoriesTree.first(where: { $0.id == newId }),
+                                                   let categoryEnum = OfferCategory(rawValue: categoryResponse.id) {
+                                                    viewModel.category = categoryEnum
+                                                    viewModel.selectedCategoryId = categoryResponse.id
+                                                    viewModel.availableSubCategories = categoryResponse.subCategories
+                                                    // Réinitialiser la sous-catégorie si elle n'est plus valide
+                                                    if let currentSubCategory = viewModel.subCategory,
+                                                       !categoryResponse.subCategories.contains(currentSubCategory) {
+                                                        viewModel.subCategory = nil
+                                                    }
+                                                }
+                                            }
+                                        )) {
+                                            Text("Sélectionner une activité")
+                                                .tag("")
+                                            ForEach(viewModel.categoriesTree) { categoryResponse in
+                                                Text(categoryResponse.name)
+                                                    .tag(categoryResponse.id)
+                                            }
+                                        }
+                                        .pickerStyle(.menu)
+                                        .tint(.black)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(12)
+                                        .background(Color.white)
+                                        .cornerRadius(10)
+                                    }
+                                }
+                                .padding(.horizontal, 20)
+                                
+                                // Sous-catégorie
+                                if !viewModel.availableSubCategories.isEmpty {
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text("Sous-catégorie")
+                                            .font(.system(size: 13, weight: .medium))
+                                            .foregroundColor(.white.opacity(0.9))
+                                        
+                                        Picker("Sous-catégorie", selection: $viewModel.subCategory) {
+                                            Text("Sélectionner une sous-catégorie")
+                                                .tag(nil as String?)
+                                            ForEach(viewModel.availableSubCategories, id: \.self) { subCategory in
+                                                Text(subCategory)
+                                                    .tag(subCategory as String?)
+                                            }
+                                        }
+                                        .pickerStyle(.menu)
+                                        .tint(.black)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(12)
+                                        .background(Color.white)
+                                        .cornerRadius(10)
+                                    }
+                                    .padding(.horizontal, 20)
+                                }
                                 
                                 // Site web
                                 InputField(
@@ -367,7 +458,7 @@ struct ManageEstablishmentView: View {
             hideKeyboard()
         }
         .onAppear {
-            // Charger les données au démarrage
+            // Charger les données (qui charge aussi les catégories en parallèle)
             viewModel.loadEstablishmentData()
         }
         .onReceive(viewModel.$successMessage) { successMessage in
@@ -437,6 +528,13 @@ class ManageEstablishmentViewModel: ObservableObject {
     @Published var longitude: Double? = nil
     @Published var profession: String? = nil
     @Published var category: OfferCategory? = nil
+    @Published var subCategory: String? = nil // Sous-catégorie sélectionnée
+    
+    // Catégories et sous-catégories depuis l'API
+    @Published var categoriesTree: [CategoryResponse] = []
+    @Published var isLoadingCategories: Bool = false
+    @Published var selectedCategoryId: String? = nil // ID technique de la catégorie sélectionnée (ex: "BEAUTE_ESTHETIQUE")
+    @Published var availableSubCategories: [String] = [] // Sous-catégories disponibles selon la catégorie sélectionnée
     
     @Published var isLoading: Bool = false
     @Published var isLoadingData: Bool = false
@@ -462,6 +560,7 @@ class ManageEstablishmentViewModel: ObservableObject {
     private var initialLongitude: Double? = nil
     private var initialProfession: String? = nil
     private var initialCategory: OfferCategory? = nil
+    private var initialSubCategory: String? = nil
     private var initialImageUrl: String? = nil
     private var hasInitialImage: Bool = false
     
@@ -494,10 +593,8 @@ class ManageEstablishmentViewModel: ObservableObject {
                 Task { @MainActor [weak self] in
                     if let data = try? await item.loadTransferable(type: Data.self),
                        let image = UIImage(data: data) {
-                        await MainActor.run {
-                            self?.imageToCrop = image
-                            self?.showImageCrop = true
-                        }
+                        self?.imageToCrop = image
+                        self?.showImageCrop = true
                     }
                 }
             }
@@ -513,14 +610,42 @@ class ManageEstablishmentViewModel: ObservableObject {
         
         Task {
             do {
-                let userMe = try await profileAPIService.getUserMe()
+                // Charger les données utilisateur et les catégories en parallèle
+                async let userMeTask = profileAPIService.getUserMe()
+                async let categoriesTask = profileAPIService.getProfessionalsCategoriesTree()
+                
+                let (userMe, categories) = try await (userMeTask, categoriesTask)
+                
+                // Mettre à jour l'arbre des catégories
+                categoriesTree = categories
                 
                 // Remplir les champs avec les données de l'API
                 name = userMe.establishmentName ?? ""
                 description = userMe.establishmentDescription ?? ""
                 address = userMe.address ?? ""
-                city = userMe.city ?? ""
-                postalCode = userMe.postalCode ?? ""
+                
+                // Gérer le code postal
+                let backendPostalCode = userMe.postalCode ?? ""
+                postalCode = backendPostalCode
+                
+                // Pour la ville : ne la remplir QUE si elle existe vraiment et ne ressemble pas à un code postal
+                // Lors de l'inscription, on ne collecte que le code postal, pas la ville
+                let backendCity = userMe.city ?? ""
+                let cityIsNumeric = backendCity.allSatisfy { $0.isNumber } && backendCity.count == 5
+                
+                if !backendCity.isEmpty && !cityIsNumeric {
+                    // La ville existe et ne ressemble pas à un code postal : on l'utilise
+                    city = backendCity
+                } else {
+                    // La ville est vide ou ressemble à un code postal : on laisse le champ vide
+                    city = ""
+                }
+                
+                // Log pour debug
+                print("🏢 [GÉRER ÉTABLISSEMENT] Données finales:")
+                print("   - city (backend): \(backendCity)")
+                print("   - city (final): \(city)")
+                print("   - postalCode: \(postalCode)")
                 phone = userMe.phoneNumber ?? ""
                 email = userMe.email ?? ""
                 website = userMe.website ?? ""
@@ -529,6 +654,24 @@ class ManageEstablishmentViewModel: ObservableObject {
                 longitude = userMe.longitude
                 profession = userMe.profession
                 category = userMe.category
+                subCategory = userMe.subCategory
+                
+                // Si une catégorie est chargée, mettre à jour les sous-catégories disponibles
+                if let category = category {
+                    if let categoryResponse = categoriesTree.first(where: { $0.id == category.rawValue }) {
+                        selectedCategoryId = categoryResponse.id
+                        availableSubCategories = categoryResponse.subCategories
+                        
+                        // Vérifier que la sous-catégorie actuelle est toujours valide
+                        if let currentSubCategory = subCategory,
+                           !categoryResponse.subCategories.contains(currentSubCategory) {
+                            subCategory = nil
+                        }
+                    } else {
+                        selectedCategoryId = category.rawValue
+                        availableSubCategories = []
+                    }
+                }
                 
                 // Construire l'URL complète de l'image d'établissement
                 // Gère les URLs absolues (http/https) et les URLs relatives (/uploads/)
@@ -561,6 +704,7 @@ class ManageEstablishmentViewModel: ObservableObject {
         initialLongitude = longitude
         initialProfession = profession
         initialCategory = category
+        initialSubCategory = subCategory
         initialImageUrl = establishmentImageUrl
         hasInitialImage = (establishmentImageUrl != nil)
     }
@@ -581,13 +725,13 @@ class ManageEstablishmentViewModel: ObservableObject {
         // Vérifier les modifications de localisation
         let locationChanged = latitude != initialLatitude || longitude != initialLongitude
         
-        // Vérifier les modifications de profession/catégorie
-        let professionChanged = profession != initialProfession || category != initialCategory
+        // Vérifier les modifications de catégorie/sous-catégorie
+        let categoryChanged = category != initialCategory || subCategory != initialSubCategory
         
         // Vérifier si une nouvelle image a été sélectionnée
         let imageChanged = selectedImage != nil
         
-        return textChanged || locationChanged || professionChanged || imageChanged
+        return textChanged || locationChanged || categoryChanged || imageChanged
     }
     
     var isEstablishmentEmpty: Bool {
@@ -639,13 +783,27 @@ class ManageEstablishmentViewModel: ObservableObject {
         Task {
             do {
                 print("🏢 [GÉRER ÉTABLISSEMENT] Création de la requête de mise à jour...")
+                
+                // Convertir la catégorie sélectionnée en ID technique pour l'API
+                // Le backend attend l'ID technique (ex: "BEAUTE_ESTHETIQUE") dans le champ category
+                var categoryToSend: OfferCategory? = nil
+                if let selectedCategoryId = selectedCategoryId,
+                   let categoryEnum = OfferCategory(rawValue: selectedCategoryId) {
+                    categoryToSend = categoryEnum
+                    print("🏢 [GÉRER ÉTABLISSEMENT] Catégorie sélectionnée: \(selectedCategoryId)")
+                } else if let category = category {
+                    // Fallback : utiliser la catégorie existante si pas de sélection explicite
+                    categoryToSend = category
+                    print("🏢 [GÉRER ÉTABLISSEMENT] Utilisation de la catégorie existante: \(category.rawValue)")
+                }
+                
                 // Créer la requête de mise à jour (champs établissement uniquement)
                 let updateRequest = UpdateProfileRequest(
                     firstName: nil, // Pas de modification du prénom ici
                     lastName: nil, // Pas de modification du nom ici
                     email: nil, // Pas de modification de l'email ici
                     address: address.trimmingCharacters(in: .whitespaces),
-                    city: city.trimmingCharacters(in: .whitespaces),
+                    city: city.trimmingCharacters(in: .whitespaces).isEmpty ? nil : city.trimmingCharacters(in: .whitespaces),
                     postalCode: postalCode.trimmingCharacters(in: .whitespaces).isEmpty ? nil : postalCode.trimmingCharacters(in: .whitespaces),
                     birthDate: nil, // Pas de modification de la date de naissance ici
                     latitude: latitude,
@@ -656,8 +814,9 @@ class ManageEstablishmentViewModel: ObservableObject {
                     website: website.trimmingCharacters(in: .whitespaces).isEmpty ? nil : website.trimmingCharacters(in: .whitespaces),
                     instagram: instagram.trimmingCharacters(in: .whitespaces).isEmpty ? nil : instagram.trimmingCharacters(in: .whitespaces),
                     openingHours: nil,
-                    profession: profession?.trimmingCharacters(in: .whitespaces),
-                    category: category
+                    profession: subCategory?.trimmingCharacters(in: .whitespaces), // Utiliser subCategory comme profession pour compatibilité
+                    category: categoryToSend, // ID technique de la catégorie (ex: "BEAUTE_ESTHETIQUE")
+                    subCategory: subCategory?.trimmingCharacters(in: .whitespaces) // Texte de la sous-catégorie (ex: "Coiffure")
                 )
                 
                 // IMPORTANT: Convertir UNIQUEMENT l'image croppée en Data pour l'envoi au backend

@@ -220,8 +220,39 @@ class ManageSubscriptionsViewModel: ObservableObject {
             isLoading = false
         } catch {
             isLoading = false
-            errorMessage = "Erreur lors du chargement des données d'abonnement"
-            print("Erreur lors du chargement des données d'abonnement: \(error)")
+            // Ne pas afficher d'erreur si c'est un "notFound" (404) - c'est normal si l'utilisateur n'a pas d'abonnement
+            if let apiError = error as? APIError {
+                switch apiError {
+                case .notFound:
+                    print("[ManageSubscriptionsViewModel] ⚠️ Pas d'abonnement trouvé (404) - C'est normal si l'utilisateur n'a pas d'abonnement")
+                    errorMessage = nil // Ne pas afficher d'erreur
+                    // Réinitialiser les données d'abonnement
+                    currentSubscriptionPlan = nil
+                    currentFormula = ""
+                    currentAmount = ""
+                    nextPaymentDate = ""
+                    commitmentUntil = ""
+                default:
+                    errorMessage = "Erreur lors du chargement des données d'abonnement"
+                    print("Erreur lors du chargement des données d'abonnement: \(error)")
+                }
+            } else {
+                // Vérifier si c'est une erreur 404 dans le message
+                let errorDescription = error.localizedDescription
+                if errorDescription.contains("404") || errorDescription.contains("Not Found") || errorDescription.contains("Ressource non trouvée") {
+                    print("[ManageSubscriptionsViewModel] ⚠️ Pas d'abonnement trouvé (404) - C'est normal si l'utilisateur n'a pas d'abonnement")
+                    errorMessage = nil // Ne pas afficher d'erreur
+                    // Réinitialiser les données d'abonnement
+                    currentSubscriptionPlan = nil
+                    currentFormula = ""
+                    currentAmount = ""
+                    nextPaymentDate = ""
+                    commitmentUntil = ""
+                } else {
+                    errorMessage = "Erreur lors du chargement des données d'abonnement"
+                    print("Erreur lors du chargement des données d'abonnement: \(error)")
+                }
+            }
         }
     }
     

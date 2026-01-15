@@ -26,6 +26,7 @@ struct Offer: Identifiable, Hashable, Codable {
     let isClub10: Bool
     let partnerId: UUID?
     let apiId: Int? // ID original de l'API pour pouvoir recharger les détails
+    let distanceMeters: Double? // Distance en mètres depuis la position de l'utilisateur (si recherche géolocalisée)
     
     init(
         id: UUID = UUID(),
@@ -40,7 +41,8 @@ struct Offer: Identifiable, Hashable, Codable {
         offerType: OfferType = .offer,
         isClub10: Bool = false,
         partnerId: UUID? = nil,
-        apiId: Int? = nil
+        apiId: Int? = nil,
+        distanceMeters: Double? = nil
     ) {
         self.id = id
         self.title = title
@@ -55,6 +57,7 @@ struct Offer: Identifiable, Hashable, Codable {
         self.isClub10 = isClub10
         self.partnerId = partnerId
         self.apiId = apiId
+        self.distanceMeters = distanceMeters
     }
     
     /// Retourne l'URL complète de l'image

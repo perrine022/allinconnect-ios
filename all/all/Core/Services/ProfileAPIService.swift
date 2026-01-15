@@ -8,6 +8,19 @@
 import Foundation
 import Combine
 
+// MARK: - Category Response Model
+struct CategoryResponse: Codable, Identifiable {
+    let id: String // ID technique de l'enum (ex: "BEAUTE_ESTHETIQUE")
+    let name: String // Nom lisible en français (ex: "Beauté & Esthétique")
+    let subCategories: [String] // Liste des sous-catégories (ex: ["Coiffure", "Barbier", ...])
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case subCategories = "subCategories"
+    }
+}
+
 // MARK: - Update Profile Request
 struct UpdateProfileRequest: Codable {
     // Champs utilisateur généraux
@@ -30,6 +43,7 @@ struct UpdateProfileRequest: Codable {
     let openingHours: String?
     let profession: String?
     let category: OfferCategory?
+    let subCategory: String? // Sous-catégorie (ex: "Coiffure")
     
     enum CodingKeys: String, CodingKey {
         case firstName = "firstName"
@@ -49,6 +63,7 @@ struct UpdateProfileRequest: Codable {
         case openingHours = "openingHours"
         case profession
         case category
+        case subCategory = "subCategory"
     }
 }
 
@@ -120,6 +135,7 @@ struct UserMeResponse: Codable {
     let openingHours: String?
     let profession: String?
     let category: OfferCategory?
+    let subCategory: String? // Sous-catégorie (ex: "Coiffure")
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -146,6 +162,7 @@ struct UserMeResponse: Codable {
         case openingHours = "openingHours"
         case profession
         case category
+        case subCategory = "subCategory"
     }
     
     // Initializer personnalisé pour gérer les valeurs optionnelles avec valeurs par défaut
@@ -176,6 +193,7 @@ struct UserMeResponse: Codable {
         openingHours = try container.decodeIfPresent(String.self, forKey: .openingHours)
         profession = try container.decodeIfPresent(String.self, forKey: .profession)
         category = try container.decodeIfPresent(OfferCategory.self, forKey: .category)
+        subCategory = try container.decodeIfPresent(String.self, forKey: .subCategory)
     }
 }
 
@@ -196,6 +214,8 @@ struct UserLightResponse: Codable {
     let walletBalance: Double?
     let referralCode: String?
     let notificationPreference: NotificationPreferencesResponse?
+    let planDuration: String? // "MONTHLY", "ANNUAL", "NONE"
+    let cardValidityDate: String? // Date de validité de la carte (ISO 8601)
     
     enum CodingKeys: String, CodingKey {
         case firstName = "firstName"
@@ -213,6 +233,8 @@ struct UserLightResponse: Codable {
         case walletBalance = "walletBalance"
         case referralCode = "referralCode"
         case notificationPreference = "notificationPreference"
+        case planDuration = "planDuration"
+        case cardValidityDate = "cardValidityDate"
     }
     
     // Initializer personnalisé pour gérer les valeurs optionnelles avec valeurs par défaut
@@ -234,6 +256,8 @@ struct UserLightResponse: Codable {
         walletBalance = try container.decodeIfPresent(Double.self, forKey: .walletBalance) ?? 0.0
         referralCode = try container.decodeIfPresent(String.self, forKey: .referralCode)
         notificationPreference = try container.decodeIfPresent(NotificationPreferencesResponse.self, forKey: .notificationPreference)
+        planDuration = try container.decodeIfPresent(String.self, forKey: .planDuration)
+        cardValidityDate = try container.decodeIfPresent(String.self, forKey: .cardValidityDate)
     }
 }
 
@@ -473,6 +497,42 @@ class ProfileAPIService: ObservableObject {
             return response
         } catch {
             print("[ProfileAPIService] getReferrals() - Erreur: \(error.localizedDescription)")
+            throw error
+        }
+    }
+    
+    // MARK: - Get Professionals Categories Tree
+    /// Récupère l'arbre complet des catégories avec leurs sous-catégories
+    /// Endpoint: GET /api/v1/users/professionals/categories-tree
+    /// Authentification: Non requise (Public)
+    /// URL complète: https://allinconnect-back-1.onrender.com/api/v1/users/professionals/categories-tree
+    func getProfessionalsCategoriesTree() async throws -> [CategoryResponse] {
+        print("═══════════════════════════════════════════════════════════")
+        print("🏢 [CATEGORIES] getProfessionalsCategoriesTree() - Début")
+        print("═══════════════════════════════════════════════════════════")
+        print("🏢 [CATEGORIES] Endpoint: GET /api/v1/users/professionals/categories-tree")
+        print("🏢 [CATEGORIES] URL complète: \(APIConfig.baseURL)/users/professionals/categories-tree")
+        print("🏢 [CATEGORIES] Authentification: Non requise (Public)")
+        do {
+            // Endpoint public, pas besoin d'authentification
+            let response: [CategoryResponse] = try await apiService.request(
+                endpoint: "/users/professionals/categories-tree",
+                method: .get,
+                parameters: nil,
+                headers: nil
+            )
+            print("🏢 [CATEGORIES] ✅ Succès: \(response.count) catégories récupérées")
+            for (index, category) in response.enumerated() {
+                print("🏢 [CATEGORIES]   \(index + 1). \(category.name) (\(category.id)) - \(category.subCategories.count) sous-catégories")
+            }
+            print("═══════════════════════════════════════════════════════════")
+            return response
+        } catch {
+            print("🏢 [CATEGORIES] ❌ Erreur: \(error.localizedDescription)")
+            if let apiError = error as? APIError {
+                print("🏢 [CATEGORIES] Type d'erreur: \(apiError)")
+            }
+            print("═══════════════════════════════════════════════════════════")
             throw error
         }
     }

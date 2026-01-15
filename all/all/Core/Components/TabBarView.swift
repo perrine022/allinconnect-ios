@@ -67,10 +67,11 @@ struct TabBarView: View {
                                 Spacer()
                                 FooterBar(
                                     selectedTab: $appState.selectedTab,
+                                    onTabSelected: { tab in
+                                        appState.navigateToTab(tab)
+                                    },
                                     showProfileBadge: appState.showProfileBadge
-                                ) { tab in
-                                    appState.navigateToTab(tab)
-                                }
+                                )
                                 .frame(width: geometry.size.width)
                             }
                             .ignoresSafeArea(edges: .bottom)
@@ -149,23 +150,65 @@ struct TabBarView: View {
         
         print("[TabBarView] Gestion navigation depuis notification push: \(userInfo)")
         
-        // Pour une offre ou un événement
-        if let offerIdString = userInfo["offerId"] as? String,
-           let offerId = Int(offerIdString) {
-            print("[TabBarView] Navigation vers offre: \(offerId)")
-            // Basculer vers l'onglet Offres si nécessaire
+        // Support du format recommandé avec "screen" et "entityId"
+        if let screen = userInfo["screen"] as? String,
+           let entityIdString = userInfo["entityId"] as? String,
+           let entityId = Int(entityIdString) {
+            
+            switch screen {
+            case "order_detail":
+                // Navigation vers détail de commande (si implémenté)
+                print("[TabBarView] Navigation vers order_detail: \(entityId)")
+                // TODO: Implémenter la navigation vers OrderDetailView si nécessaire
+                
+            case "message_thread":
+                // Navigation vers thread de message (si implémenté)
+                print("[TabBarView] Navigation vers message_thread: \(entityId)")
+                // TODO: Implémenter la navigation vers MessageThreadView si nécessaire
+                
+            case "offer_detail", "event_detail":
+                // Navigation vers offre/événement
+                print("[TabBarView] Navigation vers \(screen): \(entityId)")
+                appState.selectedTab = .offers
+                pushNotificationOfferId = entityId
+                
+            case "professional_detail", "partner_detail":
+                // Navigation vers professionnel
+                print("[TabBarView] Navigation vers \(screen): \(entityId)")
+                appState.selectedTab = .home
+                pushNotificationProfessionalId = entityId
+                
+            default:
+                print("[TabBarView] Screen non reconnu: \(screen)")
+            }
+            
+            return
+        }
+        
+        // Support des formats existants (rétrocompatibilité)
+        // Pour une nouvelle offre ou un événement
+        // Le backend peut envoyer offerId comme Int ou String
+        if let offerIdInt = userInfo["offerId"] as? Int {
+            print("[TabBarView] Navigation vers offre (format legacy): \(offerIdInt)")
             appState.selectedTab = .offers
-            // Naviguer vers l'offre
+            pushNotificationOfferId = offerIdInt
+        } else if let offerIdString = userInfo["offerId"] as? String,
+                  let offerId = Int(offerIdString) {
+            print("[TabBarView] Navigation vers offre (format legacy): \(offerId)")
+            appState.selectedTab = .offers
             pushNotificationOfferId = offerId
         }
         
         // Pour un nouvel établissement
-        if let professionalIdString = userInfo["professionalId"] as? String,
-           let professionalId = Int(professionalIdString) {
-            print("[TabBarView] Navigation vers professionnel: \(professionalId)")
-            // Basculer vers l'onglet Accueil ou Offres
+        // Le backend peut envoyer professionalId comme Int ou String
+        if let professionalIdInt = userInfo["professionalId"] as? Int {
+            print("[TabBarView] Navigation vers professionnel (format legacy): \(professionalIdInt)")
             appState.selectedTab = .home
-            // Naviguer vers le partenaire
+            pushNotificationProfessionalId = professionalIdInt
+        } else if let professionalIdString = userInfo["professionalId"] as? String,
+                  let professionalId = Int(professionalIdString) {
+            print("[TabBarView] Navigation vers professionnel (format legacy): \(professionalId)")
+            appState.selectedTab = .home
             pushNotificationProfessionalId = professionalId
         }
     }

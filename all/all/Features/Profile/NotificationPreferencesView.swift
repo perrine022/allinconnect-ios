@@ -97,9 +97,6 @@ struct NotificationPreferencesView: View {
                                             step: 1
                                         )
                                         .tint(.red)
-                                        .onChange(of: viewModel.notificationRadius) { oldValue, newValue in
-                                            print("🔔 [TOGGLE] Rayon de notification changé: \(Int(oldValue)) km → \(Int(newValue)) km")
-                                        }
                                         
                                         HStack {
                                             Text("5 km")

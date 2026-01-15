@@ -138,12 +138,13 @@ struct ProfileView: View {
                     Spacer()
                     FooterBar(
                         selectedTab: $appState.selectedTab,
+                        onTabSelected: { tab in
+                            appState.navigateToTab(tab, dismiss: {
+                                // Pas de dismiss ici car on est déjà dans la vue principale
+                            })
+                        },
                         showProfileBadge: appState.showProfileBadge
-                    ) { tab in
-                        appState.navigateToTab(tab, dismiss: {
-                            // Pas de dismiss ici car on est déjà dans la vue principale
-                        })
-                    }
+                    )
                     .frame(width: geometry.size.width)
                 }
                 .ignoresSafeArea(edges: .bottom)
@@ -308,16 +309,18 @@ struct ProfileView: View {
                 Divider()
                     .background(Color.gray.opacity(0.2))
                 
-                HStack {
-                    Text("Engagement jusqu'au")
-                        .font(.system(size: 14, weight: .regular))
-                        .foregroundColor(.gray.opacity(0.7))
-                    
-                    Spacer()
-                    
-                    Text(viewModel.commitmentUntil)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.black)
+                if !viewModel.formattedCardValidityDate.isEmpty {
+                    HStack {
+                        Text("Engagement jusqu'au")
+                            .font(.system(size: 14, weight: .regular))
+                            .foregroundColor(.gray.opacity(0.7))
+                        
+                        Spacer()
+                        
+                        Text(viewModel.formattedCardValidityDate)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.black)
+                    }
                 }
             }
         }
@@ -931,12 +934,13 @@ struct EditProfileView: View {
                     Spacer()
                     FooterBar(
                         selectedTab: $appState.selectedTab,
+                        onTabSelected: { tab in
+                            appState.navigateToTab(tab, dismiss: {
+                                dismiss()
+                            })
+                        },
                         showProfileBadge: appState.showProfileBadge
-                    ) { tab in
-                        appState.navigateToTab(tab, dismiss: {
-                            dismiss()
-                        })
-                    }
+                    )
                     .frame(width: geometry.size.width)
                 }
                 .ignoresSafeArea(edges: .bottom)

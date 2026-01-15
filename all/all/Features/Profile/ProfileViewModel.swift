@@ -22,6 +22,7 @@ class ProfileViewModel: ObservableObject {
     // Données abonnement PRO
     @Published var nextPaymentDate: String = "15/02/2026"
     @Published var commitmentUntil: String = "15/02/2027"
+    @Published var cardValidityDate: Date? = nil // Date de validité de la carte
     
     // Données abonnement CLUB10 (client)
     @Published var club10NextPaymentDate: String = ""
@@ -46,6 +47,17 @@ class ProfileViewModel: ObservableObject {
         default:
             return cardType
         }
+    }
+    
+    // Helper pour formater la date de validité de la carte
+    var formattedCardValidityDate: String {
+        guard let validityDate = cardValidityDate else {
+            return ""
+        }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yyyy"
+        formatter.locale = Locale(identifier: "fr_FR")
+        return formatter.string(from: validityDate)
     }
     
     // Abonnement PRO
@@ -534,6 +546,60 @@ class ProfileViewModel: ObservableObject {
             
             if let subscriptionAmount = userLight.subscriptionAmount {
                 club10Amount = String(format: "%.2f€", subscriptionAmount)
+            }
+            
+            // Récupérer la date de validité de la carte (cardValidityDate)
+            // Format attendu: "2026-07-15T07:15:29" ou "2026-07-15T07:15:29.123456Z"
+            if let cardValidityDateString = userLight.cardValidityDate {
+                print("[ProfileViewModel] 📅 Parsing cardValidityDate: \(cardValidityDateString)")
+                var parsedDate: Date? = nil
+                
+                // Essayer d'abord avec ISO8601DateFormatter (format avec timezone)
+                let isoFormatter = ISO8601DateFormatter()
+                isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds, .withTimeZone]
+                if let date = isoFormatter.date(from: cardValidityDateString) {
+                    parsedDate = date
+                    print("[ProfileViewModel] ✅ cardValidityDate parsé avec ISO8601 (avec timezone)")
+                } else {
+                    // Essayer sans fractions de secondes
+                    isoFormatter.formatOptions = [.withInternetDateTime, .withTimeZone]
+                    if let date = isoFormatter.date(from: cardValidityDateString) {
+                        parsedDate = date
+                        print("[ProfileViewModel] ✅ cardValidityDate parsé avec ISO8601 (sans fractions)")
+                    } else {
+                        // Essayer avec DateFormatter pour format "2026-07-15T07:15:29" (sans timezone)
+                        let dateFormatter = DateFormatter()
+                        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+                        dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+                        if let date = dateFormatter.date(from: cardValidityDateString) {
+                            parsedDate = date
+                            print("[ProfileViewModel] ✅ cardValidityDate parsé avec DateFormatter (sans timezone)")
+                        } else {
+                            // Essayer format simple "yyyy-MM-dd"
+                            dateFormatter.dateFormat = "yyyy-MM-dd"
+                            if let date = dateFormatter.date(from: cardValidityDateString) {
+                                parsedDate = date
+                                print("[ProfileViewModel] ✅ cardValidityDate parsé avec format simple")
+                            } else {
+                                print("[ProfileViewModel] ⚠️ Impossible de parser cardValidityDate: \(cardValidityDateString)")
+                            }
+                        }
+                    }
+                }
+                
+                if let date = parsedDate {
+                    cardValidityDate = date
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "dd/MM/yyyy"
+                    formatter.locale = Locale(identifier: "fr_FR")
+                    print("[ProfileViewModel] ✅ cardValidityDate défini: \(formatter.string(from: date))")
+                } else {
+                    cardValidityDate = nil
+                    print("[ProfileViewModel] ⚠️ cardValidityDate reste nil")
+                }
+            } else {
+                print("[ProfileViewModel] ⚠️ cardValidityDate est nil dans la réponse")
+                cardValidityDate = nil
             }
             
             // Si c'est une carte FAMILY ou CLIENT_FAMILY, vérifier si l'utilisateur est propriétaire

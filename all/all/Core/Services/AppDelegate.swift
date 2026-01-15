@@ -25,7 +25,28 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         // Configurer le delegate pour les notifications
         UNUserNotificationCenter.current().delegate = self
         
+        // Demander la permission pour les notifications
+        requestNotificationPermission(application)
+        
         return true
+    }
+    
+    // MARK: - Request Notification Permission
+    private func requestNotificationPermission(_ application: UIApplication) {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+            if let error = error {
+                print("[AppDelegate] Notification permission error: \(error.localizedDescription)")
+                return
+            }
+            if granted {
+                DispatchQueue.main.async {
+                    application.registerForRemoteNotifications()
+                }
+            } else {
+                print("[AppDelegate] Notification permission denied")
+            }
+        }
     }
     
     // MARK: - Universal Links / Deep Links
@@ -123,6 +144,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     }
     
     // MARK: - UNUserNotificationCenterDelegate
+    // Quand une notification arrive en foreground
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
@@ -136,6 +158,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         }
     }
     
+    // Quand l'utilisateur clique la notif (background/terminated)
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
@@ -146,55 +169,12 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         
         print("[AppDelegate] Notification tapped - userInfo: \(userInfo)")
         
-        // Extraire les données du payload pour la navigation
-        var navigationData: [String: Any] = [:]
-        
-        // Pour une nouvelle offre ou un événement
-        // Le backend peut envoyer offerId comme Int ou String
-        if let offerIdInt = userInfo["offerId"] as? Int {
-            navigationData["offerId"] = String(offerIdInt)
-            print("[AppDelegate] Notification pour offre/événement: \(offerIdInt)")
-            
-            // Vérifier si c'est un événement
-            if let type = userInfo["type"] as? String, type == "EVENT" {
-                navigationData["type"] = "EVENT"
-                print("[AppDelegate] Type: Événement local")
-            } else {
-                navigationData["type"] = "OFFER"
-                print("[AppDelegate] Type: Offre")
-            }
-        } else if let offerIdString = userInfo["offerId"] as? String {
-            navigationData["offerId"] = offerIdString
-            print("[AppDelegate] Notification pour offre/événement: \(offerIdString)")
-            
-            // Vérifier si c'est un événement
-            if let type = userInfo["type"] as? String, type == "EVENT" {
-                navigationData["type"] = "EVENT"
-                print("[AppDelegate] Type: Événement local")
-            } else {
-                navigationData["type"] = "OFFER"
-                print("[AppDelegate] Type: Offre")
-            }
-        }
-        
-        // Pour un nouvel établissement
-        // Le backend peut envoyer professionalId comme Int ou String
-        if let professionalIdInt = userInfo["professionalId"] as? Int {
-            navigationData["professionalId"] = String(professionalIdInt)
-            print("[AppDelegate] Notification pour professionnel: \(professionalIdInt)")
-        } else if let professionalIdString = userInfo["professionalId"] as? String {
-            navigationData["professionalId"] = professionalIdString
-            print("[AppDelegate] Notification pour professionnel: \(professionalIdString)")
-        }
-        
         // Poster une notification pour déclencher la navigation
-        if !navigationData.isEmpty {
-            NotificationCenter.default.post(
-                name: NSNotification.Name("PushNotificationTapped"),
-                object: nil,
-                userInfo: navigationData
-            )
-        }
+        NotificationCenter.default.post(
+            name: NSNotification.Name("PushNotificationTapped"),
+            object: nil,
+            userInfo: userInfo
+        )
         
         completionHandler()
     }

@@ -708,21 +708,36 @@ struct ModernPartnerCard: View {
                                 .lineLimit(2)
                                 .multilineTextAlignment(.leading)
                             
-                            // Catégorie avec badge moderne plus petit
-                            HStack(spacing: 4) {
-                                Image(systemName: "tag.fill")
-                                    .font(.system(size: 10))
-                                    .foregroundColor(.white.opacity(0.7))
-                                Text(partner.category)
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundColor(.white.opacity(0.85))
+                            // Catégorie et sous-catégorie avec badges modernes plus petits
+                            HStack(spacing: 6) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "tag.fill")
+                                        .font(.system(size: 10))
+                                        .foregroundColor(.white.opacity(0.7))
+                                    Text(partner.category)
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundColor(.white.opacity(0.85))
+                                }
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.white.opacity(0.15))
+                                .cornerRadius(6)
+                                
+                                // Afficher la sous-catégorie si disponible
+                                if let subCategory = partner.subCategory, !subCategory.isEmpty {
+                                    HStack(spacing: 4) {
+                                        Text(subCategory)
+                                            .font(.system(size: 11, weight: .regular))
+                                            .foregroundColor(.white.opacity(0.75))
+                                    }
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Color.white.opacity(0.12))
+                                    .cornerRadius(6)
+                                }
                             }
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color.white.opacity(0.15))
-                            .cornerRadius(6)
                             
-                            // Localisation plus petite
+                            // Localisation plus petite avec distance si disponible
                             HStack(spacing: 4) {
                                 Image(systemName: "mappin.circle.fill")
                                     .font(.system(size: 11))
@@ -730,6 +745,14 @@ struct ModernPartnerCard: View {
                                 Text("\(partner.city)")
                                     .font(.system(size: 11, weight: .regular))
                                     .foregroundColor(.white.opacity(0.8))
+                                
+                                // Distance si disponible
+                                if let distance = partner.distanceMeters,
+                                   let formattedDistance = DistanceFormatter.formatDistanceShort(distance) {
+                                    Text("• \(formattedDistance)")
+                                        .font(.system(size: 10, weight: .regular))
+                                        .foregroundColor(.white.opacity(0.7))
+                                }
                             }
                             
                             // Note avec style moderne plus petit

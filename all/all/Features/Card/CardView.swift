@@ -97,8 +97,8 @@ struct CardView: View {
                         .padding(.vertical, 50)
                     } else if viewModel.hasLoadedOnce && viewModel.cardNumber != nil && viewModel.isCardActive {
                         // Afficher la carte si elle existe et est active - Format carte de crédit avec image en plein écran
-                        // DEBUG: Log pour vérifier les valeurs
-                        let _ = print("💳 [CARDVIEW] Affichage carte - cardNumber: \(viewModel.cardNumber ?? "nil"), isCardActive: \(viewModel.isCardActive), cardType: \(viewModel.cardType ?? "nil")")
+                        // DEBUG: Log complet avec toutes les données du backend
+                        let _ = viewModel.logAllBackendData()
                         ZStack {
                             // Image "MEMBRE DU CLUB10" en plein écran de la carte
                             Image("VIPCardImage")
@@ -113,7 +113,7 @@ struct CardView: View {
                                 Spacer()
                                     .frame(height: 40) // Descendre le contenu d'une ligne
                                 
-                                // Nom et "Carte familiale" sur la même ligne
+                                // Nom et type de carte sur la même ligne
                                 HStack(alignment: .center, spacing: 8) {
                                     // Nom et prénom utilisateur en blanc
                                     Text(viewModel.user.fullName)
@@ -123,19 +123,37 @@ struct CardView: View {
                                     
                                     Spacer()
                                     
-                                    // "Carte familiale" aligné à droite
-                                    if viewModel.cardType == "FAMILY" || viewModel.cardType == "CLIENT_FAMILY" {
-                                        Text("Carte familiale")
+                                    // Type de carte aligné à droite
+                                    if let cardType = viewModel.cardType {
+                                        Text(cardTypeDisplayName(cardType))
                                             .font(.system(size: 13, weight: .bold))
                                             .foregroundColor(.white)
                                             .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
                                     }
                                 }
                                 
+                                // Saut de ligne
+                                Spacer()
+                                    .frame(height: 8)
+                                
+                                // Date de validité de la carte sous le nom/prénom
+                                if !viewModel.formattedCardValidityDate.isEmpty {
+                                    HStack(spacing: 4) {
+                                        Text("Date de validité")
+                                            .font(.system(size: 14, weight: .bold))
+                                            .foregroundColor(.white.opacity(0.9))
+                                        Text(viewModel.formattedCardValidityDate)
+                                            .font(.system(size: 14, weight: .bold))
+                                            .foregroundColor(.white.opacity(0.9))
+                                    }
+                                    .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
+                                }
+                                
                                 // Date de validité et "Actif" en dessous
-                                if let expirationDate = viewModel.cardExpirationDate {
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        HStack(alignment: .center, spacing: 8) {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack(alignment: .center, spacing: 8) {
+                                        // Date de validité (si disponible)
+                                        if viewModel.cardExpirationDate != nil {
                                             HStack(spacing: 4) {
                                                 Text("Valide jusqu'au")
                                                     .font(.system(size: 13, weight: .bold))
@@ -144,10 +162,16 @@ struct CardView: View {
                                                     .font(.system(size: 13, weight: .bold))
                                                     .foregroundColor(.white)
                                             }
-                                            
-                                            Spacer()
-                                            
-                                            // Badge "Actif" aligné à droite
+                                        } else {
+                                            // Si pas de date, afficher juste un espace
+                                            Text("")
+                                                .font(.system(size: 13, weight: .bold))
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        // Badge "Actif" aligné à droite (toujours affiché si isCardActive)
+                                        if viewModel.isCardActive {
                                             Text("Actif")
                                                 .font(.system(size: 13, weight: .bold))
                                                 .foregroundColor(.white)
@@ -157,17 +181,17 @@ struct CardView: View {
                                                 .cornerRadius(8)
                                                 .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
                                         }
-                                        
-                                        // Période de validité de l'abonnement
-                                        if !viewModel.subscriptionValidUntil.isEmpty {
-                                            HStack(spacing: 4) {
-                                                Text("Abonnement valable jusqu'au")
-                                                    .font(.system(size: 11, weight: .medium))
-                                                    .foregroundColor(.white.opacity(0.9))
-                                                Text(viewModel.subscriptionValidUntil)
-                                                    .font(.system(size: 11, weight: .bold))
-                                                    .foregroundColor(.white)
-                                            }
+                                    }
+                                    
+                                    // Période de validité de l'abonnement
+                                    if !viewModel.subscriptionValidUntil.isEmpty {
+                                        HStack(spacing: 4) {
+                                            Text("Abonnement valable jusqu'au")
+                                                .font(.system(size: 11, weight: .medium))
+                                                .foregroundColor(.white.opacity(0.9))
+                                            Text(viewModel.subscriptionValidUntil)
+                                                .font(.system(size: 11, weight: .bold))
+                                                .foregroundColor(.white)
                                         }
                                     }
                                 }
@@ -442,6 +466,20 @@ struct CardView: View {
                 )
                 .environmentObject(appState)
             }
+        }
+    }
+    
+    // Fonction helper pour afficher le nom du type de carte
+    private func cardTypeDisplayName(_ cardType: String) -> String {
+        switch cardType {
+        case "FAMILY", "CLIENT_FAMILY":
+            return "Carte familiale"
+        case "PROFESSIONAL":
+            return "Carte professionnelle"
+        case "CLIENT", "CLIENT_INDIVIDUAL":
+            return "Carte client"
+        default:
+            return cardType
         }
     }
 }

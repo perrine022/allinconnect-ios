@@ -58,3 +58,4 @@ Après correction, vérifiez que :
 - ✅ Le projet compile sans erreur
 - ✅ L'animation Lottie fonctionne (ou le fallback SwiftUI)
 
+

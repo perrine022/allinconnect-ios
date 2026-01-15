@@ -11,6 +11,7 @@ struct Partner: Identifiable, Hashable {
     let id: UUID
     let name: String
     let category: String
+    let subCategory: String? // Sous-catégorie (ex: "Coiffure")
     let address: String
     let city: String
     let postalCode: String
@@ -27,11 +28,13 @@ struct Partner: Identifiable, Hashable {
     let establishmentImageUrl: String? // URL absolue de l'image de l'établissement (depuis le backend)
     var isFavorite: Bool
     let apiId: Int? // ID original de l'API pour pouvoir gérer les favoris
+    let distanceMeters: Double? // Distance en mètres depuis la position de l'utilisateur (si recherche géolocalisée)
     
     init(
         id: UUID = UUID(),
         name: String,
         category: String,
+        subCategory: String? = nil,
         address: String,
         city: String,
         postalCode: String,
@@ -47,11 +50,13 @@ struct Partner: Identifiable, Hashable {
         headerImageName: String,
         establishmentImageUrl: String? = nil,
         isFavorite: Bool = false,
-        apiId: Int? = nil
+        apiId: Int? = nil,
+        distanceMeters: Double? = nil
     ) {
         self.id = id
         self.name = name
         self.category = category
+        self.subCategory = subCategory
         self.address = address
         self.city = city
         self.postalCode = postalCode
@@ -68,6 +73,7 @@ struct Partner: Identifiable, Hashable {
         self.establishmentImageUrl = establishmentImageUrl
         self.isFavorite = isFavorite
         self.apiId = apiId
+        self.distanceMeters = distanceMeters
     }
 }
 

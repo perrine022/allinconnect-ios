@@ -73,6 +73,7 @@ struct OfferResponse: Codable, Identifiable {
     let category: String? // Catégorie (ex: "BIEN_ETRE")
     let type: String? // "OFFRE" ou "EVENEMENT"
     let imageUrl: String?
+    let distanceMeters: Double? // Distance en mètres depuis la position de l'utilisateur (si recherche géolocalisée)
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -90,6 +91,7 @@ struct OfferResponse: Codable, Identifiable {
         case category
         case type
         case imageUrl = "imageUrl"
+        case distanceMeters = "distanceMeters"
     }
 }
 
@@ -192,10 +194,11 @@ class OffersAPIService: ObservableObject {
         }
         
         // Paramètres pour la recherche par rayon (obligatoires ensemble)
+        // Le backend attend le radius en MÈTRES, donc on convertit de km en mètres
         if let latitude = latitude, let longitude = longitude, let radius = radius {
             parameters["lat"] = latitude
             parameters["lon"] = longitude
-            parameters["radius"] = radius
+            parameters["radius"] = radius * 1000.0 // Conversion km → mètres
         }
         
         do {
@@ -611,7 +614,8 @@ extension OfferResponse {
             offerType: offerTypeEnum,
             isClub10: isClub10,
             partnerId: partnerId,
-            apiId: id // Stocker l'ID original de l'API
+            apiId: id, // Stocker l'ID original de l'API
+            distanceMeters: distanceMeters // Distance en mètres depuis la position de l'utilisateur
         )
     }
 }

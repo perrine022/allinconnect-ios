@@ -109,10 +109,14 @@ class PushManager: NSObject {
         let environment = "PRODUCTION"
         #endif
         
+        // Récupérer le deviceId (identifierForVendor)
+        let deviceId = UIDevice.current.identifierForVendor?.uuidString ?? ""
+        
         let requestBody: [String: Any] = [
             "token": token,
             "platform": "IOS",
-            "environment": environment
+            "environment": environment,
+            "deviceId": deviceId
         ]
         
         // Construire l'URL complète en utilisant APIConfig

@@ -354,7 +354,8 @@ class EditProfileViewModel: ObservableObject {
                     instagram: nil,
                     openingHours: nil,
                     profession: nil,
-                    category: nil
+                    category: nil,
+                    subCategory: nil
                 )
                 
                 // Appeler l'API

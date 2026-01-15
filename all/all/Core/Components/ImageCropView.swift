@@ -136,7 +136,6 @@ struct ImageCropView: View {
     }
     
     private func adjustOffset(geometry: GeometryProxy, cropFrame: CGRect) {
-        let imageSize = image.size
         let scaledWidth = geometry.size.width * scale
         let scaledHeight = geometry.size.height * scale
         

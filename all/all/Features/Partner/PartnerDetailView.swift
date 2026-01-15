@@ -136,13 +136,22 @@ struct PartnerDetailView: View {
                                     .padding(.horizontal, 20)
                                     .padding(.top, 20)
                                 
-                                // Badge catégorie et note sur la même ligne
+                                // Badge catégorie, sous-catégorie et note sur la même ligne
                                 HStack(spacing: 12) {
                                     BadgeView(
                                         text: viewModel.partner.category,
                                         gradientColors: [Color.appDarkRed2, Color.appDarkRed1],
                                         fontSize: 12
                                     )
+                                    
+                                    // Afficher la sous-catégorie si disponible
+                                    if let subCategory = viewModel.partner.subCategory, !subCategory.isEmpty {
+                                        BadgeView(
+                                            text: subCategory,
+                                            gradientColors: [Color.appDarkRed1.opacity(0.8), Color.appDarkRed2.opacity(0.8)],
+                                            fontSize: 11
+                                        )
+                                    }
                                     
                                     HStack(spacing: 4) {
                                         Image(systemName: "star.fill")

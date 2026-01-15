@@ -35,6 +35,7 @@ class CardViewModel: ObservableObject {
     @Published var cardType: String? = nil
     @Published var isCardActive: Bool = false
     @Published var cardExpirationDate: Date? = nil
+    @Published var cardValidityDate: Date? = nil // Date de validité de la carte depuis cardValidityDate
     @Published var isCardOwner: Bool = false
     
     // Informations d'abonnement
@@ -52,6 +53,10 @@ class CardViewModel: ObservableObject {
     private let billingAPIService: BillingAPIService
     private let dataService: MockDataService // Gardé pour les favoris en fallback
     private var cancellables = Set<AnyCancellable>()
+    
+    // Stocker les données du backend pour les logs
+    private var lastUserMe: UserMeResponse?
+    private var lastUserLight: UserLightResponse?
     
     init(
         profileAPIService: ProfileAPIService? = nil,
@@ -148,6 +153,11 @@ class CardViewModel: ObservableObject {
                 
                 let userMe = try await profileAPIService.getUserMe()
                 
+                // Stocker les données pour les logs
+                await MainActor.run {
+                    lastUserMe = userMe
+                }
+                
                 let duration = Date().timeIntervalSince(startTime)
                 print("💳 [MA CARTE] ✅ Réponse reçue en \(String(format: "%.2f", duration))s")
                 print("💳 [MA CARTE] Données reçues:")
@@ -166,17 +176,49 @@ class CardViewModel: ObservableObject {
                 
                 let userLight = try await profileAPIService.getUserLight()
                 
+                // Stocker les données pour les logs
+                await MainActor.run {
+                    lastUserLight = userLight
+                }
+                
                 let durationLight = Date().timeIntervalSince(startTimeLight)
                 print("💳 [MA CARTE] ✅ Réponse reçue en \(String(format: "%.2f", durationLight))s")
-                print("💳 [MA CARTE] Données reçues:")
+                print("💳 [MA CARTE] Données reçues (GET /api/v1/users/me/light):")
                 print("   - firstName: \(userLight.firstName)")
                 print("   - lastName: \(userLight.lastName)")
                 print("   - isMember: \(userLight.isMember?.description ?? "nil")")
+                print("   - userType: \(userLight.userType ?? "nil")")
+                print("   - isCardActive: \(userLight.isCardActive?.description ?? "nil")")
                 print("   - referralCount: \(userLight.referralCount?.description ?? "nil")")
                 print("   - favoriteCount: \(userLight.favoriteCount?.description ?? "nil")")
-                print("   - walletBalance: \(userLight.walletBalance?.description ?? "nil")")
+                print("   - subscriptionDate: \(userLight.subscriptionDate ?? "nil")")
                 print("   - renewalDate: \(userLight.renewalDate ?? "nil")")
+                print("   - subscriptionAmount: \(userLight.subscriptionAmount?.description ?? "nil")")
+                print("   - walletBalance: \(userLight.walletBalance?.description ?? "nil")")
                 print("   - referralCode: \(userLight.referralCode ?? "nil")")
+                print("   - planDuration: \(userLight.planDuration ?? "nil")")
+                print("   - cardValidityDate: \(userLight.cardValidityDate ?? "nil")")
+                if let card = userLight.card {
+                    print("   - card.cardNumber: \(card.cardNumber)")
+                    print("   - card.type: \(card.type ?? "nil")")
+                    print("   - card.ownerId: \(card.ownerId?.description ?? "nil")")
+                    print("   - card.ownerName: \(card.ownerName ?? "nil")")
+                } else {
+                    print("   - card: nil")
+                }
+                if let notificationPref = userLight.notificationPreference {
+                    print("   - notificationPreference.notifyNewOffers: \(notificationPref.notifyNewOffers)")
+                    print("   - notificationPreference.notifyNewProNearby: \(notificationPref.notifyNewProNearby)")
+                    print("   - notificationPreference.notifyLocalEvents: \(notificationPref.notifyLocalEvents)")
+                    print("   - notificationPreference.notificationRadius: \(notificationPref.notificationRadius)")
+                } else {
+                    print("   - notificationPreference: nil")
+                }
+                if let payments = userLight.payments {
+                    print("   - payments.count: \(payments.count)")
+                } else {
+                    print("   - payments: nil")
+                }
                 print("💳 [MA CARTE] ───────────────────────────────────────────────────")
                 
                 // Mettre à jour les données utilisateur
@@ -258,6 +300,59 @@ class CardViewModel: ObservableObject {
                             cardExpirationDate = dateFormatter.date(from: renewalDateString)
                         }
                     }
+                }
+                
+                // Récupérer la date de validité de la carte (cardValidityDate)
+                // Format attendu: "2026-07-15T07:15:29" ou "2026-07-15T07:15:29.123456Z"
+                if let cardValidityDateString = userLight.cardValidityDate {
+                    print("💳 [MA CARTE] Parsing cardValidityDate: \(cardValidityDateString)")
+                    
+                    var parsedDate: Date? = nil
+                    
+                    // Essayer d'abord avec ISO8601DateFormatter (format avec timezone)
+                    let isoFormatter = ISO8601DateFormatter()
+                    isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds, .withTimeZone]
+                    if let date = isoFormatter.date(from: cardValidityDateString) {
+                        parsedDate = date
+                        print("💳 [MA CARTE] ✅ cardValidityDate parsé avec ISO8601 (avec timezone)")
+                    } else {
+                        // Essayer sans fractions de secondes
+                        isoFormatter.formatOptions = [.withInternetDateTime, .withTimeZone]
+                        if let date = isoFormatter.date(from: cardValidityDateString) {
+                            parsedDate = date
+                            print("💳 [MA CARTE] ✅ cardValidityDate parsé avec ISO8601 (sans fractions)")
+                        } else {
+                            // Essayer avec DateFormatter pour format "2026-07-15T07:15:29" (sans timezone)
+                            let dateFormatter = DateFormatter()
+                            dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+                            dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+                            if let date = dateFormatter.date(from: cardValidityDateString) {
+                                parsedDate = date
+                                print("💳 [MA CARTE] ✅ cardValidityDate parsé avec DateFormatter (sans timezone)")
+                            } else {
+                                // Essayer format simple "yyyy-MM-dd"
+                                dateFormatter.dateFormat = "yyyy-MM-dd"
+                                if let date = dateFormatter.date(from: cardValidityDateString) {
+                                    parsedDate = date
+                                    print("💳 [MA CARTE] ✅ cardValidityDate parsé avec format simple")
+                                } else {
+                                    print("💳 [MA CARTE] ⚠️ Impossible de parser cardValidityDate: \(cardValidityDateString)")
+                                }
+                            }
+                        }
+                    }
+                    
+                    if let date = parsedDate {
+                        await MainActor.run {
+                            cardValidityDate = date
+                            let formatter = DateFormatter()
+                            formatter.dateFormat = "dd/MM/yyyy"
+                            formatter.locale = Locale(identifier: "fr_FR")
+                            print("💳 [MA CARTE] ✅ cardValidityDate défini: \(formatter.string(from: date))")
+                        }
+                    }
+                } else {
+                    print("💳 [MA CARTE] ⚠️ cardValidityDate est nil dans la réponse")
                 }
                 
                 // Mettre à jour les compteurs
@@ -862,6 +957,144 @@ class CardViewModel: ObservableObject {
         formatter.dateFormat = "dd/MM/yyyy"
         formatter.locale = Locale(identifier: "fr_FR")
         return formatter.string(from: expirationDate)
+    }
+    
+    var formattedCardValidityDate: String {
+        guard let validityDate = cardValidityDate else {
+            return ""
+        }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yyyy"
+        formatter.locale = Locale(identifier: "fr_FR")
+        return formatter.string(from: validityDate)
+    }
+    
+    // MARK: - Log All Backend Data
+    func logAllBackendData() {
+        print("═══════════════════════════════════════════════════════════")
+        print("💳 [CARDVIEW] AFFICHAGE CARTE - TOUTES LES DONNÉES DU BACKEND")
+        print("═══════════════════════════════════════════════════════════")
+        
+        // Données du ViewModel (état actuel)
+        print("📊 ÉTAT ACTUEL DU VIEWMODEL:")
+        print("   - cardNumber: \(cardNumber ?? "nil")")
+        print("   - isCardActive: \(isCardActive)")
+        print("   - cardType: \(cardType ?? "nil")")
+        print("   - isMember: \(isMember)")
+        print("   - cardExpirationDate: \(cardExpirationDate?.description ?? "nil")")
+        print("   - formattedExpirationDate: \(formattedExpirationDate)")
+        print("   - cardValidityDate: \(cardValidityDate?.description ?? "nil")")
+        print("   - formattedCardValidityDate: \(formattedCardValidityDate)")
+        print("   - subscriptionNextPaymentDate: \(subscriptionNextPaymentDate)")
+        print("   - subscriptionValidUntil: \(subscriptionValidUntil)")
+        print("   - isCardOwner: \(isCardOwner)")
+        print("   - referrals: \(referrals)")
+        print("   - favoritesCount: \(favoritesCount)")
+        print("   - wallet: \(wallet)")
+        print("   - savings: \(savings)")
+        print("   - referralCode: \(referralCode)")
+        print("   - user.fullName: \(user.fullName)")
+        
+        // Données complètes depuis userMe (GET /api/v1/users/me)
+        if let userMe = lastUserMe {
+            print("")
+            print("📋 DONNÉES COMPLÈTES (GET /api/v1/users/me):")
+            print("   - id: \(userMe.id?.description ?? "nil")")
+            print("   - email: \(userMe.email ?? "nil")")
+            print("   - firstName: \(userMe.firstName)")
+            print("   - lastName: \(userMe.lastName)")
+            print("   - userType: \(userMe.userType ?? "nil")")
+            print("   - address: \(userMe.address ?? "nil")")
+            print("   - city: \(userMe.city ?? "nil")")
+            print("   - postalCode: \(userMe.postalCode ?? "nil")")
+            print("   - latitude: \(userMe.latitude?.description ?? "nil")")
+            print("   - longitude: \(userMe.longitude?.description ?? "nil")")
+            print("   - isCardActive: \(userMe.isCardActive?.description ?? "nil")")
+            print("   - referralCode: \(userMe.referralCode ?? "nil")")
+            print("   - premiumEnabled: \(userMe.premiumEnabled?.description ?? "nil")")
+            print("   - subscriptionType: \(userMe.subscriptionType ?? "nil")")
+            
+            // Données de la carte
+            if let card = userMe.card {
+                print("   - card.cardNumber: \(card.cardNumber)")
+                print("   - card.type: \(card.type ?? "nil")")
+                print("   - card.ownerId: \(card.ownerId?.description ?? "nil")")
+                print("   - card.ownerName: \(card.ownerName ?? "nil")")
+            } else {
+                print("   - card: nil")
+            }
+            
+            // Données établissement (si pro)
+            print("   - establishmentName: \(userMe.establishmentName ?? "nil")")
+            print("   - establishmentDescription: \(userMe.establishmentDescription ?? "nil")")
+            print("   - establishmentImageUrl: \(userMe.establishmentImageUrl ?? "nil")")
+            print("   - phoneNumber: \(userMe.phoneNumber ?? "nil")")
+            print("   - website: \(userMe.website ?? "nil")")
+            print("   - instagram: \(userMe.instagram ?? "nil")")
+            print("   - openingHours: \(userMe.openingHours ?? "nil")")
+            print("   - profession: \(userMe.profession ?? "nil")")
+            print("   - category: \(userMe.category?.rawValue ?? "nil")")
+            print("   - subCategory: \(userMe.subCategory ?? "nil")")
+        } else {
+            print("")
+            print("📋 DONNÉES COMPLÈTES (GET /api/v1/users/me): non disponibles")
+        }
+        
+        // Données allégées depuis userLight (GET /api/v1/users/me/light)
+        if let userLight = lastUserLight {
+            print("")
+            print("📋 DONNÉES ALLÉGÉES (GET /api/v1/users/me/light):")
+            print("   - firstName: \(userLight.firstName)")
+            print("   - lastName: \(userLight.lastName)")
+            print("   - isMember: \(userLight.isMember?.description ?? "nil")")
+            print("   - userType: \(userLight.userType ?? "nil")")
+            print("   - isCardActive: \(userLight.isCardActive?.description ?? "nil")")
+            print("   - referralCount: \(userLight.referralCount?.description ?? "nil")")
+            print("   - favoriteCount: \(userLight.favoriteCount?.description ?? "nil")")
+            print("   - subscriptionDate: \(userLight.subscriptionDate ?? "nil")")
+            print("   - renewalDate: \(userLight.renewalDate ?? "nil")")
+            print("   - subscriptionAmount: \(userLight.subscriptionAmount?.description ?? "nil")")
+            print("   - walletBalance: \(userLight.walletBalance?.description ?? "nil")")
+            print("   - referralCode: \(userLight.referralCode ?? "nil")")
+            print("   - planDuration: \(userLight.planDuration ?? "nil")")
+            print("   - cardValidityDate: \(userLight.cardValidityDate ?? "nil")")
+            
+            // Données de la carte
+            if let card = userLight.card {
+                print("   - card.cardNumber: \(card.cardNumber)")
+                print("   - card.type: \(card.type ?? "nil")")
+                print("   - card.ownerId: \(card.ownerId?.description ?? "nil")")
+                print("   - card.ownerName: \(card.ownerName ?? "nil")")
+            } else {
+                print("   - card: nil")
+            }
+            
+            // Préférences de notification
+            if let notificationPref = userLight.notificationPreference {
+                print("   - notificationPreference.notifyNewOffers: \(notificationPref.notifyNewOffers)")
+                print("   - notificationPreference.notifyNewProNearby: \(notificationPref.notifyNewProNearby)")
+                print("   - notificationPreference.notifyLocalEvents: \(notificationPref.notifyLocalEvents)")
+                print("   - notificationPreference.notificationRadius: \(notificationPref.notificationRadius)")
+                print("   - notificationPreference.preferredCategories: \(notificationPref.preferredCategories)")
+            } else {
+                print("   - notificationPreference: nil")
+            }
+            
+            // Paiements
+            if let payments = userLight.payments {
+                print("   - payments.count: \(payments.count)")
+                for (index, payment) in payments.enumerated() {
+                    print("     [\(index)] payment.id: \(payment.id), amount: \(payment.amount), status: \(payment.status)")
+                }
+            } else {
+                print("   - payments: nil")
+            }
+        } else {
+            print("")
+            print("📋 DONNÉES ALLÉGÉES (GET /api/v1/users/me/light): non disponibles")
+        }
+        
+        print("═══════════════════════════════════════════════════════════")
     }
     
     // MARK: - Subscription Info

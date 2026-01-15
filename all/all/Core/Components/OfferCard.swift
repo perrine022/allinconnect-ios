@@ -49,9 +49,19 @@ struct OfferCard: View {
                         .font(.system(size: 18, weight: .bold))
                         .foregroundColor(.white)
                     
-                    Text(offer.businessName)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.white.opacity(0.9))
+                    HStack(spacing: 6) {
+                        Text(offer.businessName)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white.opacity(0.9))
+                        
+                        // Distance si disponible
+                        if let distance = offer.distanceMeters,
+                           let formattedDistance = DistanceFormatter.formatDistanceShort(distance) {
+                            Text("• \(formattedDistance)")
+                                .font(.system(size: 11, weight: .regular))
+                                .foregroundColor(.white.opacity(0.6))
+                        }
+                    }
                     
                     Text("Jusqu'au \(offer.validUntil)")
                         .font(.system(size: 12, weight: .regular))

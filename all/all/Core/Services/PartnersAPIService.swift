@@ -23,6 +23,7 @@ struct PartnerProfessionalResponse: Codable, Identifiable {
     let subscriptionType: String?
     let profession: String?
     let category: OfferCategory?
+    let subCategory: String? // Sous-catégorie (ex: "Coiffure")
     let hasConnectedBefore: Bool?
     let referralCode: String?
     let subscriptionPlan: SubscriptionPlanResponse?
@@ -33,6 +34,7 @@ struct PartnerProfessionalResponse: Codable, Identifiable {
     let website: String?
     let instagram: String?
     let openingHours: String?
+    let distanceMeters: Double? // Distance en mètres depuis la position de l'utilisateur (si recherche géolocalisée)
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -48,6 +50,7 @@ struct PartnerProfessionalResponse: Codable, Identifiable {
         case subscriptionType = "subscriptionType"
         case profession
         case category
+        case subCategory = "subCategory"
         case hasConnectedBefore = "hasConnectedBefore"
         case referralCode = "referralCode"
         case subscriptionPlan = "subscriptionPlan"
@@ -58,6 +61,7 @@ struct PartnerProfessionalResponse: Codable, Identifiable {
         case website
         case instagram
         case openingHours = "openingHours"
+        case distanceMeters = "distanceMeters"
     }
 }
 
@@ -153,10 +157,11 @@ class PartnersAPIService: ObservableObject {
         }
         
         // Paramètres pour la recherche par rayon (obligatoires ensemble)
+        // Le backend attend le radius en MÈTRES, donc on convertit de km en mètres
         if let latitude = latitude, let longitude = longitude, let radius = radius {
             parameters["lat"] = latitude
             parameters["lon"] = longitude
-            parameters["radius"] = radius
+            parameters["radius"] = radius * 1000.0 // Conversion km → mètres
         }
         
         do {
@@ -241,6 +246,7 @@ extension PartnerProfessionalResponse {
             id: partnerUUID,
             name: name,
             category: categoryName,
+            subCategory: subCategory, // Sous-catégorie depuis l'API
             address: fullAddress,
             city: partnerCity,
             postalCode: postalCode,
@@ -256,7 +262,8 @@ extension PartnerProfessionalResponse {
             headerImageName: defaultImage,
             establishmentImageUrl: imageUrl, // URL absolue de l'image depuis le backend
             isFavorite: false, // Sera géré via l'API
-            apiId: id // Stocker l'ID original de l'API
+            apiId: id, // Stocker l'ID original de l'API
+            distanceMeters: distanceMeters // Distance en mètres depuis la position de l'utilisateur
         )
     }
 }

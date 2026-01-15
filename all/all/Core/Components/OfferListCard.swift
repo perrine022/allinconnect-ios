@@ -70,10 +70,20 @@ struct OfferListCard: View {
                     }
                     
                     // Nom du studio
-                    Text(offer.businessName)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.red)
-                        .lineLimit(1)
+                    HStack(spacing: 6) {
+                        Text(offer.businessName)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.red)
+                            .lineLimit(1)
+                        
+                        // Distance si disponible
+                        if let distance = offer.distanceMeters,
+                           let formattedDistance = DistanceFormatter.formatDistanceShort(distance) {
+                            Text("• \(formattedDistance)")
+                                .font(.system(size: 11, weight: .regular))
+                                .foregroundColor(.gray.opacity(0.7))
+                        }
+                    }
                     
                     // Description
                     Text(offer.description)

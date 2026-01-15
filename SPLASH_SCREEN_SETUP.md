@@ -73,3 +73,4 @@ Après l'animation, l'app passe automatiquement à `AppContentView` (tutoriel, l
 1. Vérifiez que `logo.png` fait bien 1024x1024 pixels
 2. Vérifiez que le chemin dans `splash.json` correspond : `"u": "Images/"` et `"p": "logo.png"`
 
+

@@ -60,15 +60,34 @@ struct PartnerCard: View {
                         .foregroundColor(.black)
                         .lineLimit(1)
                     
-                    // Catégorie
-                    Text(partner.category)
-                        .font(.system(size: 14, weight: .regular))
-                        .foregroundColor(.gray)
+                    // Catégorie et sous-catégorie
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(partner.category)
+                            .font(.system(size: 14, weight: .regular))
+                            .foregroundColor(.gray)
+                        
+                        // Afficher la sous-catégorie si disponible
+                        if let subCategory = partner.subCategory, !subCategory.isEmpty {
+                            Text(subCategory)
+                                .font(.system(size: 12, weight: .regular))
+                                .foregroundColor(.gray.opacity(0.8))
+                        }
+                    }
                     
-                    // Localisation
-                    Text("\(partner.city) (\(partner.postalCode))")
-                        .font(.system(size: 13, weight: .regular))
-                        .foregroundColor(.gray)
+                    // Localisation avec distance si disponible
+                    HStack(spacing: 4) {
+                        Text("\(partner.city)\(partner.postalCode.isEmpty ? "" : " (\(partner.postalCode))")")
+                            .font(.system(size: 13, weight: .regular))
+                            .foregroundColor(.gray)
+                        
+                        // Distance si disponible
+                        if let distance = partner.distanceMeters,
+                           let formattedDistance = DistanceFormatter.formatDistanceShort(distance) {
+                            Text("• \(formattedDistance)")
+                                .font(.system(size: 12, weight: .regular))
+                                .foregroundColor(.gray.opacity(0.7))
+                        }
+                    }
                     
                     // Note
                     HStack(spacing: 4) {

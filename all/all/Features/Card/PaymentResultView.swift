@@ -37,15 +37,6 @@ struct PaymentResultView: View {
             VStack(spacing: 24) {
                 Spacer()
                 
-                // Logo de l'app en haut
-                if status == .success {
-                    Image("AppLogo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 120, height: 120)
-                        .padding(.bottom, 20)
-                }
-                
                 // Icône de statut
                 Image(systemName: statusIcon)
                     .font(.system(size: 80))
@@ -104,8 +95,11 @@ struct PaymentResultView: View {
                             // Envoyer une notification pour déclencher la navigation vers ManageEstablishmentView
                             NotificationCenter.default.post(name: NSNotification.Name("NavigateToManageEstablishment"), object: nil)
                         }
+                    } else if status == .success {
+                        // Pour les clients particuliers après un paiement réussi, naviguer vers la page Offres
+                        appState.navigateToTab(.offers)
                     } else {
-                        // Pour les clients ou en cas d'échec, naviguer vers l'accueil
+                        // En cas d'échec, naviguer vers l'accueil
                         appState.navigateToTab(.home)
                     }
                     

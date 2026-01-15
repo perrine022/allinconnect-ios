@@ -17,11 +17,16 @@ struct LottieView: UIViewRepresentable {
         let view = LottieAnimationView(name: name)
         view.contentMode = .scaleAspectFit
         view.loopMode = loopMode
+        view.clipsToBounds = true // Empêcher le débordement
         view.play()
         return view
     }
 
-    func updateUIView(_ uiView: LottieAnimationView, context: Context) {}
+    func updateUIView(_ uiView: LottieAnimationView, context: Context) {
+        // S'assurer que la vue respecte les contraintes
+        uiView.contentMode = .scaleAspectFit
+        uiView.clipsToBounds = true
+    }
 }
 #else
 // Fallback si Lottie n'est pas disponible
