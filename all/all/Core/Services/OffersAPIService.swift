@@ -555,7 +555,7 @@ extension OfferResponse {
         // Utiliser le champ discount du backend s'il existe, sinon utiliser price comme fallback
         // Afficher exactement ce qui est dans le backend sans ajouter d'unité
         let discount: String
-        if let discountFromBackend = discount, !discountFromBackend.isEmpty {
+        if let discountFromBackend = self.discount, !discountFromBackend.isEmpty {
             // Utiliser directement le champ discount du backend (déjà formaté)
             discount = discountFromBackend
         } else if let price = price {
