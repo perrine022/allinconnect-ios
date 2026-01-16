@@ -36,6 +36,8 @@ struct PartnerProfessionalResponse: Codable, Identifiable {
     let openingHours: String?
     let distanceMeters: Double? // Distance en mètres depuis la position de l'utilisateur (si recherche géolocalisée)
     let isClub10: Bool? // Indique si l'établissement fait partie du Club 10
+    let averageRating: Double? // Note moyenne depuis le backend
+    let reviewCount: Int? // Nombre d'avis depuis le backend
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -64,6 +66,8 @@ struct PartnerProfessionalResponse: Codable, Identifiable {
         case openingHours = "openingHours"
         case distanceMeters = "distanceMeters"
         case isClub10 = "club10" // Le backend envoie "club10" (sans "is")
+        case averageRating = "averageRating"
+        case reviewCount = "reviewCount"
     }
 }
 
@@ -274,6 +278,12 @@ extension PartnerProfessionalResponse {
         // Gère les URLs absolues (http/https) et les URLs relatives (/uploads/)
         let imageUrl: String? = ImageURLHelper.buildImageURL(from: establishmentImageUrl)
         
+        // Debug: Log pour vérifier l'URL de l'image
+        print("🖼️ [PartnersAPIService] Mapping Partner Image:")
+        print("   - establishmentImageUrl (raw): \(establishmentImageUrl ?? "nil")")
+        print("   - imageUrl (built): \(imageUrl ?? "nil")")
+        print("   - Partner name: \(name)")
+        
         // Créer un Partner avec les données disponibles
         return Partner(
             id: partnerUUID,
@@ -288,8 +298,8 @@ extension PartnerProfessionalResponse {
             website: website, // Utiliser website depuis l'API
             instagram: instagram, // Utiliser instagram depuis l'API
             description: establishmentDescription, // Utiliser establishmentDescription
-            rating: 4.5, // Par défaut, peut être récupéré depuis un autre endpoint
-            reviewCount: 0, // Par défaut, peut être récupéré depuis un autre endpoint
+            rating: averageRating ?? 0.0, // Note moyenne depuis le backend, 0.0 par défaut si non disponible
+            reviewCount: reviewCount ?? 0, // Nombre d'avis depuis le backend, 0 par défaut si non disponible
             discount: isClub10Value ? 10 : nil, // Réduction UNIQUEMENT si isClub10 == true
             imageName: defaultImage,
             headerImageName: defaultImage,

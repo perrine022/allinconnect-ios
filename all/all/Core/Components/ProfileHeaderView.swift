@@ -34,80 +34,71 @@ struct ProfileHeaderView: View {
         self.height = height
     }
     
+    @State private var showImageZoom = false
+    @State private var zoomScale: CGFloat = 1.0
+    @State private var lastZoomScale: CGFloat = 1.0
+    
     var body: some View {
         ZStack(alignment: .bottom) {
-            // Gradient rouge en haut
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color.red.opacity(0.3),
-                    Color.clear
-                ]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: height)
-            
             VStack(spacing: 0) {
                 Spacer()
                 
-                // Photo de profil avec bordure rouge
-                ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    Color.red.opacity(0.8),
-                                    Color.red.opacity(0.6)
-                                ]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 140, height: 140)
-                    
-                    // Afficher l'image de l'établissement si disponible, sinon l'icône par défaut
-                    Group {
-                        if let imageUrl = ImageURLHelper.buildImageURL(from: establishmentImageUrl),
-                           let url = URL(string: imageUrl) {
-                            AsyncImage(url: url) { phase in
-                                switch phase {
-                                case .empty:
-                                    Image(systemName: profileImageName)
-                                        .resizable()
-                                        .scaledToFill()
-                                        .foregroundColor(.white.opacity(0.9))
-                                case .success(let image):
-                                    image
-                                        .resizable()
-                                        .scaledToFill()
-                                case .failure:
-                                    Image(systemName: profileImageName)
-                                        .resizable()
-                                        .scaledToFill()
-                                        .foregroundColor(.white.opacity(0.9))
-                                @unknown default:
-                                    Image(systemName: profileImageName)
-                                        .resizable()
-                                        .scaledToFill()
-                                        .foregroundColor(.white.opacity(0.9))
+                // Photo de profil sans filtre rouge
+                Button(action: {
+                    showImageZoom = true
+                }) {
+                    ZStack {
+                        // Afficher l'image de l'établissement si disponible, sinon l'icône par défaut
+                        Group {
+                            if let imageUrl = ImageURLHelper.buildImageURL(from: establishmentImageUrl),
+                               let url = URL(string: imageUrl) {
+                                AsyncImage(url: url) { phase in
+                                    switch phase {
+                                    case .empty:
+                                        Image(systemName: profileImageName)
+                                            .resizable()
+                                            .scaledToFill()
+                                            .foregroundColor(.white.opacity(0.9))
+                                    case .success(let image):
+                                        image
+                                            .resizable()
+                                            .scaledToFill()
+                                    case .failure:
+                                        Image(systemName: profileImageName)
+                                            .resizable()
+                                            .scaledToFill()
+                                            .foregroundColor(.white.opacity(0.9))
+                                    @unknown default:
+                                        Image(systemName: profileImageName)
+                                            .resizable()
+                                            .scaledToFill()
+                                            .foregroundColor(.white.opacity(0.9))
+                                    }
                                 }
+                            } else {
+                                // Fallback : icône par défaut
+                                Image(systemName: profileImageName)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .foregroundColor(.white.opacity(0.9))
                             }
-                        } else {
-                            // Fallback : icône par défaut
-                            Image(systemName: profileImageName)
-                                .resizable()
-                                .scaledToFill()
-                                .foregroundColor(.white.opacity(0.9))
                         }
+                        .frame(width: 140, height: 140)
+                        .clipShape(Circle())
                     }
-                    .frame(width: 130, height: 130)
-                    .clipShape(Circle())
+                    .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 5)
+                    .padding(.bottom, 20)
                 }
-                .shadow(color: Color.red.opacity(0.5), radius: 20, x: 0, y: 10)
-                .padding(.bottom, 20)
+                .buttonStyle(PlainButtonStyle())
             }
         }
         .frame(height: height)
+        .sheet(isPresented: $showImageZoom) {
+            ImageZoomView(
+                imageUrl: establishmentImageUrl,
+                profileImageName: profileImageName
+            )
+        }
     }
 }
 

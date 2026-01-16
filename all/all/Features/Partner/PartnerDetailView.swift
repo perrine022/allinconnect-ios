@@ -14,6 +14,7 @@ struct PartnerDetailView: View {
     @State private var selectedOffer: Offer?
     @State private var showRatingPopup = false
     @State private var isLoggedIn = LoginViewModel.isLoggedIn()
+    @State private var showImageZoom = false
     
     // Vérifier si l'utilisateur peut laisser un avis (connecté avec statut CLIENT ou PRO)
     private var canLeaveRating: Bool {
@@ -44,38 +45,46 @@ struct PartnerDetailView: View {
                                 
                                 // Image de l'établissement ou logo stylisé "A" en arrière-plan
                                 // Dimensions fixes pour un affichage cohérent (ratio 16:9)
-                                Group {
-                                    if let imageUrl = ImageURLHelper.buildImageURL(from: viewModel.partner.establishmentImageUrl),
-                                       let url = URL(string: imageUrl) {
-                                        AsyncImage(url: url) { phase in
-                                            switch phase {
-                                            case .empty:
-                                                Text("A")
-                                                    .font(.system(size: 120, weight: .ultraLight))
-                                                    .foregroundColor(Color.appDarkRed1.opacity(0.3))
-                                            case .success(let image):
-                                                image
-                                                    .resizable()
-                                                    .scaledToFit()
-                                                    .opacity(0.3)
-                                            case .failure:
-                                                Text("A")
-                                                    .font(.system(size: 120, weight: .ultraLight))
-                                                    .foregroundColor(Color.appDarkRed1.opacity(0.3))
-                                            @unknown default:
-                                                Text("A")
-                                                    .font(.system(size: 120, weight: .ultraLight))
-                                                    .foregroundColor(Color.appDarkRed1.opacity(0.3))
-                                            }
-                                        }
-                                    } else {
-                                        // Logo stylisé "A" en arrière-plan
-                                        Text("A")
-                                            .font(.system(size: 120, weight: .ultraLight))
-                                            .foregroundColor(Color.appDarkRed1.opacity(0.3))
+                                Button(action: {
+                                    if viewModel.partner.establishmentImageUrl != nil {
+                                        showImageZoom = true
                                     }
+                                }) {
+                                    Group {
+                                        if let imageUrl = ImageURLHelper.buildImageURL(from: viewModel.partner.establishmentImageUrl),
+                                           let url = URL(string: imageUrl) {
+                                            AsyncImage(url: url) { phase in
+                                                switch phase {
+                                                case .empty:
+                                                    Text("A")
+                                                        .font(.system(size: 120, weight: .ultraLight))
+                                                        .foregroundColor(Color.appDarkRed1.opacity(0.3))
+                                                case .success(let image):
+                                                    image
+                                                        .resizable()
+                                                        .scaledToFit()
+                                                        .opacity(0.3)
+                                                case .failure:
+                                                    Text("A")
+                                                        .font(.system(size: 120, weight: .ultraLight))
+                                                        .foregroundColor(Color.appDarkRed1.opacity(0.3))
+                                                @unknown default:
+                                                    Text("A")
+                                                        .font(.system(size: 120, weight: .ultraLight))
+                                                        .foregroundColor(Color.appDarkRed1.opacity(0.3))
+                                                }
+                                            }
+                                        } else {
+                                            // Logo stylisé "A" en arrière-plan
+                                            Text("A")
+                                                .font(.system(size: 120, weight: .ultraLight))
+                                                .foregroundColor(Color.appDarkRed1.opacity(0.3))
+                                        }
+                                    }
+                                    .frame(width: geometry.size.width, height: geometry.size.width * 9 / 16)
                                 }
-                                .frame(width: geometry.size.width, height: geometry.size.width * 9 / 16)
+                                .buttonStyle(PlainButtonStyle())
+                                .disabled(viewModel.partner.establishmentImageUrl == nil)
                                 
                                 // Boutons de navigation - positionnés en haut, proches des bords
                                 VStack {
@@ -463,6 +472,12 @@ struct PartnerDetailView: View {
                     }
                 }
         )
+        .sheet(isPresented: $showImageZoom) {
+            ImageZoomView(
+                imageUrl: viewModel.partner.establishmentImageUrl,
+                profileImageName: "camera.fill"
+            )
+        }
         .navigationDestination(item: $selectedOffer) { offer in
             OfferDetailView(offer: offer)
         }

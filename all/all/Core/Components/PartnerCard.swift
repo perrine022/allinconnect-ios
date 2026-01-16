@@ -17,15 +17,15 @@ struct PartnerCard: View {
             HStack(spacing: 12) {
                 // Image de l'établissement ou icône par défaut
                 Group {
-                    if let imageUrl = ImageURLHelper.buildImageURL(from: partner.establishmentImageUrl),
+                    // L'URL est déjà construite dans le mapping, on l'utilise directement
+                    if let imageUrl = partner.establishmentImageUrl, !imageUrl.isEmpty,
                        let url = URL(string: imageUrl) {
                         AsyncImage(url: url) { phase in
                             switch phase {
                             case .empty:
-                                Image(systemName: partner.imageName)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .foregroundColor(.gray.opacity(0.3))
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .gray))
+                                    .frame(width: 70, height: 70)
                             case .success(let image):
                                 image
                                     .resizable()
@@ -35,6 +35,10 @@ struct PartnerCard: View {
                                     .resizable()
                                     .scaledToFill()
                                     .foregroundColor(.gray.opacity(0.3))
+                                    .task {
+                                        print("🖼️ [PartnerCard] Failed to load image for \(partner.name):")
+                                        print("   URL: \(imageUrl)")
+                                    }
                             @unknown default:
                                 Image(systemName: partner.imageName)
                                     .resizable()
@@ -43,11 +47,18 @@ struct PartnerCard: View {
                             }
                         }
                     } else {
-                        // Fallback : icône par défaut
+                        // Pas d'URL d'image disponible
                         Image(systemName: partner.imageName)
                             .resizable()
                             .scaledToFill()
                             .foregroundColor(.gray.opacity(0.3))
+                            .task {
+                                if partner.establishmentImageUrl == nil || partner.establishmentImageUrl!.isEmpty {
+                                    print("🖼️ [PartnerCard] No image URL for partner: \(partner.name)")
+                                } else {
+                                    print("🖼️ [PartnerCard] Invalid URL for partner \(partner.name): \(partner.establishmentImageUrl ?? "nil")")
+                                }
+                            }
                     }
                 }
                 .frame(width: 70, height: 70)

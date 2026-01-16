@@ -105,33 +105,19 @@ struct CardView: View {
                                 .resizable()
                                 .scaledToFit()
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .cornerRadius(16)
+                                .clipShape(RoundedRectangle(cornerRadius: 24))
                             
                             // Overlay avec texte organisé selon le design
                             VStack(alignment: .leading, spacing: 0) {
-                                // En haut : Icône carte + CLUB10
-                                HStack(spacing: 12) {
-                                    Image(systemName: "creditcard.fill")
-                                        .foregroundColor(.white)
-                                        .font(.system(size: 20))
-                                    
-                                    Text("CLUB10")
-                                        .font(.system(size: 20, weight: .bold))
-                                        .foregroundColor(.white)
-                                    
-                                    Spacer()
-                                }
-                                .padding(.top, 20)
-                                .padding(.horizontal, 20)
-                                
                                 Spacer()
+                                    .frame(height: 60) // Descendu de 3 lignes (20 + 40)
                                 
                                 // Au milieu : Type de carte + Membre privilégié + Titulaire + Nom
                                 VStack(alignment: .leading, spacing: 8) {
                                     // Type de carte
                                     if let cardType = viewModel.cardType {
                                         Text(cardTypeDisplayName(cardType).uppercased())
-                                            .font(.system(size: 12, weight: .semibold))
+                                            .font(.system(size: 12, weight: .bold))
                                             .foregroundColor(.white.opacity(0.9))
                                     }
                                     
@@ -142,14 +128,14 @@ struct CardView: View {
                                             .font(.system(size: 12))
                                         
                                         Text("Membre privilégié")
-                                            .font(.system(size: 11, weight: .regular))
+                                            .font(.system(size: 11, weight: .bold))
                                             .foregroundColor(.white.opacity(0.9))
                                     }
                                     
                                     // Titulaire + Nom
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text("TITULAIRE")
-                                            .font(.system(size: 10, weight: .semibold))
+                                            .font(.system(size: 10, weight: .bold))
                                             .foregroundColor(.white.opacity(0.8))
                                         
                                         Text(viewModel.user.fullName)
@@ -171,7 +157,7 @@ struct CardView: View {
                                         
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text("VALIDE JUSQU'AU")
-                                                .font(.system(size: 10, weight: .semibold))
+                                                .font(.system(size: 10, weight: .bold))
                                                 .foregroundColor(.white.opacity(0.8))
                                             
                                             if let expirationDate = viewModel.cardExpirationDate {
@@ -212,7 +198,7 @@ struct CardView: View {
                         }
                         .frame(height: 220) // Format carte de crédit (ratio ~2:1)
                         .frame(maxWidth: geometry.size.width - (horizontalPadding(for: geometry.size.width) * 2))
-                        .cornerRadius(20)
+                        .clipShape(RoundedRectangle(cornerRadius: 24))
                         .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 4)
                         .padding(.horizontal, horizontalPadding(for: geometry.size.width))
                         .padding(.top, 0)
