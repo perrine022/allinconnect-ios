@@ -10,8 +10,8 @@ import Combine
 
 // MARK: - API Configuration
 struct APIConfig {
-    static let baseURL = "https://allinconnect-back-1.onrender.com/api/v1" // Production
-    // static let baseURL = "http://127.0.0.1:8080/api/v1" // Local
+    // static let baseURL = "https://allinconnect-back-1.onrender.com/api/v1" // Production
+    static let baseURL = "http://127.0.0.1:8080/api/v1" // Local
     
     static var defaultHeaders: [String: String] {
         var headers = [
@@ -137,6 +137,12 @@ class APIService: APIServiceProtocol, ObservableObject {
         
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
+        
+        // Pour les requêtes GET, éviter le cache HTTP pour toujours récupérer les données fraîches
+        if method == .get {
+            request.cachePolicy = .reloadIgnoringLocalCacheData
+            request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+        }
         
         // Ajouter les headers par défaut (incluant Authorization: Bearer TOKEN)
         APIConfig.defaultHeaders.forEach { key, value in

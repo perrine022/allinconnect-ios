@@ -84,11 +84,10 @@ struct OfferDetailView: View {
                             .padding(.vertical, 100)
                         } else if let offer = viewModel.offer ?? offer {
                             VStack(spacing: 0) {
-                                // Image header
+                                // Image header avec dimensions fixes (ratio 16:9)
                                 ZStack(alignment: .topLeading) {
-                                    OfferImage(offer: offer, contentMode: .fill)
-                                        .frame(height: 200)
-                                        .clipped()
+                                    OfferImage(offer: offer, contentMode: .fit)
+                                        .frame(width: geometry.size.width, height: geometry.size.width * 9 / 16)
                                 
                                 // Overlay gradient
                                 LinearGradient(

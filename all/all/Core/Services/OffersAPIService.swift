@@ -62,6 +62,7 @@ struct OfferResponse: Codable, Identifiable {
     let title: String
     let description: String
     let price: Double?
+    let discount: String? // Réduction formatée depuis le backend (ex: "-50%", "10€", etc.)
     let startDate: String?
     let endDate: String?
     let featured: Bool?
@@ -80,6 +81,7 @@ struct OfferResponse: Codable, Identifiable {
         case title
         case description
         case price
+        case discount
         case startDate = "startDate"
         case endDate = "endDate"
         case featured
@@ -550,10 +552,15 @@ extension OfferResponse {
         // Convertir startDate en format français
         let startDateFormatted: String? = formatDateToFrench(startDate)
         
-        // Créer un discount depuis le price
+        // Utiliser le champ discount du backend s'il existe, sinon utiliser price comme fallback
+        // Afficher exactement ce qui est dans le backend sans ajouter d'unité
         let discount: String
-        if let price = price {
-            discount = "\(String(format: "%.2f", price))€"
+        if let discountFromBackend = discount, !discountFromBackend.isEmpty {
+            // Utiliser directement le champ discount du backend (déjà formaté)
+            discount = discountFromBackend
+        } else if let price = price {
+            // Fallback : utiliser le price si discount n'est pas disponible
+            discount = String(format: "%.2f", price)
         } else {
             discount = "Sur devis"
         }

@@ -13,6 +13,7 @@ struct ManageSubscriptionsView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = ManageSubscriptionsViewModel()
     @State private var showCancelAlert = false
+    @State private var modifySubscriptionNavigationId: UUID?
     
     var body: some View {
         GeometryReader { geometry in
@@ -208,26 +209,42 @@ struct ManageSubscriptionsView: View {
                                 .padding(.top, 8)
                             }
                             
-                            // Bouton Résilier (uniquement si l'utilisateur a un abonnement actif et non résilié)
+                            // Boutons d'action (uniquement si l'utilisateur a un abonnement actif et non résilié)
                             // Vérifier que l'abonnement n'est pas déjà résilié
                             let isSubscriptionCancelled = viewModel.subscriptionStatus == "CANCELLED" || 
                                                           viewModel.subscriptionStatus == "CANCELED"
                             
                             if viewModel.currentSubscriptionPlan != nil && !isSubscriptionCancelled {
-                                Button(action: {
-                                    showCancelAlert = true
-                                }) {
-                                    Text("Résilier mon abonnement")
-                                        .font(.system(size: 15, weight: .semibold))
-                                        .foregroundColor(.red)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 14)
-                                        .background(Color.clear)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .stroke(Color.red, lineWidth: 1.5)
-                                        )
-                                        .cornerRadius(12)
+                                VStack(spacing: 12) {
+                                    // Bouton Modifier mon abonnement
+                                    Button(action: {
+                                        modifySubscriptionNavigationId = UUID()
+                                    }) {
+                                        Text("Modifier mon abonnement")
+                                            .font(.system(size: 15, weight: .semibold))
+                                            .foregroundColor(.white)
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 14)
+                                            .background(Color.appGold)
+                                            .cornerRadius(12)
+                                    }
+                                    
+                                    // Bouton Résilier mon abonnement
+                                    Button(action: {
+                                        showCancelAlert = true
+                                    }) {
+                                        Text("Résilier mon abonnement")
+                                            .font(.system(size: 15, weight: .semibold))
+                                            .foregroundColor(.red)
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 14)
+                                            .background(Color.clear)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 12)
+                                                    .stroke(Color.red, lineWidth: 1.5)
+                                            )
+                                            .cornerRadius(12)
+                                    }
                                 }
                                 .padding(.horizontal, 20)
                                 .padding(.top, 8)
@@ -303,6 +320,10 @@ struct ManageSubscriptionsView: View {
             if let fileURL = viewModel.downloadedInvoiceURL {
                 ShareSheet(activityItems: [fileURL])
             }
+        }
+        .navigationDestination(item: $modifySubscriptionNavigationId) { _ in
+            ModifySubscriptionView(currentPlanId: viewModel.currentSubscriptionPlan?.id)
+                .environmentObject(appState)
         }
     }
 }

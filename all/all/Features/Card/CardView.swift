@@ -103,130 +103,111 @@ struct CardView: View {
                             // Image "MEMBRE DU CLUB10" en plein écran de la carte
                             Image("VIPCardImage")
                                 .resizable()
-                                .scaledToFill()
+                                .scaledToFit()
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .clipped()
                                 .cornerRadius(16)
                             
-                            // Overlay avec texte en noir
-                            VStack(alignment: .leading, spacing: 10) {
-                                Spacer()
-                                    .frame(height: 40) // Descendre le contenu d'une ligne
-                                
-                                // Nom et type de carte sur la même ligne
-                                HStack(alignment: .center, spacing: 8) {
-                                    // Nom et prénom utilisateur en blanc
-                                    Text(viewModel.user.fullName)
+                            // Overlay avec texte organisé selon le design
+                            VStack(alignment: .leading, spacing: 0) {
+                                // En haut : Icône carte + CLUB10
+                                HStack(spacing: 12) {
+                                    Image(systemName: "creditcard.fill")
+                                        .foregroundColor(.white)
+                                        .font(.system(size: 20))
+                                    
+                                    Text("CLUB10")
                                         .font(.system(size: 20, weight: .bold))
                                         .foregroundColor(.white)
-                                        .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
+                                    
+                                    Spacer()
+                                }
+                                .padding(.top, 20)
+                                .padding(.horizontal, 20)
+                                
+                                Spacer()
+                                
+                                // Au milieu : Type de carte + Membre privilégié + Titulaire + Nom
+                                VStack(alignment: .leading, spacing: 8) {
+                                    // Type de carte
+                                    if let cardType = viewModel.cardType {
+                                        Text(cardTypeDisplayName(cardType).uppercased())
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundColor(.white.opacity(0.9))
+                                    }
+                                    
+                                    // Membre privilégié avec icône personne
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "person.fill")
+                                            .foregroundColor(.white)
+                                            .font(.system(size: 12))
+                                        
+                                        Text("Membre privilégié")
+                                            .font(.system(size: 11, weight: .regular))
+                                            .foregroundColor(.white.opacity(0.9))
+                                    }
+                                    
+                                    // Titulaire + Nom
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("TITULAIRE")
+                                            .font(.system(size: 10, weight: .semibold))
+                                            .foregroundColor(.white.opacity(0.8))
+                                        
+                                        Text(viewModel.user.fullName)
+                                            .font(.system(size: 22, weight: .bold))
+                                            .foregroundColor(.white)
+                                    }
+                                }
+                                .padding(.horizontal, 20)
+                                
+                                Spacer()
+                                
+                                // En bas : Calendrier + Date + Badge Actif
+                                HStack(alignment: .center, spacing: 8) {
+                                    // Icône calendrier + Date
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "calendar")
+                                            .foregroundColor(.white)
+                                            .font(.system(size: 14))
+                                        
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("VALIDE JUSQU'AU")
+                                                .font(.system(size: 10, weight: .semibold))
+                                                .foregroundColor(.white.opacity(0.8))
+                                            
+                                            if let expirationDate = viewModel.cardExpirationDate {
+                                                Text(formatDateToFrenchLong(expirationDate))
+                                                    .font(.system(size: 16, weight: .bold))
+                                                    .foregroundColor(.white)
+                                            } else if !viewModel.formattedCardValidityDate.isEmpty {
+                                                Text(viewModel.formattedCardValidityDate)
+                                                    .font(.system(size: 16, weight: .bold))
+                                                    .foregroundColor(.white)
+                                            }
+                                        }
+                                    }
                                     
                                     Spacer()
                                     
-                                    // Type de carte aligné à droite
-                                    if let cardType = viewModel.cardType {
-                                        Text(cardTypeDisplayName(cardType))
-                                            .font(.system(size: 13, weight: .bold))
-                                            .foregroundColor(.white)
-                                            .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
-                                    }
-                                }
-                                
-                                // Saut de ligne
-                                Spacer()
-                                    .frame(height: 8)
-                                
-                                // Date de validité de la carte sous le nom/prénom
-                                if !viewModel.formattedCardValidityDate.isEmpty {
-                                    HStack(spacing: 4) {
-                                        Text("Date de validité")
-                                            .font(.system(size: 14, weight: .bold))
-                                            .foregroundColor(.white.opacity(0.9))
-                                        Text(viewModel.formattedCardValidityDate)
-                                            .font(.system(size: 14, weight: .bold))
-                                            .foregroundColor(.white.opacity(0.9))
-                                    }
-                                    .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
-                                }
-                                
-                                // Date de validité et "Actif" en dessous
-                                VStack(alignment: .leading, spacing: 6) {
-                                    HStack(alignment: .center, spacing: 8) {
-                                        // Date de validité (si disponible)
-                                        if viewModel.cardExpirationDate != nil {
-                                            HStack(spacing: 4) {
-                                                Text("Valide jusqu'au")
-                                                    .font(.system(size: 13, weight: .bold))
-                                                    .foregroundColor(.white)
-                                                Text(viewModel.formattedExpirationDate)
-                                                    .font(.system(size: 13, weight: .bold))
-                                                    .foregroundColor(.white)
-                                            }
-                                        } else {
-                                            // Si pas de date, afficher juste un espace
-                                            Text("")
-                                                .font(.system(size: 13, weight: .bold))
-                                        }
-                                        
-                                        Spacer()
-                                        
-                                        // Badge "Actif" aligné à droite (toujours affiché si isCardActive)
-                                        if viewModel.isCardActive {
+                                    // Badge "Actif" avec coche
+                                    if viewModel.isCardActive {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .foregroundColor(.white)
+                                                .font(.system(size: 14))
+                                            
                                             Text("Actif")
                                                 .font(.system(size: 13, weight: .bold))
                                                 .foregroundColor(.white)
-                                                .padding(.horizontal, 12)
-                                                .padding(.vertical, 6)
-                                                .background(Color.green)
-                                                .cornerRadius(8)
-                                                .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
                                         }
-                                    }
-                                    
-                                    // Période de validité de l'abonnement
-                                    if !viewModel.subscriptionValidUntil.isEmpty {
-                                        HStack(spacing: 4) {
-                                            Text("Abonnement valable jusqu'au")
-                                                .font(.system(size: 11, weight: .medium))
-                                                .foregroundColor(.white.opacity(0.9))
-                                            Text(viewModel.subscriptionValidUntil)
-                                                .font(.system(size: 11, weight: .bold))
-                                                .foregroundColor(.white)
-                                        }
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 8)
+                                        .background(Color.green)
+                                        .cornerRadius(8)
                                     }
                                 }
-                                
-                                Spacer()
-                                
-                                // Bouton "Gérer ma famille" si carte familiale et si l'utilisateur est propriétaire - en bas
-                                if (viewModel.cardType == "FAMILY" || viewModel.cardType == "CLIENT_FAMILY") && viewModel.isCardOwner {
-                                    HStack {
-                                        Spacer()
-                                        
-                                        Button(action: {
-                                            showFamilyManagement = true
-                                        }) {
-                                            HStack(spacing: 6) {
-                                                Image(systemName: "person.2.fill")
-                                                    .foregroundColor(.black)
-                                                    .font(.system(size: 13))
-                                                
-                                                Text("Gérer ma famille")
-                                                    .font(.system(size: 13, weight: .semibold))
-                                                    .foregroundColor(.black)
-                                            }
-                                            .padding(.horizontal, 20)
-                                            .padding(.vertical, 10)
-                                            .background(Color.white.opacity(0.9))
-                                            .cornerRadius(8)
-                                        }
-                                        
-                                        Spacer()
-                                    }
-                                }
+                                .padding(.horizontal, 20)
+                                .padding(.bottom, 20)
                             }
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 16)
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
                         }
                         .frame(height: 220) // Format carte de crédit (ratio ~2:1)
@@ -481,6 +462,14 @@ struct CardView: View {
         default:
             return cardType
         }
+    }
+    
+    // Fonction helper pour formater la date en français long (ex: "15 Juillet 2026")
+    private func formatDateToFrenchLong(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.dateFormat = "d MMMM yyyy"
+        return formatter.string(from: date)
     }
 }
 

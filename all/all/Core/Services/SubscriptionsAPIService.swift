@@ -454,6 +454,30 @@ class SubscriptionsAPIService: ObservableObject {
     // MARK: - Cancel Subscription
     /// Annule un abonnement
     /// Endpoint: POST /api/v1/subscriptions/cancel?atPeriodEnd={true|false}
+    // MARK: - Switch Subscription
+    /// Change l'abonnement actuel vers un nouveau plan
+    /// Endpoint: POST /api/v1/subscriptions/switch/{planId}
+    /// - Parameter planId: ID du nouveau plan vers lequel changer
+    func switchSubscription(planId: Int) async throws {
+        print("═══════════════════════════════════════════════════════════")
+        print("💳 [SUBSCRIPTIONS] switchSubscription() - Début")
+        print("═══════════════════════════════════════════════════════════")
+        print("💳 [SUBSCRIPTIONS] Endpoint: POST /api/v1/subscriptions/switch/\(planId)")
+        print("💳 [SUBSCRIPTIONS] planId: \(planId)")
+        
+        // La réponse peut être vide (200 OK)
+        struct EmptyResponse: Codable {}
+        let _: EmptyResponse = try await apiService.request(
+            endpoint: "/subscriptions/switch/\(planId)",
+            method: .post,
+            parameters: nil,
+            headers: nil
+        )
+        
+        print("💳 [SUBSCRIPTIONS] ✅ Changement d'abonnement réussi")
+        print("═══════════════════════════════════════════════════════════")
+    }
+    
     /// - Parameter atPeriodEnd: true pour résilier à la fin de la période, false pour résilier immédiatement
     func cancelSubscription(atPeriodEnd: Bool = true) async throws {
         print("═══════════════════════════════════════════════════════════")

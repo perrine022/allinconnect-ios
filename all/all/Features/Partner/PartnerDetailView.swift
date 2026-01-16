@@ -43,6 +43,7 @@ struct PartnerDetailView: View {
                                     .frame(height: 200)
                                 
                                 // Image de l'établissement ou logo stylisé "A" en arrière-plan
+                                // Dimensions fixes pour un affichage cohérent (ratio 16:9)
                                 Group {
                                     if let imageUrl = ImageURLHelper.buildImageURL(from: viewModel.partner.establishmentImageUrl),
                                        let url = URL(string: imageUrl) {
@@ -55,7 +56,7 @@ struct PartnerDetailView: View {
                                             case .success(let image):
                                                 image
                                                     .resizable()
-                                                    .scaledToFill()
+                                                    .scaledToFit()
                                                     .opacity(0.3)
                                             case .failure:
                                                 Text("A")
@@ -74,8 +75,7 @@ struct PartnerDetailView: View {
                                             .foregroundColor(Color.appDarkRed1.opacity(0.3))
                                     }
                                 }
-                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                                .clipped()
+                                .frame(width: geometry.size.width, height: geometry.size.width * 9 / 16)
                                 
                                 // Boutons de navigation - positionnés en haut, proches des bords
                                 VStack {
@@ -138,6 +138,7 @@ struct PartnerDetailView: View {
                                 
                                 // Badge catégorie, sous-catégorie et note sur la même ligne
                                 HStack(spacing: 12) {
+                                    // Afficher la catégorie
                                     BadgeView(
                                         text: viewModel.partner.category,
                                         gradientColors: [Color.appDarkRed2, Color.appDarkRed1],
@@ -149,7 +150,7 @@ struct PartnerDetailView: View {
                                         BadgeView(
                                             text: subCategory,
                                             gradientColors: [Color.appDarkRed1.opacity(0.8), Color.appDarkRed2.opacity(0.8)],
-                                            fontSize: 11
+                                            fontSize: 12
                                         )
                                     }
                                     
@@ -493,6 +494,7 @@ struct PartnerDetailView: View {
         PartnerDetailView(partner: Partner(
             name: "GameZone VR",
             category: "Divertissement",
+            subCategory: "Jeux vidéo",
             address: "120 Cours Lafayette",
             city: "Lyon",
             postalCode: "69003",

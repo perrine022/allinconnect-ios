@@ -246,12 +246,10 @@ extension PartnerProfessionalResponse {
             name = "\(firstName) \(lastName)"
         }
         
-        // Déterminer la catégorie depuis le champ category ou profession
+        // Déterminer la catégorie depuis le champ category
         let categoryName: String
         if let category = category {
             categoryName = category.displayName
-        } else if let profession = profession {
-            categoryName = profession
         } else {
             categoryName = "Professionnel"
         }
@@ -281,7 +279,7 @@ extension PartnerProfessionalResponse {
             id: partnerUUID,
             name: name,
             category: categoryName,
-            subCategory: subCategory, // Sous-catégorie depuis l'API
+            subCategory: subCategory, // Sous-catégorie depuis l'API (ex: "Coiffure", "Restaurant")
             address: fullAddress,
             city: partnerCity,
             postalCode: postalCode,
@@ -289,7 +287,7 @@ extension PartnerProfessionalResponse {
             email: email,
             website: website, // Utiliser website depuis l'API
             instagram: instagram, // Utiliser instagram depuis l'API
-            description: establishmentDescription ?? profession, // Utiliser establishmentDescription si disponible, sinon profession
+            description: establishmentDescription, // Utiliser establishmentDescription
             rating: 4.5, // Par défaut, peut être récupéré depuis un autre endpoint
             reviewCount: 0, // Par défaut, peut être récupéré depuis un autre endpoint
             discount: isClub10Value ? 10 : nil, // Réduction UNIQUEMENT si isClub10 == true

@@ -52,7 +52,6 @@ class SignUpViewModel: ObservableObject {
         isValidEmail(email) &&
         !password.isEmpty &&
         password.count >= 6 &&
-        password == confirmPassword &&
         !postalCode.trimmingCharacters(in: .whitespaces).isEmpty &&
         postalCode.count == 5 &&
         isValidBirthDate()

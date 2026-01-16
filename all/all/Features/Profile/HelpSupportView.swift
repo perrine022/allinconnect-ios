@@ -159,6 +159,12 @@ struct FAQView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var expandedQuestion: String? = nil
     
+    // Vérifier si l'utilisateur est un professionnel
+    private var isProfessional: Bool {
+        let userTypeString = UserDefaults.standard.string(forKey: "user_type") ?? "CLIENT"
+        return userTypeString == "PROFESSIONAL" || userTypeString == "PRO"
+    }
+    
     // FAQ pour les utilisateurs finaux
     let userFAQItems: [(question: String, answer: String)] = [
         ("Qu'est-ce qu'ALL IN Connect ?", "ALL IN Connect est une application qui regroupe les bons plans locaux, les professionnels, les offres et événements près de chez vous. Grâce à la carte PASS Club 10, vous bénéficiez de réductions chez tous les professionnels membres."),
@@ -251,6 +257,12 @@ struct FAQView: View {
                                 }
                             }
                             .padding(.horizontal, 20)
+                            .onAppear {
+                                // Si l'utilisateur est un professionnel, dérouler automatiquement la première question
+                                if isProfessional && expandedQuestion == nil && !proFAQItems.isEmpty {
+                                    expandedQuestion = proFAQItems.first?.question
+                                }
+                            }
                             
                             Spacer()
                                 .frame(height: 100)

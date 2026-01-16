@@ -13,12 +13,11 @@ struct SignUpView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = SignUpViewModel()
     @State private var showPassword = false
-    @State private var showConfirmPassword = false
     @State private var subscriptionNavigationId: UUID?
     @FocusState private var focusedField: Field?
     
     enum Field: Hashable {
-        case firstName, lastName, email, password, confirmPassword, postalCode, birthDay, birthMonth, birthYear, referralCode
+        case firstName, lastName, email, password, postalCode, birthDay, birthMonth, birthYear, referralCode
     }
     
     var body: some View {
@@ -137,75 +136,6 @@ struct SignUpView: View {
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 10)
                                             .stroke(focusedField == .password ? Color.appGold : Color.clear, lineWidth: 2)
-                                    )
-                                    .cornerRadius(10)
-                                }
-                                .padding(.horizontal, 20)
-                                
-                                // Confirmer mot de passe
-                                VStack(alignment: .leading, spacing: 8) {
-                                    HStack {
-                                        Text("Confirmer le mot de passe")
-                                            .font(.system(size: 14, weight: .medium))
-                                            .foregroundColor(.white.opacity(0.9))
-                                        
-                                        Spacer()
-                                        
-                                        // Indicateur de correspondance
-                                        if !viewModel.confirmPassword.isEmpty {
-                                            if viewModel.password == viewModel.confirmPassword {
-                                                HStack(spacing: 4) {
-                                                    Image(systemName: "checkmark.circle.fill")
-                                                        .foregroundColor(.green)
-                                                        .font(.system(size: 14))
-                                                    Text("Correspond")
-                                                        .font(.system(size: 12, weight: .medium))
-                                                        .foregroundColor(.green)
-                                                }
-                                            } else {
-                                                HStack(spacing: 4) {
-                                                    Image(systemName: "xmark.circle.fill")
-                                                        .foregroundColor(.red)
-                                                        .font(.system(size: 14))
-                                                    Text("Ne correspond pas")
-                                                        .font(.system(size: 12, weight: .medium))
-                                                        .foregroundColor(.red)
-                                                }
-                                            }
-                                        }
-                                    }
-                                    
-                                    HStack {
-                                        if showConfirmPassword {
-                                            TextField("", text: $viewModel.confirmPassword, prompt: Text("Confirmez votre mot de passe").foregroundColor(.gray.opacity(0.6)))
-                                                .focused($focusedField, equals: .confirmPassword)
-                                                .foregroundColor(.black)
-                                                .font(.system(size: 16))
-                                        } else {
-                                            SecureField("", text: $viewModel.confirmPassword, prompt: Text("Confirmez votre mot de passe").foregroundColor(.gray.opacity(0.6)))
-                                                .focused($focusedField, equals: .confirmPassword)
-                                                .foregroundColor(.black)
-                                                .font(.system(size: 16))
-                                        }
-                                        
-                                        Button(action: {
-                                            showConfirmPassword.toggle()
-                                        }) {
-                                            Image(systemName: showConfirmPassword ? "eye.slash.fill" : "eye.fill")
-                                                .foregroundColor(.gray.opacity(0.6))
-                                                .font(.system(size: 16))
-                                        }
-                                    }
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 14)
-                                    .background(focusedField == .confirmPassword ? Color.white.opacity(0.95) : Color.white)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .stroke(
-                                                focusedField == .confirmPassword ? Color.appGold : 
-                                                (!viewModel.confirmPassword.isEmpty && viewModel.password != viewModel.confirmPassword) ? Color.red : Color.clear,
-                                                lineWidth: 2
-                                            )
                                     )
                                     .cornerRadius(10)
                                 }
@@ -412,19 +342,6 @@ struct SignUpView: View {
                                         .font(.system(size: 13, weight: .regular))
                                         .foregroundColor(.red.opacity(0.9))
                                         .padding(.horizontal, 20)
-                                }
-                                
-                                // Indication si les mots de passe ne correspondent pas
-                                if !viewModel.password.isEmpty && !viewModel.confirmPassword.isEmpty && viewModel.password != viewModel.confirmPassword {
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "exclamationmark.triangle.fill")
-                                            .foregroundColor(.red)
-                                            .font(.system(size: 12))
-                                        Text("Les mots de passe ne correspondent pas")
-                                            .font(.system(size: 12, weight: .regular))
-                                            .foregroundColor(.red.opacity(0.9))
-                                    }
-                                    .padding(.horizontal, 20)
                                 }
                                 
                                 // Bouton S'inscrire
