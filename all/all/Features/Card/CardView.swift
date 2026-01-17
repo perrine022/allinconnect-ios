@@ -132,7 +132,7 @@ struct CardView: View {
                                             .foregroundColor(.white)
                                     }
                                 }
-                                .padding(.horizontal, 20)
+                                .padding(.horizontal, 35)
                                 
                                 Spacer()
                                 
@@ -174,7 +174,7 @@ struct CardView: View {
                                         }
                                     }
                                 }
-                                .padding(.horizontal, 20)
+                                .padding(.horizontal, 35)
                                 .padding(.bottom, 20)
                             }
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)

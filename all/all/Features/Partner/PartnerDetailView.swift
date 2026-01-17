@@ -62,8 +62,7 @@ struct PartnerDetailView: View {
                                                 case .success(let image):
                                                     image
                                                         .resizable()
-                                                        .scaledToFit()
-                                                        .opacity(0.3)
+                                                        .scaledToFill()
                                                 case .failure:
                                                     Text("A")
                                                         .font(.system(size: 120, weight: .ultraLight))
@@ -81,7 +80,8 @@ struct PartnerDetailView: View {
                                                 .foregroundColor(Color.appDarkRed1.opacity(0.3))
                                         }
                                     }
-                                    .frame(width: geometry.size.width, height: geometry.size.width * 9 / 16)
+                                    .frame(width: geometry.size.width, height: 200)
+                                    .clipped()
                                 }
                                 .buttonStyle(PlainButtonStyle())
                                 .disabled(viewModel.partner.establishmentImageUrl == nil)
@@ -129,12 +129,19 @@ struct PartnerDetailView: View {
                                         .disabled(viewModel.isTogglingFavorite)
                                     }
                                     .padding(.horizontal, 16)
-                                    .padding(.top, max(geometry.safeAreaInsets.top, 8) + 100)
+                                    .padding(.top, max(geometry.safeAreaInsets.top, 8))
                                     
                                     Spacer()
+                                    
+                                    // Positionner les boutons en bas du bloc
+                                    HStack {
+                                        Spacer()
+                                    }
+                                    .padding(.bottom, 8)
                                 }
                             }
                             .frame(height: 200)
+                            .clipped()
                             
                             // Contenu principal
                             VStack(alignment: .leading, spacing: 18) {
@@ -163,18 +170,21 @@ struct PartnerDetailView: View {
                                         )
                                     }
                                     
-                                    HStack(spacing: 4) {
-                                        Image(systemName: "star.fill")
-                                            .foregroundColor(.appGold)
-                                            .font(.system(size: 14))
-                                        
-                                        Text(String(format: "%.1f", viewModel.partner.rating))
-                                            .font(.system(size: 16, weight: .semibold))
-                                            .foregroundColor(.white)
-                                        
-                                        Text("(\(viewModel.partner.reviewCount) avis)")
-                                            .font(.system(size: 14, weight: .regular))
-                                            .foregroundColor(.gray)
+                                    // Note (uniquement si il y a des avis)
+                                    if viewModel.partner.reviewCount > 0 {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "star.fill")
+                                                .foregroundColor(.appGold)
+                                                .font(.system(size: 14))
+                                            
+                                            Text(String(format: "%.1f", viewModel.partner.rating))
+                                                .font(.system(size: 16, weight: .semibold))
+                                                .foregroundColor(.white)
+                                            
+                                            Text("(\(viewModel.partner.reviewCount) avis)")
+                                                .font(.system(size: 14, weight: .regular))
+                                                .foregroundColor(.gray)
+                                        }
                                     }
                                 }
                                 .padding(.horizontal, 20)

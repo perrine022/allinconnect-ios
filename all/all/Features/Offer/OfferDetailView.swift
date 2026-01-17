@@ -84,42 +84,37 @@ struct OfferDetailView: View {
                             .padding(.vertical, 100)
                         } else if let offer = viewModel.offer ?? offer {
                             VStack(spacing: 0) {
-                                // Image header avec dimensions fixes (ratio 16:9)
+                                // Image header avec dimensions fixes
                                 ZStack(alignment: .topLeading) {
-                                    OfferImage(offer: offer, contentMode: .fit)
-                                        .frame(width: geometry.size.width, height: geometry.size.width * 9 / 16)
-                                
-                                // Overlay gradient
-                                LinearGradient(
-                                    gradient: Gradient(colors: [
-                                        Color.clear,
-                                        Color.black.opacity(0.6)
-                                    ]),
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                                .frame(height: 200)
-                                
-                                // Bouton retour
-                                HStack {
-                                    NavigationButton(
-                                        icon: "arrow.left",
-                                        iconColor: Color.white,
-                                        backgroundColor: Color.black.opacity(0.5),
-                                        action: {
-                                            dismiss()
-                                        }
-                                    )
+                                    // Fond rouge foncé en arrière-plan
+                                    Color.appDarkRed2
+                                        .frame(height: 200)
                                     
-                                    Spacer()
+                                    OfferImage(offer: offer, contentMode: .fill)
+                                        .frame(width: geometry.size.width, height: 200)
+                                        .clipped()
+                                
+                                    // Bouton retour
+                                    HStack {
+                                        NavigationButton(
+                                            icon: "arrow.left",
+                                            iconColor: Color.white,
+                                            backgroundColor: Color.black.opacity(0.5),
+                                            action: {
+                                                dismiss()
+                                            }
+                                        )
+                                        
+                                        Spacer()
+                                    }
+                                    .padding(.horizontal, 20)
+                                    .padding(.top, max(geometry.safeAreaInsets.top, 8))
                                 }
-                                .padding(.horizontal, 20)
-                                .padding(.top, 8)
-                            }
-                            .frame(height: 200)
-                            
-                            // Contenu
-                            VStack(alignment: .leading, spacing: 20) {
+                                .frame(height: 200)
+                                .clipped()
+                                
+                                // Contenu
+                                VStack(alignment: .leading, spacing: 20) {
                                 // Badge type et titre
                                 VStack(alignment: .leading, spacing: 12) {
                                     BadgeView(
@@ -346,9 +341,9 @@ struct OfferDetailView: View {
                                     .padding(.horizontal, 20)
                                 }
                                 
-                                Spacer()
-                                    .frame(height: 100)
-                            }
+                                    Spacer()
+                                        .frame(height: 100)
+                                }
                             }
                         }
                     }
