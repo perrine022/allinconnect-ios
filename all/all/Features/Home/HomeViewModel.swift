@@ -126,10 +126,10 @@ class HomeViewModel: ObservableObject {
         isLoadingOffers = true
         offersError = nil
         offersAPIError = nil // Réinitialiser l'erreur API
-            
+        
             do {
                 print("═══════════════════════════════════════════════════════════")
-                print("[HomeViewModel] 🔥 DÉBUT Chargement des 5 premières offres pour 'À ne pas louper'")
+                print("[HomeViewModel] 🔥 DÉBUT Chargement des 5 offres les plus proches pour 'À ne pas louper'")
                 print("[HomeViewModel] Filtre: type=OFFRE (uniquement les offres, pas les événements)")
                 print("═══════════════════════════════════════════════════════════")
                 
@@ -139,18 +139,19 @@ class HomeViewModel: ObservableObject {
                 var longitude: Double? = nil
                 var radius: Double? = nil
                 
-                // Si le rayon de recherche est activé et qu'on a la localisation, utiliser la géolocalisation
-                if searchRadius > 0, let location = locationService.currentLocation {
+                // TOUJOURS utiliser la géolocalisation si disponible pour les offres les plus proches
+                if let location = locationService.currentLocation {
                     latitude = location.coordinate.latitude
                     longitude = location.coordinate.longitude
-                    radius = searchRadius
+                    // Utiliser un rayon par défaut de 50km si searchRadius est à 0
+                    radius = searchRadius > 0 ? searchRadius : 50.0
                     print("[HomeViewModel] 📍 Utilisation de la géolocalisation: lat=\(latitude!), lon=\(longitude!), radius=\(radius!) km")
                 } else if !cityText.isEmpty {
-                    // Sinon, utiliser la ville si spécifiée (seulement si pas de recherche par rayon)
+                    // Sinon, utiliser la ville si spécifiée
                     city = cityText
                     print("[HomeViewModel] 📍 Utilisation de la ville depuis cityText: \(cityText)")
                 } else {
-                    print("[HomeViewModel] 📍 Aucune ville ou géolocalisation spécifiée, chargement de toutes les offres")
+                    print("[HomeViewModel] 📍 Aucune localisation disponible, chargement de toutes les offres")
                 }
                 
                 // Utiliser exactement le même appel API que OffersViewModel
@@ -169,8 +170,16 @@ class HomeViewModel: ObservableObject {
                 
                 print("[HomeViewModel] ✅ \(offersResponse.count) offres récupérées depuis l'API (type=OFFRE)")
                 
-                // Prendre les 5 premières offres avec leurs vraies images depuis l'API
-                let limitedOffers = Array(offersResponse.prefix(5))
+                // Trier les offres par distance (les plus proches en premier)
+                // Les offres avec distanceMeters sont triées en premier, puis par distance croissante
+                let sortedOffers = offersResponse.sorted { offer1, offer2 in
+                    let dist1 = offer1.distanceMeters ?? Double.infinity
+                    let dist2 = offer2.distanceMeters ?? Double.infinity
+                    return dist1 < dist2
+                }
+                
+                // Prendre les 5 offres les plus proches
+                let limitedOffers = Array(sortedOffers.prefix(5))
                 
                 print("[HomeViewModel] ✅ \(limitedOffers.count) offres sélectionnées pour affichage")
                 for (index, offer) in limitedOffers.enumerated() {
@@ -305,19 +314,54 @@ class HomeViewModel: ObservableObject {
         }
     }
     
-    // Charger les 4 premiers partenaires pour la page d'accueil
+    // Charger les 4 partenaires les plus proches pour la page d'accueil
     func loadFeaturedPartners() {
         Task { @MainActor in
             isLoadingPartners = true
             do {
-                // Récupérer tous les professionnels depuis l'API
-                let professionalsResponse = try await partnersAPIService.getAllProfessionals()
+                var professionalsResponse: [PartnerProfessionalResponse]
+                
+                // TOUJOURS utiliser la géolocalisation si disponible pour les partenaires les plus proches
+                if let location = locationService.currentLocation {
+                    let latitude = location.coordinate.latitude
+                    let longitude = location.coordinate.longitude
+                    // Utiliser un rayon par défaut de 50km si searchRadius est à 0
+                    let radius = searchRadius > 0 ? searchRadius : 50.0
+                    
+                    print("🔍 [HomeViewModel] loadFeaturedPartners() - Utilisation de la géolocalisation")
+                    print("   - Latitude: \(latitude), Longitude: \(longitude), Rayon: \(radius) km")
+                    
+                    // Recherche par rayon pour obtenir les distances
+                    professionalsResponse = try await partnersAPIService.searchProfessionals(
+                        city: nil,
+                        category: nil,
+                        name: nil,
+                        latitude: latitude,
+                        longitude: longitude,
+                        radius: radius,
+                        isClub10: nil
+                    )
+                } else {
+                    // Si pas de localisation, récupérer tous les professionnels
+                    print("🔍 [HomeViewModel] loadFeaturedPartners() - Pas de localisation, chargement de tous les partenaires")
+                    professionalsResponse = try await partnersAPIService.getAllProfessionals()
+                }
                 
                 // Convertir en modèles Partner
-                let allPartners = professionalsResponse.map { $0.toPartner() }
+                var allPartners = professionalsResponse.map { $0.toPartner() }
                 
-                // Prendre les 4 premiers partenaires
+                // Trier les partenaires par distance (les plus proches en premier)
+                // Les partenaires avec distanceMeters sont triés en premier, puis par distance croissante
+                allPartners.sort { partner1, partner2 in
+                    let dist1 = partner1.distanceMeters ?? Double.infinity
+                    let dist2 = partner2.distanceMeters ?? Double.infinity
+                    return dist1 < dist2
+                }
+                
+                // Prendre les 4 partenaires les plus proches
                 featuredPartners = Array(allPartners.prefix(4))
+                
+                print("🔍 [HomeViewModel] ✅ \(featuredPartners.count) partenaires les plus proches chargés pour l'accueil")
                 
                 // Synchroniser les favoris depuis l'API pour les partenaires affichés
                 await syncFavorites()

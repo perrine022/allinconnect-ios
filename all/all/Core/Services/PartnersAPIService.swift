@@ -190,8 +190,9 @@ class PartnersAPIService: ObservableObject {
         print("🔍 [PartnersAPIService] Tous les paramètres: \(parameters)")
         
         do {
+            // Endpoint selon la documentation backend: /api/v1/users/search/professionals
             let professionals: [PartnerProfessionalResponse] = try await apiService.request(
-                endpoint: "/users/professionals/search",
+                endpoint: "/users/search/professionals",
                 method: .get,
                 parameters: parameters.isEmpty ? nil : parameters,
                 headers: nil
@@ -206,6 +207,9 @@ class PartnersAPIService: ObservableObject {
                 print("   - Nom: \(professional.firstName) \(professional.lastName)")
                 print("   - Établissement: \(professional.establishmentName ?? "N/A")")
                 print("   - isClub10 (décodé): \(professional.isClub10?.description ?? "nil")")
+                print("   - averageRating: \(professional.averageRating ?? 0.0)")
+                print("   - reviewCount: \(professional.reviewCount ?? 0)")
+                print("   - establishmentImageUrl (raw): \(professional.establishmentImageUrl ?? "nil")")
             }
             
             print("═══════════════════════════════════════════════════════════")

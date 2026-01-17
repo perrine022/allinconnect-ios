@@ -17,9 +17,11 @@ struct PartnerCard: View {
             HStack(spacing: 12) {
                 // Image de l'établissement ou icône par défaut
                 Group {
-                    // L'URL est déjà construite dans le mapping, on l'utilise directement
-                    if let imageUrl = partner.establishmentImageUrl, !imageUrl.isEmpty,
-                       let url = URL(string: imageUrl) {
+                    // Reconstruire l'URL pour s'assurer qu'elle est correcte
+                    // (gère les cas où l'URL pourrait être relative ou absolue)
+                    if let builtImageUrl = ImageURLHelper.buildImageURL(from: partner.establishmentImageUrl),
+                       !builtImageUrl.isEmpty,
+                       let url = URL(string: builtImageUrl) {
                         AsyncImage(url: url) { phase in
                             switch phase {
                             case .empty:
@@ -37,7 +39,8 @@ struct PartnerCard: View {
                                     .foregroundColor(.gray.opacity(0.3))
                                     .task {
                                         print("🖼️ [PartnerCard] Failed to load image for \(partner.name):")
-                                        print("   URL: \(imageUrl)")
+                                        print("   Raw URL: \(partner.establishmentImageUrl ?? "nil")")
+                                        print("   Built URL: \(builtImageUrl)")
                                     }
                             @unknown default:
                                 Image(systemName: partner.imageName)
@@ -47,7 +50,7 @@ struct PartnerCard: View {
                             }
                         }
                     } else {
-                        // Pas d'URL d'image disponible
+                        // Pas d'URL d'image disponible ou URL invalide
                         Image(systemName: partner.imageName)
                             .resizable()
                             .scaledToFill()
@@ -56,7 +59,11 @@ struct PartnerCard: View {
                                 if partner.establishmentImageUrl == nil || partner.establishmentImageUrl!.isEmpty {
                                     print("🖼️ [PartnerCard] No image URL for partner: \(partner.name)")
                                 } else {
-                                    print("🖼️ [PartnerCard] Invalid URL for partner \(partner.name): \(partner.establishmentImageUrl ?? "nil")")
+                                    print("🖼️ [PartnerCard] Invalid URL for partner \(partner.name):")
+                                    print("   Raw URL: \(partner.establishmentImageUrl ?? "nil")")
+                                    if let builtUrl = ImageURLHelper.buildImageURL(from: partner.establishmentImageUrl) {
+                                        print("   Built URL: \(builtUrl)")
+                                    }
                                 }
                             }
                     }
@@ -100,19 +107,21 @@ struct PartnerCard: View {
                         }
                     }
                     
-                    // Note
-                    HStack(spacing: 4) {
-                        Image(systemName: "star.fill")
-                            .foregroundColor(.yellow)
-                            .font(.system(size: 12))
-                        
-                        Text(String(format: "%.1f", partner.rating))
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(.black)
-                        
-                        Text("(\(partner.reviewCount) avis)")
-                            .font(.system(size: 12, weight: .regular))
-                            .foregroundColor(.gray)
+                    // Note (uniquement si il y a des avis et une note > 0)
+                    if partner.reviewCount > 0 && partner.rating > 0 {
+                        HStack(spacing: 4) {
+                            Image(systemName: "star.fill")
+                                .foregroundColor(.yellow)
+                                .font(.system(size: 12))
+                            
+                            Text(String(format: "%.1f", partner.rating))
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(.black)
+                            
+                            Text("(\(partner.reviewCount) avis)")
+                                .font(.system(size: 12, weight: .regular))
+                                .foregroundColor(.gray)
+                        }
                     }
                 }
                 

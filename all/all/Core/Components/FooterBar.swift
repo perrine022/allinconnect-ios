@@ -12,6 +12,11 @@ struct FooterBar: View {
     let onTabSelected: (TabItem) -> Void
     var showProfileBadge: Bool = false
     
+    // Vérifier si l'utilisateur est connecté
+    private var isLoggedIn: Bool {
+        LoginViewModel.isLoggedIn()
+    }
+    
     init(
         selectedTab: Binding<TabItem>,
         onTabSelected: @escaping (TabItem) -> Void,
@@ -22,10 +27,22 @@ struct FooterBar: View {
         self.showProfileBadge = showProfileBadge
     }
     
+    // Vérifier si un onglet est accessible (seul l'accueil est accessible si non connecté)
+    private func isTabAccessible(_ tab: TabItem) -> Bool {
+        if tab == .home {
+            return true // L'accueil est toujours accessible
+        }
+        return isLoggedIn // Les autres onglets nécessitent une connexion
+    }
+    
     var body: some View {
         HStack(spacing: 0) {
             ForEach(TabItem.allCases, id: \.self) { tab in
                 Button(action: {
+                    // Empêcher l'action si l'onglet n'est pas accessible
+                    guard isTabAccessible(tab) else {
+                        return
+                    }
                     selectedTab = tab
                     onTabSelected(tab)
                 }) {
@@ -33,14 +50,23 @@ struct FooterBar: View {
                         VStack(spacing: 4) {
                             Image(systemName: tab.icon)
                                 .font(.system(size: 20, weight: .medium))
-                                .foregroundColor(selectedTab == tab ? .red : Color(red: 0.7, green: 0.7, blue: 0.7))
+                                .foregroundColor(
+                                    isTabAccessible(tab) 
+                                        ? (selectedTab == tab ? .red : Color(red: 0.7, green: 0.7, blue: 0.7))
+                                        : Color(red: 0.4, green: 0.4, blue: 0.4).opacity(0.5) // Grisé si désactivé
+                                )
                             
                             Text(tab.rawValue)
                                 .font(.system(size: 11, weight: .medium))
-                                .foregroundColor(selectedTab == tab ? .red : Color(red: 0.7, green: 0.7, blue: 0.7))
+                                .foregroundColor(
+                                    isTabAccessible(tab) 
+                                        ? (selectedTab == tab ? .red : Color(red: 0.7, green: 0.7, blue: 0.7))
+                                        : Color(red: 0.4, green: 0.4, blue: 0.4).opacity(0.5) // Grisé si désactivé
+                                )
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 6)
+                        .opacity(isTabAccessible(tab) ? 1.0 : 0.5) // Réduire l'opacité si désactivé
                         
                         // Badge rouge sur l'onglet profil
                         if tab == .profile && showProfileBadge {
@@ -51,6 +77,7 @@ struct FooterBar: View {
                         }
                     }
                 }
+                .disabled(!isTabAccessible(tab)) // Désactiver le bouton si l'onglet n'est pas accessible
             }
         }
         .padding(.horizontal, 0)
