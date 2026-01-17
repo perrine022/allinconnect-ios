@@ -103,43 +103,32 @@ struct CardView: View {
                             // Image "MEMBRE DU CLUB10" en plein écran de la carte
                             Image("VIPCardImage")
                                 .resizable()
-                                .scaledToFit()
+                                .scaledToFill()
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .clipShape(RoundedRectangle(cornerRadius: 24))
+                                .clipped()
                             
                             // Overlay avec texte organisé selon le design
                             VStack(alignment: .leading, spacing: 0) {
                                 Spacer()
                                     .frame(height: 60) // Descendu de 3 lignes (20 + 40)
                                 
-                                // Au milieu : Type de carte + Membre privilégié + Titulaire + Nom
+                                // Au milieu : Type de carte + Titulaire + Nom
                                 VStack(alignment: .leading, spacing: 8) {
-                                    // Type de carte
+                                    // Type de carte en jaune
                                     if let cardType = viewModel.cardType {
                                         Text(cardTypeDisplayName(cardType).uppercased())
-                                            .font(.system(size: 12, weight: .bold))
-                                            .foregroundColor(.white.opacity(0.9))
-                                    }
-                                    
-                                    // Membre privilégié avec icône personne
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "person.fill")
-                                            .foregroundColor(.white)
-                                            .font(.system(size: 12))
-                                        
-                                        Text("Membre privilégié")
-                                            .font(.system(size: 11, weight: .bold))
-                                            .foregroundColor(.white.opacity(0.9))
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundColor(.appGold)
                                     }
                                     
                                     // Titulaire + Nom
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text("TITULAIRE")
                                             .font(.system(size: 10, weight: .bold))
-                                            .foregroundColor(.white.opacity(0.8))
+                                            .foregroundColor(.white.opacity(0.9))
                                         
                                         Text(viewModel.user.fullName)
-                                            .font(.system(size: 22, weight: .bold))
+                                            .font(.system(size: 24, weight: .heavy))
                                             .foregroundColor(.white)
                                     }
                                 }
@@ -147,34 +136,9 @@ struct CardView: View {
                                 
                                 Spacer()
                                 
-                                // En bas : Calendrier + Date + Badge Actif
-                                HStack(alignment: .center, spacing: 8) {
-                                    // Icône calendrier + Date
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "calendar")
-                                            .foregroundColor(.white)
-                                            .font(.system(size: 14))
-                                        
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text("VALIDE JUSQU'AU")
-                                                .font(.system(size: 10, weight: .bold))
-                                                .foregroundColor(.white.opacity(0.8))
-                                            
-                                            if let expirationDate = viewModel.cardExpirationDate {
-                                                Text(formatDateToFrenchLong(expirationDate))
-                                                    .font(.system(size: 16, weight: .bold))
-                                                    .foregroundColor(.white)
-                                            } else if !viewModel.formattedCardValidityDate.isEmpty {
-                                                Text(viewModel.formattedCardValidityDate)
-                                                    .font(.system(size: 16, weight: .bold))
-                                                    .foregroundColor(.white)
-                                            }
-                                        }
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    // Badge "Actif" avec coche
+                                // En bas : Date + Badge Actif (en bas à gauche)
+                                HStack(alignment: .bottom, spacing: 12) {
+                                    // Badge "Actif" en bas à gauche en vert
                                     if viewModel.isCardActive {
                                         HStack(spacing: 6) {
                                             Image(systemName: "checkmark.circle.fill")
@@ -190,6 +154,25 @@ struct CardView: View {
                                         .background(Color.green)
                                         .cornerRadius(8)
                                     }
+                                    
+                                    Spacer()
+                                    
+                                    // Date d'expiration
+                                    VStack(alignment: .trailing, spacing: 2) {
+                                        Text("VALIDE JUSQU'AU")
+                                            .font(.system(size: 10, weight: .bold))
+                                            .foregroundColor(.white.opacity(0.9))
+                                        
+                                        if let expirationDate = viewModel.cardExpirationDate {
+                                            Text(formatDateToFrenchLong(expirationDate))
+                                                .font(.system(size: 18, weight: .heavy))
+                                                .foregroundColor(.white)
+                                        } else if !viewModel.formattedCardValidityDate.isEmpty {
+                                            Text(viewModel.formattedCardValidityDate)
+                                                .font(.system(size: 18, weight: .heavy))
+                                                .foregroundColor(.white)
+                                        }
+                                    }
                                 }
                                 .padding(.horizontal, 20)
                                 .padding(.bottom, 20)
@@ -198,7 +181,12 @@ struct CardView: View {
                         }
                         .frame(height: 220) // Format carte de crédit (ratio ~2:1)
                         .frame(maxWidth: geometry.size.width - (horizontalPadding(for: geometry.size.width) * 2))
+                        .background(Color.clear) // Fond transparent pour éviter les bords blancs
                         .clipShape(RoundedRectangle(cornerRadius: 24))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 24)
+                                .stroke(Color.clear, lineWidth: 0) // Pas de bordure
+                        )
                         .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 4)
                         .padding(.horizontal, horizontalPadding(for: geometry.size.width))
                         .padding(.top, 0)

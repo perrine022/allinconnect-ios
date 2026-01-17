@@ -72,11 +72,35 @@ struct PartnerCard: View {
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 
                 VStack(alignment: .leading, spacing: 6) {
-                    // Nom
-                    Text(partner.name)
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.black)
-                        .lineLimit(1)
+                    // Nom avec note à droite
+                    HStack(alignment: .center, spacing: 8) {
+                        Text(partner.name)
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.black)
+                            .lineLimit(1)
+                        
+                        Spacer()
+                        
+                        // Note à droite du titre (afficher si rating > 0)
+                        if partner.rating > 0 {
+                            HStack(spacing: 4) {
+                                Image(systemName: "star.fill")
+                                    .foregroundColor(.yellow)
+                                    .font(.system(size: 12))
+                                
+                                Text(String(format: "%.1f", partner.rating))
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundColor(.black)
+                                
+                                // Afficher le nombre d'avis seulement si disponible et > 0
+                                if partner.reviewCount > 0 {
+                                    Text("(\(partner.reviewCount))")
+                                        .font(.system(size: 12, weight: .regular))
+                                        .foregroundColor(.gray)
+                                }
+                            }
+                        }
+                    }
                     
                     // Catégorie et sous-catégorie
                     VStack(alignment: .leading, spacing: 2) {
@@ -104,23 +128,6 @@ struct PartnerCard: View {
                             Text("• \(formattedDistance)")
                                 .font(.system(size: 12, weight: .regular))
                                 .foregroundColor(.gray.opacity(0.7))
-                        }
-                    }
-                    
-                    // Note (uniquement si il y a des avis et une note > 0)
-                    if partner.reviewCount > 0 && partner.rating > 0 {
-                        HStack(spacing: 4) {
-                            Image(systemName: "star.fill")
-                                .foregroundColor(.yellow)
-                                .font(.system(size: 12))
-                            
-                            Text(String(format: "%.1f", partner.rating))
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundColor(.black)
-                            
-                            Text("(\(partner.reviewCount) avis)")
-                                .font(.system(size: 12, weight: .regular))
-                                .foregroundColor(.gray)
                         }
                     }
                 }

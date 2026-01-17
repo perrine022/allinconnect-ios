@@ -527,13 +527,11 @@ struct HomeView: View {
         .onTapGesture {
             hideKeyboard()
         }
-        .task {
-            // Charger les 4 premières offres réelles depuis l'API au démarrage
-            viewModel.loadOffersByCity()
-            // Charger les 5 premiers partenaires pour la page d'accueil
-            viewModel.loadFeaturedPartners()
-        }
         .onAppear {
+            // Recharger les données à chaque fois qu'on arrive sur l'accueil
+            viewModel.loadOffersByCity()
+            viewModel.loadFeaturedPartners()
+            
             // Demander la permission de localisation si pas encore demandée
             if locationService.authorizationStatus == .notDetermined {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -579,6 +577,17 @@ struct HomeView: View {
             }
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("EstablishmentUpdated"))) { _ in
+            // Recharger les partenaires quand un établissement est mis à jour
+            print("🏠 [HomeView] Notification 'EstablishmentUpdated' reçue - Rechargement des partenaires")
+            viewModel.loadPartners()
+            viewModel.loadFeaturedPartners()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OfferCreated"))) { _ in
+            // Recharger les offres quand une nouvelle offre est créée
+            print("🏠 [HomeView] Notification 'OfferCreated' reçue - Rechargement des offres 'À ne pas louper'")
+            viewModel.loadOffersByCity()
         }
         .navigationDestination(item: $selectedPartner) { partner in
             PartnerDetailView(partner: partner)
@@ -701,12 +710,34 @@ struct ModernPartnerCard: View {
                         )
                         
                         VStack(alignment: .leading, spacing: 6) {
-                            // Nom avec texte plus petit
-                            Text(partner.name)
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.white)
-                                .lineLimit(2)
-                                .multilineTextAlignment(.leading)
+                            // Nom avec note à droite
+                            HStack(alignment: .center, spacing: 8) {
+                                Text(partner.name)
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.white)
+                                    .lineLimit(2)
+                                    .multilineTextAlignment(.leading)
+                                
+                                Spacer()
+                                
+                                // Note à droite du titre (afficher si rating > 0)
+                                if partner.rating > 0 {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "star.fill")
+                                            .foregroundColor(.appGold)
+                                            .font(.system(size: 11))
+                                        Text(String(format: "%.1f", partner.rating))
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundColor(.white)
+                                        // Afficher le nombre d'avis seulement si disponible et > 0
+                                        if partner.reviewCount > 0 {
+                                            Text("(\(partner.reviewCount))")
+                                                .font(.system(size: 11, weight: .regular))
+                                                .foregroundColor(.white.opacity(0.65))
+                                        }
+                                    }
+                                }
+                            }
                             
                             // Catégorie et sous-catégorie avec badges modernes plus petits
                             HStack(spacing: 6) {
@@ -755,18 +786,6 @@ struct ModernPartnerCard: View {
                                 }
                             }
                             
-                            // Note avec style moderne plus petit
-                            HStack(spacing: 4) {
-                                Image(systemName: "star.fill")
-                                    .foregroundColor(.appGold)
-                                    .font(.system(size: 11))
-                                Text(String(format: "%.1f", partner.rating))
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .foregroundColor(.white)
-                                Text("(\(partner.reviewCount))")
-                                    .font(.system(size: 11, weight: .regular))
-                                    .foregroundColor(.white.opacity(0.65))
-                            }
                         }
                         
                         Spacer()

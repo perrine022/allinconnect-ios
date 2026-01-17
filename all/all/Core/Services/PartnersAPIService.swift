@@ -190,9 +190,8 @@ class PartnersAPIService: ObservableObject {
         print("🔍 [PartnersAPIService] Tous les paramètres: \(parameters)")
         
         do {
-            // Endpoint selon la documentation backend: /api/v1/users/search/professionals
             let professionals: [PartnerProfessionalResponse] = try await apiService.request(
-                endpoint: "/users/search/professionals",
+                endpoint: "/users/professionals/search",
                 method: .get,
                 parameters: parameters.isEmpty ? nil : parameters,
                 headers: nil
@@ -200,16 +199,31 @@ class PartnersAPIService: ObservableObject {
             
             print("🔍 [PartnersAPIService] ✅ Réponse reçue: \(professionals.count) partenaires")
             
-            // Log détaillé pour chaque partenaire
+            // Log détaillé pour chaque partenaire avec focus sur le rating
             for (index, professional) in professionals.enumerated() {
+                print("═══════════════════════════════════════════════════════════")
                 print("🔍 [PartnersAPIService] Partenaire \(index + 1):")
                 print("   - ID: \(professional.id)")
                 print("   - Nom: \(professional.firstName) \(professional.lastName)")
                 print("   - Établissement: \(professional.establishmentName ?? "N/A")")
                 print("   - isClub10 (décodé): \(professional.isClub10?.description ?? "nil")")
-                print("   - averageRating: \(professional.averageRating ?? 0.0)")
-                print("   - reviewCount: \(professional.reviewCount ?? 0)")
+                print("   ⭐ RATING INFO:")
+                print("      - averageRating (raw): \(professional.averageRating?.description ?? "nil")")
+                print("      - averageRating (value): \(professional.averageRating ?? 0.0)")
+                print("      - reviewCount (raw): \(professional.reviewCount?.description ?? "nil")")
+                print("      - reviewCount (value): \(professional.reviewCount ?? 0)")
+                if let rating = professional.averageRating {
+                    print("      - ✅ Rating disponible: \(rating)")
+                } else {
+                    print("      - ❌ Rating non disponible (nil)")
+                }
+                if let count = professional.reviewCount {
+                    print("      - ✅ ReviewCount disponible: \(count)")
+                } else {
+                    print("      - ❌ ReviewCount non disponible (nil)")
+                }
                 print("   - establishmentImageUrl (raw): \(professional.establishmentImageUrl ?? "nil")")
+                print("═══════════════════════════════════════════════════════════")
             }
             
             print("═══════════════════════════════════════════════════════════")
@@ -286,6 +300,14 @@ extension PartnerProfessionalResponse {
         print("🖼️ [PartnersAPIService] Mapping Partner Image:")
         print("   - establishmentImageUrl (raw): \(establishmentImageUrl ?? "nil")")
         print("   - imageUrl (built): \(imageUrl ?? "nil")")
+        print("   - Partner name: \(name)")
+        
+        // Log du mapping du rating avant création du Partner
+        print("🔄 [PartnersAPIService] Mapping Partner - Rating:")
+        print("   - averageRating (from API): \(averageRating?.description ?? "nil")")
+        print("   - reviewCount (from API): \(reviewCount?.description ?? "nil")")
+        print("   - rating (mapped): \(averageRating ?? 0.0)")
+        print("   - reviewCount (mapped): \(reviewCount ?? 0)")
         print("   - Partner name: \(name)")
         
         // Créer un Partner avec les données disponibles
