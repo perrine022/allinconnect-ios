@@ -625,7 +625,7 @@ struct ModernPartnerCard: View {
     
     var body: some View {
         Button(action: onTap) {
-            ZStack(alignment: .topTrailing) {
+            ZStack(alignment: .bottomTrailing) {
                 // Fond avec gradient moderne et contour visible - plus marqué (rouge vers la gauche)
                 RoundedRectangle(cornerRadius: 16)
                     .fill(
@@ -646,6 +646,7 @@ struct ModernPartnerCard: View {
                     .shadow(color: Color.red.opacity(0.3), radius: 10, x: 0, y: 5)
                     .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
                 
+                // Contenu principal - largeur fixe pour éviter les décalages
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(alignment: .top, spacing: 12) {
                         // Image de l'établissement avec style moderne
@@ -741,32 +742,62 @@ struct ModernPartnerCard: View {
                             }
                             .padding(.bottom, 8) // Espacement avant la ligne des métiers
                             
-                            // Catégorie et sous-catégorie avec badges modernes plus petits
-                            HStack(spacing: 6) {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "tag.fill")
-                                        .font(.system(size: 10))
-                                        .foregroundColor(.white.opacity(0.7))
-                                    Text(partner.category)
-                                        .font(.system(size: 12, weight: .medium))
-                                        .foregroundColor(.white.opacity(0.85))
-                                }
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(Color.white.opacity(0.15))
-                                .cornerRadius(6)
-                                
-                                // Afficher la sous-catégorie si disponible
-                                if let subCategory = partner.subCategory, !subCategory.isEmpty {
+                            // Catégorie et sous-catégorie avec badges modernes - layout adaptatif sur 2 lignes si nécessaire
+                            ViewThatFits(in: .horizontal) {
+                                // Essayer d'abord sur une ligne
+                                HStack(spacing: 6) {
                                     HStack(spacing: 4) {
-                                        Text(subCategory)
-                                            .font(.system(size: 11, weight: .regular))
-                                            .foregroundColor(.white.opacity(0.75))
+                                        Image(systemName: "tag.fill")
+                                            .font(.system(size: 10))
+                                            .foregroundColor(.white.opacity(0.7))
+                                        Text(partner.category)
+                                            .font(.system(size: 12, weight: .medium))
+                                            .foregroundColor(.white.opacity(0.85))
                                     }
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
-                                    .background(Color.white.opacity(0.12))
+                                    .background(Color.white.opacity(0.15))
                                     .cornerRadius(6)
+                                    
+                                    if let subCategory = partner.subCategory, !subCategory.isEmpty {
+                                        HStack(spacing: 4) {
+                                            Text(subCategory)
+                                                .font(.system(size: 11, weight: .regular))
+                                                .foregroundColor(.white.opacity(0.75))
+                                        }
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(Color.white.opacity(0.12))
+                                        .cornerRadius(6)
+                                    }
+                                }
+                                
+                                // Si ça ne rentre pas, mettre sur deux lignes
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "tag.fill")
+                                            .font(.system(size: 10))
+                                            .foregroundColor(.white.opacity(0.7))
+                                        Text(partner.category)
+                                            .font(.system(size: 12, weight: .medium))
+                                            .foregroundColor(.white.opacity(0.85))
+                                    }
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Color.white.opacity(0.15))
+                                    .cornerRadius(6)
+                                    
+                                    if let subCategory = partner.subCategory, !subCategory.isEmpty {
+                                        HStack(spacing: 4) {
+                                            Text(subCategory)
+                                                .font(.system(size: 11, weight: .regular))
+                                                .foregroundColor(.white.opacity(0.75))
+                                        }
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(Color.white.opacity(0.12))
+                                        .cornerRadius(6)
+                                    }
                                 }
                             }
                             .padding(.bottom, 8) // Espacement après la ligne des métiers
@@ -791,16 +822,17 @@ struct ModernPartnerCard: View {
                             
                         }
                         
-                        Spacer()
+                        Spacer(minLength: 0)
                     }
                     .padding(.horizontal, 14)
                     .padding(.vertical, 16)
                     .frame(minHeight: 100) // Augmenter la hauteur minimale pour plus d'espace
+                    .frame(maxWidth: .infinity, alignment: .leading) // Largeur maximale pour éviter les décalages
                 }
-                
-                // Badge de réduction en haut à droite - repositionné pour éviter la superposition
-                if let discount = partner.discount {
-                    VStack {
+                .frame(maxWidth: .infinity, alignment: .leading) // Largeur fixe pour le contenu
+                .overlay(alignment: .topTrailing) {
+                    // Badge de réduction en haut à droite
+                    if let discount = partner.discount {
                         Text("-\(discount)%")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(.white)
@@ -815,28 +847,20 @@ struct ModernPartnerCard: View {
                             )
                             .cornerRadius(8)
                             .shadow(color: Color.black.opacity(0.25), radius: 3, x: 0, y: 2)
+                            .padding(.top, 16)
+                            .padding(.trailing, 16)
                     }
-                    .padding(.top, 16)
-                    .padding(.trailing, 16)
                 }
-                
-                // Bouton favori en bas à droite - positionné vraiment en bas à droite
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        Button(action: onFavoriteToggle) {
-                            Image(systemName: partner.isFavorite ? "heart.fill" : "heart")
-                                .foregroundColor(partner.isFavorite ? .red : .white.opacity(0.75))
-                                .font(.system(size: 18))
-                                .padding(8)
-                                .background(Color.white.opacity(0.15))
-                                .clipShape(Circle())
-                        }
-                        .buttonStyle(PlainButtonStyle())
+                .overlay(alignment: .bottomTrailing) {
+                    // Bouton favori collé en bas à droite du container - sans fond, juste l'icône
+                    Button(action: onFavoriteToggle) {
+                        Image(systemName: partner.isFavorite ? "heart.fill" : "heart")
+                            .foregroundColor(partner.isFavorite ? .red : .white.opacity(0.75))
+                            .font(.system(size: 18, weight: .semibold))
                     }
-                    .padding(.bottom, 24)
-                    .padding(.trailing, 20)
+                    .buttonStyle(PlainButtonStyle())
+                    .padding(.trailing, 8)
+                    .padding(.bottom, 8)
                 }
             }
         }

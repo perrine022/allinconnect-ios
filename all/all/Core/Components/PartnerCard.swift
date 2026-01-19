@@ -14,64 +14,66 @@ struct PartnerCard: View {
     
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 12) {
-                // Image de l'établissement ou icône par défaut
-                Group {
-                    // Reconstruire l'URL pour s'assurer qu'elle est correcte
-                    // (gère les cas où l'URL pourrait être relative ou absolue)
-                    if let builtImageUrl = ImageURLHelper.buildImageURL(from: partner.establishmentImageUrl),
-                       !builtImageUrl.isEmpty,
-                       let url = URL(string: builtImageUrl) {
-                        AsyncImage(url: url) { phase in
-                            switch phase {
-                            case .empty:
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .gray))
-                                    .frame(width: 70, height: 70)
-                            case .success(let image):
-                                image
-                                    .resizable()
-                                    .scaledToFill()
-                            case .failure:
-                                Image(systemName: partner.imageName)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .foregroundColor(.gray.opacity(0.3))
-                                    .task {
-                                        print("🖼️ [PartnerCard] Failed to load image for \(partner.name):")
-                                        print("   Raw URL: \(partner.establishmentImageUrl ?? "nil")")
-                                        print("   Built URL: \(builtImageUrl)")
-                                    }
-                            @unknown default:
-                                Image(systemName: partner.imageName)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .foregroundColor(.gray.opacity(0.3))
-                            }
-                        }
-                    } else {
-                        // Pas d'URL d'image disponible ou URL invalide
-                        Image(systemName: partner.imageName)
-                            .resizable()
-                            .scaledToFill()
-                            .foregroundColor(.gray.opacity(0.3))
-                            .task {
-                                if partner.establishmentImageUrl == nil || partner.establishmentImageUrl!.isEmpty {
-                                    print("🖼️ [PartnerCard] No image URL for partner: \(partner.name)")
-                                } else {
-                                    print("🖼️ [PartnerCard] Invalid URL for partner \(partner.name):")
-                                    print("   Raw URL: \(partner.establishmentImageUrl ?? "nil")")
-                                    if let builtUrl = ImageURLHelper.buildImageURL(from: partner.establishmentImageUrl) {
-                                        print("   Built URL: \(builtUrl)")
-                                    }
+            ZStack(alignment: .bottomTrailing) {
+                // Contenu principal
+                HStack(spacing: 12) {
+                    // Image de l'établissement ou icône par défaut
+                    Group {
+                        // Reconstruire l'URL pour s'assurer qu'elle est correcte
+                        // (gère les cas où l'URL pourrait être relative ou absolue)
+                        if let builtImageUrl = ImageURLHelper.buildImageURL(from: partner.establishmentImageUrl),
+                           !builtImageUrl.isEmpty,
+                           let url = URL(string: builtImageUrl) {
+                            AsyncImage(url: url) { phase in
+                                switch phase {
+                                case .empty:
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .gray))
+                                        .frame(width: 70, height: 70)
+                                case .success(let image):
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                case .failure:
+                                    Image(systemName: partner.imageName)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .foregroundColor(.gray.opacity(0.3))
+                                        .task {
+                                            print("🖼️ [PartnerCard] Failed to load image for \(partner.name):")
+                                            print("   Raw URL: \(partner.establishmentImageUrl ?? "nil")")
+                                            print("   Built URL: \(builtImageUrl)")
+                                        }
+                                @unknown default:
+                                    Image(systemName: partner.imageName)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .foregroundColor(.gray.opacity(0.3))
                                 }
                             }
+                        } else {
+                            // Pas d'URL d'image disponible ou URL invalide
+                            Image(systemName: partner.imageName)
+                                .resizable()
+                                .scaledToFill()
+                                .foregroundColor(.gray.opacity(0.3))
+                                .task {
+                                    if partner.establishmentImageUrl == nil || partner.establishmentImageUrl!.isEmpty {
+                                        print("🖼️ [PartnerCard] No image URL for partner: \(partner.name)")
+                                    } else {
+                                        print("🖼️ [PartnerCard] Invalid URL for partner \(partner.name):")
+                                        print("   Raw URL: \(partner.establishmentImageUrl ?? "nil")")
+                                        if let builtUrl = ImageURLHelper.buildImageURL(from: partner.establishmentImageUrl) {
+                                            print("   Built URL: \(builtUrl)")
+                                        }
+                                    }
+                                }
+                        }
                     }
-                }
-                .frame(width: 70, height: 70)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                
-                VStack(alignment: .leading, spacing: 6) {
+                    .frame(width: 70, height: 70)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    
+                    VStack(alignment: .leading, spacing: 6) {
                     // Nom avec note à droite
                     HStack(alignment: .center, spacing: 8) {
                         Text(partner.name.capitalized)
@@ -130,12 +132,20 @@ struct PartnerCard: View {
                                 .foregroundColor(.gray.opacity(0.7))
                         }
                     }
+                    
+                    Spacer(minLength: 0)
+                    }
                 }
-                
-                Spacer()
-                
-                VStack(alignment: .trailing, spacing: 8) {
-                    // Badge de réduction
+                .frame(maxWidth: .infinity, alignment: .leading) // Largeur maximale pour éviter les décalages
+                .padding(12)
+                .background(Color.white)
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.appDarkRed1.opacity(0.3), lineWidth: 1)
+                )
+                .overlay(alignment: .topTrailing) {
+                    // Badge de réduction en haut à droite
                     if let discount = partner.discount {
                         Text("-\(discount)%")
                             .font(.system(size: 12, weight: .bold))
@@ -144,24 +154,22 @@ struct PartnerCard: View {
                             .padding(.vertical, 4)
                             .background(Color.green)
                             .cornerRadius(6)
+                            .padding(.top, 12)
+                            .padding(.trailing, 12)
                     }
-                    
-                    // Bouton favori
+                }
+                .overlay(alignment: .bottomTrailing) {
+                    // Bouton favori collé en bas à droite du container - sans fond, juste l'icône
                     Button(action: onFavoriteToggle) {
                         Image(systemName: partner.isFavorite ? "heart.fill" : "heart")
                             .foregroundColor(partner.isFavorite ? .red : .gray)
-                            .font(.system(size: 20))
+                            .font(.system(size: 18, weight: .semibold))
                     }
                     .buttonStyle(PlainButtonStyle())
+                    .padding(.trailing, 8)
+                    .padding(.bottom, 8)
                 }
             }
-            .padding(12)
-            .background(Color.white)
-            .cornerRadius(12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.appDarkRed1.opacity(0.3), lineWidth: 1)
-            )
         }
         .buttonStyle(PlainButtonStyle())
     }
