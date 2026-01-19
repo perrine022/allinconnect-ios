@@ -14,6 +14,9 @@ struct CreateOfferView: View {
     @FocusState private var focusedField: Field?
     var onOfferCreated: ((Offer) -> Void)?
     
+    @State private var showCropView = false
+    @State private var imageToCrop: UIImage?
+    
     enum Field {
         case title, description, startDate, validUntil, discount
     }
@@ -101,14 +104,15 @@ struct CreateOfferView: View {
                             if let image = viewModel.selectedImage {
                                 // Aperçu de l'image sélectionnée avec options
                                 VStack(spacing: 12) {
-                                    // Aperçu de l'image
+                                    // Aperçu de l'image avec dimensions fixes (ratio 16:9)
+                                    // Utiliser scaledToFit pour afficher exactement ce qui a été croppé
                                     Image(uiImage: image)
                                         .resizable()
-                                        .scaledToFill()
-                                        .frame(height: 200)
-                                        .frame(maxWidth: .infinity)
-                                        .cornerRadius(12)
+                                        .scaledToFit()
+                                        .frame(width: UIScreen.main.bounds.width - 40, height: (UIScreen.main.bounds.width - 40) * 9 / 16)
                                         .clipped()
+                                        .cornerRadius(12)
+                                        .background(Color.black.opacity(0.1))
                                         .overlay(
                                             RoundedRectangle(cornerRadius: 12)
                                                 .stroke(Color.white.opacity(0.2), lineWidth: 1)
@@ -201,8 +205,9 @@ struct CreateOfferView: View {
                                     if let data = try? await newValue.loadTransferable(type: Data.self),
                                        let uiImage = UIImage(data: data) {
                                         await MainActor.run {
-                                            viewModel.imageToCrop = uiImage
-                                            viewModel.showImageCrop = true
+                                            // Ouvrir l'écran de recadrage
+                                            imageToCrop = uiImage
+                                            showCropView = true
                                         }
                                     }
                                 } else {
@@ -212,14 +217,32 @@ struct CreateOfferView: View {
                                 }
                             }
                         }
-                        .sheet(isPresented: $viewModel.showImageCrop) {
-                            if let imageToCrop = viewModel.imageToCrop {
-                                ImageCropSheet(
-                                    isPresented: $viewModel.showImageCrop,
-                                    image: imageToCrop,
-                                    cropSize: CGSize(width: 400, height: 400),
-                                    croppedImage: $viewModel.selectedImage
-                                )
+                        .sheet(isPresented: $showCropView) {
+                            if let imageToCrop = imageToCrop {
+                                NavigationView {
+                                    ImageCropView(
+                                        image: imageToCrop,
+                                        cropRatio: 16.0 / 9.0, // Ratio 16:9 pour les offres
+                                        onCrop: { croppedImage in
+                                            viewModel.selectedImage = croppedImage
+                                            showCropView = false
+                                        },
+                                        onCancel: {
+                                            showCropView = false
+                                            viewModel.selectedImageItem = nil
+                                        }
+                                    )
+                                    .navigationBarTitleDisplayMode(.inline)
+                                    .toolbar {
+                                        ToolbarItem(placement: .navigationBarTrailing) {
+                                            Button("Fermer") {
+                                                showCropView = false
+                                                viewModel.selectedImageItem = nil
+                                            }
+                                            .foregroundColor(.white)
+                                        }
+                                    }
+                                }
                             }
                         }
                         
@@ -392,6 +415,11 @@ struct CreateOfferView: View {
                                 let newOffer = try await viewModel.publishOffer()
                                 // Passer l'offre créée au callback
                                 onOfferCreated?(newOffer)
+                                
+                                // Poster une notification pour recharger les offres dans OffersView
+                                NotificationCenter.default.post(name: NSNotification.Name("OfferCreated"), object: nil)
+                                print("📢 [CreateOfferView] Notification 'OfferCreated' postée")
+                                
                                 dismiss()
                             } catch {
                                 viewModel.errorMessage = error.localizedDescription

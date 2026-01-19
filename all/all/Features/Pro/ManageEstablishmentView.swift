@@ -16,6 +16,9 @@ struct ManageEstablishmentView: View {
     @StateObject private var viewModel = ManageEstablishmentViewModel()
     @FocusState private var focusedField: Field?
     
+    @State private var showCropView = false
+    @State private var imageToCrop: UIImage?
+    
     enum Field: Hashable {
         case name, description, address, city, postalCode, phone, email, website, instagram, subCategory
     }
@@ -91,17 +94,21 @@ struct ManageEstablishmentView: View {
                                     matching: .images
                                 ) {
                                     ZStack {
-                                        // PRIORITÉ 1: Toujours afficher l'image croppée si elle existe
-                                        // C'est cette image croppée qui sera envoyée au backend
+                                        // PRIORITÉ 1: Toujours afficher l'image sélectionnée si elle existe
+                                        // Dimensions fixes pour un affichage cohérent (ratio 16:9)
+                                        // Utiliser scaledToFit pour afficher exactement ce qui a été croppé
                                         if let selectedImage = viewModel.selectedImage {
                                             Image(uiImage: selectedImage)
                                                 .resizable()
-                                                .scaledToFill()
-                                                .frame(height: 150)
+                                                .scaledToFit()
+                                                .frame(width: UIScreen.main.bounds.width - 40, height: (UIScreen.main.bounds.width - 40) * 9 / 16)
                                                 .clipped()
                                                 .cornerRadius(12)
+                                                .background(Color.black.opacity(0.1))
                                         } else if let imageUrl = viewModel.establishmentImageUrl, let url = URL(string: imageUrl) {
-                                            // PRIORITÉ 2: Afficher l'image existante depuis le serveur seulement si pas d'image croppée
+                                            // PRIORITÉ 2: Afficher l'image existante depuis le serveur seulement si pas d'image sélectionnée
+                                            // Dimensions fixes pour un affichage cohérent (ratio 16:9)
+                                            // Utiliser scaledToFit pour afficher exactement ce qui a été croppé
                                             AsyncImage(url: url) { phase in
                                                 switch phase {
                                                 case .empty:
@@ -110,7 +117,7 @@ struct ManageEstablishmentView: View {
                                                 case .success(let image):
                                                     image
                                                         .resizable()
-                                                        .scaledToFill()
+                                                        .scaledToFit()
                                                 case .failure:
                                                     Image(systemName: "camera.fill")
                                                         .font(.system(size: 32))
@@ -121,14 +128,16 @@ struct ManageEstablishmentView: View {
                                                         .foregroundColor(.gray.opacity(0.6))
                                                 }
                                             }
-                                            .frame(height: 150)
+                                            .frame(width: UIScreen.main.bounds.width - 40, height: (UIScreen.main.bounds.width - 40) * 9 / 16)
                                             .clipped()
                                             .cornerRadius(12)
+                                            .background(Color.black.opacity(0.1))
                                         } else {
                                             // PRIORITÉ 3: Afficher le placeholder si aucune image
+                                            // Dimensions fixes pour un affichage cohérent (ratio 16:9)
                                             RoundedRectangle(cornerRadius: 12)
                                                 .fill(Color.appDarkRed1.opacity(0.6))
-                                                .frame(height: 150)
+                                                .frame(width: UIScreen.main.bounds.width - 40, height: (UIScreen.main.bounds.width - 40) * 9 / 16)
                                             
                                             VStack(spacing: 8) {
                                                 Image(systemName: "camera.fill")
@@ -144,7 +153,7 @@ struct ManageEstablishmentView: View {
                                         // Overlay pour indiquer que c'est cliquable
                                         RoundedRectangle(cornerRadius: 12)
                                             .fill(Color.black.opacity(0.3))
-                                            .frame(height: 150)
+                                            .frame(width: UIScreen.main.bounds.width - 40, height: (UIScreen.main.bounds.width - 40) * 9 / 16)
                                             .overlay(
                                                 VStack {
                                                     Spacer()
@@ -161,6 +170,52 @@ struct ManageEstablishmentView: View {
                                 }
                             }
                             .padding(.horizontal, 20)
+                            .onChange(of: viewModel.selectedImageItem) { oldValue, newValue in
+                                Task {
+                                    if let newValue = newValue {
+                                        if let data = try? await newValue.loadTransferable(type: Data.self),
+                                           let uiImage = UIImage(data: data) {
+                                            await MainActor.run {
+                                                // Ouvrir l'écran de recadrage
+                                                imageToCrop = uiImage
+                                                showCropView = true
+                                            }
+                                        }
+                                    } else {
+                                        await MainActor.run {
+                                            viewModel.selectedImage = nil
+                                        }
+                                    }
+                                }
+                            }
+                            .sheet(isPresented: $showCropView) {
+                                if let imageToCrop = imageToCrop {
+                                    NavigationView {
+                                        ImageCropView(
+                                            image: imageToCrop,
+                                            cropRatio: 16.0 / 9.0, // Ratio 16:9 pour les photos d'établissement
+                                            onCrop: { croppedImage in
+                                                viewModel.selectedImage = croppedImage
+                                                showCropView = false
+                                            },
+                                            onCancel: {
+                                                showCropView = false
+                                                viewModel.selectedImageItem = nil
+                                            }
+                                        )
+                                        .navigationBarTitleDisplayMode(.inline)
+                                        .toolbar {
+                                            ToolbarItem(placement: .navigationBarTrailing) {
+                                                Button("Fermer") {
+                                                    showCropView = false
+                                                    viewModel.selectedImageItem = nil
+                                                }
+                                                .foregroundColor(.white)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                             
                             // Formulaire
                             VStack(spacing: 12) {
@@ -494,16 +549,6 @@ struct ManageEstablishmentView: View {
                 }
             }
         }
-        .sheet(isPresented: $viewModel.showImageCrop) {
-            if let imageToCrop = viewModel.imageToCrop {
-                ImageCropSheet(
-                    isPresented: $viewModel.showImageCrop,
-                    image: imageToCrop,
-                    cropSize: CGSize(width: 400, height: 400),
-                    croppedImage: $viewModel.selectedImage
-                )
-            }
-        }
     }
 }
 
@@ -566,11 +611,9 @@ class ManageEstablishmentViewModel: ObservableObject {
     @Published var isLoadingData: Bool = false
     @Published var errorMessage: String?
     @Published var successMessage: String?
-    @Published var selectedImage: UIImage? = nil // Image CROPPÉE - c'est cette image qui est affichée et envoyée au backend
+    @Published var selectedImage: UIImage? = nil // Image sélectionnée - c'est cette image qui est affichée et envoyée au backend
     @Published var selectedImageItem: PhotosPickerItem? = nil // Item sélectionné depuis PhotosPicker
     @Published var establishmentImageUrl: String? = nil // URL de l'image existante depuis le serveur
-    @Published var showImageCrop: Bool = false // Afficher le sheet de crop
-    @Published var imageToCrop: UIImage? = nil // Image originale avant crop (utilisée pour le crop sheet)
     
     // Valeurs initiales pour détecter les modifications
     private var initialName: String = ""
@@ -613,19 +656,7 @@ class ManageEstablishmentViewModel: ObservableObject {
             self.longitude = location.coordinate.longitude
         }
         
-        // Observer les changements de selectedImageItem pour convertir en UIImage
-        $selectedImageItem
-            .compactMap { $0 }
-            .sink { [weak self] item in
-                Task { @MainActor [weak self] in
-                    if let data = try? await item.loadTransferable(type: Data.self),
-                       let image = UIImage(data: data) {
-                        self?.imageToCrop = image
-                        self?.showImageCrop = true
-                    }
-                }
-            }
-            .store(in: &cancellables)
+        // Note: La conversion de l'image sera gérée dans la vue pour permettre le recadrage
     }
     
     private var cancellables = Set<AnyCancellable>()
@@ -854,22 +885,20 @@ class ManageEstablishmentViewModel: ObservableObject {
                 print("🏢 [GÉRER ÉTABLISSEMENT] Valeur isClub10 dans updateRequest: \(updateRequest.isClub10?.description ?? "nil")")
                 print("🏢 [GÉRER ÉTABLISSEMENT] ========================================")
                 
-                // IMPORTANT: Convertir UNIQUEMENT l'image croppée en Data pour l'envoi au backend
-                // selectedImage contient toujours l'image croppée (pas l'image originale)
+                // Convertir l'image sélectionnée en Data pour l'envoi au backend
                 var imageData: Data? = nil
                 if let selectedImage = selectedImage {
-                    // Utiliser l'image croppée (selectedImage) pour l'envoi au backend
                     // Compression à 0.8 pour un bon équilibre qualité/taille
                     imageData = selectedImage.jpegData(compressionQuality: 0.8)
-                    print("🏢 [GÉRER ÉTABLISSEMENT] ✅ Image croppée convertie en Data pour envoi au backend")
+                    print("🏢 [GÉRER ÉTABLISSEMENT] ✅ Image convertie en Data pour envoi au backend")
                     print("🏢 [GÉRER ÉTABLISSEMENT] Taille de l'image: \(imageData?.count ?? 0) bytes")
                 }
                 
                 // Appeler l'API avec ou sans image
                 print("🏢 [GÉRER ÉTABLISSEMENT] Appel API...")
-                print("🏢 [GÉRER ÉTABLISSEMENT] Image croppée fournie: \(imageData != nil)")
+                print("🏢 [GÉRER ÉTABLISSEMENT] Image fournie: \(imageData != nil)")
                 if let imageData = imageData {
-                    print("🏢 [GÉRER ÉTABLISSEMENT] Appel: updateProfileWithImage() avec image croppée")
+                    print("🏢 [GÉRER ÉTABLISSEMENT] Appel: updateProfileWithImage() avec image")
                     try await profileAPIService.updateProfileWithImage(updateRequest, imageData: imageData)
                 } else {
                     print("🏢 [GÉRER ÉTABLISSEMENT] Appel: updateProfile() sans image")
@@ -881,7 +910,6 @@ class ManageEstablishmentViewModel: ObservableObject {
                 successMessage = "Fiche établissement mise à jour avec succès"
                 
                 // Réinitialiser l'image sélectionnée après sauvegarde
-                // L'image croppée a été envoyée, on peut la réinitialiser
                 selectedImage = nil
                 
                 // Recharger les données depuis l'API pour s'assurer qu'on a les dernières valeurs
