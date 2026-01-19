@@ -146,7 +146,7 @@ struct PartnerDetailView: View {
                             // Contenu principal
                             VStack(alignment: .leading, spacing: 18) {
                                 // Nom du studio
-                                Text(viewModel.partner.name)
+                                Text(viewModel.partner.name.capitalized)
                                     .font(.system(size: 32, weight: .bold))
                                     .foregroundColor(.white)
                                     .padding(.horizontal, 20)

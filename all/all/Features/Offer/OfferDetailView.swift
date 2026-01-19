@@ -122,7 +122,7 @@ struct OfferDetailView: View {
                                         gradientColors: offer.offerType == .event ? [Color.red, Color.red] : [Color.appGold, Color.appGold.opacity(0.8)]
                                     )
                                     
-                                    Text(offer.title)
+                                    Text(offer.title.capitalized)
                                         .font(.system(size: 32, weight: .bold))
                                         .foregroundColor(.white)
                                     

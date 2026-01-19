@@ -92,7 +92,7 @@ struct ProfessionalCard: View {
                             Image(systemName: "mappin.circle.fill")
                                 .foregroundColor(.red.opacity(0.8))
                                 .font(.system(size: 11))
-                            Text("\(professional.address), \(professional.city)")
+                            Text("\(professional.address), \(professional.city.capitalized)")
                                 .font(.system(size: 12))
                                 .foregroundColor(.gray)
                         }

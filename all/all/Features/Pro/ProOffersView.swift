@@ -174,7 +174,7 @@ struct ProOfferCard: View {
             
             // Contenu
             VStack(alignment: .leading, spacing: 6) {
-                Text(offer.title)
+                Text(offer.title.capitalized)
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.black)
                     .lineLimit(2)

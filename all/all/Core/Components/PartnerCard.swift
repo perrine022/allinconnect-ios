@@ -74,7 +74,7 @@ struct PartnerCard: View {
                 VStack(alignment: .leading, spacing: 6) {
                     // Nom avec note à droite
                     HStack(alignment: .center, spacing: 8) {
-                        Text(partner.name)
+                        Text(partner.name.capitalized)
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(.black)
                             .lineLimit(1)
@@ -118,7 +118,7 @@ struct PartnerCard: View {
                     
                     // Localisation avec distance si disponible
                     HStack(spacing: 4) {
-                        Text("\(partner.city)\(partner.postalCode.isEmpty ? "" : " (\(partner.postalCode))")")
+                        Text("\(partner.city.capitalized)\(partner.postalCode.isEmpty ? "" : " (\(partner.postalCode))")")
                             .font(.system(size: 13, weight: .regular))
                             .foregroundColor(.gray)
                         

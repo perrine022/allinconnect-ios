@@ -709,20 +709,18 @@ struct ModernPartnerCard: View {
                                 .stroke(Color.white.opacity(0.25), lineWidth: 1)
                         )
                         
-                        VStack(alignment: .leading, spacing: 6) {
-                            // Nom avec note à droite
-                            HStack(alignment: .center, spacing: 8) {
-                                Text(partner.name)
+                        VStack(alignment: .leading, spacing: 8) {
+                            // Nom avec note à droite (étoile plus près du nom)
+                            HStack(alignment: .center, spacing: 6) {
+                                Text(partner.name.capitalized)
                                     .font(.system(size: 14, weight: .semibold))
                                     .foregroundColor(.white)
                                     .lineLimit(2)
                                     .multilineTextAlignment(.leading)
                                 
-                                Spacer()
-                                
-                                // Note à droite du titre (afficher si rating > 0)
+                                // Note à droite du titre (afficher si rating > 0) - plus près du nom
                                 if partner.rating > 0 {
-                                    HStack(spacing: 4) {
+                                    HStack(spacing: 3) {
                                         Image(systemName: "star.fill")
                                             .foregroundColor(.appGold)
                                             .font(.system(size: 11))
@@ -736,8 +734,12 @@ struct ModernPartnerCard: View {
                                                 .foregroundColor(.white.opacity(0.65))
                                         }
                                     }
+                                    .padding(.leading, 4)
                                 }
+                                
+                                Spacer()
                             }
+                            .padding(.bottom, 8) // Espacement avant la ligne des métiers
                             
                             // Catégorie et sous-catégorie avec badges modernes plus petits
                             HStack(spacing: 6) {
@@ -767,13 +769,14 @@ struct ModernPartnerCard: View {
                                     .cornerRadius(6)
                                 }
                             }
+                            .padding(.bottom, 8) // Espacement après la ligne des métiers
                             
                             // Localisation plus petite avec distance si disponible
                             HStack(spacing: 4) {
                                 Image(systemName: "mappin.circle.fill")
                                     .font(.system(size: 11))
                                     .foregroundColor(.white.opacity(0.7))
-                                Text("\(partner.city)")
+                                Text(partner.city.capitalized)
                                     .font(.system(size: 11, weight: .regular))
                                     .foregroundColor(.white.opacity(0.8))
                                 
@@ -790,10 +793,12 @@ struct ModernPartnerCard: View {
                         
                         Spacer()
                     }
-                    .padding(14)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 16)
+                    .frame(minHeight: 100) // Augmenter la hauteur minimale pour plus d'espace
                 }
                 
-                // Badge de réduction en haut à droite plus petit
+                // Badge de réduction en haut à droite - repositionné pour éviter la superposition
                 if let discount = partner.discount {
                     VStack {
                         Text("-\(discount)%")
@@ -811,10 +816,11 @@ struct ModernPartnerCard: View {
                             .cornerRadius(8)
                             .shadow(color: Color.black.opacity(0.25), radius: 3, x: 0, y: 2)
                     }
-                    .padding(12)
+                    .padding(.top, 16)
+                    .padding(.trailing, 16)
                 }
                 
-                // Bouton favori en bas à droite plus petit
+                // Bouton favori en bas à droite - positionné vraiment en bas à droite
                 VStack {
                     Spacer()
                     HStack {
@@ -829,7 +835,8 @@ struct ModernPartnerCard: View {
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
-                    .padding(12)
+                    .padding(.bottom, 24)
+                    .padding(.trailing, 20)
                 }
             }
         }

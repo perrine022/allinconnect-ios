@@ -30,7 +30,7 @@ struct CurrentOfferCard: View {
                 
                 VStack(alignment: .leading, spacing: 4) {
                     // Titre
-                    Text(offer.title)
+                    Text(offer.title.capitalized)
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white)
                         .lineLimit(2)

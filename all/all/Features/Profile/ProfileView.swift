@@ -474,7 +474,7 @@ struct ProfileView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                             
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(offer.title)
+                                Text(offer.title.capitalized)
                                     .font(.system(size: 14, weight: .semibold))
                                     .foregroundColor(.black)
                                     .lineLimit(1)
@@ -577,7 +577,7 @@ struct ProfileView: View {
                                 }
                                 
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(partner.name)
+                                    Text(partner.name.capitalized)
                                         .font(.system(size: 15, weight: .semibold))
                                         .foregroundColor(.black)
                                         .lineLimit(1)

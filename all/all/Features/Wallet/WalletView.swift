@@ -395,7 +395,7 @@ struct WalletProfessionalSelectionRow: View {
                 
                 // Informations du professionnel
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(selectedProfessional.partner.name)
+                    Text(selectedProfessional.partner.name.capitalized)
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.white)
                     
@@ -576,7 +576,7 @@ struct WalletPartnerCard: View {
                 
                 // Informations
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(partner.name)
+                    Text(partner.name.capitalized)
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.black)
                         .lineLimit(1)
