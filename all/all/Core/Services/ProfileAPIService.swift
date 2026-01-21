@@ -406,7 +406,7 @@ class ProfileAPIService: ObservableObject {
         }
         
         // Nettoyer les valeurs nil (NSNull dans JSON)
-        var cleanedParameters = parameters.compactMapValues { value -> Any? in
+        let cleanedParameters = parameters.compactMapValues { value -> Any? in
             if value is NSNull {
                 return nil
             }

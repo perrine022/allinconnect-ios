@@ -25,8 +25,6 @@ class CreateOfferViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var selectedImage: UIImage? = nil
     @Published var selectedImageItem: PhotosPickerItem? = nil
-    @Published var showImageCrop: Bool = false
-    @Published var imageToCrop: UIImage? = nil
     
     private let offersAPIService: OffersAPIService
     
@@ -178,21 +176,14 @@ class CreateOfferViewModel: ObservableObject {
             endDate = simpleFormatter.string(from: endDateParsed) + "T23:59:59"
         }
         
-        // Convertir le discount en price si possible (extraire le nombre)
-        let price: Double?
-        if !discount.isEmpty {
-            // Extraire les chiffres du discount (ex: "-50%" -> 50, "10€" -> 10)
-            let numbers = discount.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
-            price = Double(numbers)
-        } else {
-            price = nil
-        }
+        // Utiliser directement le discount comme reduction (String)
+        let reduction: String? = discount.isEmpty ? nil : discount.trimmingCharacters(in: .whitespaces)
         
         // Log des données avant l'appel API
         print("📝 [CreateOffer] Préparation de la création d'offre:")
         print("   - Titre: \(title.trimmingCharacters(in: .whitespaces))")
         print("   - Description: \(description.trimmingCharacters(in: .whitespaces))")
-        print("   - Prix: \(price?.description ?? "nil")")
+        print("   - Réduction: \(reduction ?? "nil")")
         print("   - Date de début (ISO): \(startDateISO)")
         print("   - Date de fin (ISO): \(endDate)")
         print("   - Featured (CLUB10): \(isClub10)")
@@ -210,7 +201,7 @@ class CreateOfferViewModel: ObservableObject {
         let offerResponse = try await offersAPIService.createOffer(
             title: title.trimmingCharacters(in: .whitespaces),
             description: description.trimmingCharacters(in: .whitespaces),
-            price: price,
+            reduction: reduction,
             startDate: startDateISO,
             endDate: endDate,
             featured: isClub10, // featured = isClub10

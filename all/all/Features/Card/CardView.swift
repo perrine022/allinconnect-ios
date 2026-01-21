@@ -110,7 +110,7 @@ struct CardView: View {
                             // Overlay avec texte organisé selon le design
                             VStack(alignment: .leading, spacing: 0) {
                                 Spacer()
-                                    .frame(height: 60) // Descendu de 3 lignes (20 + 40)
+                                    .frame(height: 80) // Descendu pour les lignes de texte à gauche
                                 
                                 // Au milieu : Type de carte + Titulaire + Nom
                                 VStack(alignment: .leading, spacing: 8) {
@@ -159,7 +159,7 @@ struct CardView: View {
                                     
                                     // Date d'expiration
                                     VStack(alignment: .trailing, spacing: 2) {
-                                        Text("VALIDE JUSQU'AU")
+                                        Text("EXPIRE LE")
                                             .font(.system(size: 10, weight: .bold))
                                             .foregroundColor(.white.opacity(0.9))
                                         

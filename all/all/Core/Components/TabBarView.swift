@@ -34,8 +34,13 @@ struct TabBarView: View {
         Group {
             if !isLoggedIn {
                 // Rediriger vers la connexion si l'utilisateur n'est pas connecté
+                // Forcer l'onglet à l'accueil pour éviter toute navigation vers d'autres onglets
                 LoginViewWrapper()
                     .environmentObject(appState)
+                    .onAppear {
+                        // S'assurer que l'onglet est toujours sur l'accueil si l'utilisateur n'est pas connecté
+                        appState.selectedTab = .home
+                    }
                     .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserDidLogin"))) { _ in
                         isLoggedIn = true
                         // Enregistrer le token push après la connexion

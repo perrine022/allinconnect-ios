@@ -424,6 +424,11 @@ struct OffersView: View {
             print("📋 [OffersView] onAppear - Rafraîchissement des offres depuis le backend")
             viewModel.loadOffers(forceRefresh: true)
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OfferCreated"))) { _ in
+            // Recharger les offres quand une nouvelle offre est créée
+            print("📋 [OffersView] Notification 'OfferCreated' reçue - Rechargement des offres")
+            viewModel.loadOffers(forceRefresh: true)
+        }
         .onChange(of: locationService.currentLocation) { _, newLocation in
             // Recharger uniquement si la localisation a vraiment changé significativement (plus de 500m)
             guard let newLocation = newLocation, viewModel.searchRadius > 0 else { return }

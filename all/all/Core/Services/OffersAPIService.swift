@@ -61,8 +61,8 @@ struct OfferResponse: Codable, Identifiable {
     let id: Int
     let title: String
     let description: String
-    let price: Double?
-    let discount: String? // Réduction formatée depuis le backend (ex: "-50%", "10€", etc.)
+    let reduction: String? // Réduction au format String (ex: "15%", "5€ de remise", "Un acheté un offert")
+    let discount: String? // Ancien champ pour compatibilité (déprécié, utiliser reduction)
     let startDate: String?
     let endDate: String?
     let featured: Bool?
@@ -80,7 +80,7 @@ struct OfferResponse: Codable, Identifiable {
         case id
         case title
         case description
-        case price
+        case reduction
         case discount
         case startDate = "startDate"
         case endDate = "endDate"
@@ -284,7 +284,7 @@ class OffersAPIService: ObservableObject {
     func createOffer(
         title: String,
         description: String,
-        price: Double?,
+        reduction: String?,
         startDate: String?,
         endDate: String?,
         featured: Bool?,
@@ -298,8 +298,8 @@ class OffersAPIService: ObservableObject {
             "type": type
         ]
         
-        if let price = price {
-            jsonData["price"] = price
+        if let reduction = reduction, !reduction.isEmpty {
+            jsonData["reduction"] = reduction
         }
         
         if let startDate = startDate {
@@ -373,7 +373,7 @@ class OffersAPIService: ObservableObject {
         id: Int,
         title: String? = nil,
         description: String? = nil,
-        price: Double? = nil,
+        reduction: String? = nil,
         startDate: String? = nil,
         endDate: String? = nil,
         featured: Bool? = nil,
@@ -391,8 +391,8 @@ class OffersAPIService: ObservableObject {
             jsonData["description"] = description
         }
         
-        if let price = price {
-            jsonData["price"] = price
+        if let reduction = reduction, !reduction.isEmpty {
+            jsonData["reduction"] = reduction
         }
         
         if let startDate = startDate {
@@ -552,15 +552,15 @@ extension OfferResponse {
         // Convertir startDate en format français
         let startDateFormatted: String? = formatDateToFrench(startDate)
         
-        // Utiliser le champ discount du backend s'il existe, sinon utiliser price comme fallback
-        // Afficher exactement ce qui est dans le backend sans ajouter d'unité
+        // Utiliser le champ reduction du backend (nouveau champ String)
+        // Fallback sur discount pour compatibilité avec l'ancien système
         let discount: String
-        if let discountFromBackend = self.discount, !discountFromBackend.isEmpty {
-            // Utiliser directement le champ discount du backend (déjà formaté)
+        if let reductionFromBackend = self.reduction, !reductionFromBackend.isEmpty {
+            // Utiliser directement le champ reduction du backend (format String)
+            discount = reductionFromBackend
+        } else if let discountFromBackend = self.discount, !discountFromBackend.isEmpty {
+            // Fallback : utiliser l'ancien champ discount si reduction n'est pas disponible
             discount = discountFromBackend
-        } else if let price = price {
-            // Fallback : utiliser le price si discount n'est pas disponible
-            discount = String(format: "%.2f", price)
         } else {
             discount = "Sur devis"
         }

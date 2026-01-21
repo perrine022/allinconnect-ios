@@ -82,7 +82,7 @@ class OfferDetailViewModel: ObservableObject {
                 print("   - Type: \(offerResponse.type ?? "nil")")
                 print("   - StartDate: \(offerResponse.startDate ?? "nil")")
                 print("   - EndDate: \(offerResponse.endDate ?? "nil")")
-                print("   - Price: \(offerResponse.price != nil ? "\(offerResponse.price!)" : "nil")")
+                print("   - Reduction: \(offerResponse.reduction ?? "nil")")
                 print("   - ImageUrl: \(offerResponse.imageUrl ?? "nil")")
                 
                 // Log du professional

@@ -348,7 +348,64 @@ class HomeViewModel: ObservableObject {
                 }
                 
                 // Convertir en modèles Partner
-                var allPartners = professionalsResponse.map { $0.toPartner() }
+                var allPartners = professionalsResponse.map { response in
+                    // Log COMPLET des données brutes du partenaire depuis l'API
+                    print("🏠 [HomeViewModel] ========== PARTENAIRE RÉCUPÉRÉ DEPUIS L'API ==========")
+                    print("🏠 [HomeViewModel] ID: \(response.id)")
+                    print("🏠 [HomeViewModel] Email: \(response.email)")
+                    print("🏠 [HomeViewModel] Prénom: \(response.firstName)")
+                    print("🏠 [HomeViewModel] Nom: \(response.lastName)")
+                    print("🏠 [HomeViewModel] Adresse: \(response.address ?? "nil")")
+                    print("🏠 [HomeViewModel] Ville: \(response.city ?? "nil")")
+                    print("🏠 [HomeViewModel] Latitude: \(response.latitude?.description ?? "nil")")
+                    print("🏠 [HomeViewModel] Longitude: \(response.longitude?.description ?? "nil")")
+                    print("🏠 [HomeViewModel] UserType: \(response.userType)")
+                    print("🏠 [HomeViewModel] SubscriptionType: \(response.subscriptionType ?? "nil")")
+                    print("🏠 [HomeViewModel] Profession: \(response.profession ?? "nil")")
+                    print("🏠 [HomeViewModel] Category: \(response.category?.rawValue ?? "nil")")
+                    print("🏠 [HomeViewModel] SubCategory: \(response.subCategory ?? "nil")")
+                    print("🏠 [HomeViewModel] EstablishmentName: \(response.establishmentName ?? "nil")")
+                    print("🏠 [HomeViewModel] EstablishmentDescription: \(response.establishmentDescription ?? "nil")")
+                    print("🏠 [HomeViewModel] ⭐️ ESTABLISHMENT IMAGE URL (RAW): \(response.establishmentImageUrl ?? "nil")")
+                    print("🏠 [HomeViewModel] PhoneNumber: \(response.phoneNumber ?? "nil")")
+                    print("🏠 [HomeViewModel] Website: \(response.website ?? "nil")")
+                    print("🏠 [HomeViewModel] Instagram: \(response.instagram ?? "nil")")
+                    print("🏠 [HomeViewModel] OpeningHours: \(response.openingHours ?? "nil")")
+                    print("🏠 [HomeViewModel] DistanceMeters: \(response.distanceMeters?.description ?? "nil")")
+                    print("🏠 [HomeViewModel] IsClub10: \(response.isClub10?.description ?? "nil")")
+                    print("🏠 [HomeViewModel] AverageRating: \(response.averageRating?.description ?? "nil")")
+                    print("🏠 [HomeViewModel] ReviewCount: \(response.reviewCount?.description ?? "nil")")
+                    print("🏠 [HomeViewModel] =========================================================")
+                    
+                    let partner = response.toPartner()
+                    
+                    // Log COMPLET du Partner créé
+                    print("🏠 [HomeViewModel] ========== PARTNER CRÉÉ (OBJET COMPLET) ==========")
+                    print("🏠 [HomeViewModel] ID: \(partner.id)")
+                    print("🏠 [HomeViewModel] Name: \(partner.name)")
+                    print("🏠 [HomeViewModel] Category: \(partner.category)")
+                    print("🏠 [HomeViewModel] SubCategory: \(partner.subCategory ?? "nil")")
+                    print("🏠 [HomeViewModel] Address: \(partner.address)")
+                    print("🏠 [HomeViewModel] City: \(partner.city)")
+                    print("🏠 [HomeViewModel] PostalCode: \(partner.postalCode)")
+                    print("🏠 [HomeViewModel] Phone: \(partner.phone ?? "nil")")
+                    print("🏠 [HomeViewModel] Email: \(partner.email ?? "nil")")
+                    print("🏠 [HomeViewModel] Website: \(partner.website ?? "nil")")
+                    print("🏠 [HomeViewModel] Instagram: \(partner.instagram ?? "nil")")
+                    print("🏠 [HomeViewModel] Description: \(partner.description ?? "nil")")
+                    print("🏠 [HomeViewModel] Rating: \(partner.rating)")
+                    print("🏠 [HomeViewModel] ReviewCount: \(partner.reviewCount)")
+                    print("🏠 [HomeViewModel] Discount: \(partner.discount?.description ?? "nil")")
+                    print("🏠 [HomeViewModel] ImageName: \(partner.imageName)")
+                    print("🏠 [HomeViewModel] HeaderImageName: \(partner.headerImageName)")
+                    print("🏠 [HomeViewModel] ⭐️ ESTABLISHMENT IMAGE URL: \(partner.establishmentImageUrl ?? "nil")")
+                    print("🏠 [HomeViewModel] IsFavorite: \(partner.isFavorite)")
+                    print("🏠 [HomeViewModel] ApiId: \(partner.apiId?.description ?? "nil")")
+                    print("🏠 [HomeViewModel] DistanceMeters: \(partner.distanceMeters?.description ?? "nil")")
+                    print("🏠 [HomeViewModel] =========================================================")
+                    
+                    return partner
+                }
                 
                 // Trier les partenaires par distance (les plus proches en premier)
                 // Les partenaires avec distanceMeters sont triés en premier, puis par distance croissante
@@ -362,6 +419,33 @@ class HomeViewModel: ObservableObject {
                 featuredPartners = Array(allPartners.prefix(4))
                 
                 print("🔍 [HomeViewModel] ✅ \(featuredPartners.count) partenaires les plus proches chargés pour l'accueil")
+                
+                // Log COMPLET de chaque featuredPartner
+                for (index, partner) in featuredPartners.enumerated() {
+                    print("🏠 [HomeViewModel] ========== FEATURED PARTNER \(index + 1) (FINAL) ==========")
+                    print("🏠 [HomeViewModel] ID: \(partner.id)")
+                    print("🏠 [HomeViewModel] Name: \(partner.name)")
+                    print("🏠 [HomeViewModel] Category: \(partner.category)")
+                    print("🏠 [HomeViewModel] SubCategory: \(partner.subCategory ?? "nil")")
+                    print("🏠 [HomeViewModel] Address: \(partner.address)")
+                    print("🏠 [HomeViewModel] City: \(partner.city)")
+                    print("🏠 [HomeViewModel] PostalCode: \(partner.postalCode)")
+                    print("🏠 [HomeViewModel] Phone: \(partner.phone ?? "nil")")
+                    print("🏠 [HomeViewModel] Email: \(partner.email ?? "nil")")
+                    print("🏠 [HomeViewModel] Website: \(partner.website ?? "nil")")
+                    print("🏠 [HomeViewModel] Instagram: \(partner.instagram ?? "nil")")
+                    print("🏠 [HomeViewModel] Description: \(partner.description ?? "nil")")
+                    print("🏠 [HomeViewModel] Rating: \(partner.rating)")
+                    print("🏠 [HomeViewModel] ReviewCount: \(partner.reviewCount)")
+                    print("🏠 [HomeViewModel] Discount: \(partner.discount?.description ?? "nil")")
+                    print("🏠 [HomeViewModel] ImageName: \(partner.imageName)")
+                    print("🏠 [HomeViewModel] HeaderImageName: \(partner.headerImageName)")
+                    print("🏠 [HomeViewModel] ⭐️ ESTABLISHMENT IMAGE URL: \(partner.establishmentImageUrl ?? "nil")")
+                    print("🏠 [HomeViewModel] IsFavorite: \(partner.isFavorite)")
+                    print("🏠 [HomeViewModel] ApiId: \(partner.apiId?.description ?? "nil")")
+                    print("🏠 [HomeViewModel] DistanceMeters: \(partner.distanceMeters?.description ?? "nil")")
+                    print("🏠 [HomeViewModel] =========================================================")
+                }
                 
                 // Synchroniser les favoris depuis l'API pour les partenaires affichés
                 await syncFavorites()

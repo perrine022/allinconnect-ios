@@ -96,8 +96,8 @@ struct PaymentResultView: View {
                             NotificationCenter.default.post(name: NSNotification.Name("NavigateToManageEstablishment"), object: nil)
                         }
                     } else if status == .success {
-                        // Pour les clients particuliers après un paiement réussi, naviguer vers la page Offres
-                        appState.navigateToTab(.offers)
+                        // Pour les clients particuliers après un paiement réussi, naviguer vers la page d'accueil
+                        appState.navigateToTab(.home)
                     } else {
                         // En cas d'échec, naviguer vers l'accueil
                         appState.navigateToTab(.home)

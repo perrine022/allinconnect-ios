@@ -444,6 +444,15 @@ struct ManageEstablishmentView: View {
                                 }
                                 .buttonStyle(PlainButtonStyle())
                                 .padding(.horizontal, 20)
+                                
+                                // Texte explicatif Club 10
+                                Text("Le Club 10 regroupe des professionnels locaux engagés.\nEn proposant -10% aux membres, tu gagnes en visibilité et en nouveaux clients.\nLes habitants présentent leur carte digitale, vous faites le reste ⭐️")
+                                    .font(.system(size: 12, weight: .regular))
+                                    .foregroundColor(.gray)
+                                    .multilineTextAlignment(.leading)
+                                    .lineSpacing(4)
+                                    .padding(.horizontal, 20)
+                                    .padding(.top, 4)
                             }
                             .disabled(viewModel.isLoadingData)
                             .opacity(viewModel.isLoadingData ? 0.5 : 1.0)

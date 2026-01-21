@@ -181,12 +181,26 @@ class ProfileViewModel: ObservableObject {
             
             // Convertir en modèles Partner et marquer comme favoris
             favoritePartners = favoritesResponse.map { response in
+                // Log des données brutes du favori depuis l'API
+                print("❤️ [ProfileViewModel] Favori récupéré depuis l'API:")
+                print("   - ID: \(response.id)")
+                print("   - Nom: \(response.firstName) \(response.lastName)")
+                print("   - Établissement: \(response.establishmentName ?? "N/A")")
+                print("   - establishmentImageUrl (raw): \(response.establishmentImageUrl ?? "nil")")
+                
                 let basePartner = response.toPartner()
+                
+                // Log après conversion
+                print("❤️ [ProfileViewModel] Partner créé depuis favori:")
+                print("   - Nom: \(basePartner.name)")
+                print("   - establishmentImageUrl (dans Partner): \(basePartner.establishmentImageUrl ?? "nil")")
+                
                 // Créer une nouvelle instance avec isFavorite = true
-                return Partner(
+                let partner = Partner(
                     id: basePartner.id,
                     name: basePartner.name,
                     category: basePartner.category,
+                    subCategory: basePartner.subCategory,
                     address: basePartner.address,
                     city: basePartner.city,
                     postalCode: basePartner.postalCode,
@@ -200,9 +214,17 @@ class ProfileViewModel: ObservableObject {
                     discount: basePartner.discount,
                     imageName: basePartner.imageName,
                     headerImageName: basePartner.headerImageName,
+                    establishmentImageUrl: basePartner.establishmentImageUrl, // IMPORTANT: Inclure l'URL de l'image
                     isFavorite: true, // Les favoris récupérés depuis l'API sont forcément favoris
-                    apiId: basePartner.apiId
+                    apiId: basePartner.apiId,
+                    distanceMeters: basePartner.distanceMeters
                 )
+                
+                print("❤️ [ProfileViewModel] Partner final créé:")
+                print("   - Nom: \(partner.name)")
+                print("   - establishmentImageUrl (final): \(partner.establishmentImageUrl ?? "nil")")
+                
+                return partner
             }
             
             isLoadingFavorites = false

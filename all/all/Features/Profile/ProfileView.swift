@@ -566,15 +566,62 @@ struct ProfileView: View {
                             selectedPartner = partner
                         }) {
                             HStack(spacing: 12) {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(Color.red.opacity(0.2))
-                                        .frame(width: 50, height: 50)
+                                // Image de l'établissement ou icône par défaut
+                                Group {
+                                    // Log pour déboguer l'affichage de l'image
+                                    let _ = print("🖼️ [ProfileView] Affichage image favori:")
+                                    let _ = print("   - Partner: \(partner.name)")
+                                    let _ = print("   - establishmentImageUrl (raw): \(partner.establishmentImageUrl ?? "nil")")
                                     
-                                    Image(systemName: partner.imageName)
-                                        .foregroundColor(.red)
-                                        .font(.system(size: 20))
+                                    if let builtImageUrl = ImageURLHelper.buildImageURL(from: partner.establishmentImageUrl) {
+                                        let _ = print("   - builtImageUrl: \(builtImageUrl)")
+                                        
+                                        if !builtImageUrl.isEmpty, let url = URL(string: builtImageUrl) {
+                                            let _ = print("   - URL valide: \(url)")
+                                            AsyncImage(url: url) { phase in
+                                                switch phase {
+                                                case .empty:
+                                                    let _ = print("   - État: Chargement...")
+                                                    ProgressView()
+                                                        .progressViewStyle(CircularProgressViewStyle(tint: .gray))
+                                                        .frame(width: 50, height: 50)
+                                                case .success(let image):
+                                                    let _ = print("   - État: Succès - Image chargée")
+                                                    image
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                case .failure(let error):
+                                                    let _ = print("   - État: Échec - \(error.localizedDescription)")
+                                                    Image(systemName: partner.imageName)
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                        .foregroundColor(.gray.opacity(0.3))
+                                                @unknown default:
+                                                    let _ = print("   - État: Inconnu")
+                                                    Image(systemName: partner.imageName)
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                        .foregroundColor(.gray.opacity(0.3))
+                                                }
+                                            }
+                                        } else {
+                                            let _ = print("   - URL invalide ou vide")
+                                            Image(systemName: partner.imageName)
+                                                .resizable()
+                                                .scaledToFill()
+                                                .foregroundColor(.gray.opacity(0.3))
+                                        }
+                                    } else {
+                                        // Pas d'URL d'image disponible ou URL invalide
+                                        let _ = print("   - Pas d'URL construite (establishmentImageUrl est nil ou invalide)")
+                                        Image(systemName: partner.imageName)
+                                            .resizable()
+                                            .scaledToFill()
+                                            .foregroundColor(.gray.opacity(0.3))
+                                    }
                                 }
+                                .frame(width: 50, height: 50)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
                                 
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(partner.name.capitalized)
