@@ -216,7 +216,15 @@ class PartnerDetailViewModel: ObservableObject {
             let offersResponse = try await offersAPIService.getActiveOffersByProfessional(professionalId: professionalId)
             
             // Convertir les réponses en modèles Offer
-            currentOffers = offersResponse.map { $0.toOffer() }
+            var convertedOffers = offersResponse.map { $0.toOffer() }
+            
+            // Filtrer les offres actives selon les dates
+            let beforeFilter = convertedOffers.count
+            convertedOffers = convertedOffers.filter { $0.isActiveToday() }
+            let afterFilter = convertedOffers.count
+            print("[PartnerDetailViewModel] 🔍 Filtre date appliqué: \(beforeFilter) offres → \(afterFilter) offres actives aujourd'hui")
+            
+            currentOffers = convertedOffers
         } catch {
             print("Erreur lors du chargement des offres actives: \(error)")
             // En cas d'erreur, utiliser les données mockées en fallback

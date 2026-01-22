@@ -151,7 +151,24 @@ class OffersViewModel: ObservableObject {
                 )
                 
                 // Convertir les réponses en modèles Offer
-                allOffers = offersResponse.map { $0.toOffer() }
+                var convertedOffers = offersResponse.map { $0.toOffer() }
+                
+                // Filtrer les offres selon les dates selon le mode
+                if offerTimeMode == .current {
+                    // Mode "actuelles" : filtrer pour ne garder que les offres actives aujourd'hui
+                    let beforeFilter = convertedOffers.count
+                    convertedOffers = convertedOffers.filter { $0.isActiveToday() }
+                    let afterFilter = convertedOffers.count
+                    print("📋 [OffersViewModel] 🔍 Filtre date appliqué (actuelles): \(beforeFilter) offres → \(afterFilter) offres actives aujourd'hui")
+                } else if offerTimeMode == .upcoming {
+                    // Mode "à venir" : filtrer pour ne garder que les offres avec startDate > dateDuJour
+                    let beforeFilter = convertedOffers.count
+                    convertedOffers = convertedOffers.filter { $0.isUpcoming() }
+                    let afterFilter = convertedOffers.count
+                    print("📋 [OffersViewModel] 🔍 Filtre date appliqué (à venir): \(beforeFilter) offres → \(afterFilter) offres à venir")
+                }
+                
+                allOffers = convertedOffers
                 
                 print("📋 [OffersViewModel] ✅ \(allOffers.count) offres récupérées depuis le backend")
                 
@@ -233,7 +250,22 @@ class OffersViewModel: ObservableObject {
                 isClub10: onlyClub10 ? true : nil
             )
             
-            let refreshedOffers = offersResponse.map { $0.toOffer() }
+            var refreshedOffers = offersResponse.map { $0.toOffer() }
+            
+            // Filtrer les offres selon les dates selon le mode
+            if offerTimeMode == .current {
+                // Mode "actuelles" : filtrer pour ne garder que les offres actives aujourd'hui
+                let beforeFilter = refreshedOffers.count
+                refreshedOffers = refreshedOffers.filter { $0.isActiveToday() }
+                let afterFilter = refreshedOffers.count
+                print("📋 [OffersViewModel] 🔍 Filtre date appliqué (refresh, actuelles): \(beforeFilter) offres → \(afterFilter) offres actives aujourd'hui")
+            } else if offerTimeMode == .upcoming {
+                // Mode "à venir" : filtrer pour ne garder que les offres avec startDate > dateDuJour
+                let beforeFilter = refreshedOffers.count
+                refreshedOffers = refreshedOffers.filter { $0.isUpcoming() }
+                let afterFilter = refreshedOffers.count
+                print("📋 [OffersViewModel] 🔍 Filtre date appliqué (refresh, à venir): \(beforeFilter) offres → \(afterFilter) offres à venir")
+            }
             
             // Mettre à jour les données et le cache
             await MainActor.run {

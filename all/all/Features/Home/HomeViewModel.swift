@@ -187,7 +187,15 @@ class HomeViewModel: ObservableObject {
                 }
                 
                 // Convertir les réponses API en modèles Offer (avec les vraies images)
-                offers = limitedOffers.map { $0.toOffer() }
+                var convertedOffers = limitedOffers.map { $0.toOffer() }
+                
+                // Filtrer les offres actives selon les dates (toujours pour la page d'accueil)
+                let beforeFilter = convertedOffers.count
+                convertedOffers = convertedOffers.filter { $0.isActiveToday() }
+                let afterFilter = convertedOffers.count
+                print("[HomeViewModel] 🔍 Filtre date appliqué: \(beforeFilter) offres → \(afterFilter) offres actives aujourd'hui")
+                
+                offers = convertedOffers
                 
                 print("[HomeViewModel] ✅ Offres converties et prêtes à afficher avec images réelles")
                 print("═══════════════════════════════════════════════════════════")

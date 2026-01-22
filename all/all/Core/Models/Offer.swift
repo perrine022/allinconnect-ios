@@ -93,5 +93,82 @@ struct Offer: Identifiable, Hashable, Codable {
         }
         return nil
     }
+    
+    /// Vérifie si l'offre est active à la date du jour
+    /// Une offre est active si : startDate <= dateDuJour <= validUntil
+    func isActiveToday() -> Bool {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        
+        // Parser la date de début (format DD/MM/YYYY)
+        let startDateParsed: Date?
+        if let startDateString = startDate, !startDateString.isEmpty, startDateString != "N/A" {
+            let dateFormatter = DateFormatter()
+            dateFormatter.locale = Locale(identifier: "fr_FR")
+            dateFormatter.dateFormat = "dd/MM/yyyy"
+            startDateParsed = dateFormatter.date(from: startDateString)
+        } else {
+            // Si pas de date de début, considérer que l'offre a déjà commencé
+            startDateParsed = nil
+        }
+        
+        // Parser la date de fin (validUntil, format DD/MM/YYYY)
+        let endDateParsed: Date?
+        if validUntil != "N/A" && !validUntil.isEmpty {
+            let dateFormatter = DateFormatter()
+            dateFormatter.locale = Locale(identifier: "fr_FR")
+            dateFormatter.dateFormat = "dd/MM/yyyy"
+            endDateParsed = dateFormatter.date(from: validUntil)
+        } else {
+            // Si pas de date de fin, considérer que l'offre n'a pas de limite
+            endDateParsed = nil
+        }
+        
+        // Vérifier que startDate <= today (ou pas de startDate)
+        if let startDate = startDateParsed {
+            let startOfStartDate = calendar.startOfDay(for: startDate)
+            if today < startOfStartDate {
+                return false
+            }
+        }
+        
+        // Vérifier que today <= endDate (ou pas de endDate)
+        if let endDate = endDateParsed {
+            let startOfEndDate = calendar.startOfDay(for: endDate)
+            if today > startOfEndDate {
+                return false
+            }
+        }
+        
+        // Si on arrive ici, l'offre est active
+        return true
+    }
+    
+    /// Vérifie si l'offre est à venir (startDate > dateDuJour)
+    /// Une offre est à venir si sa date de début est strictement supérieure à la date du jour
+    func isUpcoming() -> Bool {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        
+        // Parser la date de début (format DD/MM/YYYY)
+        guard let startDateString = startDate, !startDateString.isEmpty, startDateString != "N/A" else {
+            // Si pas de date de début, l'offre n'est pas considérée comme "à venir"
+            return false
+        }
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "fr_FR")
+        dateFormatter.dateFormat = "dd/MM/yyyy"
+        
+        guard let startDateParsed = dateFormatter.date(from: startDateString) else {
+            // Si on ne peut pas parser la date, on ne peut pas déterminer si c'est à venir
+            return false
+        }
+        
+        let startOfStartDate = calendar.startOfDay(for: startDateParsed)
+        
+        // L'offre est à venir si startDate > today
+        return startOfStartDate > today
+    }
 }
 
