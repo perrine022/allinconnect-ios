@@ -166,6 +166,14 @@ struct ProSubscriptionView: View {
                                         title: "Carte digitale incluse",
                                         description: "Bénéficie de tous les avantages de la carte digitale"
                                     )
+                                    
+                                    // Programme parrainage
+                                    ProBenefitCard(
+                                        icon: "person.2.fill",
+                                        iconColor: .appGold,
+                                        title: "Programme parrainage",
+                                        description: "50% du 1er mois de chaque filleul"
+                                    )
                                 }
                             }
                             .padding(.horizontal, 20)

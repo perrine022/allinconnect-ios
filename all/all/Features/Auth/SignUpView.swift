@@ -62,7 +62,7 @@ struct SignUpView: View {
                                 SignUpInputField(
                                     title: "Nom",
                                     text: $viewModel.lastName,
-                                    placeholder: "Votre nom",
+                                    placeholder: "Ton nom",
                                     isFocused: focusedField == .lastName
                                 )
                                 .focused($focusedField, equals: .lastName)
@@ -71,7 +71,7 @@ struct SignUpView: View {
                                 SignUpInputField(
                                     title: "Prénom",
                                     text: $viewModel.firstName,
-                                    placeholder: "Votre prénom",
+                                    placeholder: "Ton prénom",
                                     isFocused: focusedField == .firstName
                                 )
                                 .focused($focusedField, equals: .firstName)
@@ -81,7 +81,7 @@ struct SignUpView: View {
                                     SignUpInputField(
                                         title: "Email",
                                         text: $viewModel.email,
-                                        placeholder: "votre@email.com",
+                                        placeholder: "ton@email.com",
                                         keyboardType: .emailAddress,
                                         isFocused: focusedField == .email,
                                         hasError: !viewModel.email.isEmpty && !viewModel.isValidEmail
@@ -111,12 +111,12 @@ struct SignUpView: View {
                                     
                                     HStack {
                                         if showPassword {
-                                            TextField("", text: $viewModel.password, prompt: Text("Votre mot de passe").foregroundColor(.gray.opacity(0.6)))
+                                            TextField("", text: $viewModel.password, prompt: Text("Ton mot de passe").foregroundColor(.gray.opacity(0.6)))
                                                 .focused($focusedField, equals: .password)
                                                 .foregroundColor(.black)
                                                 .font(.system(size: 16))
                                         } else {
-                                            SecureField("", text: $viewModel.password, prompt: Text("Votre mot de passe").foregroundColor(.gray.opacity(0.6)))
+                                            SecureField("", text: $viewModel.password, prompt: Text("Ton mot de passe").foregroundColor(.gray.opacity(0.6)))
                                                 .focused($focusedField, equals: .password)
                                                 .foregroundColor(.black)
                                                 .font(.system(size: 16))

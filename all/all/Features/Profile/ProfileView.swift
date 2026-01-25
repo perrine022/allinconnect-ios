@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreLocation
 
 struct ProfileView: View {
     @StateObject private var viewModel = ProfileViewModel()
@@ -745,6 +746,28 @@ struct ProfileView: View {
                         settingsNavigationId = UUID()
                     }
                 )
+                
+                Divider()
+                    .background(Color.white.opacity(0.1))
+                    .padding(.leading, 54)
+                
+                // Bouton pour activer la géolocalisation si refusée
+                if LocationService.shared.authorizationStatus == .denied || LocationService.shared.authorizationStatus == .restricted {
+                    ProfileMenuRow(
+                        icon: "location.fill",
+                        title: "Activer la géolocalisation",
+                        action: {
+                            // Ouvrir les paramètres iOS pour permettre à l'utilisateur d'activer la géolocalisation
+                            if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+                                UIApplication.shared.open(settingsUrl)
+                            }
+                        }
+                    )
+                    
+                    Divider()
+                        .background(Color.white.opacity(0.1))
+                        .padding(.leading, 54)
+                }
             }
             .background(Color.appDarkRed1.opacity(0.8))
             .cornerRadius(16)

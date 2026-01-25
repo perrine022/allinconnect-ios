@@ -11,8 +11,14 @@ import SafariServices
 struct ManageSubscriptionView: View {
     @StateObject private var viewModel = BillingViewModel()
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var appState: AppState
     @State private var showPortal = false
     @State private var portalURL: URL?
+    @State private var modifySubscriptionNavigationId: UUID?
+    @State private var showCancelAlert = false
+    @State private var isCancelling = false
+    @State private var cancelSuccessMessage: String?
+    private let subscriptionsAPIService = SubscriptionsAPIService()
     
     var body: some View {
         ZStack {
@@ -116,30 +122,93 @@ struct ManageSubscriptionView: View {
                     )
                     .padding(.horizontal, 20)
                     
-                    // Bouton pour gérer la facturation
-                    Button(action: {
-                        Task {
-                            await openPortal()
-                        }
-                    }) {
-                        HStack {
-                            if viewModel.isLoading {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                    .scaleEffect(0.8)
-                            } else {
-                                Text("Gérer la facturation")
-                                    .font(.system(size: 17, weight: .semibold))
+                    // Boutons d'action (uniquement si l'utilisateur a un abonnement actif et non résilié)
+                    let isSubscriptionCancelled = viewModel.subscriptionStatus == "CANCELLED" || 
+                                                  viewModel.subscriptionStatus == "CANCELED"
+                    
+                    if viewModel.premiumEnabled && !isSubscriptionCancelled {
+                        VStack(spacing: 12) {
+                            // Bouton Modifier mon abonnement
+                            Button(action: {
+                                modifySubscriptionNavigationId = UUID()
+                            }) {
+                                Text("Modifier mon abonnement")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 14)
+                                    .background(Color.appGold)
+                                    .cornerRadius(12)
                             }
+                            
+                            // Bouton Résilier mon abonnement
+                            Button(action: {
+                                showCancelAlert = true
+                            }) {
+                                Text("Résilier mon abonnement")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundColor(.red)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 14)
+                                    .background(Color.clear)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.red, lineWidth: 1.5)
+                                    )
+                                    .cornerRadius(12)
+                            }
+                            
+                            // Bouton pour gérer la facturation
+                            Button(action: {
+                                Task {
+                                    await openPortal()
+                                }
+                            }) {
+                                HStack {
+                                    if viewModel.isLoading {
+                                        ProgressView()
+                                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                            .scaleEffect(0.8)
+                                    } else {
+                                        Text("Gérer la facturation")
+                                            .font(.system(size: 17, weight: .semibold))
+                                    }
+                                }
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(viewModel.isLoading ? Color.gray.opacity(0.5) : Color.red)
+                                .cornerRadius(12)
+                            }
+                            .disabled(viewModel.isLoading)
                         }
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(viewModel.isLoading ? Color.gray.opacity(0.5) : Color.red)
-                        .cornerRadius(12)
+                        .padding(.horizontal, 20)
+                    } else {
+                        // Bouton pour gérer la facturation (si pas d'abonnement actif)
+                        Button(action: {
+                            Task {
+                                await openPortal()
+                            }
+                        }) {
+                            HStack {
+                                if viewModel.isLoading {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                        .scaleEffect(0.8)
+                                } else {
+                                    Text("Gérer la facturation")
+                                        .font(.system(size: 17, weight: .semibold))
+                                }
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(viewModel.isLoading ? Color.gray.opacity(0.5) : Color.red)
+                            .cornerRadius(12)
+                        }
+                        .disabled(viewModel.isLoading)
+                        .padding(.horizontal, 20)
                     }
-                    .disabled(viewModel.isLoading)
-                    .padding(.horizontal, 20)
                     
                     // Informations
                     VStack(alignment: .leading, spacing: 8) {
@@ -147,7 +216,7 @@ struct ManageSubscriptionView: View {
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.white)
                         
-                        Text("Vous pouvez modifier votre méthode de paiement, consulter vos factures, ou annuler votre abonnement depuis le portail de gestion Stripe.")
+                        Text("Tu peux modifier ta méthode de paiement, consulter tes factures, ou annuler ton abonnement depuis le portail de gestion Stripe.")
                             .font(.system(size: 14, weight: .regular))
                             .foregroundColor(.gray)
                             .lineSpacing(4)
@@ -168,6 +237,19 @@ struct ManageSubscriptionView: View {
                             .padding(.vertical, 12)
                             .frame(maxWidth: .infinity)
                             .background(Color.red.opacity(0.1))
+                            .cornerRadius(10)
+                            .padding(.horizontal, 20)
+                    }
+                    
+                    // Message de succès pour la résiliation
+                    if let successMessage = cancelSuccessMessage {
+                        Text(successMessage)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.green)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+                            .frame(maxWidth: .infinity)
+                            .background(Color.green.opacity(0.1))
                             .cornerRadius(10)
                             .padding(.horizontal, 20)
                     }
@@ -201,6 +283,25 @@ struct ManageSubscriptionView: View {
                 .ignoresSafeArea()
             }
         }
+        .alert("Résilier l'abonnement", isPresented: $showCancelAlert) {
+            Button("Annuler", role: .cancel) { }
+            Button("À la fin de la période", role: .none) {
+                Task {
+                    await cancelSubscription(atPeriodEnd: true)
+                }
+            }
+            Button("Immédiatement", role: .destructive) {
+                Task {
+                    await cancelSubscription(atPeriodEnd: false)
+                }
+            }
+        } message: {
+            Text("Choisis le type de résiliation :\n\n• À la fin de la période : Tu gardes l'accès jusqu'à la fin de la période payée.\n• Immédiatement : L'accès sera coupé tout de suite.")
+        }
+        .navigationDestination(item: $modifySubscriptionNavigationId) { _ in
+            ModifySubscriptionView(currentPlanId: nil)
+                .environmentObject(appState)
+        }
         .onAppear {
             Task {
                 await viewModel.loadSubscriptionStatus()
@@ -225,6 +326,42 @@ struct ManageSubscriptionView: View {
         formatter.timeStyle = .none
         formatter.locale = Locale(identifier: "fr_FR")
         return formatter.string(from: date)
+    }
+    
+    private func cancelSubscription(atPeriodEnd: Bool) async {
+        isCancelling = true
+        cancelSuccessMessage = nil
+        
+        do {
+            try await subscriptionsAPIService.cancelSubscription(atPeriodEnd: atPeriodEnd)
+            
+            // Attendre un court délai pour que le backend traite la résiliation
+            try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 seconde
+            
+            // Recharger les données pour voir le nouveau statut
+            await viewModel.loadSubscriptionStatus()
+            await viewModel.loadSubscriptionDetails()
+            
+            // Notifier la mise à jour
+            NotificationCenter.default.post(name: NSNotification.Name("SubscriptionUpdated"), object: nil)
+            
+            isCancelling = false
+            
+            // Afficher un message de succès
+            if atPeriodEnd {
+                cancelSuccessMessage = "Ton abonnement sera résilié à la fin de la période payée. Tu gardes l'accès jusqu'à cette date."
+            } else {
+                cancelSuccessMessage = "Ton abonnement a été résilié avec succès."
+            }
+            
+            // Effacer le message après 5 secondes
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                cancelSuccessMessage = nil
+            }
+        } catch {
+            isCancelling = false
+            viewModel.errorMessage = "Erreur lors de la résiliation : \(error.localizedDescription)"
+        }
     }
 }
 

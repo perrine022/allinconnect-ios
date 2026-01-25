@@ -75,6 +75,12 @@ struct PaymentResultView: View {
                     // Priorité 1: Vérifier la catégorie du plan qui vient d'être payé
                     // Priorité 2: Vérifier dans UserDefaults
                     var isPro = false
+                    var isFamilyCard = false
+                    
+                    // Vérifier si c'est une carte famille
+                    if let planCategory = planCategory {
+                        isFamilyCard = planCategory == "FAMILY" || planCategory == "CLIENT_FAMILY"
+                    }
                     
                     if let planCategory = planCategory, planCategory == "PROFESSIONAL" {
                         // Si on vient de payer un plan PROFESSIONAL, c'est qu'on est pro
@@ -85,8 +91,8 @@ struct PaymentResultView: View {
                         isPro = userTypeString == "PRO" || userTypeString == "PROFESSIONAL"
                     }
                     
-                    if isPro && status == .success {
-                        // Pour les pros après un paiement réussi, rediriger vers "Gérer mon établissement"
+                    if isPro && status == .success && !isFamilyCard {
+                        // Pour les pros après un paiement réussi d'un plan PRO (pas une carte famille), rediriger vers "Gérer mon établissement"
                         // D'abord naviguer vers l'onglet Profil
                         appState.navigateToTab(.profile)
                         
@@ -96,7 +102,7 @@ struct PaymentResultView: View {
                             NotificationCenter.default.post(name: NSNotification.Name("NavigateToManageEstablishment"), object: nil)
                         }
                     } else if status == .success {
-                        // Pour les clients particuliers après un paiement réussi, naviguer vers la page d'accueil
+                        // Pour les clients particuliers ou les pros qui prennent une carte famille, naviguer vers la page d'accueil
                         appState.navigateToTab(.home)
                     } else {
                         // En cas d'échec, naviguer vers l'accueil

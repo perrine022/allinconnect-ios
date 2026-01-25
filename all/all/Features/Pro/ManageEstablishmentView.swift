@@ -446,7 +446,7 @@ struct ManageEstablishmentView: View {
                                 .padding(.horizontal, 20)
                                 
                                 // Texte explicatif Club 10
-                                Text("Le Club 10 regroupe des professionnels locaux engagés.\nEn proposant -10% aux membres, tu gagnes en visibilité et en nouveaux clients.\nLes habitants présentent leur carte digitale, vous faites le reste ⭐️")
+                                Text("Le Club 10 regroupe des professionnels locaux engagés.\nEn proposant -10% aux membres, tu gagnes en visibilité et en nouveaux clients.\nLes clients présentent leur carte digitale, tu fais le reste ⭐️")
                                     .font(.system(size: 12, weight: .regular))
                                     .foregroundColor(.black)
                                     .multilineTextAlignment(.center)

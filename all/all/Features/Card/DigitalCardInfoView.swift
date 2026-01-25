@@ -78,6 +78,14 @@ struct DigitalCardInfoView: View {
                                     title: "Newsletter exclusive",
                                     description: "Offres & évènements en avant-première"
                                 )
+                                
+                                // Carte 5: Programme parrainage
+                                BenefitCard(
+                                    icon: "person.2.fill",
+                                    iconColor: .appGold,
+                                    title: "Programme parrainage",
+                                    description: "50% du 1er mois de chaque filleul"
+                                )
                             }
                             .padding(.horizontal, 20)
                             

@@ -47,35 +47,20 @@ class ForgotPasswordViewModel: ObservableObject {
             return
         }
         
+        // Afficher immédiatement le message de succès
+        isLoading = false
+        isEmailSent = true
+        
+        // Envoyer la demande en arrière-plan (sans bloquer l'UI)
         Task {
             do {
-                // Appeler l'API
+                // Appeler l'API en arrière-plan
                 try await authAPIService.forgotPassword(email: email.trimmingCharacters(in: .whitespaces).lowercased())
-                
-                isLoading = false
-                isEmailSent = true
+                print("✅ Email de réinitialisation envoyé avec succès")
             } catch {
-                isLoading = false
-                
-                // Gérer les erreurs
-                if let apiError = error as? APIError {
-                    switch apiError {
-                    case .httpError(let statusCode, let message):
-                        if statusCode == 404 {
-                            errorMessage = "Aucun compte trouvé avec cet email"
-                        } else {
-                            errorMessage = message ?? "Erreur lors de l'envoi de l'email"
-                        }
-                    case .networkError:
-                        errorMessage = "Erreur de connexion. Vérifiez votre connexion internet."
-                    default:
-                        errorMessage = apiError.localizedDescription
-                    }
-                } else {
-                    errorMessage = error.localizedDescription
-                }
-                
-                print("Erreur lors de l'envoi de l'email de réinitialisation: \(error)")
+                // En cas d'erreur, on ne change pas l'état de succès pour ne pas perturber l'utilisateur
+                // L'email sera peut-être quand même envoyé côté serveur
+                print("⚠️ Erreur lors de l'envoi de l'email de réinitialisation: \(error)")
             }
         }
     }
@@ -114,7 +99,7 @@ struct ForgotPasswordView: View {
                     
                     // Description
                     if !viewModel.isEmailSent {
-                        Text("Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.")
+                        Text("Entre ton adresse email et nous t'enverrons un lien pour réinitialiser ton mot de passe.")
                             .font(.system(size: 15, weight: .regular))
                             .foregroundColor(.white.opacity(0.9))
                             .multilineTextAlignment(.center)
@@ -127,7 +112,7 @@ struct ForgotPasswordView: View {
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(.white.opacity(0.9))
                             
-                            TextField("", text: $viewModel.email, prompt: Text("votre@email.com").foregroundColor(.gray.opacity(0.6)))
+                            TextField("", text: $viewModel.email, prompt: Text("ton@email.com").foregroundColor(.gray.opacity(0.6)))
                                 .focused($isEmailFocused)
                                 .foregroundColor(.black)
                                 .font(.system(size: 16))

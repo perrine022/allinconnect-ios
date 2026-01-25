@@ -57,7 +57,7 @@ struct LoginView: View {
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(.white.opacity(0.9))
                             
-                            TextField("", text: $viewModel.email, prompt: Text("votre@email.com").foregroundColor(.gray.opacity(0.6)))
+                            TextField("", text: $viewModel.email, prompt: Text("ton@email.com").foregroundColor(.gray.opacity(0.6)))
                                 .focused($focusedField, equals: .email)
                                 .foregroundColor(.black)
                                 .font(.system(size: 16))
@@ -83,12 +83,12 @@ struct LoginView: View {
                             
                             HStack {
                                 if showPassword {
-                                    TextField("", text: $viewModel.password, prompt: Text("Votre mot de passe").foregroundColor(.gray.opacity(0.6)))
+                                    TextField("", text: $viewModel.password, prompt: Text("Ton mot de passe").foregroundColor(.gray.opacity(0.6)))
                                         .focused($focusedField, equals: .password)
                                         .foregroundColor(.black)
                                         .font(.system(size: 16))
                                 } else {
-                                    SecureField("", text: $viewModel.password, prompt: Text("Votre mot de passe").foregroundColor(.gray.opacity(0.6)))
+                                    SecureField("", text: $viewModel.password, prompt: Text("Ton mot de passe").foregroundColor(.gray.opacity(0.6)))
                                         .focused($focusedField, equals: .password)
                                         .foregroundColor(.black)
                                         .font(.system(size: 16))
@@ -166,11 +166,11 @@ struct LoginView: View {
                         .padding(.horizontal, 20)
                         .padding(.top, 8)
                     
-                    // Bouton Inscrivez-vous
+                    // Bouton Inscris-toi
                     Button(action: {
                         signUpNavigationId = UUID()
                     }) {
-                        Text("Inscrivez-vous")
+                        Text("Inscris-toi")
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)

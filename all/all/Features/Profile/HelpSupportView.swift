@@ -424,18 +424,26 @@ struct ContactFormView: View {
                                         .font(.system(size: 14, weight: .medium))
                                         .foregroundColor(.white.opacity(0.9))
                                     
-                                    TextEditor(text: $message)
-                                        .frame(height: 120)
-                                        .padding(10)
-                                        .background(focusedField == .message ? Color.appDarkRed1.opacity(0.8) : Color.appDarkRed1.opacity(0.6))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 10)
-                                                .stroke(focusedField == .message ? Color.appGold : Color.clear, lineWidth: 2)
-                                        )
-                                        .cornerRadius(10)
-                                        .foregroundColor(.white)
-                                        .accentColor(.appGold)
-                                        .focused($focusedField, equals: .message)
+                                    ZStack(alignment: .topLeading) {
+                                        if message.isEmpty {
+                                            Text("Écris ton message ici...")
+                                                .foregroundColor(.gray.opacity(0.6))
+                                                .padding(.horizontal, 15)
+                                                .padding(.vertical, 18)
+                                        }
+                                        TextEditor(text: $message)
+                                            .frame(height: 120)
+                                            .padding(10)
+                                            .background(Color.white)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .stroke(focusedField == .message ? Color.appGold : Color.gray.opacity(0.3), lineWidth: focusedField == .message ? 2 : 1)
+                                            )
+                                            .cornerRadius(10)
+                                            .foregroundColor(.black)
+                                            .accentColor(.appGold)
+                                            .focused($focusedField, equals: .message)
+                                    }
                                 }
                                 .padding(.horizontal, 20)
                             }
@@ -613,18 +621,26 @@ struct ReportProblemView: View {
                                         .font(.system(size: 14, weight: .medium))
                                         .foregroundColor(.white.opacity(0.9))
                                     
-                                    TextEditor(text: $description)
-                                        .frame(height: 150)
-                                        .padding(10)
-                                        .background(focusedField == .description ? Color.appDarkRed1.opacity(0.8) : Color.appDarkRed1.opacity(0.6))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 10)
-                                                .stroke(focusedField == .description ? Color.appGold : Color.clear, lineWidth: 2)
-                                        )
-                                        .cornerRadius(10)
-                                        .foregroundColor(.white)
-                                        .accentColor(.appGold)
-                                        .focused($focusedField, equals: .description)
+                                    ZStack(alignment: .topLeading) {
+                                        if description.isEmpty {
+                                            Text("Décris ton problème en détail...")
+                                                .foregroundColor(.gray.opacity(0.6))
+                                                .padding(.horizontal, 15)
+                                                .padding(.vertical, 18)
+                                        }
+                                        TextEditor(text: $description)
+                                            .frame(height: 150)
+                                            .padding(10)
+                                            .background(Color.white)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .stroke(focusedField == .description ? Color.appGold : Color.gray.opacity(0.3), lineWidth: focusedField == .description ? 2 : 1)
+                                            )
+                                            .cornerRadius(10)
+                                            .foregroundColor(.black)
+                                            .accentColor(.appGold)
+                                            .focused($focusedField, equals: .description)
+                                    }
                                 }
                                 .padding(.horizontal, 20)
                             }
