@@ -434,6 +434,7 @@ struct ContactFormView: View {
                                         TextEditor(text: $message)
                                             .frame(height: 120)
                                             .padding(10)
+                                            .scrollContentBackground(.hidden)
                                             .background(Color.white)
                                             .overlay(
                                                 RoundedRectangle(cornerRadius: 10)
@@ -631,6 +632,7 @@ struct ReportProblemView: View {
                                         TextEditor(text: $description)
                                             .frame(height: 150)
                                             .padding(10)
+                                            .scrollContentBackground(.hidden)
                                             .background(Color.white)
                                             .overlay(
                                                 RoundedRectangle(cornerRadius: 10)

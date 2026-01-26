@@ -17,6 +17,8 @@ class BillingViewModel: ObservableObject {
     @Published var premiumEnabled: Bool = false
     @Published var subscriptionStatus: String? // "ACTIVE", "PAST_DUE", "CANCELED", etc.
     @Published var currentPeriodEnd: Date?
+    @Published var currentPeriodStart: Date? // Début de la période actuelle
+    @Published var subscriptionCreatedAt: Date? // Date de création de l'abonnement
     
     // Détails de l'abonnement
     @Published var stripeSubscriptionId: String?
@@ -109,11 +111,24 @@ class BillingViewModel: ObservableObject {
             }
             premiumEnabled = details.premiumEnabled
             
-            // Parser la date de fin de période si disponible
+            // Parser les dates si disponibles
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds, .withTimeZone]
+            
+            if let periodStartString = details.currentPeriodStart {
+                currentPeriodStart = formatter.date(from: periodStartString)
+            }
+            
             if let periodEndString = details.currentPeriodEnd {
-                let formatter = ISO8601DateFormatter()
-                formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds, .withTimeZone]
                 currentPeriodEnd = formatter.date(from: periodEndString)
+            }
+            
+            // Parser la date de création de l'abonnement
+            if let createdAtString = details.createdAt {
+                subscriptionCreatedAt = formatter.date(from: createdAtString)
+            } else if let periodStart = currentPeriodStart {
+                // Si createdAt n'est pas disponible, utiliser currentPeriodStart comme approximation
+                subscriptionCreatedAt = periodStart
             }
             
             print("[BillingViewModel] loadSubscriptionDetails() - Succès")

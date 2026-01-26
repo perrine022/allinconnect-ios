@@ -99,7 +99,7 @@ struct ForgotPasswordView: View {
                     
                     // Description
                     if !viewModel.isEmailSent {
-                        Text("Entre ton adresse email et nous t'enverrons un lien pour réinitialiser ton mot de passe.")
+                        Text("Entre ton adresse email pour faire une demande de réinitialisation de mot de passe.")
                             .font(.system(size: 15, weight: .regular))
                             .foregroundColor(.white.opacity(0.9))
                             .multilineTextAlignment(.center)
@@ -172,11 +172,11 @@ struct ForgotPasswordView: View {
                                 .font(.system(size: 60))
                                 .foregroundColor(.green)
                             
-                            Text("Email envoyé !")
+                            Text("Demande prise en compte")
                                 .font(.system(size: 24, weight: .bold))
                                 .foregroundColor(.white)
                             
-                            Text("Nous avons envoyé un lien de réinitialisation à \(viewModel.email). Vérifiez votre boîte de réception.")
+                            Text("Ta demande a été prise en compte. Nous allons t'envoyer un lien pour réinitialiser ton mot de passe.")
                                 .font(.system(size: 15, weight: .regular))
                                 .foregroundColor(.white.opacity(0.9))
                                 .multilineTextAlignment(.center)

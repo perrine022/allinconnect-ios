@@ -355,7 +355,9 @@ struct CancelSubscriptionResponse: Codable {
 struct SubscriptionDetailsResponse: Codable {
     let stripeSubscriptionId: String?
     let status: String? // "ACTIVE", "PAST_DUE", "CANCELLED", etc.
+    let currentPeriodStart: String? // ISO 8601 date string - Début de la période actuelle
     let currentPeriodEnd: String? // ISO 8601 date string
+    let createdAt: String? // ISO 8601 date string - Date de création de l'abonnement
     let premiumEnabled: Bool
     let lastFour: String? // Les 4 derniers chiffres de la carte
     let cardBrand: String? // "visa", "mastercard", etc.
@@ -364,7 +366,9 @@ struct SubscriptionDetailsResponse: Codable {
     enum CodingKeys: String, CodingKey {
         case stripeSubscriptionId
         case status
+        case currentPeriodStart
         case currentPeriodEnd
+        case createdAt
         case premiumEnabled
         case lastFour
         case cardBrand

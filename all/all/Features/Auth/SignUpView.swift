@@ -95,7 +95,7 @@ struct SignUpView: View {
                                             Image(systemName: "exclamationmark.circle.fill")
                                                 .foregroundColor(.red)
                                                 .font(.system(size: 12))
-                                            Text("Format invalide. Utilisez le format : exemple@domaine.com")
+                                            Text("Format invalide. Utilise le format : exemple@domaine.com")
                                                 .font(.system(size: 12, weight: .regular))
                                                 .foregroundColor(.red)
                                         }

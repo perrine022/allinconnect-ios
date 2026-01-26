@@ -187,7 +187,7 @@ class SignUpViewModel: ObservableObject {
         
         // Validation
         guard isValid else {
-            errorMessage = "Veuillez remplir tous les champs correctement"
+            errorMessage = "Remplis tous les champs correctement"
             isLoading = false
             completion(false)
             return
@@ -268,9 +268,9 @@ class SignUpViewModel: ObservableObject {
                         // Vérifier si c'est une erreur de connexion au serveur
                         let nsError = underlyingError as NSError
                         if nsError.domain == NSURLErrorDomain && (nsError.code == -1004 || nsError.code == NSURLErrorCannotConnectToHost) {
-                            errorMessage = "Impossible de se connecter au serveur. Vérifiez votre connexion internet."
+                            errorMessage = "Impossible de se connecter au serveur. Vérifie ta connexion internet."
                         } else {
-                            errorMessage = "Erreur de connexion. Vérifiez votre connexion internet."
+                            errorMessage = "Erreur de connexion. Vérifie ta connexion internet."
                         }
                     default:
                         errorMessage = apiError.localizedDescription

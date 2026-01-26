@@ -193,6 +193,44 @@ struct CardView: View {
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
                         .animation(.easeInOut(duration: 0.3), value: viewModel.hasLoadedOnce)
                         
+                        // Bouton "Gérer ma famille" pour les cartes famille
+                        if let cardType = viewModel.cardType, (cardType == "FAMILY" || cardType == "CLIENT_FAMILY") {
+                            Button(action: {
+                                showFamilyManagement = true
+                            }) {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "person.2.fill")
+                                        .foregroundColor(.white)
+                                        .font(.system(size: 18, weight: .semibold))
+                                    
+                                    Text("Gérer ma famille")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.white)
+                                    
+                                    Spacer()
+                                    
+                                    Image(systemName: "chevron.right")
+                                        .foregroundColor(.white.opacity(0.7))
+                                        .font(.system(size: 14, weight: .medium))
+                                }
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 16)
+                                .frame(maxWidth: geometry.size.width - (horizontalPadding(for: geometry.size.width) * 2))
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(Color.appDarkRed1.opacity(0.85))
+                                        .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(Color.red.opacity(0.3), lineWidth: 1)
+                                )
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .padding(.horizontal, horizontalPadding(for: geometry.size.width))
+                            .padding(.top, 20)
+                        }
+                        
                         // Grille de statistiques
                         VStack(spacing: 10) {
                             HStack(spacing: 10) {

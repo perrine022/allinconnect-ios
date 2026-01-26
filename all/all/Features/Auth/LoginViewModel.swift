@@ -45,7 +45,7 @@ class LoginViewModel: ObservableObject {
         
         // Validation
         guard isValid else {
-            errorMessage = "Veuillez remplir tous les champs correctement"
+            errorMessage = "Remplis tous les champs correctement"
             isLoading = false
             return
         }
@@ -96,9 +96,9 @@ class LoginViewModel: ObservableObject {
                         // Vérifier si c'est une erreur de connexion au serveur
                         let nsError = underlyingError as NSError
                         if nsError.domain == NSURLErrorDomain && (nsError.code == -1004 || nsError.code == NSURLErrorCannotConnectToHost) {
-                            errorMessage = "Impossible de se connecter au serveur. Vérifiez votre connexion internet."
+                            errorMessage = "Impossible de se connecter au serveur. Vérifie ta connexion internet."
                         } else {
-                            errorMessage = "Problème de connexion. Vérifiez votre connexion internet."
+                            errorMessage = "Problème de connexion. Vérifie ta connexion internet."
                         }
                     case .unauthorized:
                         errorMessage = "Les informations de connexion sont incorrectes"
