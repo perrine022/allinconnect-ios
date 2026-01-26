@@ -347,7 +347,13 @@ struct ContactFormView: View {
     @State private var email: String = ""
     @State private var subject: String = ""
     @State private var message: String = ""
+    @State private var isLoading: Bool = false
+    @State private var successMessage: String?
+    @State private var errorMessage: String?
     @FocusState private var focusedField: Field?
+    
+    private let customerRequestAPIService = CustomerRequestAPIService()
+    private let profileAPIService = ProfileAPIService()
     
     enum Field: Hashable {
         case name, email, subject, message
@@ -449,21 +455,52 @@ struct ContactFormView: View {
                                 .padding(.horizontal, 20)
                             }
                             
+                            // Messages de succès/erreur
+                            if let successMessage = successMessage {
+                                Text(successMessage)
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(.green)
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 12)
+                                    .frame(maxWidth: .infinity)
+                                    .background(Color.green.opacity(0.1))
+                                    .cornerRadius(10)
+                            }
+                            
+                            if let errorMessage = errorMessage {
+                                Text(errorMessage)
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(.red)
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 12)
+                                    .frame(maxWidth: .infinity)
+                                    .background(Color.red.opacity(0.1))
+                                    .cornerRadius(10)
+                            }
+                            
                             // Bouton Envoyer
                             Button(action: {
-                                // Envoyer le message
-                                // Plus tard, appeler l'API pour envoyer le message
-                                dismiss()
+                                Task {
+                                    await sendContactRequest()
+                                }
                             }) {
-                                Text("Envoyer")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.black)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 14)
-                                    .background(isValid ? Color.appGold : Color.gray.opacity(0.5))
-                                    .cornerRadius(12)
+                                HStack {
+                                    if isLoading {
+                                        ProgressView()
+                                            .progressViewStyle(CircularProgressViewStyle(tint: .black))
+                                            .scaleEffect(0.8)
+                                    } else {
+                                        Text("Envoyer")
+                                            .font(.system(size: 16, weight: .bold))
+                                    }
+                                }
+                                .foregroundColor(.black)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(isValid && !isLoading ? Color.appGold : Color.gray.opacity(0.5))
+                                .cornerRadius(12)
                             }
-                            .disabled(!isValid)
+                            .disabled(!isValid || isLoading)
                             .padding(.horizontal, 20)
                             .padding(.top, 8)
                             
@@ -492,6 +529,43 @@ struct ContactFormView: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .onTapGesture {
             hideKeyboard()
+        }
+    }
+    
+    private func sendContactRequest() async {
+        isLoading = true
+        errorMessage = nil
+        successMessage = nil
+        
+        do {
+            // Récupérer le userId depuis le profil
+            let userMe = try await profileAPIService.getUserMe()
+            guard let userId = userMe.id else {
+                throw APIError.invalidResponse
+            }
+            
+            // Construire le titre avec le sujet
+            let title = subject.trimmingCharacters(in: .whitespaces)
+            let messageText = message.trimmingCharacters(in: .whitespaces)
+            
+            // Envoyer la demande
+            _ = try await customerRequestAPIService.createCustomerRequest(
+                userId: userId,
+                title: title,
+                message: messageText
+            )
+            
+            successMessage = "Ton message a été envoyé avec succès !"
+            isLoading = false
+            
+            // Fermer la vue après 2 secondes
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                dismiss()
+            }
+        } catch {
+            isLoading = false
+            errorMessage = "Erreur lors de l'envoi du message : \(error.localizedDescription)"
+            print("❌ [ContactFormView] Erreur: \(error)")
         }
     }
 }
@@ -533,7 +607,13 @@ struct ReportProblemView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var problemType: String = ""
     @State private var description: String = ""
+    @State private var isLoading: Bool = false
+    @State private var successMessage: String?
+    @State private var errorMessage: String?
     @FocusState private var focusedField: Field?
+    
+    private let customerRequestAPIService = CustomerRequestAPIService()
+    private let profileAPIService = ProfileAPIService()
     
     enum Field: Hashable {
         case problemType, description
@@ -647,21 +727,52 @@ struct ReportProblemView: View {
                                 .padding(.horizontal, 20)
                             }
                             
+                            // Messages de succès/erreur
+                            if let successMessage = successMessage {
+                                Text(successMessage)
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(.green)
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 12)
+                                    .frame(maxWidth: .infinity)
+                                    .background(Color.green.opacity(0.1))
+                                    .cornerRadius(10)
+                            }
+                            
+                            if let errorMessage = errorMessage {
+                                Text(errorMessage)
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(.red)
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 12)
+                                    .frame(maxWidth: .infinity)
+                                    .background(Color.red.opacity(0.1))
+                                    .cornerRadius(10)
+                            }
+                            
                             // Bouton Envoyer
                             Button(action: {
-                                // Envoyer le signalement
-                                // Plus tard, appeler l'API pour envoyer le signalement
-                                dismiss()
+                                Task {
+                                    await sendReportRequest()
+                                }
                             }) {
-                                Text("Envoyer le signalement")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.black)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 14)
-                                    .background(isValid ? Color.appGold : Color.gray.opacity(0.5))
-                                    .cornerRadius(12)
+                                HStack {
+                                    if isLoading {
+                                        ProgressView()
+                                            .progressViewStyle(CircularProgressViewStyle(tint: .black))
+                                            .scaleEffect(0.8)
+                                    } else {
+                                        Text("Envoyer le signalement")
+                                            .font(.system(size: 16, weight: .bold))
+                                    }
+                                }
+                                .foregroundColor(.black)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(isValid && !isLoading ? Color.appGold : Color.gray.opacity(0.5))
+                                .cornerRadius(12)
                             }
-                            .disabled(!isValid)
+                            .disabled(!isValid || isLoading)
                             .padding(.horizontal, 20)
                             .padding(.top, 8)
                             
@@ -690,6 +801,43 @@ struct ReportProblemView: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .onTapGesture {
             hideKeyboard()
+        }
+    }
+    
+    private func sendReportRequest() async {
+        isLoading = true
+        errorMessage = nil
+        successMessage = nil
+        
+        do {
+            // Récupérer le userId depuis le profil
+            let userMe = try await profileAPIService.getUserMe()
+            guard let userId = userMe.id else {
+                throw APIError.invalidResponse
+            }
+            
+            // Construire le titre avec le type de problème
+            let title = "Signalement: \(problemType)"
+            let messageText = description.trimmingCharacters(in: .whitespaces)
+            
+            // Envoyer la demande
+            _ = try await customerRequestAPIService.createCustomerRequest(
+                userId: userId,
+                title: title,
+                message: messageText
+            )
+            
+            successMessage = "Ton signalement a été envoyé avec succès !"
+            isLoading = false
+            
+            // Fermer la vue après 2 secondes
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                dismiss()
+            }
+        } catch {
+            isLoading = false
+            errorMessage = "Erreur lors de l'envoi du signalement : \(error.localizedDescription)"
+            print("❌ [ReportProblemView] Erreur: \(error)")
         }
     }
 }

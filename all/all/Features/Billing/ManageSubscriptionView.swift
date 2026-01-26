@@ -128,18 +128,51 @@ struct ManageSubscriptionView: View {
                     
                     // Vérifier si 6 mois se sont écoulés depuis la souscription
                     let canCancelSubscription: Bool = {
+                        print("═══════════════════════════════════════════════════════════")
+                        print("🔍 [ManageSubscriptionView] Vérification de la date de souscription")
+                        print("═══════════════════════════════════════════════════════════")
+                        
                         guard let subscriptionDate = viewModel.subscriptionCreatedAt else {
-                            // Si on n'a pas la date de création, on n'autorise pas la résiliation
+                            print("❌ [ManageSubscriptionView] subscriptionCreatedAt est nil")
+                            print("   → Bouton 'Résilier' ne sera PAS affiché")
                             return false
                         }
+                        
+                        let dateFormatter = DateFormatter()
+                        dateFormatter.dateStyle = .medium
+                        dateFormatter.timeStyle = .short
+                        dateFormatter.locale = Locale(identifier: "fr_FR")
+                        
+                        print("✅ [ManageSubscriptionView] Date de souscription trouvée:")
+                        print("   - subscriptionDate: \(dateFormatter.string(from: subscriptionDate))")
+                        print("   - subscriptionDate (ISO): \(subscriptionDate)")
                         
                         // Ajouter 6 mois à la date de souscription
                         guard let sixMonthsAfterSubscription = Calendar.current.date(byAdding: .month, value: 6, to: subscriptionDate) else {
+                            print("❌ [ManageSubscriptionView] Impossible de calculer (subscriptionDate + 6 mois)")
                             return false
                         }
                         
+                        let currentDate = Date()
+                        print("   - Date actuelle: \(dateFormatter.string(from: currentDate))")
+                        print("   - Date limite (subscriptionDate + 6 mois): \(dateFormatter.string(from: sixMonthsAfterSubscription))")
+                        
+                        // Calculer le nombre de jours entre la date actuelle et la date limite
+                        let daysDifference = Calendar.current.dateComponents([.day], from: sixMonthsAfterSubscription, to: currentDate).day ?? 0
+                        print("   - Différence: \(daysDifference) jours")
+                        
                         // Vérifier si la date actuelle est après (subscriptionDate + 6 mois)
-                        return Date() >= sixMonthsAfterSubscription
+                        let canCancel = currentDate >= sixMonthsAfterSubscription
+                        
+                        if canCancel {
+                            print("✅ [ManageSubscriptionView] 6 mois ou plus écoulés → Bouton 'Résilier' SERA affiché")
+                        } else {
+                            print("❌ [ManageSubscriptionView] Moins de 6 mois écoulés → Bouton 'Résilier' ne sera PAS affiché")
+                        }
+                        
+                        print("═══════════════════════════════════════════════════════════")
+                        
+                        return canCancel
                     }()
                     
                     if viewModel.premiumEnabled && !isSubscriptionCancelled {

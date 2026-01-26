@@ -124,11 +124,31 @@ class BillingViewModel: ObservableObject {
             }
             
             // Parser la date de création de l'abonnement
+            print("🔍 [BillingViewModel] Parsing de la date de souscription...")
+            print("   - details.createdAt (raw): \(details.createdAt ?? "nil")")
+            print("   - currentPeriodStart (raw): \(details.currentPeriodStart ?? "nil")")
+            
             if let createdAtString = details.createdAt {
                 subscriptionCreatedAt = formatter.date(from: createdAtString)
+                if let date = subscriptionCreatedAt {
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.dateStyle = .medium
+                    dateFormatter.timeStyle = .short
+                    dateFormatter.locale = Locale(identifier: "fr_FR")
+                    print("   ✅ subscriptionCreatedAt défini depuis createdAt: \(dateFormatter.string(from: date))")
+                } else {
+                    print("   ⚠️ Impossible de parser createdAt: \(createdAtString)")
+                }
             } else if let periodStart = currentPeriodStart {
                 // Si createdAt n'est pas disponible, utiliser currentPeriodStart comme approximation
                 subscriptionCreatedAt = periodStart
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateStyle = .medium
+                dateFormatter.timeStyle = .short
+                dateFormatter.locale = Locale(identifier: "fr_FR")
+                print("   ⚠️ createdAt non disponible, utilisation de currentPeriodStart: \(dateFormatter.string(from: periodStart))")
+            } else {
+                print("   ❌ Aucune date de souscription disponible (ni createdAt ni currentPeriodStart)")
             }
             
             print("[BillingViewModel] loadSubscriptionDetails() - Succès")
@@ -136,6 +156,15 @@ class BillingViewModel: ObservableObject {
             print("   - status: \(subscriptionStatus ?? "nil")")
             print("   - lastFour: \(lastFour ?? "nil")")
             print("   - cardBrand: \(cardBrand ?? "nil")")
+            if let subscriptionDate = subscriptionCreatedAt {
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateStyle = .medium
+                dateFormatter.timeStyle = .short
+                dateFormatter.locale = Locale(identifier: "fr_FR")
+                print("   - subscriptionCreatedAt: \(dateFormatter.string(from: subscriptionDate))")
+            } else {
+                print("   - subscriptionCreatedAt: nil")
+            }
         } catch {
             print("[BillingViewModel] loadSubscriptionDetails() - Erreur: \(error.localizedDescription)")
             // Ne pas afficher d'erreur si l'utilisateur n'a pas d'abonnement (404)
