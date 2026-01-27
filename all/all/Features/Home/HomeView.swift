@@ -651,78 +651,57 @@ struct ModernPartnerCard: View {
                     HStack(alignment: .top, spacing: 12) {
                         // Image de l'établissement avec style moderne
                         Group {
-                            if let rawUrl = partner.establishmentImageUrl, !rawUrl.isEmpty {
-                                let finalImageUrl: String = {
-                                    if rawUrl.hasPrefix("http://") || rawUrl.hasPrefix("https://") {
-                                        print("🖼️ [HomeView] URL déjà complète pour \(partner.name): \(rawUrl)")
-                                        return rawUrl
-                                    } else {
-                                        let builtUrl = ImageURLHelper.buildImageURL(from: rawUrl) ?? rawUrl
-                                        print("🖼️ [HomeView] URL relative construite pour \(partner.name): \(builtUrl)")
-                                        return builtUrl
-                                    }
-                                }()
-                                
-                                if let url = URL(string: finalImageUrl) {
-                                    AsyncImage(url: url) { phase in
-                                        switch phase {
-                                        case .empty:
-                                            ZStack {
-                                                RoundedRectangle(cornerRadius: 12)
-                                                    .fill(Color.white.opacity(0.15))
-                                                Image(systemName: partner.imageName)
-                                                    .resizable()
-                                                    .scaledToFit()
-                                                    .foregroundColor(.white.opacity(0.5))
-                                                    .frame(width: 30, height: 30)
-                                            }
-                                        case .success(let image):
-                                            image
+                            // Utiliser ImageURLHelper pour construire l'URL (gère automatiquement les URLs absolues et relatives)
+                            if let builtImageUrl = ImageURLHelper.buildImageURL(from: partner.establishmentImageUrl),
+                               !builtImageUrl.isEmpty,
+                               let url = URL(string: builtImageUrl) {
+                                AsyncImage(url: url) { phase in
+                                    switch phase {
+                                    case .empty:
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .fill(Color.white.opacity(0.15))
+                                            Image(systemName: partner.imageName)
                                                 .resizable()
-                                                .scaledToFill()
-                                                .onAppear {
-                                                    print("🖼️ [HomeView] ✅ Image chargée avec succès pour \(partner.name)")
-                                                }
-                                        case .failure(let error):
-                                            ZStack {
-                                                RoundedRectangle(cornerRadius: 12)
-                                                    .fill(Color.white.opacity(0.15))
-                                                Image(systemName: partner.imageName)
-                                                    .resizable()
-                                                    .scaledToFit()
-                                                    .foregroundColor(.white.opacity(0.5))
-                                                    .frame(width: 30, height: 30)
-                                            }
-                                            .onAppear {
-                                                print("🖼️ [HomeView] ❌ Échec chargement image pour \(partner.name): \(error.localizedDescription)")
-                                            }
-                                        @unknown default:
-                                            ZStack {
-                                                RoundedRectangle(cornerRadius: 12)
-                                                    .fill(Color.white.opacity(0.15))
-                                                Image(systemName: partner.imageName)
-                                                    .resizable()
-                                                    .scaledToFit()
-                                                    .foregroundColor(.white.opacity(0.5))
-                                                    .frame(width: 30, height: 30)
-                                            }
+                                                .scaledToFit()
+                                                .foregroundColor(.white.opacity(0.5))
+                                                .frame(width: 30, height: 30)
                                         }
-                                    }
-                                } else {
-                                    ZStack {
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .fill(Color.white.opacity(0.15))
-                                        Image(systemName: partner.imageName)
+                                    case .success(let image):
+                                        image
                                             .resizable()
-                                            .scaledToFit()
-                                            .foregroundColor(.white.opacity(0.5))
-                                            .frame(width: 30, height: 30)
-                                    }
-                                    .onAppear {
-                                        print("🖼️ [HomeView] ❌ URL invalide pour \(partner.name): \(finalImageUrl)")
+                                            .scaledToFill()
+                                            .onAppear {
+                                                print("🖼️ [HomeView] ✅ Image chargée avec succès pour \(partner.name)")
+                                            }
+                                    case .failure(let error):
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .fill(Color.white.opacity(0.15))
+                                            Image(systemName: partner.imageName)
+                                                .resizable()
+                                                .scaledToFit()
+                                                .foregroundColor(.white.opacity(0.5))
+                                                .frame(width: 30, height: 30)
+                                        }
+                                        .onAppear {
+                                            print("🖼️ [HomeView] ❌ Échec chargement image pour \(partner.name): \(error.localizedDescription)")
+                                            print("   - URL utilisée: \(builtImageUrl)")
+                                        }
+                                    @unknown default:
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .fill(Color.white.opacity(0.15))
+                                            Image(systemName: partner.imageName)
+                                                .resizable()
+                                                .scaledToFit()
+                                                .foregroundColor(.white.opacity(0.5))
+                                                .frame(width: 30, height: 30)
+                                        }
                                     }
                                 }
                             } else {
+                                // Pas d'URL d'image disponible ou URL invalide
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 12)
                                         .fill(Color.white.opacity(0.15))
@@ -733,7 +712,15 @@ struct ModernPartnerCard: View {
                                         .frame(width: 30, height: 30)
                                 }
                                 .onAppear {
-                                    print("🖼️ [HomeView] Pas d'URL disponible pour \(partner.name)")
+                                    if partner.establishmentImageUrl == nil || partner.establishmentImageUrl!.isEmpty {
+                                        print("🖼️ [HomeView] Pas d'URL disponible pour \(partner.name)")
+                                    } else {
+                                        print("🖼️ [HomeView] URL invalide pour \(partner.name)")
+                                        print("   - Raw URL: \(partner.establishmentImageUrl ?? "nil")")
+                                        if let builtUrl = ImageURLHelper.buildImageURL(from: partner.establishmentImageUrl) {
+                                            print("   - Built URL: \(builtUrl)")
+                                        }
+                                    }
                                 }
                             }
                         }

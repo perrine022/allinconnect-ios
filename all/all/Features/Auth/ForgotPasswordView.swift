@@ -55,12 +55,18 @@ class ForgotPasswordViewModel: ObservableObject {
         Task {
             do {
                 // Appeler l'API en arrière-plan
-                try await authAPIService.forgotPassword(email: email.trimmingCharacters(in: .whitespaces).lowercased())
-                print("✅ Email de réinitialisation envoyé avec succès")
+                // L'endpoint /forgot-password-logs enregistre le log, identifie l'utilisateur et retourne les infos complètes
+                let log = try await authAPIService.forgotPassword(email: email.trimmingCharacters(in: .whitespaces).lowercased())
+                print("✅ Demande de réinitialisation envoyée avec succès")
+                print("   - Log ID: \(log.id)")
+                if let userId = log.userId {
+                    print("   - Utilisateur trouvé: \(log.userFirstName ?? "") \(log.userLastName ?? "") (ID: \(userId))")
+                } else {
+                    print("   - Aucun utilisateur trouvé pour cet email")
+                }
             } catch {
                 // En cas d'erreur, on ne change pas l'état de succès pour ne pas perturber l'utilisateur
-                // L'email sera peut-être quand même envoyé côté serveur
-                print("⚠️ Erreur lors de l'envoi de l'email de réinitialisation: \(error)")
+                print("⚠️ Erreur lors de l'envoi de la demande de réinitialisation: \(error)")
             }
         }
     }

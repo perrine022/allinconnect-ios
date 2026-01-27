@@ -102,8 +102,8 @@ struct PaymentResultView: View {
                             NotificationCenter.default.post(name: NSNotification.Name("NavigateToManageEstablishment"), object: nil)
                         }
                     } else if status == .success {
-                        // Pour les clients particuliers ou les pros qui prennent une carte famille, naviguer vers la page d'accueil
-                        appState.navigateToTab(.home)
+                        // Pour les clients particuliers (carte digitale) ou les pros qui prennent une carte famille, naviguer vers "Ma carte"
+                        appState.navigateToTab(.card)
                     } else {
                         // En cas d'échec, naviguer vers l'accueil
                         appState.navigateToTab(.home)

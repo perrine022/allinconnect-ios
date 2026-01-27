@@ -24,7 +24,7 @@ struct CustomerRequestRequest: Codable {
 // MARK: - Customer Request Response Model
 struct CustomerRequestResponse: Codable {
     let id: Int
-    let userId: Int
+    let userId: Int? // Optionnel car le backend peut ne pas le renvoyer
     let title: String
     let message: String
     let createdAt: String?
@@ -84,7 +84,12 @@ class CustomerRequestAPIService: ObservableObject {
             headers: nil
         )
         
-        print("📧 [CUSTOMER_REQUEST] ✅ Demande créée avec succès: ID=\(response.id)")
+        print("📧 [CUSTOMER_REQUEST] ✅ Demande créée avec succès")
+        print("   - ID: \(response.id)")
+        print("   - userId: \(response.userId?.description ?? "nil")")
+        print("   - title: \(response.title)")
+        print("   - message: \(response.message.prefix(50))...")
+        print("   - createdAt: \(response.createdAt ?? "nil")")
         print("═══════════════════════════════════════════════════════════")
         
         return response

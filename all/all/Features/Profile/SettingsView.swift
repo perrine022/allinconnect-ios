@@ -140,8 +140,8 @@ struct SettingsView: View {
                 VStack(spacing: 8) {
                     Spacer()
                     
-                    // Texte "Made with love ❤️ par Codyxo.com"
-                    Text("Made with love ❤️ par Codyxo.com")
+                    // Texte "Made with love ❤️ par Perrine Honoré"
+                    Text("Made with love ❤️ par Perrine Honoré")
                         .font(.system(size: 12, weight: .regular))
                         .foregroundColor(.white.opacity(0.6))
                         .padding(.bottom, 4)

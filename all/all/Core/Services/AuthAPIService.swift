@@ -82,6 +82,34 @@ struct ResetPasswordRequest: Codable {
     }
 }
 
+// MARK: - Forgot Password Log Response
+struct ForgotPasswordLogResponse: Codable, Identifiable {
+    let id: Int
+    let email: String
+    let userId: Int?
+    let userFirstName: String?
+    let userLastName: String?
+    let createdAt: String
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case email
+        case userId
+        case userFirstName
+        case userLastName
+        case createdAt
+    }
+}
+
+// MARK: - Create Forgot Password Log Request
+struct CreateForgotPasswordLogRequest: Codable {
+    let email: String
+    
+    enum CodingKeys: String, CodingKey {
+        case email
+    }
+}
+
 // MARK: - Auth API Service
 @MainActor
 class AuthAPIService: ObservableObject {
@@ -139,23 +167,97 @@ class AuthAPIService: ObservableObject {
     }
     
     // MARK: - Forgot Password
-    func forgotPassword(email: String) async throws {
-        let forgotPasswordRequest = ForgotPasswordRequest(email: email)
+    /// Envoie une demande de réinitialisation de mot de passe
+    /// Endpoint: POST /api/v1/forgot-password-logs
+    /// Cet endpoint enregistre la demande dans les logs, identifie l'utilisateur et retourne les informations complètes
+    func forgotPassword(email: String) async throws -> ForgotPasswordLogResponse {
+        print("═══════════════════════════════════════════════════════════")
+        print("🔐 [AuthAPIService] forgotPassword() - Début")
+        print("═══════════════════════════════════════════════════════════")
+        print("🔐 [AuthAPIService] Endpoint: POST /api/v1/forgot-password-logs")
+        print("🔐 [AuthAPIService] Email: \(email)")
+        
+        let request = CreateForgotPasswordLogRequest(email: email)
         
         let encoder = JSONEncoder()
-        let jsonData = try encoder.encode(forgotPasswordRequest)
+        let jsonData = try encoder.encode(request)
         
         guard let parameters = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
             throw APIError.invalidResponse
         }
         
-        struct EmptyResponse: Codable {}
-        let _: EmptyResponse = try await apiService.request(
-            endpoint: "/auth/forgot-password",
+        let log: ForgotPasswordLogResponse = try await apiService.request(
+            endpoint: "/forgot-password-logs",
             method: .post,
             parameters: parameters,
             headers: nil
         )
+        
+        print("🔐 [AuthAPIService] ✅ Demande de réinitialisation envoyée")
+        print("   - Log ID: \(log.id)")
+        print("   - Email: \(log.email)")
+        if let userId = log.userId {
+            print("   - User ID: \(userId)")
+            print("   - User: \(log.userFirstName ?? "") \(log.userLastName ?? "")")
+        } else {
+            print("   - Utilisateur non trouvé pour cet email")
+        }
+        print("   - Created At: \(log.createdAt)")
+        print("═══════════════════════════════════════════════════════════")
+        
+        return log
+    }
+    
+    // MARK: - Get Forgot Password Logs
+    /// Récupère tous les logs de réinitialisation de mot de passe
+    /// Endpoint: GET /api/v1/forgot-password-logs
+    func getForgotPasswordLogs() async throws -> [ForgotPasswordLogResponse] {
+        print("═══════════════════════════════════════════════════════════")
+        print("📋 [AuthAPIService] getForgotPasswordLogs() - Début")
+        print("═══════════════════════════════════════════════════════════")
+        print("📋 [AuthAPIService] Endpoint: GET /api/v1/forgot-password-logs")
+        
+        let logs: [ForgotPasswordLogResponse] = try await apiService.request(
+            endpoint: "/forgot-password-logs",
+            method: .get,
+            parameters: nil,
+            headers: nil
+        )
+        
+        print("📋 [AuthAPIService] ✅ \(logs.count) log(s) récupéré(s)")
+        print("═══════════════════════════════════════════════════════════")
+        
+        return logs
+    }
+    
+    // MARK: - Create Forgot Password Log
+    /// Crée un nouveau log de réinitialisation de mot de passe
+    /// Endpoint: POST /api/v1/forgot-password-logs
+    /// Body: { "email": "user@example.com" }
+    func createForgotPasswordLog(email: String) async throws -> ForgotPasswordLogResponse {
+        print("📋 [AuthAPIService] createForgotPasswordLog() - Début")
+        print("📋 [AuthAPIService] Endpoint: POST /api/v1/forgot-password-logs")
+        print("📋 [AuthAPIService] Email: \(email)")
+        
+        let request = CreateForgotPasswordLogRequest(email: email)
+        
+        let encoder = JSONEncoder()
+        let jsonData = try encoder.encode(request)
+        
+        guard let parameters = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
+            throw APIError.invalidResponse
+        }
+        
+        let log: ForgotPasswordLogResponse = try await apiService.request(
+            endpoint: "/forgot-password-logs",
+            method: .post,
+            parameters: parameters,
+            headers: nil
+        )
+        
+        print("📋 [AuthAPIService] ✅ Log créé avec succès: ID=\(log.id)")
+        
+        return log
     }
     
     // MARK: - Reset Password

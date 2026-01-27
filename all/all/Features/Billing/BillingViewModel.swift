@@ -19,6 +19,7 @@ class BillingViewModel: ObservableObject {
     @Published var currentPeriodEnd: Date?
     @Published var currentPeriodStart: Date? // Début de la période actuelle
     @Published var subscriptionCreatedAt: Date? // Date de création de l'abonnement
+    @Published var cardValidityDate: Date? // Date de validité de la carte depuis /users/me/light
     
     // Détails de l'abonnement
     @Published var stripeSubscriptionId: String?
@@ -76,6 +77,9 @@ class BillingViewModel: ObservableObject {
                 currentPeriodEnd = formatter.date(from: periodEndString)
             }
             
+            // Charger les données allégées depuis /users/me/light pour récupérer cardValidityDate
+            await loadUserLightData()
+            
             // Mettre à jour le cache
             savePremiumCache(status.premiumEnabled)
             
@@ -85,6 +89,56 @@ class BillingViewModel: ObservableObject {
             isLoading = false
             errorMessage = "Erreur lors du chargement du statut: \(error.localizedDescription)"
             print("[BillingViewModel] loadSubscriptionStatus() - Erreur: \(error.localizedDescription)")
+        }
+    }
+    
+    // MARK: - Load User Light Data
+    /// Charge les données allégées depuis /users/me/light pour récupérer cardValidityDate
+    func loadUserLightData() async {
+        print("🔍 [BillingViewModel] loadUserLightData() - Début")
+        print("🔍 [BillingViewModel] Endpoint: GET /api/v1/users/me/light")
+        
+        do {
+            let userLight = try await profileAPIService.getUserLight()
+            
+            // Parser cardValidityDate
+            if let cardValidityDateString = userLight.cardValidityDate {
+                let formatter = ISO8601DateFormatter()
+                formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds, .withTimeZone]
+                cardValidityDate = formatter.date(from: cardValidityDateString)
+                
+                if let date = cardValidityDate {
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.dateStyle = .medium
+                    dateFormatter.timeStyle = .short
+                    dateFormatter.locale = Locale(identifier: "fr_FR")
+                    print("✅ [BillingViewModel] cardValidityDate récupéré: \(dateFormatter.string(from: date))")
+                } else {
+                    print("⚠️ [BillingViewModel] Impossible de parser cardValidityDate: \(cardValidityDateString)")
+                }
+            } else {
+                print("⚠️ [BillingViewModel] cardValidityDate non disponible dans la réponse")
+            }
+            
+            // Parser subscriptionDate si disponible
+            if let subscriptionDateString = userLight.subscriptionDate {
+                let formatter = ISO8601DateFormatter()
+                formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds, .withTimeZone]
+                subscriptionCreatedAt = formatter.date(from: subscriptionDateString)
+                
+                if let date = subscriptionCreatedAt {
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.dateStyle = .medium
+                    dateFormatter.timeStyle = .short
+                    dateFormatter.locale = Locale(identifier: "fr_FR")
+                    print("✅ [BillingViewModel] subscriptionDate récupéré depuis /users/me/light: \(dateFormatter.string(from: date))")
+                }
+            }
+            
+            print("🔍 [BillingViewModel] loadUserLightData() - Succès")
+        } catch {
+            print("⚠️ [BillingViewModel] loadUserLightData() - Erreur: \(error.localizedDescription)")
+            // Ne pas bloquer l'UI si cette requête échoue
         }
     }
     

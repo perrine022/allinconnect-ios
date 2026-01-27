@@ -126,14 +126,15 @@ struct ManageSubscriptionView: View {
                     let isSubscriptionCancelled = viewModel.subscriptionStatus == "CANCELLED" || 
                                                   viewModel.subscriptionStatus == "CANCELED"
                     
-                    // Vérifier si 6 mois se sont écoulés depuis la souscription
+                    // Vérifier si cardValidityDate est passée (date dans le passé)
+                    // Si cardValidityDate est dans le futur, on ne peut pas résilier
                     let canCancelSubscription: Bool = {
                         print("═══════════════════════════════════════════════════════════")
-                        print("🔍 [ManageSubscriptionView] Vérification de la date de souscription")
+                        print("🔍 [ManageSubscriptionView] Vérification de cardValidityDate")
                         print("═══════════════════════════════════════════════════════════")
                         
-                        guard let subscriptionDate = viewModel.subscriptionCreatedAt else {
-                            print("❌ [ManageSubscriptionView] subscriptionCreatedAt est nil")
+                        guard let cardValidityDate = viewModel.cardValidityDate else {
+                            print("❌ [ManageSubscriptionView] cardValidityDate est nil")
                             print("   → Bouton 'Résilier' ne sera PAS affiché")
                             return false
                         }
@@ -143,31 +144,21 @@ struct ManageSubscriptionView: View {
                         dateFormatter.timeStyle = .short
                         dateFormatter.locale = Locale(identifier: "fr_FR")
                         
-                        print("✅ [ManageSubscriptionView] Date de souscription trouvée:")
-                        print("   - subscriptionDate: \(dateFormatter.string(from: subscriptionDate))")
-                        print("   - subscriptionDate (ISO): \(subscriptionDate)")
-                        
-                        // Ajouter 6 mois à la date de souscription
-                        guard let sixMonthsAfterSubscription = Calendar.current.date(byAdding: .month, value: 6, to: subscriptionDate) else {
-                            print("❌ [ManageSubscriptionView] Impossible de calculer (subscriptionDate + 6 mois)")
-                            return false
-                        }
-                        
                         let currentDate = Date()
+                        print("✅ [ManageSubscriptionView] cardValidityDate trouvée:")
+                        print("   - cardValidityDate: \(dateFormatter.string(from: cardValidityDate))")
                         print("   - Date actuelle: \(dateFormatter.string(from: currentDate))")
-                        print("   - Date limite (subscriptionDate + 6 mois): \(dateFormatter.string(from: sixMonthsAfterSubscription))")
                         
-                        // Calculer le nombre de jours entre la date actuelle et la date limite
-                        let daysDifference = Calendar.current.dateComponents([.day], from: sixMonthsAfterSubscription, to: currentDate).day ?? 0
-                        print("   - Différence: \(daysDifference) jours")
-                        
-                        // Vérifier si la date actuelle est après (subscriptionDate + 6 mois)
-                        let canCancel = currentDate >= sixMonthsAfterSubscription
+                        // Vérifier si cardValidityDate est dans le passé (on peut résilier)
+                        // Si cardValidityDate est dans le futur, on ne peut PAS résilier
+                        let canCancel = currentDate >= cardValidityDate
                         
                         if canCancel {
-                            print("✅ [ManageSubscriptionView] 6 mois ou plus écoulés → Bouton 'Résilier' SERA affiché")
+                            print("✅ [ManageSubscriptionView] cardValidityDate est passée → Bouton 'Résilier' SERA affiché")
                         } else {
-                            print("❌ [ManageSubscriptionView] Moins de 6 mois écoulés → Bouton 'Résilier' ne sera PAS affiché")
+                            print("❌ [ManageSubscriptionView] cardValidityDate est dans le futur → Bouton 'Résilier' ne sera PAS affiché")
+                            let daysUntilValidity = Calendar.current.dateComponents([.day], from: currentDate, to: cardValidityDate).day ?? 0
+                            print("   - Jours restants jusqu'à cardValidityDate: \(daysUntilValidity)")
                         }
                         
                         print("═══════════════════════════════════════════════════════════")
