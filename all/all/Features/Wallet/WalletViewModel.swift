@@ -74,7 +74,7 @@ struct WalletRequestEntry: Identifiable {
         case "VALIDATED":
             return "Validée"
         case "DONE":
-            return "Validé ✅ ton pro t'attend !"
+            return "Validé"
         case "REJECTED":
             return "Refusée"
         case "PENDING":

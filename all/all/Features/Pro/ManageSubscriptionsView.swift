@@ -229,24 +229,24 @@ struct ManageSubscriptionsView: View {
                                             .cornerRadius(12)
                                     }
                                     
-                                    // Bouton Résilier mon abonnement (grisé et désactivé si dans la période d'engagement)
+                                    // Bouton Résilier mon abonnement (toujours gris et désactivé)
                                     Button(action: {
                                         showCancelAlert = true
                                     }) {
                                         Text("Résilier mon abonnement")
                                             .font(.system(size: 15, weight: .semibold))
-                                            .foregroundColor(viewModel.canCancelSubscription ? .red : .gray)
+                                            .foregroundColor(.gray)
                                             .frame(maxWidth: .infinity)
                                             .padding(.vertical, 14)
                                             .background(Color.clear)
                                             .overlay(
                                                 RoundedRectangle(cornerRadius: 12)
-                                                    .stroke(viewModel.canCancelSubscription ? Color.red : Color.gray.opacity(0.5), lineWidth: 1.5)
+                                                    .stroke(Color.gray.opacity(0.5), lineWidth: 1.5)
                                             )
                                             .cornerRadius(12)
                                     }
-                                    .disabled(!viewModel.canCancelSubscription)
-                                    .opacity(viewModel.canCancelSubscription ? 1.0 : 0.5)
+                                    .disabled(true)
+                                    .opacity(0.5)
                                 }
                                 .padding(.horizontal, 20)
                                 .padding(.top, 8)
