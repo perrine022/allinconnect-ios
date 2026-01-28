@@ -229,11 +229,9 @@ struct ManageSubscriptionsView: View {
                                             .cornerRadius(12)
                                     }
                                     
-                                    // Bouton Résilier mon abonnement (grisé si dans la période d'engagement)
+                                    // Bouton Résilier mon abonnement (grisé et désactivé si dans la période d'engagement)
                                     Button(action: {
-                                        if viewModel.canCancelSubscription {
-                                            showCancelAlert = true
-                                        }
+                                        showCancelAlert = true
                                     }) {
                                         Text("Résilier mon abonnement")
                                             .font(.system(size: 15, weight: .semibold))
@@ -248,7 +246,7 @@ struct ManageSubscriptionsView: View {
                                             .cornerRadius(12)
                                     }
                                     .disabled(!viewModel.canCancelSubscription)
-                                    .opacity(viewModel.canCancelSubscription ? 1.0 : 0.6)
+                                    .opacity(viewModel.canCancelSubscription ? 1.0 : 0.5)
                                 }
                                 .padding(.horizontal, 20)
                                 .padding(.top, 8)

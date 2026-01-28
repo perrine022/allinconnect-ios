@@ -543,6 +543,14 @@ struct WalletRequestRow: View {
                         .cornerRadius(6)
                 }
             }
+            
+            // Afficher le message "Validé ✅ ton pro t'attend !" en vert pour le statut "done"
+            if request.status.uppercased() == "DONE" {
+                Text("Validé ✅ ton pro t'attend !")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.green)
+                    .padding(.top, 4)
+            }
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 12)

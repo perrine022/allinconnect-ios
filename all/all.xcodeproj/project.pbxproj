@@ -23,7 +23,6 @@
 		BF8CBE542F04227D00776451 /* FirebaseFirestoreCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = BF8CBE532F04227D00776451 /* FirebaseFirestoreCombine-Community */; };
 		BF8CBE562F04227D00776451 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = BF8CBE552F04227D00776451 /* FirebaseFunctions */; };
 		BF8CBE582F04227D00776451 /* FirebaseFunctionsCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = BF8CBE572F04227D00776451 /* FirebaseFunctionsCombine-Community */; };
-		BF8CBE5A2F04227D00776451 /* FirebaseInAppMessaging-Beta in Frameworks */ = {isa = PBXBuildFile; productRef = BF8CBE592F04227D00776451 /* FirebaseInAppMessaging-Beta */; };
 		BF8CBE5C2F04227D00776451 /* FirebaseInstallations in Frameworks */ = {isa = PBXBuildFile; productRef = BF8CBE5B2F04227D00776451 /* FirebaseInstallations */; };
 		BF8CBE5E2F04227D00776451 /* FirebaseMLModelDownloader in Frameworks */ = {isa = PBXBuildFile; productRef = BF8CBE5D2F04227D00776451 /* FirebaseMLModelDownloader */; };
 		BF8CBE602F04227D00776451 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = BF8CBE5F2F04227D00776451 /* FirebaseMessaging */; };
@@ -108,7 +107,6 @@
 				BF8CBE582F04227D00776451 /* FirebaseFunctionsCombine-Community in Frameworks */,
 				BF8CBE482F04227D00776451 /* FirebaseAuth in Frameworks */,
 				BF8CBE462F04227D00776451 /* FirebaseAppDistribution-Beta in Frameworks */,
-				BF8CBE5A2F04227D00776451 /* FirebaseInAppMessaging-Beta in Frameworks */,
 				BF8CBE4E2F04227D00776451 /* FirebaseCrashlytics in Frameworks */,
 				BF8CBE502F04227D00776451 /* FirebaseDatabase in Frameworks */,
 				BF8CBE5E2F04227D00776451 /* FirebaseMLModelDownloader in Frameworks */,
@@ -189,7 +187,6 @@
 				BF8CBE532F04227D00776451 /* FirebaseFirestoreCombine-Community */,
 				BF8CBE552F04227D00776451 /* FirebaseFunctions */,
 				BF8CBE572F04227D00776451 /* FirebaseFunctionsCombine-Community */,
-				BF8CBE592F04227D00776451 /* FirebaseInAppMessaging-Beta */,
 				BF8CBE5B2F04227D00776451 /* FirebaseInstallations */,
 				BF8CBE5D2F04227D00776451 /* FirebaseMLModelDownloader */,
 				BF8CBE5F2F04227D00776451 /* FirebaseMessaging */,
@@ -495,7 +492,9 @@
 				INFOPLIST_FILE = all/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "All In Connect";
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Cette application a besoin d'accéder à votre caméra pour vous permettre de prendre des photos pour vos offres et votre établissement.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "All In Connect a besoin de votre localisation pour vous proposer les offres et partenaires les plus proches de vous.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Cette application a besoin d'accéder à votre bibliothèque photo pour vous permettre de sélectionner des images pour vos offres et votre établissement.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -534,7 +533,9 @@
 				INFOPLIST_FILE = all/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "All In Connect";
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Cette application a besoin d'accéder à votre caméra pour vous permettre de prendre des photos pour vos offres et votre établissement.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "All In Connect a besoin de votre localisation pour vous proposer les offres et partenaires les plus proches de vous.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Cette application a besoin d'accéder à votre bibliothèque photo pour vous permettre de sélectionner des images pour vos offres et votre établissement.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -790,11 +791,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = BF8CBE3C2F04227D00776451 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = "FirebaseFunctionsCombine-Community";
-		};
-		BF8CBE592F04227D00776451 /* FirebaseInAppMessaging-Beta */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = BF8CBE3C2F04227D00776451 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = "FirebaseInAppMessaging-Beta";
 		};
 		BF8CBE5B2F04227D00776451 /* FirebaseInstallations */ = {
 			isa = XCSwiftPackageProductDependency;

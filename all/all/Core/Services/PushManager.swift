@@ -8,6 +8,7 @@
 import Foundation
 import UserNotifications
 import UIKit
+import FirebaseMessaging
 
 @MainActor
 class PushManager: NSObject {
@@ -73,6 +74,10 @@ class PushManager: NSObject {
     
     // MARK: - Register FCM Token (Firebase)
     func registerFCMToken(_ fcmToken: String) async {
+        print("📝 [PushManager] Enregistrement du token FCM:")
+        print("   Token: \(fcmToken)")
+        print("   Longueur: \(fcmToken.count) caractères")
+        
         // Stocker le token FCM
         UserDefaults.standard.set(fcmToken, forKey: "fcm_token")
         
@@ -80,7 +85,29 @@ class PushManager: NSObject {
         if AuthTokenManager.shared.hasToken() {
             await registerTokenWithBackend(token: fcmToken)
         } else {
-            print("PushManager: User not logged in, FCM token will be registered after login")
+            print("⚠️ [PushManager] User not logged in, FCM token will be registered after login")
+        }
+    }
+    
+    // MARK: - Get Current FCM Token
+    /// Récupère le token FCM actuel à la demande (équivalent de FirebaseMessaging.getInstance().getToken() en Android)
+    func getCurrentFCMToken() async -> String? {
+        do {
+            let token = try await Messaging.messaging().token()
+            print("🔥 [PushManager] FCM token récupéré à la demande:")
+            print("   Token: \(token)")
+            print("   Longueur: \(token.count) caractères")
+            return token
+        } catch {
+            print("❌ [PushManager] Erreur lors de la récupération du token FCM: \(error.localizedDescription)")
+            // Essayer de récupérer le token stocké en cache
+            if let cachedToken = UserDefaults.standard.string(forKey: "fcm_token") {
+                print("⚠️ [PushManager] Utilisation du token FCM en cache:")
+                print("   Token: \(cachedToken)")
+                print("   Longueur: \(cachedToken.count) caractères")
+                return cachedToken
+            }
+            return nil
         }
     }
     

@@ -58,6 +58,8 @@ struct WalletRequestEntry: Identifiable {
         switch status.uppercased() {
         case "VALIDATED":
             return .green
+        case "DONE":
+            return .green
         case "REJECTED":
             return .red
         case "PENDING":
@@ -71,6 +73,8 @@ struct WalletRequestEntry: Identifiable {
         switch status.uppercased() {
         case "VALIDATED":
             return "Validée"
+        case "DONE":
+            return "Validé ✅ ton pro t'attend !"
         case "REJECTED":
             return "Refusée"
         case "PENDING":

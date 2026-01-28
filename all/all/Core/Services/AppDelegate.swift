@@ -19,6 +19,15 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         // Configurer Firebase
         FirebaseApp.configure()
         
+        // Récupérer le token FCM (Option A - le plus simple)
+        Messaging.messaging().token { token, error in
+            if let error = error {
+                print("❌ Error fetching FCM token: \(error)")
+            } else if let token = token {
+                print("✔ FCM Token: \(token)")
+            }
+        }
+        
         // Configurer Firebase Cloud Messaging
         Messaging.messaging().delegate = self
         
@@ -35,16 +44,13 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     private func requestNotificationPermission(_ application: UIApplication) {
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
-            if let error = error {
-                print("[AppDelegate] Notification permission error: \(error.localizedDescription)")
-                return
-            }
-            if granted {
-                DispatchQueue.main.async {
-                    application.registerForRemoteNotifications()
-                }
-            } else {
-                print("[AppDelegate] Notification permission denied")
+            print("📱 [AppDelegate] Permission notifications:", granted, error?.localizedDescription ?? "none")
+            
+            // Toujours appeler registerForRemoteNotifications sur le thread main
+            // Même si granted == false, on peut logger pour debug
+            DispatchQueue.main.async {
+                application.registerForRemoteNotifications()
+                print("📱 [AppDelegate] registerForRemoteNotifications() appelé")
             }
         }
     }
@@ -123,12 +129,20 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     }
     
     // MARK: - Remote Notifications Registration
+    // ✅ APNs token -> Firebase Messaging
     func application(
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
-        // Enregistrer le token avec Firebase Messaging
+        // Convertir le token Data en String pour les logs
+        let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
+        print("✅ [AppDelegate] APNs token reçu:")
+        print("   Token: \(tokenString)")
+        print("   Longueur: \(tokenString.count) caractères")
+        
+        // Enregistrer le token avec Firebase Messaging (CRUCIAL pour obtenir le FCM token)
         Messaging.messaging().apnsToken = deviceToken
+        print("✅ [AppDelegate] APNs token défini dans Firebase Messaging")
         
         // Enregistrer aussi avec notre PushManager pour l'envoyer au backend
         Task { @MainActor in
@@ -140,7 +154,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         _ application: UIApplication,
         didFailToRegisterForRemoteNotificationsWithError error: Error
     ) {
-        print("Failed to register for remote notifications: \(error.localizedDescription)")
+        print("❌ [AppDelegate] Failed to register for remote notifications: \(error.localizedDescription)")
     }
     
     // MARK: - UNUserNotificationCenterDelegate
@@ -180,18 +194,22 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     }
     
     // MARK: - Firebase Messaging Delegate
+    // ✅ FCM token (quand APNs token est OK)
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-        print("Firebase registration token: \(String(describing: fcmToken))")
-        
-        // Enregistrer le token FCM avec notre backend
-        // Note: Firebase fournit le token FCM qui est différent du token APNS
-        // Le backend doit accepter le token FCM pour les notifications Firebase
         if let fcmToken = fcmToken {
+            print("✅ [Firebase] FCM token:", fcmToken)
+            print("   Longueur: \(fcmToken.count) caractères")
+            
+            // Enregistrer le token FCM avec notre backend
+            // Note: Firebase fournit le token FCM qui est différent du token APNS
+            // Le backend doit accepter le token FCM pour les notifications Firebase
             Task { @MainActor in
                 // Utiliser directement le token FCM (String) pour l'enregistrement
                 // Le PushManager doit être adapté pour gérer les tokens FCM
                 await PushManager.shared.registerFCMToken(fcmToken)
             }
+        } else {
+            print("❌ [Firebase] Aucun token FCM reçu (APNs token peut-être pas encore défini)")
         }
     }
 }

@@ -204,6 +204,18 @@ struct TabBarView: View {
             pushNotificationOfferId = offerId
         }
         
+        // Pour un événement (format legacy avec eventId)
+        if let eventIdInt = userInfo["eventId"] as? Int {
+            print("[TabBarView] Navigation vers événement (format legacy): \(eventIdInt)")
+            appState.selectedTab = .offers
+            pushNotificationOfferId = eventIdInt
+        } else if let eventIdString = userInfo["eventId"] as? String,
+                  let eventId = Int(eventIdString) {
+            print("[TabBarView] Navigation vers événement (format legacy): \(eventId)")
+            appState.selectedTab = .offers
+            pushNotificationOfferId = eventId
+        }
+        
         // Pour un nouvel établissement
         // Le backend peut envoyer professionalId comme Int ou String
         if let professionalIdInt = userInfo["professionalId"] as? Int {

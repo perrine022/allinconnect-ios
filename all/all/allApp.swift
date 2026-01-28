@@ -74,25 +74,7 @@ struct AppContentView: View {
                     }
             }
         }
-        .task {
-            // Initialiser les notifications push au démarrage
-            await initializePushNotifications()
-        }
-    }
-    
-    // MARK: - Push Notifications Setup
-    @MainActor
-    private func initializePushNotifications() async {
-        do {
-            let granted = try await PushManager.shared.requestAuthorization()
-            if granted {
-                PushManager.shared.registerForRemoteNotifications()
-            } else {
-                print("Push notifications authorization denied")
-            }
-        } catch {
-            print("Error requesting push notification authorization: \(error.localizedDescription)")
-        }
+        // Note: Les notifications push sont gérées dans AppDelegate au lancement
     }
     
     @MainActor
