@@ -12,8 +12,8 @@ struct ManageSubscriptionsView: View {
     @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = ManageSubscriptionsViewModel()
-    @State private var showCancelAlert = false
     @State private var modifySubscriptionNavigationId: UUID?
+    @State private var showCancelAlert = false
     
     var body: some View {
         GeometryReader { geometry in
@@ -229,22 +229,26 @@ struct ManageSubscriptionsView: View {
                                             .cornerRadius(12)
                                     }
                                     
-                                    // Bouton Résilier mon abonnement
+                                    // Bouton Résilier mon abonnement (grisé si dans la période d'engagement)
                                     Button(action: {
-                                        showCancelAlert = true
+                                        if viewModel.canCancelSubscription {
+                                            showCancelAlert = true
+                                        }
                                     }) {
                                         Text("Résilier mon abonnement")
                                             .font(.system(size: 15, weight: .semibold))
-                                            .foregroundColor(.red)
+                                            .foregroundColor(viewModel.canCancelSubscription ? .red : .gray)
                                             .frame(maxWidth: .infinity)
                                             .padding(.vertical, 14)
                                             .background(Color.clear)
                                             .overlay(
                                                 RoundedRectangle(cornerRadius: 12)
-                                                    .stroke(Color.red, lineWidth: 1.5)
+                                                    .stroke(viewModel.canCancelSubscription ? Color.red : Color.gray.opacity(0.5), lineWidth: 1.5)
                                             )
                                             .cornerRadius(12)
                                     }
+                                    .disabled(!viewModel.canCancelSubscription)
+                                    .opacity(viewModel.canCancelSubscription ? 1.0 : 0.6)
                                 }
                                 .padding(.horizontal, 20)
                                 .padding(.top, 8)
@@ -301,6 +305,11 @@ struct ManageSubscriptionsView: View {
                 await viewModel.loadInvoices()
             }
         }
+        .sheet(isPresented: $viewModel.showShareSheet) {
+            if let fileURL = viewModel.downloadedInvoiceURL {
+                ShareSheet(activityItems: [fileURL])
+            }
+        }
         .alert("Résilier l'abonnement", isPresented: $showCancelAlert) {
             Button("Annuler", role: .cancel) { }
             Button("À la fin de la période", role: .none) {
@@ -315,11 +324,6 @@ struct ManageSubscriptionsView: View {
             }
         } message: {
             Text("Choisissez le type de résiliation :\n\n• À la fin de la période : Vous gardez l'accès jusqu'à la fin de la période payée.\n• Immédiatement : L'accès sera coupé tout de suite.")
-        }
-        .sheet(isPresented: $viewModel.showShareSheet) {
-            if let fileURL = viewModel.downloadedInvoiceURL {
-                ShareSheet(activityItems: [fileURL])
-            }
         }
         .navigationDestination(item: $modifySubscriptionNavigationId) { _ in
             ModifySubscriptionView(currentPlanId: viewModel.currentSubscriptionPlan?.id)

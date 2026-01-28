@@ -21,6 +21,7 @@ class ManageSubscriptionsViewModel: ObservableObject {
     @Published var currentAmount: String = ""
     @Published var nextPaymentDate: String = ""
     @Published var commitmentUntil: String = ""
+    @Published var commitmentDate: Date? = nil // Date d'engagement pour vérifier si on peut résilier
     
     // Factures (uniquement pour les pros)
     @Published var invoices: [InvoiceResponse] = []
@@ -39,6 +40,16 @@ class ManageSubscriptionsViewModel: ObservableObject {
     
     // Stocker le statut de l'abonnement
     @Published var subscriptionStatus: String? = nil
+    
+    // Vérifier si on peut résilier (après la période d'engagement)
+    var canCancelSubscription: Bool {
+        guard let commitmentDate = commitmentDate else {
+            // Si pas de date d'engagement, on peut résilier
+            return true
+        }
+        // On peut résilier si la date actuelle est après la date d'engagement
+        return Date() >= commitmentDate
+    }
     
     init(
         profileAPIService: ProfileAPIService? = nil,
@@ -204,6 +215,8 @@ class ManageSubscriptionsViewModel: ObservableObject {
                         
                         if let commitmentDate = commitmentDate {
                             commitmentUntil = displayFormatter.string(from: commitmentDate)
+                            // Stocker la date d'engagement pour vérifier si on peut résilier
+                            self.commitmentDate = commitmentDate
                         }
                     }
                 }
@@ -215,6 +228,7 @@ class ManageSubscriptionsViewModel: ObservableObject {
                     currentAmount = ""
                     nextPaymentDate = ""
                     commitmentUntil = ""
+                    commitmentDate = nil
                 }
                 
             isLoading = false
@@ -232,6 +246,7 @@ class ManageSubscriptionsViewModel: ObservableObject {
                     currentAmount = ""
                     nextPaymentDate = ""
                     commitmentUntil = ""
+                    commitmentDate = nil
                 default:
                     errorMessage = "Erreur lors du chargement des données d'abonnement"
                     print("Erreur lors du chargement des données d'abonnement: \(error)")
@@ -248,6 +263,7 @@ class ManageSubscriptionsViewModel: ObservableObject {
                     currentAmount = ""
                     nextPaymentDate = ""
                     commitmentUntil = ""
+                    commitmentDate = nil
                 } else {
                     errorMessage = "Erreur lors du chargement des données d'abonnement"
                     print("Erreur lors du chargement des données d'abonnement: \(error)")

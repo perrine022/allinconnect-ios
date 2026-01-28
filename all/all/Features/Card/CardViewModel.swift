@@ -161,12 +161,12 @@ class CardViewModel: ObservableObject {
                 let duration = Date().timeIntervalSince(startTime)
                 print("💳 [MA CARTE] ✅ Réponse reçue en \(String(format: "%.2f", duration))s")
                 print("💳 [MA CARTE] Données reçues:")
-                print("   - userId: \(userMe.id?.description ?? "nil")")
+                print("   - userId: \(userMe.id.map { String(describing: $0) } ?? "nil")")
                 print("   - firstName: \(userMe.firstName)")
                 print("   - lastName: \(userMe.lastName)")
                 print("   - city: \(userMe.city ?? "nil")")
                 print("   - card: \(userMe.card != nil ? "exists" : "nil")")
-                print("   - isCardActive: \(userMe.isCardActive?.description ?? "nil")")
+                print("   - isCardActive: \(userMe.isCardActive.map { String(describing: $0) } ?? "nil")")
                 print("💳 [MA CARTE] ───────────────────────────────────────────────────")
                 
                 // Charger aussi les données light pour les autres infos
@@ -186,22 +186,22 @@ class CardViewModel: ObservableObject {
                 print("💳 [MA CARTE] Données reçues (GET /api/v1/users/me/light):")
                 print("   - firstName: \(userLight.firstName)")
                 print("   - lastName: \(userLight.lastName)")
-                print("   - isMember: \(userLight.isMember?.description ?? "nil")")
+                print("   - isMember: \(userLight.isMember.map { String(describing: $0) } ?? "nil")")
                 print("   - userType: \(userLight.userType ?? "nil")")
-                print("   - isCardActive: \(userLight.isCardActive?.description ?? "nil")")
-                print("   - referralCount: \(userLight.referralCount?.description ?? "nil")")
-                print("   - favoriteCount: \(userLight.favoriteCount?.description ?? "nil")")
+                print("   - isCardActive: \(userLight.isCardActive.map { String(describing: $0) } ?? "nil")")
+                print("   - referralCount: \(userLight.referralCount.map { String(describing: $0) } ?? "nil")")
+                print("   - favoriteCount: \(userLight.favoriteCount.map { String(describing: $0) } ?? "nil")")
                 print("   - subscriptionDate: \(userLight.subscriptionDate ?? "nil")")
                 print("   - renewalDate: \(userLight.renewalDate ?? "nil")")
-                print("   - subscriptionAmount: \(userLight.subscriptionAmount?.description ?? "nil")")
-                print("   - walletBalance: \(userLight.walletBalance?.description ?? "nil")")
+                print("   - subscriptionAmount: \(userLight.subscriptionAmount.map { String(describing: $0) } ?? "nil")")
+                print("   - walletBalance: \(userLight.walletBalance.map { String(describing: $0) } ?? "nil")")
                 print("   - referralCode: \(userLight.referralCode ?? "nil")")
                 print("   - planDuration: \(userLight.planDuration ?? "nil")")
                 print("   - cardValidityDate: \(userLight.cardValidityDate ?? "nil")")
                 if let card = userLight.card {
                     print("   - card.cardNumber: \(card.cardNumber)")
                     print("   - card.type: \(card.type ?? "nil")")
-                    print("   - card.ownerId: \(card.ownerId?.description ?? "nil")")
+                    print("   - card.ownerId: \(card.ownerId.map { String(describing: $0) } ?? "nil")")
                     print("   - card.ownerName: \(card.ownerName ?? "nil")")
                 } else {
                     print("   - card: nil")
@@ -273,7 +273,7 @@ class CardViewModel: ObservableObject {
                     print("   - isCardActive: \(isCardActive)")
                     print("   - cardType: \(cardType ?? "nil")")
                     print("   - userMe.card: \(userMe.card != nil ? "exists" : "nil")")
-                    print("   - userMe.isCardActive: \(userMe.isCardActive?.description ?? "nil")")
+                    print("   - userMe.isCardActive: \(userMe.isCardActive.map { String(describing: $0) } ?? "nil")")
                     if let card = userMe.card {
                         print("   - card.cardNumber: \(card.cardNumber)")
                         print("   - card.type: \(card.type ?? "nil")")
@@ -576,34 +576,33 @@ class CardViewModel: ObservableObject {
             }
             
             // Mettre à jour les données (on est déjà sur MainActor car la classe est @MainActor)
-            await MainActor.run {
-                user = User(
-                    firstName: firstName,
-                    lastName: lastName,
-                    username: firstName.lowercased(),
-                    bio: (userLight.isMember ?? false) ? "Membre CLUB10" : "",
-                    profileImageName: "person.circle.fill",
-                    publications: 0,
-                    subscribers: 0,
-                    subscriptions: 0
-                )
-                cardNumber = cardNumberValue
-                cardType = cardTypeValue
-                isCardActive = isCardActiveValue
-                isMember = userLight.isMember ?? false
-                referralCode = referralCodeValue
-                referralLink = referralLinkValue
-                referrals = userLight.referralCount ?? 0
-                wallet = userLight.walletBalance ?? 0.0
-                favoritesCount = userLight.favoriteCount ?? 0
-                savings = currentSavings
-                
-                // Log pour debug
-                print("💳 [MA CARTE] 🔄 REFRESH - ÉTAT DE LA CARTE MIS À JOUR:")
-                print("   - cardNumber: \(cardNumber ?? "nil")")
-                print("   - isCardActive: \(isCardActive)")
-                print("   - cardType: \(cardType ?? "nil")")
-            }
+            // Pas besoin d'await car on est déjà sur MainActor
+            user = User(
+                firstName: firstName,
+                lastName: lastName,
+                username: firstName.lowercased(),
+                bio: (userLight.isMember ?? false) ? "Membre CLUB10" : "",
+                profileImageName: "person.circle.fill",
+                publications: 0,
+                subscribers: 0,
+                subscriptions: 0
+            )
+            cardNumber = cardNumberValue
+            cardType = cardTypeValue
+            isCardActive = isCardActiveValue
+            isMember = userLight.isMember ?? false
+            referralCode = referralCodeValue
+            referralLink = referralLinkValue
+            referrals = userLight.referralCount ?? 0
+            wallet = userLight.walletBalance ?? 0.0
+            favoritesCount = userLight.favoriteCount ?? 0
+            savings = currentSavings
+            
+            // Log pour debug
+            print("💳 [MA CARTE] 🔄 REFRESH - ÉTAT DE LA CARTE MIS À JOUR:")
+            print("   - cardNumber: \(cardNumber ?? "nil")")
+            print("   - isCardActive: \(isCardActive)")
+            print("   - cardType: \(cardType ?? "nil")")
         } catch {
             print("💳 [MA CARTE] ❌ Erreur lors du rafraîchissement en arrière-plan")
             print("💳 [MA CARTE] Type: \(type(of: error))")
@@ -981,9 +980,9 @@ class CardViewModel: ObservableObject {
         print("   - isCardActive: \(isCardActive)")
         print("   - cardType: \(cardType ?? "nil")")
         print("   - isMember: \(isMember)")
-        print("   - cardExpirationDate: \(cardExpirationDate?.description ?? "nil")")
+        print("   - cardExpirationDate: \(cardExpirationDate.map { String(describing: $0) } ?? "nil")")
         print("   - formattedExpirationDate: \(formattedExpirationDate)")
-        print("   - cardValidityDate: \(cardValidityDate?.description ?? "nil")")
+        print("   - cardValidityDate: \(cardValidityDate.map { String(describing: $0) } ?? "nil")")
         print("   - formattedCardValidityDate: \(formattedCardValidityDate)")
         print("   - subscriptionNextPaymentDate: \(subscriptionNextPaymentDate)")
         print("   - subscriptionValidUntil: \(subscriptionValidUntil)")
@@ -999,7 +998,7 @@ class CardViewModel: ObservableObject {
         if let userMe = lastUserMe {
             print("")
             print("📋 DONNÉES COMPLÈTES (GET /api/v1/users/me):")
-            print("   - id: \(userMe.id?.description ?? "nil")")
+            print("   - id: \(userMe.id.map { String(describing: $0) } ?? "nil")")
             print("   - email: \(userMe.email ?? "nil")")
             print("   - firstName: \(userMe.firstName)")
             print("   - lastName: \(userMe.lastName)")
@@ -1007,11 +1006,11 @@ class CardViewModel: ObservableObject {
             print("   - address: \(userMe.address ?? "nil")")
             print("   - city: \(userMe.city ?? "nil")")
             print("   - postalCode: \(userMe.postalCode ?? "nil")")
-            print("   - latitude: \(userMe.latitude?.description ?? "nil")")
-            print("   - longitude: \(userMe.longitude?.description ?? "nil")")
-            print("   - isCardActive: \(userMe.isCardActive?.description ?? "nil")")
+            print("   - latitude: \(userMe.latitude.map { String(describing: $0) } ?? "nil")")
+            print("   - longitude: \(userMe.longitude.map { String(describing: $0) } ?? "nil")")
+            print("   - isCardActive: \(userMe.isCardActive.map { String(describing: $0) } ?? "nil")")
             print("   - referralCode: \(userMe.referralCode ?? "nil")")
-            print("   - premiumEnabled: \(userMe.premiumEnabled?.description ?? "nil")")
+            print("   - premiumEnabled: \(userMe.premiumEnabled.map { String(describing: $0) } ?? "nil")")
             print("   - subscriptionType: \(userMe.subscriptionType ?? "nil")")
             
             // Données de la carte
@@ -1046,15 +1045,15 @@ class CardViewModel: ObservableObject {
             print("📋 DONNÉES ALLÉGÉES (GET /api/v1/users/me/light):")
             print("   - firstName: \(userLight.firstName)")
             print("   - lastName: \(userLight.lastName)")
-            print("   - isMember: \(userLight.isMember?.description ?? "nil")")
+            print("   - isMember: \(userLight.isMember.map { String(describing: $0) } ?? "nil")")
             print("   - userType: \(userLight.userType ?? "nil")")
-            print("   - isCardActive: \(userLight.isCardActive?.description ?? "nil")")
-            print("   - referralCount: \(userLight.referralCount?.description ?? "nil")")
-            print("   - favoriteCount: \(userLight.favoriteCount?.description ?? "nil")")
+            print("   - isCardActive: \(userLight.isCardActive.map { String(describing: $0) } ?? "nil")")
+            print("   - referralCount: \(userLight.referralCount.map { String(describing: $0) } ?? "nil")")
+            print("   - favoriteCount: \(userLight.favoriteCount.map { String(describing: $0) } ?? "nil")")
             print("   - subscriptionDate: \(userLight.subscriptionDate ?? "nil")")
             print("   - renewalDate: \(userLight.renewalDate ?? "nil")")
-            print("   - subscriptionAmount: \(userLight.subscriptionAmount?.description ?? "nil")")
-            print("   - walletBalance: \(userLight.walletBalance?.description ?? "nil")")
+            print("   - subscriptionAmount: \(userLight.subscriptionAmount.map { String(describing: $0) } ?? "nil")")
+            print("   - walletBalance: \(userLight.walletBalance.map { String(describing: $0) } ?? "nil")")
             print("   - referralCode: \(userLight.referralCode ?? "nil")")
             print("   - planDuration: \(userLight.planDuration ?? "nil")")
             print("   - cardValidityDate: \(userLight.cardValidityDate ?? "nil")")

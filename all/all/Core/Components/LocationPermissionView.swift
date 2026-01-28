@@ -32,14 +32,6 @@ struct LocationPermissionView: View {
                 .foregroundColor(.white)
                 .multilineTextAlignment(.center)
             
-            // Description
-            Text("All In Connect a besoin de votre localisation pour vous proposer les offres et partenaires les plus proches de vous.")
-                .font(.system(size: 15, weight: .regular))
-                .foregroundColor(.white.opacity(0.9))
-                .multilineTextAlignment(.center)
-                .lineSpacing(4)
-                .padding(.horizontal, 30)
-            
             // Bouton activer
             Button(action: {
                 locationService.requestLocationPermission()

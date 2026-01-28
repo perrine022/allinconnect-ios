@@ -195,12 +195,16 @@ struct ManageEstablishmentView: View {
                                             image: imageToCrop,
                                             cropRatio: 16.0 / 9.0, // Ratio 16:9 pour les photos d'établissement
                                             onCrop: { croppedImage in
-                                                viewModel.selectedImage = croppedImage
-                                                showCropView = false
+                                                Task { @MainActor in
+                                                    viewModel.selectedImage = croppedImage
+                                                    showCropView = false
+                                                }
                                             },
                                             onCancel: {
-                                                showCropView = false
-                                                viewModel.selectedImageItem = nil
+                                                Task { @MainActor in
+                                                    showCropView = false
+                                                    viewModel.selectedImageItem = nil
+                                                }
                                             }
                                         )
                                         .navigationBarTitleDisplayMode(.inline)

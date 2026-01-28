@@ -226,10 +226,12 @@ class ModifySubscriptionViewModel: ObservableObject {
     
     private let subscriptionsAPIService: SubscriptionsAPIService
     private let profileAPIService: ProfileAPIService
+    private let billingAPIService: BillingAPIService
     
     init(
         subscriptionsAPIService: SubscriptionsAPIService? = nil,
-        profileAPIService: ProfileAPIService? = nil
+        profileAPIService: ProfileAPIService? = nil,
+        billingAPIService: BillingAPIService? = nil
     ) {
         if let subscriptionsAPIService = subscriptionsAPIService {
             self.subscriptionsAPIService = subscriptionsAPIService
@@ -242,6 +244,12 @@ class ModifySubscriptionViewModel: ObservableObject {
         } else {
             self.profileAPIService = ProfileAPIService()
         }
+        
+        if let billingAPIService = billingAPIService {
+            self.billingAPIService = billingAPIService
+        } else {
+            self.billingAPIService = BillingAPIService()
+        }
     }
     
     func loadAvailablePlans(excludingPlanId: Int?) async {
@@ -249,38 +257,86 @@ class ModifySubscriptionViewModel: ObservableObject {
         errorMessage = nil
         
         do {
+            print("═══════════════════════════════════════════════════════════")
+            print("📋 [ModifySubscriptionViewModel] loadAvailablePlans() - DÉBUT")
+            print("═══════════════════════════════════════════════════════════")
+            
             // Déterminer le type d'utilisateur
             let userTypeString = UserDefaults.standard.string(forKey: "user_type") ?? "CLIENT"
             let isPro = userTypeString == "PROFESSIONAL" || userTypeString == "PRO"
+            print("📋 [ModifySubscriptionViewModel] Type d'utilisateur: \(userTypeString) (isPro: \(isPro))")
+            print("📋 [ModifySubscriptionViewModel] Plan actuel à exclure (ID): \(excludingPlanId?.description ?? "nil")")
             
             // Récupérer tous les plans
             let allPlans = try await subscriptionsAPIService.getPlans()
+            print("📋 [ModifySubscriptionViewModel] Total de plans récupérés: \(allPlans.count)")
             
             // Filtrer selon le type d'utilisateur
             let filteredPlans: [SubscriptionPlanResponse]
             if isPro {
+                // Pour les PRO : uniquement les plans PROFESSIONAL qu'il n'a pas
                 filteredPlans = allPlans.filter { $0.category == "PROFESSIONAL" }
+                print("📋 [ModifySubscriptionViewModel] Plans filtrés pour PRO: \(filteredPlans.count) plans PROFESSIONAL")
             } else {
-                filteredPlans = allPlans.filter { $0.category == "INDIVIDUAL" || $0.category == "FAMILY" }
+                // Pour les CLIENT : TOUS les plans (INDIVIDUAL, FAMILY, PROFESSIONAL)
+                filteredPlans = allPlans
+                print("📋 [ModifySubscriptionViewModel] Plans filtrés pour CLIENT: \(filteredPlans.count) plans (TOUS)")
+                print("   - INDIVIDUAL: \(filteredPlans.filter { $0.category == "INDIVIDUAL" }.count)")
+                print("   - FAMILY: \(filteredPlans.filter { $0.category == "FAMILY" }.count)")
+                print("   - PROFESSIONAL: \(filteredPlans.filter { $0.category == "PROFESSIONAL" }.count)")
             }
             
-            // Exclure le plan actuel
-            if let excludingPlanId = excludingPlanId {
-                availablePlans = filteredPlans.filter { $0.id != excludingPlanId }
+            // Récupérer le plan actuel pour l'exclure
+            var currentPlanIdToExclude: Int? = excludingPlanId
+            
+            // Si aucun planId n'est fourni, essayer de le récupérer depuis les détails de l'abonnement
+            if currentPlanIdToExclude == nil {
+                do {
+                    let userId = try await profileAPIService.getCurrentUserId()
+                    let details = try await billingAPIService.getSubscriptionDetails(userId: userId)
+                    
+                    // Trouver le plan correspondant au planName actuel
+                    if let currentPlanName = details.planName {
+                        print("📋 [ModifySubscriptionViewModel] Recherche du plan actuel par nom: \(currentPlanName)")
+                        if let matchingPlan = allPlans.first(where: { $0.title == currentPlanName }) {
+                            currentPlanIdToExclude = matchingPlan.id
+                            print("📋 [ModifySubscriptionViewModel] Plan actuel trouvé: \(currentPlanName) (ID: \(matchingPlan.id))")
+                        } else {
+                            print("⚠️ [ModifySubscriptionViewModel] Plan actuel non trouvé dans la liste des plans: \(currentPlanName)")
+                        }
+                    }
+                } catch {
+                    print("⚠️ [ModifySubscriptionViewModel] Impossible de récupérer le plan actuel: \(error.localizedDescription)")
+                }
+            }
+            
+            // Exclure le plan actuel si un ID est trouvé
+            if let planIdToExclude = currentPlanIdToExclude {
+                let beforeCount = filteredPlans.count
+                availablePlans = filteredPlans.filter { $0.id != planIdToExclude }
+                print("📋 [ModifySubscriptionViewModel] Plan actuel exclu (ID: \(planIdToExclude))")
+                print("   - Avant exclusion: \(beforeCount) plans")
+                print("   - Après exclusion: \(availablePlans.count) plans")
             } else {
                 availablePlans = filteredPlans
+                print("📋 [ModifySubscriptionViewModel] Aucun plan à exclure (plan actuel non trouvé)")
             }
             
             // Sélectionner le premier plan par défaut
             if selectedPlan == nil && !availablePlans.isEmpty {
                 selectedPlan = availablePlans.first
+                print("📋 [ModifySubscriptionViewModel] Plan sélectionné par défaut: \(selectedPlan?.title ?? "nil")")
             }
+            
+            print("📋 [ModifySubscriptionViewModel] loadAvailablePlans() - SUCCÈS")
+            print("   - Plans disponibles: \(availablePlans.count)")
+            print("═══════════════════════════════════════════════════════════")
             
             isLoading = false
         } catch {
             isLoading = false
             errorMessage = "Erreur lors du chargement des plans: \(error.localizedDescription)"
-            print("Erreur lors du chargement des plans: \(error)")
+            print("❌ [ModifySubscriptionViewModel] Erreur lors du chargement des plans: \(error)")
         }
     }
     

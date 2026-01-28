@@ -95,36 +95,179 @@ class BillingViewModel: ObservableObject {
     // MARK: - Load User Light Data
     /// Charge les données allégées depuis /users/me/light pour récupérer cardValidityDate
     func loadUserLightData() async {
-        print("🔍 [BillingViewModel] loadUserLightData() - Début")
+        print("═══════════════════════════════════════════════════════════")
+        print("🔍 [BillingViewModel] loadUserLightData() - DÉBUT")
+        print("═══════════════════════════════════════════════════════════")
         print("🔍 [BillingViewModel] Endpoint: GET /api/v1/users/me/light")
         
         do {
             let userLight = try await profileAPIService.getUserLight()
             
+            print("🔍 [BillingViewModel] Réponse /users/me/light reçue:")
+            print("   - firstName: \(userLight.firstName)")
+            print("   - lastName: \(userLight.lastName)")
+            print("   - isMember: \(userLight.isMember?.description ?? "nil")")
+            print("   - userType: \(userLight.userType ?? "nil")")
+            print("   - isCardActive: \(userLight.isCardActive?.description ?? "nil")")
+            print("   - subscriptionDate (raw): \(userLight.subscriptionDate ?? "nil")")
+            print("   - renewalDate (raw): \(userLight.renewalDate ?? "nil")")
+            print("   - cardValidityDate (raw): \(userLight.cardValidityDate ?? "nil")")
+            print("   - planDuration: \(userLight.planDuration ?? "nil")")
+            if let card = userLight.card {
+                print("   - card.cardNumber: \(card.cardNumber)")
+                print("   - card.type: \(card.type)")
+            }
+            
             // Parser cardValidityDate
             if let cardValidityDateString = userLight.cardValidityDate {
-                let formatter = ISO8601DateFormatter()
-                formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds, .withTimeZone]
-                cardValidityDate = formatter.date(from: cardValidityDateString)
+                print("🔍 [BillingViewModel] Parsing de cardValidityDate...")
+                print("   - cardValidityDateString (raw): \(cardValidityDateString)")
+                
+                // Essayer plusieurs formats de parsing
+                var parsedDate: Date? = nil
+                
+                // Format 1: ISO8601 avec fractional seconds et timezone (ex: 2026-07-27T08:06:07.000000Z)
+                let formatter1 = ISO8601DateFormatter()
+                formatter1.formatOptions = [.withInternetDateTime, .withFractionalSeconds, .withTimeZone]
+                parsedDate = formatter1.date(from: cardValidityDateString)
+                if parsedDate != nil {
+                    print("   ✅ Parsing réussi avec format ISO8601 (fractional seconds + timezone)")
+                }
+                
+                // Format 2: ISO8601 standard avec timezone (ex: 2026-07-27T08:06:07Z)
+                if parsedDate == nil {
+                    let formatter2 = ISO8601DateFormatter()
+                    formatter2.formatOptions = [.withInternetDateTime, .withTimeZone]
+                    parsedDate = formatter2.date(from: cardValidityDateString)
+                    if parsedDate != nil {
+                        print("   ✅ Parsing réussi avec format ISO8601 (timezone)")
+                    }
+                }
+                
+                // Format 3: ISO8601 sans timezone (ex: 2026-07-27T08:06:07)
+                if parsedDate == nil {
+                    let formatter3 = ISO8601DateFormatter()
+                    formatter3.formatOptions = [.withInternetDateTime]
+                    parsedDate = formatter3.date(from: cardValidityDateString)
+                    if parsedDate != nil {
+                        print("   ✅ Parsing réussi avec format ISO8601 (sans timezone)")
+                    }
+                }
+                
+                // Format 4: Format personnalisé yyyy-MM-dd'T'HH:mm:ss (sans timezone)
+                if parsedDate == nil {
+                    let customFormatter = DateFormatter()
+                    customFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+                    customFormatter.locale = Locale(identifier: "en_US_POSIX")
+                    customFormatter.timeZone = TimeZone(secondsFromGMT: 0) // UTC par défaut
+                    customFormatter.isLenient = true // Permet plus de flexibilité
+                    parsedDate = customFormatter.date(from: cardValidityDateString)
+                    if parsedDate != nil {
+                        print("   ✅ Parsing réussi avec format personnalisé (yyyy-MM-dd'T'HH:mm:ss)")
+                    } else {
+                        print("   ❌ Échec parsing avec format yyyy-MM-dd'T'HH:mm:ss")
+                        print("   - String à parser: '\(cardValidityDateString)'")
+                        print("   - Longueur: \(cardValidityDateString.count) caractères")
+                    }
+                }
+                
+                // Format 5: Format personnalisé avec timezone (ex: 2026-07-27T08:06:07+00:00)
+                if parsedDate == nil {
+                    let customFormatter2 = DateFormatter()
+                    customFormatter2.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
+                    customFormatter2.locale = Locale(identifier: "en_US_POSIX")
+                    parsedDate = customFormatter2.date(from: cardValidityDateString)
+                    if parsedDate != nil {
+                        print("   ✅ Parsing réussi avec format personnalisé (avec timezone)")
+                    }
+                }
+                
+                cardValidityDate = parsedDate
                 
                 if let date = cardValidityDate {
                     let dateFormatter = DateFormatter()
                     dateFormatter.dateStyle = .medium
                     dateFormatter.timeStyle = .short
                     dateFormatter.locale = Locale(identifier: "fr_FR")
-                    print("✅ [BillingViewModel] cardValidityDate récupéré: \(dateFormatter.string(from: date))")
+                    print("✅ [BillingViewModel] cardValidityDate parsé avec succès:")
+                    print("   - cardValidityDate (Date): \(dateFormatter.string(from: date))")
+                    print("   - cardValidityDate (ISO): \(date)")
+                    
+                    // Comparer avec la date actuelle
+                    let currentDate = Date()
+                    let comparison = currentDate.compare(date)
+                    if comparison == .orderedAscending {
+                        print("   - cardValidityDate est dans le FUTUR (date actuelle < cardValidityDate)")
+                        let daysUntil = Calendar.current.dateComponents([.day], from: currentDate, to: date).day ?? 0
+                        print("   - Jours jusqu'à cardValidityDate: \(daysUntil)")
+                    } else if comparison == .orderedDescending {
+                        print("   - cardValidityDate est dans le PASSÉ (date actuelle > cardValidityDate)")
+                        let daysSince = Calendar.current.dateComponents([.day], from: date, to: currentDate).day ?? 0
+                        print("   - Jours écoulés depuis cardValidityDate: \(daysSince)")
+                    } else {
+                        print("   - cardValidityDate est AUJOURD'HUI (date actuelle == cardValidityDate)")
+                    }
                 } else {
-                    print("⚠️ [BillingViewModel] Impossible de parser cardValidityDate: \(cardValidityDateString)")
+                    print("❌ [BillingViewModel] Impossible de parser cardValidityDate avec tous les formats testés")
+                    print("   - Format reçu: \(cardValidityDateString)")
                 }
             } else {
-                print("⚠️ [BillingViewModel] cardValidityDate non disponible dans la réponse")
+                print("⚠️ [BillingViewModel] cardValidityDate non disponible dans la réponse /users/me/light")
+                print("   → cardValidityDate restera nil")
             }
             
             // Parser subscriptionDate si disponible
             if let subscriptionDateString = userLight.subscriptionDate {
-                let formatter = ISO8601DateFormatter()
-                formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds, .withTimeZone]
-                subscriptionCreatedAt = formatter.date(from: subscriptionDateString)
+                print("🔍 [BillingViewModel] Parsing de subscriptionDate depuis /users/me/light...")
+                print("   - subscriptionDateString (raw): \(subscriptionDateString)")
+                
+                // Essayer plusieurs formats comme pour cardValidityDate
+                var parsedSubscriptionDate: Date? = nil
+                
+                // Format 1: ISO8601 avec fractional seconds et timezone
+                let formatter1 = ISO8601DateFormatter()
+                formatter1.formatOptions = [.withInternetDateTime, .withFractionalSeconds, .withTimeZone]
+                parsedSubscriptionDate = formatter1.date(from: subscriptionDateString)
+                if parsedSubscriptionDate != nil {
+                    print("   ✅ Parsing réussi avec format ISO8601 (fractional seconds + timezone)")
+                }
+                
+                // Format 2: ISO8601 standard avec timezone
+                if parsedSubscriptionDate == nil {
+                    let formatter2 = ISO8601DateFormatter()
+                    formatter2.formatOptions = [.withInternetDateTime, .withTimeZone]
+                    parsedSubscriptionDate = formatter2.date(from: subscriptionDateString)
+                    if parsedSubscriptionDate != nil {
+                        print("   ✅ Parsing réussi avec format ISO8601 (timezone)")
+                    }
+                }
+                
+                // Format 3: ISO8601 sans timezone
+                if parsedSubscriptionDate == nil {
+                    let formatter3 = ISO8601DateFormatter()
+                    formatter3.formatOptions = [.withInternetDateTime]
+                    parsedSubscriptionDate = formatter3.date(from: subscriptionDateString)
+                    if parsedSubscriptionDate != nil {
+                        print("   ✅ Parsing réussi avec format ISO8601 (sans timezone)")
+                    }
+                }
+                
+                // Format 4: Format personnalisé yyyy-MM-dd'T'HH:mm:ss
+                if parsedSubscriptionDate == nil {
+                    let customFormatter = DateFormatter()
+                    customFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+                    customFormatter.locale = Locale(identifier: "en_US_POSIX")
+                    customFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+                    customFormatter.isLenient = true
+                    parsedSubscriptionDate = customFormatter.date(from: subscriptionDateString)
+                    if parsedSubscriptionDate != nil {
+                        print("   ✅ Parsing réussi avec format personnalisé (yyyy-MM-dd'T'HH:mm:ss)")
+                    } else {
+                        print("   ❌ Échec parsing avec format yyyy-MM-dd'T'HH:mm:ss")
+                    }
+                }
+                
+                subscriptionCreatedAt = parsedSubscriptionDate
                 
                 if let date = subscriptionCreatedAt {
                     let dateFormatter = DateFormatter()
@@ -132,12 +275,19 @@ class BillingViewModel: ObservableObject {
                     dateFormatter.timeStyle = .short
                     dateFormatter.locale = Locale(identifier: "fr_FR")
                     print("✅ [BillingViewModel] subscriptionDate récupéré depuis /users/me/light: \(dateFormatter.string(from: date))")
+                } else {
+                    print("❌ [BillingViewModel] Impossible de parser subscriptionDate avec tous les formats: \(subscriptionDateString)")
                 }
+            } else {
+                print("⚠️ [BillingViewModel] subscriptionDate non disponible dans /users/me/light")
             }
             
-            print("🔍 [BillingViewModel] loadUserLightData() - Succès")
+            print("🔍 [BillingViewModel] loadUserLightData() - SUCCÈS")
+            print("   - cardValidityDate final: \(cardValidityDate?.description ?? "nil")")
+            print("═══════════════════════════════════════════════════════════")
         } catch {
-            print("⚠️ [BillingViewModel] loadUserLightData() - Erreur: \(error.localizedDescription)")
+            print("❌ [BillingViewModel] loadUserLightData() - ERREUR: \(error.localizedDescription)")
+            print("   - Type d'erreur: \(type(of: error))")
             // Ne pas bloquer l'UI si cette requête échoue
         }
     }
@@ -152,6 +302,13 @@ class BillingViewModel: ObservableObject {
             
             // Charger les détails de l'abonnement
             let details = try await billingAPIService.getSubscriptionDetails(userId: userId)
+            
+            // S'assurer que cardValidityDate est chargé depuis /users/me/light
+            // (au cas où loadSubscriptionStatus() n'aurait pas été appelé)
+            if cardValidityDate == nil {
+                print("⚠️ [BillingViewModel] cardValidityDate est nil, appel de loadUserLightData()...")
+                await loadUserLightData()
+            }
             
             // Mettre à jour les propriétés
             stripeSubscriptionId = details.stripeSubscriptionId

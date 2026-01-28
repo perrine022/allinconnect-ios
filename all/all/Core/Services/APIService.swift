@@ -380,7 +380,7 @@ class APIService: APIServiceProtocol, ObservableObject {
                 // Log spécifique pour UserMeResponse après décodage
                 if endpoint.contains("/users/me") {
                     // Utiliser une approche avec reflection pour accéder à isClub10
-                    if let userMeDict = decoded as? [String: Any] {
+                    if decoded is [String: Any] {
                         print("📥 [APIService] APRÈS décodage - Type décodé: \(type(of: decoded))")
                     } else {
                         // Essayer d'accéder à la propriété via Mirror

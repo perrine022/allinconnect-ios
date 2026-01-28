@@ -126,46 +126,6 @@ struct ManageSubscriptionView: View {
                     let isSubscriptionCancelled = viewModel.subscriptionStatus == "CANCELLED" || 
                                                   viewModel.subscriptionStatus == "CANCELED"
                     
-                    // Vérifier si cardValidityDate est passée (date dans le passé)
-                    // Si cardValidityDate est dans le futur, on ne peut pas résilier
-                    let canCancelSubscription: Bool = {
-                        print("═══════════════════════════════════════════════════════════")
-                        print("🔍 [ManageSubscriptionView] Vérification de cardValidityDate")
-                        print("═══════════════════════════════════════════════════════════")
-                        
-                        guard let cardValidityDate = viewModel.cardValidityDate else {
-                            print("❌ [ManageSubscriptionView] cardValidityDate est nil")
-                            print("   → Bouton 'Résilier' ne sera PAS affiché")
-                            return false
-                        }
-                        
-                        let dateFormatter = DateFormatter()
-                        dateFormatter.dateStyle = .medium
-                        dateFormatter.timeStyle = .short
-                        dateFormatter.locale = Locale(identifier: "fr_FR")
-                        
-                        let currentDate = Date()
-                        print("✅ [ManageSubscriptionView] cardValidityDate trouvée:")
-                        print("   - cardValidityDate: \(dateFormatter.string(from: cardValidityDate))")
-                        print("   - Date actuelle: \(dateFormatter.string(from: currentDate))")
-                        
-                        // Vérifier si cardValidityDate est dans le passé (on peut résilier)
-                        // Si cardValidityDate est dans le futur, on ne peut PAS résilier
-                        let canCancel = currentDate >= cardValidityDate
-                        
-                        if canCancel {
-                            print("✅ [ManageSubscriptionView] cardValidityDate est passée → Bouton 'Résilier' SERA affiché")
-                        } else {
-                            print("❌ [ManageSubscriptionView] cardValidityDate est dans le futur → Bouton 'Résilier' ne sera PAS affiché")
-                            let daysUntilValidity = Calendar.current.dateComponents([.day], from: currentDate, to: cardValidityDate).day ?? 0
-                            print("   - Jours restants jusqu'à cardValidityDate: \(daysUntilValidity)")
-                        }
-                        
-                        print("═══════════════════════════════════════════════════════════")
-                        
-                        return canCancel
-                    }()
-                    
                     if viewModel.premiumEnabled && !isSubscriptionCancelled {
                         VStack(spacing: 12) {
                             // Bouton Modifier mon abonnement
@@ -179,41 +139,6 @@ struct ManageSubscriptionView: View {
                                     .padding(.vertical, 14)
                                     .background(Color.appGold)
                                     .cornerRadius(12)
-                            }
-                            
-                            // Bouton Résilier mon abonnement (uniquement si 6 mois se sont écoulés)
-                            if canCancelSubscription {
-                                Button(action: {
-                                    showCancelAlert = true
-                                }) {
-                                    Text("Résilier mon abonnement")
-                                        .font(.system(size: 15, weight: .semibold))
-                                        .foregroundColor(.red)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 14)
-                                        .background(Color.clear)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .stroke(Color.red, lineWidth: 1.5)
-                                        )
-                                        .cornerRadius(12)
-                                }
-                            } else {
-                                // Message informatif si moins de 6 mois
-                                VStack(spacing: 4) {
-                                    Text("Résiliation non disponible")
-                                        .font(.system(size: 13, weight: .semibold))
-                                        .foregroundColor(.gray)
-                                    
-                                    Text("Tu peux résilier ton abonnement après 6 mois de souscription")
-                                        .font(.system(size: 11, weight: .regular))
-                                        .foregroundColor(.gray.opacity(0.8))
-                                        .multilineTextAlignment(.center)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                                .background(Color.gray.opacity(0.2))
-                                .cornerRadius(12)
                             }
                             
                             // Bouton pour gérer la facturation
@@ -361,9 +286,24 @@ struct ManageSubscriptionView: View {
                 .environmentObject(appState)
         }
         .onAppear {
+            print("═══════════════════════════════════════════════════════════")
+            print("📱 [ManageSubscriptionView] onAppear - DÉBUT")
+            print("═══════════════════════════════════════════════════════════")
             Task {
                 await viewModel.loadSubscriptionStatus()
                 await viewModel.loadSubscriptionDetails()
+                // loadUserLightData() est déjà appelé dans loadSubscriptionStatus()
+                // Vérifier que cardValidityDate est bien chargé
+                if let cardValidityDate = viewModel.cardValidityDate {
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.dateStyle = .medium
+                    dateFormatter.timeStyle = .short
+                    dateFormatter.locale = Locale(identifier: "fr_FR")
+                    print("✅ [ManageSubscriptionView] cardValidityDate disponible après chargement: \(dateFormatter.string(from: cardValidityDate))")
+                } else {
+                    print("❌ [ManageSubscriptionView] cardValidityDate toujours nil après chargement")
+                }
+                print("═══════════════════════════════════════════════════════════")
             }
         }
     }
