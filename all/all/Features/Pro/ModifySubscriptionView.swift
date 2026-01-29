@@ -12,6 +12,7 @@ struct ModifySubscriptionView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = ModifySubscriptionViewModel()
+    @State private var manageEstablishmentNavigationId: UUID?
     let currentPlanId: Int? // ID du plan actuel à exclure
     
     var body: some View {
@@ -69,6 +70,7 @@ struct ModifySubscriptionView: View {
                                         ForEach(viewModel.availablePlans) { plan in
                                             Button(action: {
                                                 viewModel.selectedPlan = plan
+                                                viewModel.shouldNavigateToEstablishment = false // Réinitialiser lors de la sélection
                                             }) {
                                                 VStack(alignment: .leading, spacing: 12) {
                                                     HStack {
@@ -205,12 +207,24 @@ struct ModifySubscriptionView: View {
             await viewModel.loadAvailablePlans(excludingPlanId: currentPlanId)
         }
         .onReceive(viewModel.$successMessage) { successMessage in
-            // Fermer la vue après un délai si la modification réussit
+            // Si la modification réussit et que c'est un plan professionnel, naviguer vers "Modifier mon établissement"
             if successMessage != nil {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                    dismiss()
+                if viewModel.shouldNavigateToEstablishment {
+                    // Naviguer vers "Modifier mon établissement" après un court délai
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        manageEstablishmentNavigationId = UUID()
+                    }
+                } else {
+                    // Sinon, fermer la vue après un délai
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        dismiss()
+                    }
                 }
             }
+        }
+        .navigationDestination(item: $manageEstablishmentNavigationId) { _ in
+            ManageEstablishmentView()
+                .environmentObject(appState)
         }
     }
 }
@@ -223,6 +237,7 @@ class ModifySubscriptionViewModel: ObservableObject {
     @Published var isModifying: Bool = false
     @Published var errorMessage: String?
     @Published var successMessage: String?
+    @Published var shouldNavigateToEstablishment: Bool = false
     
     private let subscriptionsAPIService: SubscriptionsAPIService
     private let profileAPIService: ProfileAPIService
@@ -360,18 +375,23 @@ class ModifySubscriptionViewModel: ObservableObject {
             try await subscriptionsAPIService.switchSubscription(planId: selectedPlan.id)
             
             print("💳 [MODIFY SUBSCRIPTION] ✅ Abonnement modifié avec succès")
+            print("💳 [MODIFY SUBSCRIPTION] Plan sélectionné - Category: \(selectedPlan.category ?? "nil")")
             print("═══════════════════════════════════════════════════════════")
             
             isModifying = false
-            successMessage = "Votre abonnement a été modifié avec succès. Le nouveau tarif sera appliqué lors de la prochaine échéance."
+            
+            // Vérifier si le plan sélectionné est un plan professionnel
+            let isProfessionalPlan = selectedPlan.category == "PROFESSIONAL"
+            shouldNavigateToEstablishment = isProfessionalPlan
+            
+            if isProfessionalPlan {
+                successMessage = "Votre abonnement professionnel a été modifié avec succès. Tu vas maintenant pouvoir configurer ton établissement."
+            } else {
+                successMessage = "Votre abonnement a été modifié avec succès. Le nouveau tarif sera appliqué lors de la prochaine échéance."
+            }
             
             // Notifier la mise à jour
             NotificationCenter.default.post(name: NSNotification.Name("SubscriptionUpdated"), object: nil)
-            
-            // Fermer la vue après 2 secondes
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                // La vue sera fermée automatiquement via le dismiss dans le parent
-            }
         } catch {
             print("💳 [MODIFY SUBSCRIPTION] ❌ Erreur: \(error.localizedDescription)")
             print("═══════════════════════════════════════════════════════════")

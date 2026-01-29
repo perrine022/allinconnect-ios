@@ -65,9 +65,59 @@ struct PartnerProfessionalResponse: Codable, Identifiable {
         case instagram
         case openingHours = "openingHours"
         case distanceMeters = "distanceMeters"
-        case isClub10 = "club10" // Le backend envoie "club10" (sans "is")
+        case isClub10 = "isClub10" // Le backend envoie "isClub10" dans les réponses
         case averageRating = "averageRating"
         case reviewCount = "reviewCount"
+    }
+    
+    // Initializer personnalisé pour gérer isClub10 qui peut être envoyé comme Int (1/0) au lieu de Bool
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        email = try container.decode(String.self, forKey: .email)
+        firstName = try container.decode(String.self, forKey: .firstName)
+        lastName = try container.decode(String.self, forKey: .lastName)
+        address = try container.decodeIfPresent(String.self, forKey: .address)
+        city = try container.decodeIfPresent(String.self, forKey: .city)
+        latitude = try container.decodeIfPresent(Double.self, forKey: .latitude)
+        longitude = try container.decodeIfPresent(Double.self, forKey: .longitude)
+        birthDate = try container.decodeIfPresent(String.self, forKey: .birthDate)
+        userType = try container.decode(String.self, forKey: .userType)
+        subscriptionType = try container.decodeIfPresent(String.self, forKey: .subscriptionType)
+        profession = try container.decodeIfPresent(String.self, forKey: .profession)
+        category = try container.decodeIfPresent(OfferCategory.self, forKey: .category)
+        subCategory = try container.decodeIfPresent(String.self, forKey: .subCategory)
+        hasConnectedBefore = try container.decodeIfPresent(Bool.self, forKey: .hasConnectedBefore)
+        referralCode = try container.decodeIfPresent(String.self, forKey: .referralCode)
+        subscriptionPlan = try container.decodeIfPresent(SubscriptionPlanResponse.self, forKey: .subscriptionPlan)
+        establishmentName = try container.decodeIfPresent(String.self, forKey: .establishmentName)
+        establishmentDescription = try container.decodeIfPresent(String.self, forKey: .establishmentDescription)
+        establishmentImageUrl = try container.decodeIfPresent(String.self, forKey: .establishmentImageUrl)
+        phoneNumber = try container.decodeIfPresent(String.self, forKey: .phoneNumber)
+        website = try container.decodeIfPresent(String.self, forKey: .website)
+        instagram = try container.decodeIfPresent(String.self, forKey: .instagram)
+        openingHours = try container.decodeIfPresent(String.self, forKey: .openingHours)
+        distanceMeters = try container.decodeIfPresent(Double.self, forKey: .distanceMeters)
+        averageRating = try container.decodeIfPresent(Double.self, forKey: .averageRating)
+        reviewCount = try container.decodeIfPresent(Int.self, forKey: .reviewCount)
+        
+        // Décoder isClub10 - le backend peut envoyer 1/0 (Int) au lieu de true/false (Bool)
+        // Gérer les deux cas pour compatibilité
+        if let boolValue = try? container.decodeIfPresent(Bool.self, forKey: .isClub10) {
+            isClub10 = boolValue
+        } else if let intValue = try? container.decodeIfPresent(Int.self, forKey: .isClub10) {
+            // Convertir 1 -> true, 0 -> false
+            isClub10 = (intValue != 0)
+            print("🏢 [PartnerProfessionalResponse] ⚠️ isClub10 reçu comme Int (\(intValue)), converti en Bool: \(isClub10 ?? false)")
+        } else {
+            // Essayer de décoder comme n'importe quel nombre (Double, etc.)
+            if let numberValue = try? container.decodeIfPresent(Double.self, forKey: .isClub10) {
+                isClub10 = (numberValue != 0.0)
+                print("🏢 [PartnerProfessionalResponse] ⚠️ isClub10 reçu comme Double (\(numberValue)), converti en Bool: \(isClub10 ?? false)")
+            } else {
+                isClub10 = nil
+            }
+        }
     }
 }
 

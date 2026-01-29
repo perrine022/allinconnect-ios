@@ -181,15 +181,18 @@ class APIService: APIServiceProtocol, ObservableObject {
                     return value
                 }
                 
-                // Log pour vérifier isClub10 avant sérialisation
-                if let isClub10Value = cleanedParameters["isClub10"] {
-                    print("📡 [APIService] request() - isClub10 dans cleanedParameters avant sérialisation: \(isClub10Value) (type: \(type(of: isClub10Value)))")
+                // Log pour vérifier isClub10 avant sérialisation (le backend attend "isClub10" dans les requêtes PUT)
+                var isClub10Value: Bool? = nil
+                if let isClub10 = cleanedParameters["isClub10"] {
+                    isClub10Value = isClub10 as? Bool
+                    print("📡 [APIService] request() - isClub10 dans cleanedParameters avant sérialisation: \(isClub10) (type: \(type(of: isClub10)))")
                     
                     // Vérifier et corriger si c'est un NSNumber au lieu d'un Bool
-                    if let numberValue = isClub10Value as? NSNumber {
+                    if let numberValue = isClub10 as? NSNumber {
                         print("📡 [APIService] ⚠️ isClub10 est un NSNumber (\(numberValue)) - conversion en Bool")
                         cleanedParameters["isClub10"] = numberValue.boolValue
-                    } else if isClub10Value is Bool {
+                        isClub10Value = numberValue.boolValue
+                    } else if isClub10 is Bool {
                         print("📡 [APIService] ✅ isClub10 est bien un Bool")
                     }
                 } else {
@@ -205,7 +208,7 @@ class APIService: APIServiceProtocol, ObservableObject {
                     
                     // CORRECTION: JSONSerialization peut sérialiser les booléens comme 0/1 au lieu de true/false
                     // Remplacer "isClub10":1 par "isClub10":true et "isClub10":0 par "isClub10":false
-                    if let isClub10Value = cleanedParameters["isClub10"] as? Bool {
+                    if let isClub10Value = isClub10Value {
                         if isClub10Value {
                             // Remplacer "isClub10":1 par "isClub10":true
                             httpBodyString = httpBodyString.replacingOccurrences(of: "\"isClub10\":1", with: "\"isClub10\":true")
@@ -325,8 +328,8 @@ class APIService: APIServiceProtocol, ObservableObject {
                             if let jsonDict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
                                 print("📥 [APIService] Tous les clés dans la réponse: \(jsonDict.keys.sorted())")
                                 
-                                // Le backend envoie "club10" (sans "is"), pas "isClub10"
-                                if let isClub10Value = jsonDict["club10"] {
+                                // Le backend envoie "isClub10" dans les réponses
+                                if let isClub10Value = jsonDict["isClub10"] {
                                     print("📥 [APIService] isClub10 dans la réponse brute (AVANT décodage): \(isClub10Value)")
                                     print("📥 [APIService] Type de isClub10 (AVANT décodage): \(type(of: isClub10Value))")
                                     
@@ -342,15 +345,15 @@ class APIService: APIServiceProtocol, ObservableObject {
                                     } else if let intValue = isClub10Value as? Int {
                                         print("📥 [APIService] ⚠️ PROBLÈME: isClub10 est un Int (\(intValue)) au lieu d'un Bool!")
                                     } else {
-                                        print("📥 [APIService] ⚠️ Type inattendu pour club10: \(type(of: isClub10Value))")
+                                        print("📥 [APIService] ⚠️ Type inattendu pour isClub10: \(type(of: isClub10Value))")
                                     }
                                 } else {
-                                    print("📥 [APIService] ⚠️ club10 n'est PAS présent dans la réponse brute!")
+                                    print("📥 [APIService] ⚠️ isClub10 n'est PAS présent dans la réponse brute!")
                                 }
                                 
-                                // Vérifier aussi "isClub10" pour compatibilité (au cas où le backend change)
-                                if let isClub10ValueAlt = jsonDict["isClub10"] {
-                                    print("📥 [APIService] ⚠️ isClub10 (avec 'is') trouvé aussi: \(isClub10ValueAlt)")
+                                // Vérifier aussi "club10" pour compatibilité (au cas où le backend change)
+                                if let club10ValueAlt = jsonDict["club10"] {
+                                    print("📥 [APIService] ⚠️ club10 (sans 'is') trouvé aussi: \(club10ValueAlt)")
                                 }
                             }
                         } else if endpoint.contains("/users/professionals/search") {
@@ -358,16 +361,16 @@ class APIService: APIServiceProtocol, ObservableObject {
                             if let jsonArray = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] {
                                 print("📥 [APIService] Réponse est un tableau de \(jsonArray.count) partenaires")
                                 
-                                // Vérifier club10 pour chaque partenaire
+                                // Vérifier isClub10 pour chaque partenaire
                                 for (index, partnerDict) in jsonArray.enumerated() {
-                                    if let club10Value = partnerDict["club10"] {
+                                    if let isClub10Value = partnerDict["isClub10"] {
                                         let partnerName = partnerDict["establishmentName"] as? String ?? 
                                                          "\(partnerDict["firstName"] as? String ?? "") \(partnerDict["lastName"] as? String ?? "")"
-                                        print("📥 [APIService] Partenaire \(index + 1) (\(partnerName)): club10 = \(club10Value) (type: \(type(of: club10Value)))")
+                                        print("📥 [APIService] Partenaire \(index + 1) (\(partnerName)): isClub10 = \(isClub10Value) (type: \(type(of: isClub10Value)))")
                                     } else {
                                         let partnerName = partnerDict["establishmentName"] as? String ?? 
                                                          "\(partnerDict["firstName"] as? String ?? "") \(partnerDict["lastName"] as? String ?? "")"
-                                        print("📥 [APIService] ⚠️ Partenaire \(index + 1) (\(partnerName)): club10 est absent ou null")
+                                        print("📥 [APIService] ⚠️ Partenaire \(index + 1) (\(partnerName)): isClub10 est absent ou null")
                                     }
                                 }
                             }

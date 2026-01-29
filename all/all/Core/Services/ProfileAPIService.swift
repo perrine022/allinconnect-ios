@@ -65,7 +65,7 @@ struct UpdateProfileRequest: Codable {
         case profession
         case category
         case subCategory = "subCategory"
-        case isClub10 = "club10" // Le backend envoie "club10" (sans "is")
+        case isClub10 = "isClub10" // Le backend attend "isClub10" dans les requêtes PUT
     }
 }
 
@@ -166,7 +166,7 @@ struct UserMeResponse: Codable {
         case profession
         case category
         case subCategory = "subCategory"
-        case isClub10 = "club10" // Le backend envoie "club10" (sans "is")
+        case isClub10 = "isClub10" // Le backend envoie "isClub10" dans les réponses
     }
     
     // Initializer personnalisé pour gérer les valeurs optionnelles avec valeurs par défaut
@@ -199,9 +199,24 @@ struct UserMeResponse: Codable {
         category = try container.decodeIfPresent(OfferCategory.self, forKey: .category)
         subCategory = try container.decodeIfPresent(String.self, forKey: .subCategory)
         
-        // Décoder isClub10 - le backend envoie true/false
-        // Utiliser decodeIfPresent pour gérer le cas où le champ n'existe pas
-        isClub10 = try container.decodeIfPresent(Bool.self, forKey: .isClub10)
+        // Décoder isClub10 - le backend envoie "isClub10" dans les réponses
+        // Le backend peut envoyer 1/0 (Int) au lieu de true/false (Bool)
+        // Gérer les deux cas pour compatibilité
+        if let boolValue = try? container.decodeIfPresent(Bool.self, forKey: .isClub10) {
+            isClub10 = boolValue
+        } else if let intValue = try? container.decodeIfPresent(Int.self, forKey: .isClub10) {
+            // Convertir 1 -> true, 0 -> false
+            isClub10 = (intValue != 0)
+            print("🏢 [UserMeResponse] ⚠️ isClub10 reçu comme Int (\(intValue)), converti en Bool: \(isClub10 ?? false)")
+        } else {
+            // Essayer de décoder comme n'importe quel nombre (Double, etc.)
+            if let numberValue = try? container.decodeIfPresent(Double.self, forKey: .isClub10) {
+                isClub10 = (numberValue != 0.0)
+                print("🏢 [UserMeResponse] ⚠️ isClub10 reçu comme Double (\(numberValue)), converti en Bool: \(isClub10 ?? false)")
+            } else {
+                isClub10 = nil
+            }
+        }
         
         // Log pour vérifier la valeur décodée
         if let value = isClub10 {
@@ -389,9 +404,12 @@ class ProfileAPIService: ObservableObject {
         }
         
         // FORCER l'inclusion de isClub10 avec la valeur correcte (Bool Swift)
+        // Le backend attend "isClub10" dans les requêtes PUT
         // S'assurer que la valeur est toujours un Bool Swift, pas un NSNumber
         if let isClub10Value = request.isClub10 {
             parameters["isClub10"] = isClub10Value as Bool
+            // Supprimer "club10" si elle existe (au cas où JSONEncoder l'aurait créée avec l'ancien CodingKey)
+            parameters.removeValue(forKey: "club10")
             print("📡 [ProfileAPIService] ✅ isClub10 FORCÉ dans parameters: \(isClub10Value) (type: Bool)")
             
             // Re-encoder le JSON avec la valeur forcée
@@ -475,11 +493,14 @@ class ProfileAPIService: ObservableObject {
         }
         
         // FORCER l'inclusion de isClub10 même si JSONEncoder ne l'a pas inclus
+        // Le backend attend "isClub10" dans les requêtes PUT
         // JSONEncoder peut omettre les valeurs optionnelles false, mais le backend en a besoin
         // IMPORTANT: S'assurer que la valeur est bien un Bool Swift, pas un NSNumber
         if let isClub10Value = request.isClub10 {
             // Forcer la valeur comme Bool Swift pour éviter les problèmes de sérialisation
             cleanedParameters["isClub10"] = Bool(isClub10Value)
+            // Supprimer "club10" si elle existe (au cas où JSONEncoder l'aurait créée avec l'ancien CodingKey)
+            cleanedParameters.removeValue(forKey: "club10")
             print("📡 [ProfileAPIService] ✅ isClub10 FORCÉ dans cleanedParameters (multipart): \(Bool(isClub10Value)) (type: Bool)")
         } else {
             print("📡 [ProfileAPIService] ⚠️ isClub10 est nil dans request (multipart)")
